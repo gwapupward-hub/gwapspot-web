@@ -93,25 +93,13 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
             __html:
               'try{if(sessionStorage.getItem("gwap-premium-intro-seen-v1")==="true")document.documentElement.dataset.gwapIntroSeen="true"}catch(e){}',
           }}
-        />
-        <link
-          rel="preload"
-          as="image"
-          href="/brand/splash/gwap-splash-mobile.webp"
-          media="(max-width: 720px)"
-        />
-        <link
-          rel="preload"
-          as="image"
-          href="/brand/splash/gwap-splash-desktop.webp"
-          media="(min-width: 721px)"
         />
       </head>
       <body>
