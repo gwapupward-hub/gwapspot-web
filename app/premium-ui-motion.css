@@ -1,0 +1,14 @@
+/* Premium skin for existing inner routes */
+.inner-main { background: transparent; }
+.inner-main .site-header { position: sticky; top: 14px; border-radius: 22px; background: rgba(8,11,9,.72); backdrop-filter: blur(26px) saturate(140%); box-shadow: inset 0 1px rgba(255,255,255,.08), 0 24px 70px rgba(0,0,0,.32); }
+.inner-main .inner-hero, .inner-main .detail-card, .inner-main .content-card, .inner-main .community-card, .inner-main .mission-card { border-color: rgba(255,255,255,.13); background: linear-gradient(145deg, rgba(255,255,255,.06), rgba(255,255,255,.018)); box-shadow: inset 0 1px rgba(255,255,255,.08), 0 35px 80px rgba(0,0,0,.25); backdrop-filter: blur(22px); }
+.inner-main .product-card { border-radius: 22px; background: linear-gradient(145deg, rgba(255,255,255,.06), rgba(255,255,255,.018)); box-shadow: inset 0 1px rgba(255,255,255,.07), 0 24px 60px rgba(0,0,0,.2); backdrop-filter: blur(20px); }
+.inner-main .product-card:hover { transform: translateY(-7px) scale(1.01); border-color: rgba(255,255,255,.22); box-shadow: inset 0 1px rgba(255,255,255,.1), 0 32px 75px rgba(0,0,0,.32); }
+
+@keyframes auroraDrift { from { transform: translate3d(-4%, -2%, 0) scale(.95); } to { transform: translate3d(8%, 7%, 0) scale(1.12); } }
+@keyframes streakTravel { from { transform: translate3d(0,0,0) rotate(-25deg); } to { transform: translate3d(190vw,0,0) rotate(-25deg); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes float { 50% { transform: translateY(-9px) rotate(.7deg); } }
+@keyframes pulse { 50% { opacity: .45; transform: scale(.78); } }
+@keyframes scrollPulse { 50% { opacity: .25; transform: scaleY(.55); transform-origin: top; } }
+@keyframes fadeIn { from { opacity: 0; } }
