@@ -3,6 +3,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Telemetry } from "./telemetry";
 import "./globals.css";
+import "./expansion.css";
 
 const siteUrl = "https://www.gwapspot.com";
 const googleVerification = process.env.GOOGLE_SITE_VERIFICATION;

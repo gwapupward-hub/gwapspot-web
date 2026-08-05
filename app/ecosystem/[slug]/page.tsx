@@ -1,0 +1,168 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import {
+  ArrowIcon,
+  PageShell,
+  SparkIcon,
+} from "../../components/site-shell";
+import {
+  ecosystemProducts,
+  productBySlug,
+} from "../../lib/ecosystem";
+
+type ProductPageProps = {
+  params: Promise<{ slug: string }>;
+};
+
+export function generateStaticParams() {
+  return ecosystemProducts.map((product) => ({ slug: product.slug }));
+}
+
+export async function generateMetadata({
+  params,
+}: ProductPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const product = productBySlug.get(slug);
+
+  if (!product) {
+    return {};
+  }
+
+  return {
+    title: product.name,
+    description: product.summary,
+    alternates: { canonical: `/ecosystem/${product.slug}` },
+    openGraph: {
+      title: `${product.name} — GWAP Ecosystem`,
+      description: product.summary,
+      url: `/ecosystem/${product.slug}`,
+    },
+  };
+}
+
+export default async function ProductPage({ params }: ProductPageProps) {
+  const { slug } = await params;
+  const product = productBySlug.get(slug);
+
+  if (!product) {
+    notFound();
+  }
+
+  const productIndex = ecosystemProducts.findIndex(
+    (item) => item.slug === product.slug,
+  );
+  const nextProduct =
+    ecosystemProducts[(productIndex + 1) % ecosystemProducts.length];
+
+  return (
+    <PageShell>
+      <section className={`product-hero accent-${product.accent}`}>
+        <div className="product-hero-meta">
+          <Link href="/ecosystem">GWAP ECOSYSTEM</Link>
+          <span>/</span>
+          <span>{product.name}</span>
+        </div>
+        <div className="product-hero-grid">
+          <div>
+            <span className="product-eyebrow">{product.eyebrow}</span>
+            <h1>{product.name}</h1>
+            <p>{product.description}</p>
+            <div className="inner-hero-actions">
+              {product.externalUrl ? (
+                <a
+                  className="primary-button"
+                  href={product.externalUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {product.externalLabel ?? "Launch product"} <ArrowIcon />
+                </a>
+              ) : (
+                <Link className="primary-button" href="/roadmap">
+                  View development roadmap <ArrowIcon />
+                </Link>
+              )}
+              <Link className="secondary-button" href="/ecosystem">
+                All products
+              </Link>
+            </div>
+          </div>
+          <aside className="product-brief">
+            <div>
+              <span>STATUS</span>
+              <strong>{product.status}</strong>
+            </div>
+            <div>
+              <span>ROLE</span>
+              <strong>{product.role}</strong>
+            </div>
+            <div>
+              <span>PRIMARY AUDIENCE</span>
+              <strong>{product.audience}</strong>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section className="inner-section">
+        <div className="product-columns">
+          <div>
+            <span className="eyebrow">
+              <SparkIcon /> Current capabilities
+            </span>
+            <h2>What this layer is designed to do.</h2>
+          </div>
+          <ul className="capability-list">
+            {product.capabilities.map((capability, index) => (
+              <li key={capability}>
+                <span>{String(index + 1).padStart(2, "0")}</span>
+                {capability}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <section className="inner-section">
+        <div className="product-columns roadmap-columns">
+          <div>
+            <span className="eyebrow">
+              <SparkIcon /> Product roadmap
+            </span>
+            <h2>The next deliberate improvements.</h2>
+          </div>
+          <ol className="roadmap-list">
+            {product.roadmap.map((item, index) => (
+              <li key={item}>
+                <span>0{index + 1}</span>
+                <div>
+                  <small>ROADMAP ITEM</small>
+                  <strong>{item}</strong>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      <section className="inner-section">
+        <div className="cta-panel">
+          <div>
+            <span className="eyebrow">
+              <SparkIcon /> Continue exploring
+            </span>
+            <h2>Next: {nextProduct.name}</h2>
+            <p>{nextProduct.summary}</p>
+          </div>
+          <Link
+            className="primary-button"
+            href={`/ecosystem/${nextProduct.slug}`}
+          >
+            View {nextProduct.name} <ArrowIcon />
+          </Link>
+        </div>
+      </section>
+    </PageShell>
+  );
+}
