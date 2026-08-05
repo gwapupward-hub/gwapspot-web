@@ -3,12 +3,43 @@
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
+import part1 from "./splash-data/part-1";
+import part2 from "./splash-data/part-2";
+import part3 from "./splash-data/part-3";
+import part4 from "./splash-data/part-4";
+import part5 from "./splash-data/part-5";
+import part6 from "./splash-data/part-6";
+import part7 from "./splash-data/part-7";
+import part8 from "./splash-data/part-8";
+import part9 from "./splash-data/part-9";
+import part10 from "./splash-data/part-10";
+import part11 from "./splash-data/part-11";
+import part12 from "./splash-data/part-12";
+import part13 from "./splash-data/part-13";
+import part14 from "./splash-data/part-14";
 
 const INTRO_SESSION_KEY = "gwap-premium-intro-seen-v1";
 const INTRO_HOLD_MS = 2100;
 const INTRO_EXIT_MS = 720;
 const ROUTE_HOLD_MS = 260;
 const ROUTE_EXIT_MS = 520;
+const ROUTE_FALLBACK_MS = 1800;
+const SPLASH_SRC = `data:image/webp;base64,${[
+  part1,
+  part2,
+  part3,
+  part4,
+  part5,
+  part6,
+  part7,
+  part8,
+  part9,
+  part10,
+  part11,
+  part12,
+  part13,
+  part14,
+].join("")}`;
 
 type OverlayMode = "intro" | "route" | null;
 
@@ -129,6 +160,17 @@ export default function PremiumSplash() {
         setLeaving(false);
         setMode("route");
       });
+
+      const fallbackTimer = window.setTimeout(() => {
+        setLeaving(true);
+        const hideTimer = window.setTimeout(() => {
+          setMode(null);
+          setLeaving(false);
+          routePending.current = false;
+        }, ROUTE_EXIT_MS);
+        timers.current.push(hideTimer);
+      }, ROUTE_FALLBACK_MS);
+      timers.current.push(fallbackTimer);
     };
 
     document.addEventListener("click", handleInternalNavigation, true);
@@ -166,18 +208,21 @@ export default function PremiumSplash() {
       aria-live="polite"
       aria-label={mode === "intro" ? "Entering the GWAP ecosystem" : "Loading the next page"}
     >
-      <picture className="premium-splash__art" aria-hidden="true">
-        <source media="(max-width: 720px)" srcSet="/brand/splash/gwap-splash-mobile.webp" />
-        <source media="(max-width: 1180px)" srcSet="/brand/splash/gwap-splash-tablet.webp" />
+      <div
+        className="premium-splash__backdrop"
+        style={{ backgroundImage: `url("${SPLASH_SRC}")` }}
+        aria-hidden="true"
+      />
+      <div className="premium-splash__art" aria-hidden="true">
         <img
-          src="/brand/splash/gwap-splash-desktop.webp"
+          src={SPLASH_SRC}
           alt=""
-          width="1920"
-          height="1080"
+          width="400"
+          height="864"
           fetchPriority="high"
           decoding="async"
         />
-      </picture>
+      </div>
 
       <div className="premium-splash__veil" aria-hidden="true" />
       <div className="premium-splash__grain" aria-hidden="true" />
