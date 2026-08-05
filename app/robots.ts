@@ -7,7 +7,7 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: ["/api/"],
     },
-    sitemap: "https://gwapspot.com/sitemap.xml",
-    host: "https://gwapspot.com",
+    sitemap: "https://www.gwapspot.com/sitemap.xml",
+    host: "https://www.gwapspot.com",
   };
 }
