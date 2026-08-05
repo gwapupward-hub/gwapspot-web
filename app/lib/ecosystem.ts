@@ -7,6 +7,7 @@ export type EcosystemProduct = {
   eyebrow: string;
   status: ProductStatus;
   accent: ProductAccent;
+  logo: string;
   summary: string;
   description: string;
   role: string;
@@ -24,6 +25,7 @@ export const ecosystemProducts: EcosystemProduct[] = [
     eyebrow: "Digital identity",
     status: "Live",
     accent: "green",
+    logo: "/logos/gns.webp",
     summary: ".gwap names, wallet-linked profiles, and a portable identity layer for the open web.",
     description:
       "GNS turns a wallet into a readable, portable identity. Each .gwap name can connect addresses, public profile information, links, payments, and reputation into one recognizable destination.",
@@ -49,6 +51,7 @@ export const ecosystemProducts: EcosystemProduct[] = [
     eyebrow: "On-chain reputation",
     status: "Live",
     accent: "green",
+    logo: "/logos/gwapscore.svg",
     summary: "A transparent 300–900 reputation and credit-intelligence layer for wallets and applications.",
     description:
       "GwapScore converts wallet activity, verified identity, counterparty history, disputes, and other explainable signals into a consistent 300–900 protocol score.",
@@ -74,6 +77,7 @@ export const ecosystemProducts: EcosystemProduct[] = [
     eyebrow: "Creator technology",
     status: "Beta",
     accent: "purple",
+    logo: "/logos/dimi.webp",
     summary: "A music creation and collaboration platform built for modern artists and digital ownership.",
     description:
       "DIMI is designed to help artists create, collaborate, manage rights, and prove ownership without forcing creative work into disconnected tools.",
@@ -99,6 +103,7 @@ export const ecosystemProducts: EcosystemProduct[] = [
     eyebrow: "Islamic AI",
     status: "Live",
     accent: "green",
+    logo: "/logos/isnad-sunnah.svg",
     summary: "An AI-powered Islamic knowledge assistant grounded in the Qur’an, Sunnah, and trusted scholarship.",
     description:
       "Isnad Sunnah organizes specialized Islamic knowledge modules into one learning assistant, with source-aware answers and a focus on practical, trustworthy guidance.",
@@ -124,6 +129,7 @@ export const ecosystemProducts: EcosystemProduct[] = [
     eyebrow: "Lifestyle brand",
     status: "Live",
     accent: "orange",
+    logo: "/logos/money-neva-sleeps.webp",
     summary: "Street-luxury apparel and culture built around ambition, discipline, and purposeful hustle.",
     description:
       "Money Neva $leeps translates the GWAP mindset into apparel, visual culture, and community identity built for people who move with intention.",
@@ -149,6 +155,7 @@ export const ecosystemProducts: EcosystemProduct[] = [
     eyebrow: "Digital commerce",
     status: "In Development",
     accent: "orange",
+    logo: "/logos/marketplace.webp",
     summary: "A unified marketplace for ecosystem products, services, creators, and verified participants.",
     description:
       "The marketplace will connect identity, reputation, payments, products, and services so users can transact through one trusted GWAP gateway.",
@@ -172,6 +179,7 @@ export const ecosystemProducts: EcosystemProduct[] = [
     eyebrow: "Credit infrastructure",
     status: "Planned",
     accent: "purple",
+    logo: "/logos/occo.webp",
     summary: "An on-chain credit bureau designed to make wallet-level risk and credibility understandable.",
     description:
       "OCCO will provide institutional-grade wallet lookup, score interpretation, and credit intelligence for users, partners, and regulated decision-makers.",
@@ -195,6 +203,7 @@ export const ecosystemProducts: EcosystemProduct[] = [
     eyebrow: "Verification layer",
     status: "Planned",
     accent: "purple",
+    logo: "/logos/private-proof-vault.webp",
     summary: "A privacy-aware system for storing, managing, and verifying important digital proofs.",
     description:
       "Private Proof Vault is planned as a controlled layer for evidence, credentials, agreements, and verification records that should not live openly on a public profile.",

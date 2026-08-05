@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -37,6 +38,7 @@ export async function generateMetadata({
       title: `${product.name} — GWAP Ecosystem`,
       description: product.summary,
       url: `/ecosystem/${product.slug}`,
+      images: [{ url: product.logo, alt: `${product.name} logo` }],
     },
   };
 }
@@ -65,6 +67,15 @@ export default async function ProductPage({ params }: ProductPageProps) {
         </div>
         <div className="product-hero-grid">
           <div>
+            <div className="product-hero-logo">
+              <Image
+                src={product.logo}
+                alt={`${product.name} logo`}
+                width={180}
+                height={180}
+                priority
+              />
+            </div>
             <span className="product-eyebrow">{product.eyebrow}</span>
             <h1>{product.name}</h1>
             <p>{product.description}</p>

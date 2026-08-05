@@ -142,6 +142,15 @@ export function ProductCard({
           {product.status}
         </span>
       </div>
+      <div className="product-logo-wrap">
+        <Image
+          src={product.logo}
+          alt={`${product.name} logo`}
+          width={112}
+          height={112}
+          sizes="112px"
+        />
+      </div>
       <div>
         <span className="product-eyebrow">{product.eyebrow}</span>
         <h3>{product.name}</h3>

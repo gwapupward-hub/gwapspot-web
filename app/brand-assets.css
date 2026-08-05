@@ -1,0 +1,89 @@
+/* Official GWAP ecosystem brand assets */
+.brand-mark img,
+.footer-brand img,
+.cinematic-brand-mark img,
+.emblem-core img,
+.depth-core img,
+.premium-splash__logo-shell img {
+  object-fit: contain;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.product-logo-wrap,
+.product-hero-logo {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background:
+    radial-gradient(circle at 50% 30%, rgba(19, 221, 19, 0.16), transparent 66%),
+    rgba(3, 7, 5, 0.62);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 18px 45px rgba(0, 0, 0, 0.28);
+}
+
+.product-logo-wrap {
+  width: 112px;
+  height: 112px;
+  margin: 1.25rem 0 1.5rem;
+  border-radius: 26px;
+}
+
+.product-logo-wrap img {
+  width: 86%;
+  height: 86%;
+  object-fit: contain;
+  transition: transform 320ms cubic-bezier(.2,.8,.2,1), filter 320ms ease;
+}
+
+.product-card:hover .product-logo-wrap img {
+  transform: scale(1.06) rotate(-1deg);
+  filter: drop-shadow(0 0 18px rgba(19, 221, 19, 0.18));
+}
+
+.product-hero-logo {
+  width: clamp(126px, 16vw, 180px);
+  aspect-ratio: 1;
+  margin-bottom: 1.5rem;
+  border-radius: 34px;
+}
+
+.product-hero-logo img {
+  width: 88%;
+  height: 88%;
+  object-fit: contain;
+}
+
+/* The cinematic homepage already renders a glyph container. Replace initials with official logos. */
+.premium-product-card .product-glyph {
+  position: relative;
+  overflow: hidden;
+  background-color: rgba(3, 7, 5, 0.72);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 82%;
+}
+
+.premium-product-card .product-glyph b,
+.premium-product-card .product-glyph i {
+  opacity: 0;
+}
+
+.premium-product-card[href="/ecosystem/gns"] .product-glyph { background-image: url("/logos/gns.webp"); }
+.premium-product-card[href="/ecosystem/gwapscore"] .product-glyph { background-image: url("/logos/gwapscore.svg"); }
+.premium-product-card[href="/ecosystem/dimi"] .product-glyph { background-image: url("/logos/dimi.webp"); }
+.premium-product-card[href="/ecosystem/isnad-sunnah"] .product-glyph { background-image: url("/logos/isnad-sunnah.svg"); }
+.premium-product-card[href="/ecosystem/money-neva-sleeps"] .product-glyph { background-image: url("/logos/money-neva-sleeps.webp"); }
+.premium-product-card[href="/ecosystem/marketplace"] .product-glyph { background-image: url("/logos/marketplace.webp"); }
+.premium-product-card[href="/ecosystem/occo"] .product-glyph { background-image: url("/logos/occo.webp"); }
+.premium-product-card[href="/ecosystem/private-proof-vault"] .product-glyph { background-image: url("/logos/private-proof-vault.webp"); }
+
+@media (max-width: 700px) {
+  .product-logo-wrap {
+    width: 92px;
+    height: 92px;
+    border-radius: 22px;
+  }
+}
