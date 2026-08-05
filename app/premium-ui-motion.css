@@ -5,10 +5,123 @@
 .inner-main .product-card { border-radius: 22px; background: linear-gradient(145deg, rgba(255,255,255,.06), rgba(255,255,255,.018)); box-shadow: inset 0 1px rgba(255,255,255,.07), 0 24px 60px rgba(0,0,0,.2); backdrop-filter: blur(20px); }
 .inner-main .product-card:hover { transform: translateY(-7px) scale(1.01); border-color: rgba(255,255,255,.22); box-shadow: inset 0 1px rgba(255,255,255,.1), 0 32px 75px rgba(0,0,0,.32); }
 
+/* Continuous scroll-to-camera system */
+.cinematic-home.scroll-directed { perspective: 1600px; }
+.cinematic-home.scroll-directed .story-section[data-scroll-state] {
+  opacity: var(--story-opacity, 1);
+  filter: blur(var(--story-blur, 0)) saturate(calc(.72 + var(--story-focus, 1) * .28));
+  transform: perspective(1500px) translate3d(0, var(--story-y, 0), var(--story-z, 0)) scale(var(--story-scale, 1)) rotateX(var(--story-rotate, 0));
+  transform-origin: 50% 52%;
+  transition: none;
+  backface-visibility: hidden;
+  will-change: transform, opacity, filter;
+}
+
+@media (min-width: 681px) {
+  html:has(.cinematic-home.scroll-directed) { scroll-snap-type: y proximity; }
+  .cinematic-home.scroll-directed .hero-story,
+  .cinematic-home.scroll-directed .overview-story,
+  .cinematic-home.scroll-directed .trust-story,
+  .cinematic-home.scroll-directed .roadmap-story,
+  .cinematic-home.scroll-directed .community-story { scroll-snap-align: start; scroll-snap-stop: normal; }
+}
+
+/* Chapter progress navigation */
+.story-chapters { position: fixed; z-index: 95; right: 24px; top: 50%; display: flex; align-items: stretch; gap: 11px; transform: translateY(-50%); }
+.story-progress-track { position: relative; width: 1px; min-height: 216px; overflow: hidden; background: rgba(255,255,255,.1); }
+.story-progress-track i { position: absolute; inset: 0; transform: scaleY(var(--page-scroll-progress, 0)); transform-origin: top; background: linear-gradient(var(--gwap-green), var(--gwap-purple), var(--gwap-orange)); box-shadow: 0 0 14px rgba(19,221,19,.35); }
+.story-chapters nav { display: grid; gap: 6px; }
+.story-chapters a { min-width: 78px; min-height: 31px; display: grid; grid-template-columns: 22px 1fr; align-items: center; gap: 7px; padding: 0 8px; border: 1px solid transparent; border-radius: 10px; color: #68716a; background: transparent; font-size: 7px; letter-spacing: .11em; text-transform: uppercase; transition: color .25s ease, border-color .25s ease, background .25s ease, transform .25s ease; }
+.story-chapters a span { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.story-chapters a b { font-weight: 800; }
+.story-chapters a:hover, .story-chapters a.is-current { color: white; border-color: rgba(255,255,255,.11); background: rgba(8,11,9,.64); backdrop-filter: blur(16px); transform: translateX(-4px); }
+.story-chapters a.is-current span { color: var(--gwap-green); text-shadow: 0 0 12px rgba(19,221,19,.55); }
+
+/* Each chapter enters differently */
+.scroll-directed .overview-story .overview-copy,
+.scroll-directed .overview-story .metrics-glass,
+.scroll-directed .overview-story .depth-window,
+.scroll-directed .trust-story .trust-copy,
+.scroll-directed .trust-story .layer-stack,
+.scroll-directed .roadmap-story .phase-card,
+.scroll-directed .community-story .community-panel,
+.scroll-directed .community-story .community-glow {
+  transition: opacity .72s cubic-bezier(.2,.75,.15,1), transform .82s cubic-bezier(.2,.75,.15,1), filter .72s ease;
+}
+.scroll-directed .overview-story .overview-copy { opacity: .38; transform: translate3d(-55px, 18px, -40px); }
+.scroll-directed .overview-story .metrics-glass { opacity: .3; transform: translate3d(65px, 30px, -75px) rotateY(-5deg); }
+.scroll-directed .overview-story .depth-window { opacity: .28; transform: translate3d(0, 75px, -120px) scale(.92) rotateX(5deg); }
+.scroll-directed .overview-story.is-scroll-active .overview-copy,
+.scroll-directed .overview-story.is-scroll-active .metrics-glass,
+.scroll-directed .overview-story.is-scroll-active .depth-window { opacity: 1; transform: translate3d(0,0,0) scale(1) rotateX(0) rotateY(0); }
+
+.scroll-directed .ecosystem-story .premium-product-card { opacity: .2; transform: translate3d(0, 62px, -80px) rotateX(8deg); transition: opacity .62s ease, transform .72s cubic-bezier(.2,.75,.15,1), border-color .3s ease, box-shadow .3s ease; }
+.scroll-directed .ecosystem-story .premium-product-card:nth-child(2n) { transform: translate3d(0, 78px, -90px) rotateX(9deg) rotateZ(.6deg); }
+.scroll-directed .ecosystem-story.is-scroll-active .premium-product-card { opacity: 1; transform: translate3d(0,0,0) rotateX(0) rotateZ(0); }
+.scroll-directed .ecosystem-story.is-scroll-active .premium-product-card:nth-child(1) { transition-delay: .02s; }
+.scroll-directed .ecosystem-story.is-scroll-active .premium-product-card:nth-child(2) { transition-delay: .07s; }
+.scroll-directed .ecosystem-story.is-scroll-active .premium-product-card:nth-child(3) { transition-delay: .12s; }
+.scroll-directed .ecosystem-story.is-scroll-active .premium-product-card:nth-child(4) { transition-delay: .17s; }
+.scroll-directed .ecosystem-story.is-scroll-active .premium-product-card:nth-child(5) { transition-delay: .22s; }
+.scroll-directed .ecosystem-story.is-scroll-active .premium-product-card:nth-child(6) { transition-delay: .27s; }
+.scroll-directed .ecosystem-story.is-scroll-active .premium-product-card:nth-child(7) { transition-delay: .32s; }
+.scroll-directed .ecosystem-story.is-scroll-active .premium-product-card:nth-child(8) { transition-delay: .37s; }
+.scroll-directed .ecosystem-story.is-scroll-active .premium-product-card:hover { transform: translateY(-9px) scale(1.012); }
+
+.scroll-directed .trust-story .trust-copy { opacity: .32; transform: translate3d(-65px, 20px, -65px); }
+.scroll-directed .trust-story .layer-stack { opacity: .3; transform: translate3d(85px, 25px, -100px) rotateY(-7deg); }
+.scroll-directed .trust-story.is-scroll-active .trust-copy,
+.scroll-directed .trust-story.is-scroll-active .layer-stack { opacity: 1; transform: translate3d(0,0,0) rotateY(0); }
+
+.scroll-directed .roadmap-story .phase-card { opacity: .25; transform: translate3d(0, 55px, -80px) scaleY(.88); transform-origin: top; }
+.scroll-directed .roadmap-story.is-scroll-active .phase-card { opacity: 1; transform: translate3d(0,0,0) scaleY(1); }
+.scroll-directed .roadmap-story.is-scroll-active .phase-card:nth-child(2) { transform: translate3d(0,-12px,0) scaleY(1); transition-delay: .1s; }
+.scroll-directed .roadmap-story.is-scroll-active .phase-card:nth-child(3) { transition-delay: .2s; }
+
+.scroll-directed .community-story .community-panel { opacity: .28; transform: translate3d(0, 55px, -120px) scale(.9); }
+.scroll-directed .community-story .community-glow { opacity: .1; transform: scale(.65); filter: blur(70px); }
+.scroll-directed .community-story.is-scroll-active .community-panel { opacity: 1; transform: translate3d(0,0,0) scale(1); }
+.scroll-directed .community-story.is-scroll-active .community-glow { opacity: 1; transform: scale(1); filter: blur(35px); }
+
+@media (max-width: 1100px) {
+  .story-chapters { right: 10px; }
+  .story-chapters a { min-width: 31px; grid-template-columns: 1fr; justify-items: center; }
+  .story-chapters a b { display: none; }
+}
+
+@media (max-width: 680px) {
+  .cinematic-home.scroll-directed .story-section[data-scroll-state] {
+    opacity: var(--story-opacity, 1);
+    filter: blur(var(--story-blur, 0));
+    transform: perspective(1100px) translate3d(0, var(--story-y, 0), var(--story-z, 0)) scale(var(--story-scale, 1));
+  }
+  .story-chapters { right: auto; left: 50%; top: auto; bottom: max(10px, env(safe-area-inset-bottom)); align-items: center; gap: 8px; transform: translateX(-50%); padding: 7px 9px; border: 1px solid rgba(255,255,255,.1); border-radius: 16px; background: rgba(6,9,7,.7); box-shadow: 0 16px 50px rgba(0,0,0,.35); backdrop-filter: blur(22px); }
+  .story-progress-track { width: 92px; min-height: 1px; height: 1px; }
+  .story-progress-track i { transform: scaleX(var(--page-scroll-progress, 0)); transform-origin: left; }
+  .story-chapters nav { display: flex; gap: 3px; }
+  .story-chapters a { min-width: 26px; min-height: 26px; padding: 0; border-radius: 8px; }
+  .scroll-directed .overview-story .overview-copy,
+  .scroll-directed .overview-story .metrics-glass,
+  .scroll-directed .overview-story .depth-window,
+  .scroll-directed .trust-story .trust-copy,
+  .scroll-directed .trust-story .layer-stack,
+  .scroll-directed .roadmap-story .phase-card,
+  .scroll-directed .community-story .community-panel { transform: translate3d(0, 24px, -35px) scale(.975); }
+  .scroll-directed .overview-story.is-scroll-active .overview-copy,
+  .scroll-directed .overview-story.is-scroll-active .metrics-glass,
+  .scroll-directed .overview-story.is-scroll-active .depth-window,
+  .scroll-directed .trust-story.is-scroll-active .trust-copy,
+  .scroll-directed .trust-story.is-scroll-active .layer-stack,
+  .scroll-directed .roadmap-story.is-scroll-active .phase-card,
+  .scroll-directed .community-story.is-scroll-active .community-panel { transform: translate3d(0,0,0) scale(1); }
+  .scroll-directed .ecosystem-story .premium-product-card,
+  .scroll-directed .ecosystem-story .premium-product-card:nth-child(2n) { transform: translate3d(0, 28px, -38px) scale(.975); }
+  .scroll-directed .ecosystem-story.is-scroll-active .premium-product-card { transform: translate3d(0,0,0) scale(1); }
+}
+
 @keyframes auroraDrift { from { transform: translate3d(-4%, -2%, 0) scale(.95); } to { transform: translate3d(8%, 7%, 0) scale(1.12); } }
 @keyframes streakTravel { from { transform: translate3d(0,0,0) rotate(-25deg); } to { transform: translate3d(190vw,0,0) rotate(-25deg); } }
-@keyframes spin { to { transform: rotate(360deg); } }
-@keyframes orbitSpin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+@keyframes spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
 @keyframes float { 50% { transform: translateY(-9px) rotate(.7deg); } }
 @keyframes pulse { 50% { opacity: .45; transform: scale(.78); } }
 @keyframes scrollPulse { 50% { opacity: .25; transform: scaleY(.55); transform-origin: top; } }
