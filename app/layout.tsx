@@ -4,7 +4,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Telemetry } from "./telemetry";
 import "./globals.css";
 
-const siteUrl = "https://gwapspot.com";
+const siteUrl = "https://www.gwapspot.com";
 const googleVerification = process.env.GOOGLE_SITE_VERIFICATION;
 const bingVerification = process.env.BING_SITE_VERIFICATION;
 
