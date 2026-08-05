@@ -1,0 +1,39 @@
+.cinematic-home.scroll-directed .story-section[data-scroll-state] {
+  filter: blur(var(--story-blur, 0)) saturate(1);
+}
+
+.depth-orbit { animation-name: orbitSpin; }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes orbitSpin {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .story-chapters { display: none; }
+  .cinematic-home.scroll-directed .story-section[data-scroll-state],
+  .cinematic-home.scroll-directed .story-section[data-scroll-state] * {
+    transition-duration: .01ms !important;
+  }
+  .cinematic-home.scroll-directed .story-section[data-scroll-state] {
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+  }
+  .scroll-directed .overview-story .overview-copy,
+  .scroll-directed .overview-story .metrics-glass,
+  .scroll-directed .overview-story .depth-window,
+  .scroll-directed .ecosystem-story .premium-product-card,
+  .scroll-directed .trust-story .trust-copy,
+  .scroll-directed .trust-story .layer-stack,
+  .scroll-directed .roadmap-story .phase-card,
+  .scroll-directed .community-story .community-panel,
+  .scroll-directed .community-story .community-glow {
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+  }
+}
