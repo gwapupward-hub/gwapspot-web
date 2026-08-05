@@ -7,6 +7,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date();
   const primaryRoutes = [
     "",
+    "/launch",
     "/about",
     "/ecosystem",
     "/roadmap",
@@ -19,7 +20,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${baseUrl}${route}`,
       lastModified,
       changeFrequency: "weekly" as const,
-      priority: index === 0 ? 1 : 0.8,
+      priority: index === 0 ? 1 : route === "/launch" ? 0.9 : 0.8,
     })),
     ...ecosystemProducts.map((product) => ({
       url: `${baseUrl}/ecosystem/${product.slug}`,

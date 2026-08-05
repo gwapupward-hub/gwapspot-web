@@ -48,6 +48,7 @@ export function SiteHeader() {
       </Link>
 
       <nav className="desktop-nav" aria-label="Primary navigation">
+        <Link href="/launch">Launch</Link>
         <Link href="/ecosystem">Ecosystem</Link>
         <Link href="/about">About</Link>
         <Link href="/roadmap">Roadmap</Link>
@@ -75,6 +76,7 @@ export function SiteFooter() {
       <p>Building connected digital infrastructure with purpose.</p>
 
       <div className="footer-links">
+        <Link href="/launch">Launchpad</Link>
         <Link href="/ecosystem">Ecosystem</Link>
         <Link href="/about">About</Link>
         <Link href="/roadmap">Roadmap</Link>
