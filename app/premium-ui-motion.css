@@ -8,6 +8,7 @@
 @keyframes auroraDrift { from { transform: translate3d(-4%, -2%, 0) scale(.95); } to { transform: translate3d(8%, 7%, 0) scale(1.12); } }
 @keyframes streakTravel { from { transform: translate3d(0,0,0) rotate(-25deg); } to { transform: translate3d(190vw,0,0) rotate(-25deg); } }
 @keyframes spin { to { transform: rotate(360deg); } }
+@keyframes orbitSpin { to { transform: translate(-50%,-50%) rotate(360deg); } }
 @keyframes float { 50% { transform: translateY(-9px) rotate(.7deg); } }
 @keyframes pulse { 50% { opacity: .45; transform: scale(.78); } }
 @keyframes scrollPulse { 50% { opacity: .25; transform: scaleY(.55); transform-origin: top; } }
