@@ -1,10 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import PremiumSplash from "./components/premium-splash";
 import { Telemetry } from "./telemetry";
 import "./globals.css";
 import "./expansion.css";
 import "./launch.css";
+import "./premium-splash.css";
+import "./loading-screen.css";
 
 const siteUrl = "https://www.gwapspot.com";
 const googleVerification = process.env.GOOGLE_SITE_VERIFICATION;
@@ -91,7 +94,28 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              'try{if(sessionStorage.getItem("gwap-premium-intro-seen-v1")==="true")document.documentElement.dataset.gwapIntroSeen="true"}catch(e){}',
+          }}
+        />
+        <link
+          rel="preload"
+          as="image"
+          href="/brand/splash/gwap-splash-mobile.webp"
+          media="(max-width: 720px)"
+        />
+        <link
+          rel="preload"
+          as="image"
+          href="/brand/splash/gwap-splash-desktop.webp"
+          media="(min-width: 721px)"
+        />
+      </head>
       <body>
+        <PremiumSplash />
         {children}
         <Telemetry />
         <Analytics />
