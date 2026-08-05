@@ -1,0 +1,44 @@
+.route-loading {
+  min-height: 100vh;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  background:
+    radial-gradient(circle, rgba(19, 221, 19, .09), transparent 24rem),
+    #050505;
+  color: #f4f6f4;
+}
+
+.route-loading__mark {
+  width: 82px;
+  height: 82px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(19, 221, 19, .24);
+  border-radius: 24px;
+  background: rgba(19, 221, 19, .045);
+  box-shadow: 0 0 56px rgba(19, 221, 19, .12);
+}
+
+.route-loading__mark img {
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 20px rgba(19, 221, 19, .26));
+}
+
+.route-loading strong {
+  margin-top: 18px;
+  font-size: 16px;
+  letter-spacing: .2em;
+  text-indent: .2em;
+}
+
+.route-loading small {
+  margin-top: 7px;
+  color: #818a83;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
