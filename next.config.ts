@@ -14,6 +14,9 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  async redirects() {
+    return [{ source: "/logo.png", destination: "/logos/gwap.svg", permanent: false }];
+  },
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];
   },
