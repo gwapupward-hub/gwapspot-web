@@ -13,6 +13,7 @@ import "./premium-ui-sections.css";
 import "./premium-ui-story.css";
 import "./premium-ui-motion.css";
 import "./premium-ui-responsive.css";
+import "./premium-ui-scroll.css";
 
 const siteUrl = "https://www.gwapspot.com";
 const googleVerification = process.env.GOOGLE_SITE_VERIFICATION;
