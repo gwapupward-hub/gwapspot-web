@@ -1,10 +1,28 @@
 import type { MetadataRoute } from "next";
 
+const baseUrl = "https://gwapspot.com";
+
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = "https://gwapspot.com";
+  const lastModified = new Date();
+
   return [
-    { url: base, changeFrequency: "weekly", priority: 1 },
-    { url: `${base}/privacy`, changeFrequency: "yearly", priority: 0.2 },
-    { url: `${base}/terms`, changeFrequency: "yearly", priority: 0.2 },
+    {
+      url: baseUrl,
+      lastModified,
+      changeFrequency: "weekly",
+      priority: 1,
+    },
+    {
+      url: `${baseUrl}/privacy`,
+      lastModified,
+      changeFrequency: "yearly",
+      priority: 0.3,
+    },
+    {
+      url: `${baseUrl}/terms`,
+      lastModified,
+      changeFrequency: "yearly",
+      priority: 0.3,
+    },
   ];
 }
