@@ -1,27 +1,35 @@
 "use client";
 
+import { useClerk } from "@clerk/nextjs";
 import { useState, type FormEvent } from "react";
 import { getProfileCompletion, type GwapProfile } from "../lib/os-state";
 import { useGwapOs } from "./os-provider";
 
 export function ProfileView() {
-  const { state, updateProfile } = useGwapOs();
+  const { account, state, syncStatus, updateProfile } = useGwapOs();
   return (
     <ProfileForm
+      account={account}
       key={state.profile.updatedAt || "default-profile"}
       profile={state.profile}
+      syncStatus={syncStatus}
       onSave={updateProfile}
     />
   );
 }
 
 function ProfileForm({
+  account,
   profile,
+  syncStatus,
   onSave,
 }: {
+  account: { verifiedWallet: string };
   profile: GwapProfile;
+  syncStatus: "idle" | "saving" | "saved" | "error";
   onSave: (profile: Omit<GwapProfile, "updatedAt">) => void;
 }) {
+  const clerk = useClerk();
   const [saved, setSaved] = useState(false);
   const completion = getProfileCompletion(profile);
 
@@ -32,7 +40,7 @@ function ProfileForm({
       displayName: String(form.get("displayName") ?? "").trim(),
       handle: String(form.get("handle") ?? "").trim().replace(/^@/, ""),
       bio: String(form.get("bio") ?? "").trim(),
-      primaryWallet: String(form.get("primaryWallet") ?? "").trim(),
+      primaryWallet: account.verifiedWallet,
       website: String(form.get("website") ?? "").trim(),
       location: String(form.get("location") ?? "").trim(),
     });
@@ -46,8 +54,8 @@ function ProfileForm({
           <span className="os-kicker">UNIFIED PROFILE</span>
           <h1>Build the identity behind your ecosystem access.</h1>
           <p>
-            This local profile establishes the data model for a future GNS-backed
-            identity. Nothing entered here leaves this browser in Sprint 5.
+            Your account-backed profile is ready for future GNS identity,
+            reputation, and product access.
           </p>
         </div>
         <div className="os-completion-badge">
@@ -63,7 +71,15 @@ function ProfileForm({
               <span>PROFILE DETAILS</span>
               <h2>Public identity foundation</h2>
             </div>
-            {saved ? <small role="status">Saved on this device</small> : null}
+            {saved ? (
+              <small role="status">
+                {syncStatus === "error"
+                  ? "Saved locally — sync needs attention"
+                  : syncStatus === "saving"
+                    ? "Syncing to account…"
+                    : "Saved to your account"}
+              </small>
+            ) : null}
           </div>
 
           <div className="os-form-grid">
@@ -100,14 +116,17 @@ function ProfileForm({
               />
             </label>
             <label className="os-field-wide">
-              <span>Primary wallet</span>
+              <span>Verified Solana wallet</span>
               <input
                 name="primaryWallet"
-                defaultValue={profile.primaryWallet}
+                value={account.verifiedWallet || "No verified wallet connected"}
+                readOnly
                 spellCheck={false}
-                placeholder="Solana wallet address"
               />
-              <small>Stored locally. Wallet verification is not active yet.</small>
+              <small>
+                Wallet ownership is verified by a signed Clerk challenge; signatures
+                are never stored by GWAPSpot.
+              </small>
             </label>
             <label>
               <span>Website</span>
@@ -134,7 +153,7 @@ function ProfileForm({
             <button className="os-primary-action" type="submit">
               Save profile
             </button>
-            <small>Local browser storage only</small>
+            <small>Encrypted session · account-backed sync</small>
           </div>
         </form>
 
@@ -155,12 +174,19 @@ function ProfileForm({
           </section>
 
           <section className="os-panel os-account-panel">
-            <span>NEXT IDENTITY LAYER</span>
-            <h2>GNS connection</h2>
+            <span>SECURITY & IDENTITY</span>
+            <h2>Verified connections</h2>
             <p>
-              A later sprint will map this profile to an owned .gwap name, verified
-              wallets, GwapScore, and selective privacy controls.
+              Manage email, Google, GitHub, Solana wallets, active sessions, and
+              account security from one protected profile.
             </p>
+            <button
+              className="os-secondary-action"
+              type="button"
+              onClick={() => clerk.openUserProfile()}
+            >
+              Manage sign-in methods
+            </button>
           </section>
         </aside>
       </section>
