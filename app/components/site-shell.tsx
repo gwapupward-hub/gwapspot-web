@@ -53,10 +53,11 @@ export function SiteHeader() {
         <Link href="/about">About</Link>
         <Link href="/roadmap">Roadmap</Link>
         <Link href="/community">Community</Link>
+        <Link href="/contact">Contact</Link>
       </nav>
 
-      <Link className="header-cta" href="/contact">
-        Contact <ArrowIcon />
+      <Link className="header-cta" href="/app">
+        GWAP OS <ArrowIcon />
       </Link>
     </header>
   );
@@ -76,6 +77,7 @@ export function SiteFooter() {
       <p>Building connected digital infrastructure with purpose.</p>
 
       <div className="footer-links">
+        <Link href="/app">GWAP OS</Link>
         <Link href="/launch">Launchpad</Link>
         <Link href="/ecosystem">Ecosystem</Link>
         <Link href="/about">About</Link>
