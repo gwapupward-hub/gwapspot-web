@@ -39,7 +39,7 @@ export function SiteHeader() {
     <header className="site-header">
       <Link className="brand" href="/" aria-label="GWAP home">
         <span className="brand-mark">
-          <Image src="/logos/gwap-agent-clear.svg" alt="" width={40} height={40} priority />
+          <Image src="/logos/gwap-agent.png" alt="" width={40} height={40} priority />
         </span>
         <span className="brand-copy">
           <strong>GWAP</strong>
@@ -67,7 +67,7 @@ export function SiteFooter() {
   return (
     <footer className="site-footer expanded-footer">
       <div className="footer-brand">
-        <Image src="/logos/gwap-agent-clear.svg" alt="" width={34} height={34} />
+        <Image src="/logos/gwap-agent.png" alt="" width={34} height={34} />
         <div>
           <strong>GWAP</strong>
           <span>Grind With A Purpose</span>
