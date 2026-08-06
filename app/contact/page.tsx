@@ -1,17 +1,17 @@
-import type { Metadata } from "next";
 import {
   ArrowIcon,
   PageHero,
   PageShell,
   SparkIcon,
 } from "../components/site-shell";
+import { createPageMetadata } from "../lib/metadata";
 
-export const metadata: Metadata = {
+export const metadata = createPageMetadata({
   title: "Contact & Partnerships",
   description:
     "Contact GWAP through its official community, development, and partnership channels.",
-  alternates: { canonical: "/contact" },
-};
+  path: "/contact",
+});
 
 const contactPaths = [
   {
