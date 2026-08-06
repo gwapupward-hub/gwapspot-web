@@ -73,34 +73,34 @@ export function ScrollDirector() {
           nearestIndex = index;
         }
 
-        const normalizedDistance = clamp(absoluteDistance / 0.82, 0, 1);
+        const normalizedDistance = clamp(absoluteDistance / 0.68, 0, 1);
         const focus = smoothstep(1 - normalizedDistance);
         const incoming = distance > 0;
         const outgoing = distance < 0;
         const unfocused = 1 - focus;
 
         const scale = isMobile
-          ? 0.96 + focus * 0.04
+          ? 0.93 + focus * 0.07
           : incoming
-            ? 0.88 + focus * 0.12
-            : 1 + unfocused * 0.065;
+            ? 0.78 + focus * 0.22
+            : 1 + unfocused * 0.12;
         const z = isMobile
-          ? -70 * unfocused
+          ? -110 * unfocused
           : incoming
-            ? -220 * unfocused
-            : 95 * unfocused;
+            ? -340 * unfocused
+            : 160 * unfocused;
         const y = clamp(
-          distance * (isMobile ? 28 : 66),
-          isMobile ? -28 : -70,
-          isMobile ? 28 : 70,
+          distance * (isMobile ? 40 : 96),
+          isMobile ? -42 : -105,
+          isMobile ? 42 : 105,
         );
-        const blur = (isMobile ? 5 : 16) * unfocused;
-        const opacity = (isMobile ? 0.58 : 0.12) + focus * (isMobile ? 0.42 : 0.88);
+        const blur = (isMobile ? 8 : 24) * unfocused;
+        const opacity = (isMobile ? 0.42 : 0.05) + focus * (isMobile ? 0.58 : 0.95);
         const rotate = isMobile
           ? 0
           : incoming
-            ? 2.4 * unfocused
-            : -1.4 * unfocused;
+            ? 4 * unfocused
+            : -2.2 * unfocused;
 
         section.style.setProperty("--story-focus", focus.toFixed(4));
         section.style.setProperty("--story-opacity", opacity.toFixed(4));
