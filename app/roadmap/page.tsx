@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ArrowIcon,
@@ -6,13 +5,14 @@ import {
   PageShell,
   SparkIcon,
 } from "../components/site-shell";
+import { createPageMetadata } from "../lib/metadata";
 
-export const metadata: Metadata = {
+export const metadata = createPageMetadata({
   title: "Roadmap",
   description:
     "Review the phased execution roadmap for the GWAP ecosystem.",
-  alternates: { canonical: "/roadmap" },
-};
+  path: "/roadmap",
+});
 
 const phases = [
   {
