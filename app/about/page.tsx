@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ArrowIcon,
@@ -6,13 +5,14 @@ import {
   PageShell,
   SparkIcon,
 } from "../components/site-shell";
+import { createPageMetadata } from "../lib/metadata";
 
-export const metadata: Metadata = {
+export const metadata = createPageMetadata({
   title: "About",
   description:
     "Learn how GWAP connects identity, trust, commerce, creativity, knowledge, and community into one purpose-driven ecosystem.",
-  alternates: { canonical: "/about" },
-};
+  path: "/about",
+});
 
 const principles = [
   {
