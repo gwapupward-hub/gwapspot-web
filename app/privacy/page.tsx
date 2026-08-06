@@ -1,14 +1,21 @@
 import Image from "next/image";
+import Link from "next/link";
+import { createPageMetadata } from "../lib/metadata";
 
-export const metadata = { title: "Privacy Policy" };
+export const metadata = createPageMetadata({
+  title: "Privacy Policy",
+  description:
+    "Learn how the public GWAP website handles technical, analytics, and contact information.",
+  path: "/privacy",
+});
 
 export default function PrivacyPage() {
   return (
     <main className="legal-page">
-      <a className="brand" href="/">
+      <Link className="brand" href="/">
         <span className="brand-mark"><Image src="/logo.png" alt="" width={40} height={40} /></span>
         <span className="brand-copy"><strong>GWAP</strong><small>Grind With A Purpose</small></span>
-      </a>
+      </Link>
       <p className="eyebrow">Legal</p>
       <h1>Privacy Policy</h1>
       <p>Last updated: August 2026</p>
@@ -21,7 +28,7 @@ export default function PrivacyPage() {
       <p>Links to ecosystem products and social platforms lead to separate services with their own privacy practices. Review those terms before submitting personal or wallet information.</p>
       <h2>Updates</h2>
       <p>This policy will be expanded as accounts, analytics, wallet features, and additional platform services are introduced.</p>
-      <p><a href="/">Return to GWAP</a></p>
+      <p><Link href="/">Return to GWAP</Link></p>
     </main>
   );
 }
