@@ -1,9 +1,13 @@
 /* Final Liquid Glass and motion refinements */
 :root {
-  --glass-edge: rgba(255, 255, 255, 0.16);
-  --glass-highlight: rgba(255, 255, 255, 0.09);
-  --glass-shadow: rgba(0, 0, 0, 0.34);
-  --glass-blur: 28px;
+  --glass-edge: rgba(111, 255, 155, 0.22);
+  --glass-highlight: rgba(177, 255, 206, 0.11);
+  --glass-shadow: rgba(0, 0, 0, 0.52);
+  --glass-blur: 30px;
+  --glass-night: rgba(3, 8, 6, 0.82);
+  --glass-green-tint: rgba(19, 221, 19, 0.105);
+  --glass-purple-tint: rgba(155, 108, 255, 0.075);
+  --glass-orange-tint: rgba(255, 138, 36, 0.045);
   --page-transition-duration: 620ms;
   --page-transition-ease: cubic-bezier(.2,.78,.18,1);
 }
@@ -23,15 +27,17 @@
 .inner-main .community-card {
   border-color: var(--glass-edge);
   background:
-    linear-gradient(180deg, rgba(255,255,255,.085), rgba(255,255,255,.028) 42%, rgba(255,255,255,.014)),
-    radial-gradient(circle at 18% 0%, rgba(255,255,255,.1), transparent 38%),
-    rgba(7,10,8,.58);
+    radial-gradient(circle at 12% 0%, rgba(142,255,178,.13), transparent 34%),
+    radial-gradient(circle at 88% 100%, var(--glass-purple-tint), transparent 42%),
+    linear-gradient(145deg, var(--glass-green-tint), rgba(6,14,10,.32) 42%, var(--glass-orange-tint)),
+    var(--glass-night);
   box-shadow:
     inset 0 1px 0 var(--glass-highlight),
-    inset 0 -1px 0 rgba(255,255,255,.025),
-    0 22px 65px var(--glass-shadow);
-  backdrop-filter: blur(var(--glass-blur)) saturate(155%);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(155%);
+    inset 0 -1px 0 rgba(19,221,19,.055),
+    0 24px 72px var(--glass-shadow),
+    0 0 0 1px rgba(19,221,19,.025);
+  backdrop-filter: blur(var(--glass-blur)) saturate(185%) brightness(72%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(185%) brightness(72%);
 }
 
 .site-header::after,
@@ -46,8 +52,10 @@
   inset: 0;
   border-radius: inherit;
   pointer-events: none;
-  background: linear-gradient(118deg, rgba(255,255,255,.12), transparent 22%, transparent 72%, rgba(255,255,255,.035));
-  opacity: .55;
+  background:
+    linear-gradient(118deg, rgba(182,255,207,.13), transparent 20%, transparent 72%, rgba(155,108,255,.055)),
+    radial-gradient(circle at 20% 0%, rgba(255,255,255,.07), transparent 24%);
+  opacity: .68;
   mix-blend-mode: screen;
 }
 
@@ -58,6 +66,24 @@
 .depth-window,
 .community-panel,
 .phase-card { position: relative; isolation: isolate; }
+
+.site-header,
+.inner-main .site-header {
+  background:
+    linear-gradient(145deg, rgba(19,221,19,.11), rgba(4,10,7,.88) 42%, rgba(155,108,255,.07)),
+    rgba(3,7,5,.9);
+}
+
+.product-card:hover,
+.premium-product-card:hover,
+.metrics-glass:hover,
+.phase-card:hover {
+  border-color: rgba(111,255,155,.36);
+  background:
+    radial-gradient(circle at 15% 0%, rgba(142,255,178,.18), transparent 36%),
+    linear-gradient(145deg, rgba(19,221,19,.14), rgba(4,11,7,.76) 48%, rgba(155,108,255,.09)),
+    rgba(3,8,6,.88);
+}
 
 .header-cta,
 .primary-button,
@@ -82,9 +108,9 @@
 .premium-product-card:hover {
   transform: translateY(-9px) scale(1.018);
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.13),
-    0 34px 85px rgba(0,0,0,.38),
-    0 0 34px rgba(19,221,19,.08);
+    inset 0 1px 0 rgba(177,255,206,.14),
+    0 36px 90px rgba(0,0,0,.52),
+    0 0 42px rgba(19,221,19,.12);
 }
 
 .page-transition-shell {
@@ -107,6 +133,17 @@
   }
 }
 
+.cinematic-home.scroll-directed {
+  touch-action: pan-y;
+  overscroll-behavior-y: contain;
+}
+
+@media (min-width: 681px) {
+  .cinematic-home.scroll-directed .story-section[data-story-section] {
+    min-height: 112svh;
+  }
+}
+
 .scroll-directed .overview-story .overview-copy,
 .scroll-directed .overview-story .metrics-glass,
 .scroll-directed .overview-story .depth-window,
@@ -115,16 +152,17 @@
 .scroll-directed .roadmap-story .phase-card,
 .scroll-directed .community-story .community-panel,
 .scroll-directed .community-story .community-glow {
-  transition-duration: .9s, 1.02s, .9s;
+  transition-duration: 1.05s, 1.16s, 1.05s;
 }
 
 .scroll-directed .ecosystem-story .premium-product-card {
-  transition-duration: .78s, .92s, .35s, .35s;
+  transition-duration: .92s, 1.04s, .4s, .4s;
 }
 
 @media (max-width: 680px) {
   :root {
-    --glass-blur: 22px;
+    --glass-blur: 24px;
+    --glass-night: rgba(3, 8, 6, 0.86);
     --page-transition-duration: 540ms;
   }
 
