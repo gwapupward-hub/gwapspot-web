@@ -39,7 +39,7 @@ export function SiteHeader() {
     <header className="site-header">
       <Link className="brand" href="/" aria-label="GWAP home">
         <span className="brand-mark">
-          <Image src="/logo.png" alt="" width={40} height={40} priority />
+          <Image src="/logos/gwap-agent-clear.svg" alt="" width={40} height={40} priority />
         </span>
         <span className="brand-copy">
           <strong>GWAP</strong>
@@ -66,7 +66,7 @@ export function SiteFooter() {
   return (
     <footer className="site-footer expanded-footer">
       <div className="footer-brand">
-        <Image src="/logo.png" alt="" width={34} height={34} />
+        <Image src="/logos/gwap-agent-clear.svg" alt="" width={34} height={34} />
         <div>
           <strong>GWAP</strong>
           <span>Grind With A Purpose</span>
@@ -131,7 +131,7 @@ export function ProductCard({
 }) {
   return (
     <Link
-      className={`product-card accent-${product.accent}`}
+      className={`product-card product-card--${product.slug} accent-${product.accent}`}
       href={`/ecosystem/${product.slug}`}
     >
       <div className="product-card-top">
@@ -146,9 +146,10 @@ export function ProductCard({
         <Image
           src={product.logo}
           alt={`${product.name} logo`}
-          width={112}
-          height={112}
-          sizes="112px"
+          width={128}
+          height={128}
+          sizes="128px"
+          unoptimized
         />
       </div>
       <div>
