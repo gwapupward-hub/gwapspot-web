@@ -11,10 +11,13 @@ import {
   ecosystemProducts,
   productBySlug,
 } from "../../lib/ecosystem";
+import { createPageMetadata } from "../../lib/metadata";
 
 type ProductPageProps = {
   params: Promise<{ slug: string }>;
 };
+
+export const dynamicParams = false;
 
 export function generateStaticParams() {
   return ecosystemProducts.map((product) => ({ slug: product.slug }));
@@ -30,17 +33,16 @@ export async function generateMetadata({
     return {};
   }
 
-  return {
+  return createPageMetadata({
     title: product.name,
     description: product.summary,
-    alternates: { canonical: `/ecosystem/${product.slug}` },
-    openGraph: {
-      title: `${product.name} — GWAP Ecosystem`,
-      description: product.summary,
-      url: `/ecosystem/${product.slug}`,
-      images: [{ url: product.logo, alt: `${product.name} logo` }],
+    path: "/ecosystem/" + product.slug,
+    socialTitle: product.name + " — GWAP Ecosystem",
+    image: {
+      url: product.logo,
+      alt: product.name + " logo",
     },
-  };
+  });
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {

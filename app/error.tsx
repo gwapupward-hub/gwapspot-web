@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect } from "react";
 
 export default function ErrorPage({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
@@ -20,7 +21,7 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
         <p style={{ color: "#9aa39c", lineHeight: 1.7 }}>The failure was logged. Retry the request or return to the homepage.</p>
         <div style={{ display: "flex", justifyContent: "center", gap: 12, flexWrap: "wrap", marginTop: 26 }}>
           <button onClick={reset} style={{ padding: "14px 20px", border: 0, borderRadius: 11, background: "#13dd13", color: "#041104", fontWeight: 800, cursor: "pointer" }}>Retry</button>
-          <a href="/" style={{ padding: "14px 20px", borderRadius: 11, border: "1px solid rgba(255,255,255,.18)", color: "white", fontWeight: 800 }}>Return home</a>
+          <Link href="/" style={{ padding: "14px 20px", borderRadius: 11, border: "1px solid rgba(255,255,255,.18)", color: "white", fontWeight: 800 }}>Return home</Link>
         </div>
       </section>
     </main>

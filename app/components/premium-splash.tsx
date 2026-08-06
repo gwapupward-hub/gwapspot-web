@@ -1,22 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import part1 from "./splash-data/part-1";
-import part2 from "./splash-data/part-2";
-import part3 from "./splash-data/part-3";
-import part4 from "./splash-data/part-4";
-import part5 from "./splash-data/part-5";
-import part6 from "./splash-data/part-6";
-import part7 from "./splash-data/part-7";
-import part8 from "./splash-data/part-8";
-import part9 from "./splash-data/part-9";
-import part10 from "./splash-data/part-10";
-import part11 from "./splash-data/part-11";
-import part12 from "./splash-data/part-12";
-import part13 from "./splash-data/part-13";
-import part14 from "./splash-data/part-14";
 
 const INTRO_SESSION_KEY = "gwap-premium-intro-seen-v1";
 const INTRO_HOLD_MS = 2100;
@@ -24,22 +11,7 @@ const INTRO_EXIT_MS = 720;
 const ROUTE_HOLD_MS = 260;
 const ROUTE_EXIT_MS = 520;
 const ROUTE_FALLBACK_MS = 1800;
-const SPLASH_SRC = `data:image/webp;base64,${[
-  part1,
-  part2,
-  part3,
-  part4,
-  part5,
-  part6,
-  part7,
-  part8,
-  part9,
-  part10,
-  part11,
-  part12,
-  part13,
-  part14,
-].join("")}`;
+const SPLASH_SRC = "/gwap-splash.webp";
 
 type OverlayMode = "intro" | "route" | null;
 
@@ -91,9 +63,11 @@ export default function PremiumSplash() {
     }
 
     if (hasSeenIntro || reducedMotion) {
-      setMode(null);
-      setLeaving(false);
-      return;
+      const frame = window.requestAnimationFrame(() => {
+        setMode(null);
+        setLeaving(false);
+      });
+      return () => window.cancelAnimationFrame(frame);
     }
 
     try {
@@ -214,13 +188,13 @@ export default function PremiumSplash() {
         aria-hidden="true"
       />
       <div className="premium-splash__art" aria-hidden="true">
-        <img
+        <Image
           src={SPLASH_SRC}
           alt=""
-          width="400"
-          height="864"
-          fetchPriority="high"
-          decoding="async"
+          width={400}
+          height={864}
+          priority
+          unoptimized
         />
       </div>
 
@@ -244,7 +218,7 @@ export default function PremiumSplash() {
       ) : (
         <div className="premium-splash__route-mark">
           <span className="premium-splash__logo-shell">
-            <img src="/logo.png" alt="" width="76" height="76" />
+            <Image src="/logo.png" alt="" width={76} height={76} />
           </span>
           <strong>GWAP</strong>
           <small>Grind With A Purpose</small>

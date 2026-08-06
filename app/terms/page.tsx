@@ -1,14 +1,21 @@
 import Image from "next/image";
+import Link from "next/link";
+import { createPageMetadata } from "../lib/metadata";
 
-export const metadata = { title: "Terms of Use" };
+export const metadata = createPageMetadata({
+  title: "Terms of Use",
+  description:
+    "Review the terms governing access to the public GWAP website and its ecosystem information.",
+  path: "/terms",
+});
 
 export default function TermsPage() {
   return (
     <main className="legal-page">
-      <a className="brand" href="/">
+      <Link className="brand" href="/">
         <span className="brand-mark"><Image src="/logo.png" alt="" width={40} height={40} /></span>
         <span className="brand-copy"><strong>GWAP</strong><small>Grind With A Purpose</small></span>
-      </a>
+      </Link>
       <p className="eyebrow">Legal</p>
       <h1>Terms of Use</h1>
       <p>Last updated: August 2026</p>
@@ -21,7 +28,7 @@ export default function TermsPage() {
       <p>Visitors must not interfere with site operation, attempt unauthorized access, distribute malicious code, or use the website in violation of applicable law.</p>
       <h2>External services</h2>
       <p>GWAP is not responsible for the availability or practices of third-party websites linked from this site.</p>
-      <p><a href="/">Return to GWAP</a></p>
+      <p><Link href="/">Return to GWAP</Link></p>
     </main>
   );
 }
