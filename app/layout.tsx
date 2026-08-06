@@ -30,11 +30,11 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image", title: "GWAP — The Future Rewards Purpose", description: "Explore the connected GWAP ecosystem.", images: ["/opengraph-image"], creator: "@_gwapspot" },
   icons: {
     icon: [
-      { url: "/logos/gwap-agent-clear.svg", type: "image/svg+xml", sizes: "any" },
+      { url: "/logos/gwap-agent.png", type: "image/png", sizes: "1024x1024" },
       { url: "/logo.png", type: "image/png", sizes: "512x512" },
       { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
     ],
-    shortcut: [{ url: "/logos/gwap-agent-clear.svg", type: "image/svg+xml" }],
+    shortcut: [{ url: "/logos/gwap-agent.png", type: "image/png" }],
     apple: [{ url: "/apple-touch-icon.png", type: "image/png", sizes: "180x180" }],
   },
   manifest: "/manifest.webmanifest",
