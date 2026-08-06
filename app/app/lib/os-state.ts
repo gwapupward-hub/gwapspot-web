@@ -27,7 +27,23 @@ export type GwapOsState = {
   settings: GwapSettings;
 };
 
+export type GwapAccount = {
+  displayName: string;
+  email: string;
+  verifiedWallet: string;
+};
+
 export const GWAP_OS_STORAGE_KEY = "gwap-os-state-v1";
+export const MAX_GWAP_OS_STATE_BYTES = 6_500;
+
+const safeText = (value: unknown, fallback: string, maxLength: number) =>
+  typeof value === "string" ? value.trim().slice(0, maxLength) : fallback;
+
+const safeBoolean = (value: unknown, fallback: boolean) =>
+  typeof value === "boolean" ? value : fallback;
+
+const safeSlug = (value: unknown): value is string =>
+  typeof value === "string" && /^[a-z0-9-]{1,64}$/.test(value);
 
 export const defaultGwapOsState: GwapOsState = {
   profile: {
@@ -49,37 +65,86 @@ export const defaultGwapOsState: GwapOsState = {
   },
 };
 
+export function createDefaultGwapOsState(): GwapOsState {
+  return {
+    profile: { ...defaultGwapOsState.profile },
+    favorites: [...defaultGwapOsState.favorites],
+    recent: [],
+    settings: { ...defaultGwapOsState.settings },
+  };
+}
+
 export function normalizeGwapOsState(value: unknown): GwapOsState {
-  if (!value || typeof value !== "object") return defaultGwapOsState;
+  if (!value || typeof value !== "object") return createDefaultGwapOsState();
 
   const candidate = value as Partial<GwapOsState>;
-  const profile = candidate.profile ?? defaultGwapOsState.profile;
-  const settings = candidate.settings ?? defaultGwapOsState.settings;
+  const profile =
+    candidate.profile && typeof candidate.profile === "object"
+      ? candidate.profile
+      : defaultGwapOsState.profile;
+  const settings =
+    candidate.settings && typeof candidate.settings === "object"
+      ? candidate.settings
+      : defaultGwapOsState.settings;
 
   return {
     profile: {
-      ...defaultGwapOsState.profile,
-      ...profile,
+      displayName: safeText(
+        profile.displayName,
+        defaultGwapOsState.profile.displayName,
+        80,
+      ),
+      handle: safeText(profile.handle, defaultGwapOsState.profile.handle, 40)
+        .replace(/^@/, "")
+        .replace(/[^A-Za-z0-9._-]/g, ""),
+      bio: safeText(profile.bio, "", 240),
+      primaryWallet: safeText(profile.primaryWallet, "", 128),
+      website: safeText(profile.website, "", 240),
+      location: safeText(profile.location, "", 100),
+      updatedAt: safeText(profile.updatedAt, "", 40),
     },
     favorites: Array.isArray(candidate.favorites)
-      ? candidate.favorites.filter((item): item is string => typeof item === "string")
-      : defaultGwapOsState.favorites,
+      ? [...new Set(candidate.favorites.filter(safeSlug))].slice(0, 24)
+      : [...defaultGwapOsState.favorites],
     recent: Array.isArray(candidate.recent)
       ? candidate.recent
           .filter(
             (item): item is RecentLaunch =>
               Boolean(item) &&
               typeof item === "object" &&
-              typeof (item as RecentLaunch).slug === "string" &&
-              typeof (item as RecentLaunch).openedAt === "string",
+              safeSlug((item as RecentLaunch).slug) &&
+              typeof (item as RecentLaunch).openedAt === "string" &&
+              !Number.isNaN(Date.parse((item as RecentLaunch).openedAt)),
           )
+          .map((item) => ({
+            slug: item.slug,
+            openedAt: item.openedAt.slice(0, 40),
+          }))
           .slice(0, 8)
       : [],
     settings: {
-      ...defaultGwapOsState.settings,
-      ...settings,
+      compactMode: safeBoolean(
+        settings.compactMode,
+        defaultGwapOsState.settings.compactMode,
+      ),
+      reduceMotion: safeBoolean(
+        settings.reduceMotion,
+        defaultGwapOsState.settings.reduceMotion,
+      ),
+      productUpdates: safeBoolean(
+        settings.productUpdates,
+        defaultGwapOsState.settings.productUpdates,
+      ),
+      communityUpdates: safeBoolean(
+        settings.communityUpdates,
+        defaultGwapOsState.settings.communityUpdates,
+      ),
     },
   };
+}
+
+export function areGwapOsStatesEqual(left: GwapOsState, right: GwapOsState) {
+  return JSON.stringify(left) === JSON.stringify(right);
 }
 
 export function getProfileCompletion(profile: GwapProfile) {
