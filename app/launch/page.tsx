@@ -1,15 +1,15 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowIcon, PageHero, PageShell, SparkIcon } from "../components/site-shell";
 import { ecosystemProducts } from "../lib/ecosystem";
+import { createPageMetadata } from "../lib/metadata";
 import Launchpad from "./launchpad";
 
-export const metadata: Metadata = {
+export const metadata = createPageMetadata({
   title: "Launchpad",
   description:
     "Search, filter, and launch products across the GWAP ecosystem from one gateway.",
-  alternates: { canonical: "/launch" },
-};
+  path: "/launch",
+});
 
 export default function LaunchPage() {
   const availableNow = ecosystemProducts.filter((product) => product.externalUrl).length;
