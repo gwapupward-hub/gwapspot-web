@@ -333,3 +333,104 @@ html[data-gwap-reduce-motion="true"] .gwap-os *::after { scroll-behavior: auto !
   .gwap-os *::before,
   .gwap-os *::after { animation: none !important; transition-duration: .01ms !important; }
 }
+
+.os-sync-banner {
+  position: sticky;
+  z-index: 35;
+  top: 14px;
+  width: min(900px, calc(100% - 36px));
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  margin: 14px auto 0;
+  padding: 14px 16px;
+  border: 1px solid rgba(19,221,19,.28);
+  border-radius: 18px;
+  background: rgba(7,13,8,.86);
+  box-shadow: inset 0 1px rgba(255,255,255,.12), 0 18px 55px rgba(0,0,0,.3);
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+}
+.os-sync-banner.is-error { border-color: rgba(255,138,43,.36); }
+.os-sync-banner > span { display: flex; flex-direction: column; gap: 4px; }
+.os-sync-banner strong { font-size: 11px; }
+.os-sync-banner small { color: #89938b; font-size: 9px; line-height: 1.45; }
+.os-sync-banner > div { display: flex; gap: 8px; }
+.os-sync-banner button,
+.os-secondary-action,
+.os-account-actions button,
+.os-delete-confirmation button {
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid rgba(255,255,255,.13);
+  border-radius: 12px;
+  background: rgba(255,255,255,.055);
+  color: #edf3ee;
+  font: inherit;
+  font-size: 9px;
+  font-weight: 900;
+  cursor: pointer;
+}
+.os-sync-banner button:first-child,
+.os-secondary-action { border-color: rgba(19,221,19,.3); color: #13dd13; }
+.os-secondary-action { margin-top: 12px; }
+.os-account-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 18px; }
+.os-delete-confirmation { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.os-delete-confirmation button:last-child { border-color: rgba(255,117,117,.34); color: #ff9e9e; }
+.os-danger-panel small[role="alert"] { display: block; margin-top: 10px; color: #ff9e9e; font-size: 9px; }
+
+.auth-page,
+.auth-gate {
+  position: relative;
+  min-height: 100svh;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  gap: clamp(30px, 6vw, 90px);
+  padding: clamp(24px, 6vw, 80px);
+  background:
+    radial-gradient(circle at 18% 20%, rgba(19,221,19,.14), transparent 32%),
+    radial-gradient(circle at 82% 75%, rgba(140,92,255,.13), transparent 34%),
+    #030504;
+}
+.auth-page { grid-template-columns: minmax(280px, 680px) auto; }
+.auth-page-brand { max-width: 680px; }
+.auth-page-brand > span,
+.auth-gate-card > span { color: #13dd13; font-size: 9px; font-weight: 900; letter-spacing: .17em; }
+.auth-page-brand h1,
+.auth-gate-card h1 { margin: 18px 0 0; font-size: clamp(44px, 6vw, 82px); line-height: .95; letter-spacing: -.055em; }
+.auth-page-brand p,
+.auth-gate-card p { max-width: 620px; margin: 22px 0 0; color: #919b93; font-size: 15px; line-height: 1.7; }
+.auth-gate-card {
+  position: relative;
+  width: min(780px, 100%);
+  padding: clamp(28px, 5vw, 58px);
+  border: 1px solid rgba(255,255,255,.13);
+  border-radius: 28px;
+  background: rgba(255,255,255,.055);
+  box-shadow: inset 0 1px rgba(255,255,255,.12), 0 36px 100px rgba(0,0,0,.36);
+  backdrop-filter: blur(28px) saturate(145%);
+  -webkit-backdrop-filter: blur(28px) saturate(145%);
+}
+.auth-gate-card > div { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 28px; }
+.auth-gate-link { color: #a1aba3; font-size: 10px; font-weight: 800; }
+.auth-page .cl-rootBox { width: min(420px, 100%); }
+.auth-page .cl-cardBox,
+.auth-page .cl-card { border: 1px solid rgba(255,255,255,.13); box-shadow: 0 28px 90px rgba(0,0,0,.34); }
+
+@media (max-width: 900px) {
+  .auth-page { grid-template-columns: 1fr; justify-items: center; }
+  .auth-page-brand { text-align: center; }
+  .auth-page-brand p { margin-right: auto; margin-left: auto; }
+  .os-sync-banner { top: 72px; align-items: flex-start; flex-direction: column; }
+}
+
+@media (max-width: 620px) {
+  .auth-page,
+  .auth-gate { padding: 24px 16px; }
+  .auth-page-brand h1,
+  .auth-gate-card h1 { font-size: clamp(40px, 13vw, 58px); }
+  .os-sync-banner { width: calc(100% - 24px); }
+  .os-sync-banner > div { width: 100%; flex-wrap: wrap; }
+}

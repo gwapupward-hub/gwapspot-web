@@ -1,5 +1,6 @@
 "use client";
 
+import { UserButton } from "@clerk/nextjs";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -14,13 +15,15 @@ const navigation = [
 
 export function OsShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { state } = useGwapOs();
-  const initials = state.profile.displayName
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("") || "GW";
+  const {
+    account,
+    keepAccountState,
+    migrateLocalState,
+    migrationAvailable,
+    retrySync,
+    state,
+    syncStatus,
+  } = useGwapOs();
 
   return (
     <main className="gwap-os">
@@ -31,7 +34,7 @@ export function OsShell({ children }: { children: ReactNode }) {
         <Link className="os-brand" href="/app" aria-label="GWAP OS home">
           <span className="os-brand-mark">
             <Image
-              src="/logos/gwap-agent-clear.svg"
+              src="/logos/gwap-agent.png"
               alt=""
               width={42}
               height={42}
@@ -70,21 +73,19 @@ export function OsShell({ children }: { children: ReactNode }) {
         </div>
 
         <div className="os-account-card">
-          <span className="os-avatar" aria-hidden="true">
-            {initials}
-          </span>
+          <UserButton showName={false} />
           <span>
-            <strong>{state.profile.displayName}</strong>
-            <small>@{state.profile.handle || "gwap-builder"}</small>
+            <strong>{account.displayName || state.profile.displayName}</strong>
+            <small>{account.email}</small>
           </span>
-          <i>Preview</i>
+          <i>{syncStatus === "error" ? "Offline" : "Synced"}</i>
         </div>
       </aside>
 
       <section className="os-workspace">
         <header className="os-mobile-header">
           <Link href="/app" aria-label="GWAP OS home">
-            <Image src="/logos/gwap-agent-clear.svg" alt="" width={36} height={36} />
+            <Image src="/logos/gwap-agent.png" alt="" width={36} height={36} />
             <strong>GWAP OS</strong>
           </Link>
           <nav aria-label="Mobile GWAP OS navigation">
@@ -106,7 +107,35 @@ export function OsShell({ children }: { children: ReactNode }) {
               </Link>
             ))}
           </nav>
+          <UserButton showName={false} />
         </header>
+        {migrationAvailable ? (
+          <section className="os-sync-banner" role="status">
+            <span>
+              <strong>Local Sprint 5 data found</strong>
+              <small>Move this device profile, favorites, and settings into your account?</small>
+            </span>
+            <div>
+              <button type="button" onClick={migrateLocalState}>
+                Move to account
+              </button>
+              <button type="button" onClick={keepAccountState}>
+                Keep account version
+              </button>
+            </div>
+          </section>
+        ) : null}
+        {syncStatus === "error" ? (
+          <section className="os-sync-banner is-error" role="alert">
+            <span>
+              <strong>Account sync paused</strong>
+              <small>Your latest changes remain safely staged on this device.</small>
+            </span>
+            <button type="button" onClick={retrySync}>
+              Retry sync
+            </button>
+          </section>
+        ) : null}
         {children}
       </section>
     </main>

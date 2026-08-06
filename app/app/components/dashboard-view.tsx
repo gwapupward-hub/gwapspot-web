@@ -36,11 +36,11 @@ export function DashboardView({ products }: { products: EcosystemProduct[] }) {
     <div className="os-page">
       <section className="os-page-heading">
         <div>
-          <span className="os-kicker">GWAP OS / PREVIEW WORKSPACE</span>
+          <span className="os-kicker">GWAP OS / SECURE WORKSPACE</span>
           <h1>Your ecosystem. One command center.</h1>
           <p>
             Launch products, organize favorites, track recent activity, and prepare
-            your unified GWAP identity from one private device workspace.
+            your unified GWAP identity from one secure account workspace.
           </p>
         </div>
         <Link className="os-primary-action" href="/launch">
@@ -57,7 +57,7 @@ export function DashboardView({ products }: { products: EcosystemProduct[] }) {
         <article>
           <span>FAVORITES</span>
           <strong>{state.favorites.length}</strong>
-          <small>Saved to this device</small>
+          <small>Synced to your account</small>
         </article>
         <article>
           <span>RECENT</span>
@@ -149,8 +149,8 @@ export function DashboardView({ products }: { products: EcosystemProduct[] }) {
               <i style={{ width: `${profileCompletion}%` }} />
             </div>
             <p>
-              Add a bio, wallet, website, and location to prepare the profile that
-              can later connect to GNS.
+              Add a bio, verified wallet, website, and location to prepare the
+              profile that can later connect to GNS.
             </p>
             <Link href="/app/profile">Complete profile</Link>
           </section>
@@ -190,10 +190,10 @@ export function DashboardView({ products }: { products: EcosystemProduct[] }) {
 
           <section className="os-panel os-account-panel">
             <span>ACCOUNT MODE</span>
-            <h2>Local preview</h2>
+            <h2>Secure sync active</h2>
             <p>
-              Profile, favorites, and settings are stored only in this browser.
-              Secure cloud accounts activate after an authentication provider is connected.
+              Profile, favorites, recent activity, and settings follow your verified
+              account across devices.
             </p>
           </section>
         </aside>

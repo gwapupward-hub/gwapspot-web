@@ -88,13 +88,13 @@
   opacity: 0;
 }
 
-.premium-product-card[href="/ecosystem/gns"] .product-glyph { background-image: url("/logos/gns-clear.svg"); }
+.premium-product-card[href="/ecosystem/gns"] .product-glyph { background-image: url("/logos/gns.png"); }
 .premium-product-card[href="/ecosystem/gwapscore"] .product-glyph { background-image: url("/logos/gwapscore.svg"); }
 .premium-product-card[href="/ecosystem/dimi"] .product-glyph { background-image: url("/logos/dimi.webp"); }
 .premium-product-card[href="/ecosystem/isnad-sunnah"] .product-glyph { background-image: url("/logos/isnad-sunnah.svg"); }
 .premium-product-card[href="/ecosystem/money-neva-sleeps"] .product-glyph { background-image: url("/logos/money-neva-sleeps.webp"); }
 .premium-product-card[href="/ecosystem/marketplace"] .product-glyph { background-image: url("/logos/marketplace.webp"); }
-.premium-product-card[href="/ecosystem/occo"] .product-glyph { background-image: url("/logos/occo-clear.svg"); }
+.premium-product-card[href="/ecosystem/occo"] .product-glyph { background-image: url("/logos/occo.png"); }
 .premium-product-card[href="/ecosystem/private-proof-vault"] .product-glyph { background-image: url("/logos/private-proof-vault.webp"); }
 
 @media (max-width: 700px) {
