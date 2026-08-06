@@ -34,7 +34,7 @@ export function OsShell({ children }: { children: ReactNode }) {
         <Link className="os-brand" href="/app" aria-label="GWAP OS home">
           <span className="os-brand-mark">
             <Image
-              src="/logos/gwap-agent-clear.svg"
+              src="/logos/gwap-agent.png"
               alt=""
               width={42}
               height={42}
@@ -85,7 +85,7 @@ export function OsShell({ children }: { children: ReactNode }) {
       <section className="os-workspace">
         <header className="os-mobile-header">
           <Link href="/app" aria-label="GWAP OS home">
-            <Image src="/logos/gwap-agent-clear.svg" alt="" width={36} height={36} />
+            <Image src="/logos/gwap-agent.png" alt="" width={36} height={36} />
             <strong>GWAP OS</strong>
           </Link>
           <nav aria-label="Mobile GWAP OS navigation">
