@@ -16,6 +16,7 @@ import "./premium-ui-motion.css";
 import "./premium-ui-responsive.css";
 import "./premium-ui-scroll.css";
 import "./brand-assets.css";
+import "./premium-refinements.css";
 
 const siteUrl = "https://www.gwapspot.com";
 const googleVerification = process.env.GOOGLE_SITE_VERIFICATION;
