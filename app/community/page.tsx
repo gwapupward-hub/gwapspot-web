@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ArrowIcon,
@@ -7,13 +6,14 @@ import {
   SocialGrid,
   SparkIcon,
 } from "../components/site-shell";
+import { createPageMetadata } from "../lib/metadata";
 
-export const metadata: Metadata = {
+export const metadata = createPageMetadata({
   title: "Community",
   description:
     "Join the GWAP community and follow product releases, development updates, and ecosystem opportunities.",
-  alternates: { canonical: "/community" },
-};
+  path: "/community",
+});
 
 const communityRoles = [
   {
