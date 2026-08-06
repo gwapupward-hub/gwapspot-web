@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import PremiumSplash from "./components/premium-splash";
@@ -14,7 +15,6 @@ import "./premium-ui-story.css";
 import "./premium-ui-motion.css";
 import "./premium-ui-responsive.css";
 import "./premium-ui-scroll.css";
-import "./logo-fixes.css";
 import "./brand-assets.css";
 
 const siteUrl = "https://www.gwapspot.com";
@@ -53,10 +53,10 @@ export const viewport: Viewport = { themeColor: "#030504", colorScheme: "dark", 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: 'try{if(sessionStorage.getItem("gwap-premium-intro-seen-v1")==="true")document.documentElement.dataset.gwapIntroSeen="true"}catch(e){}' }} />
-      </head>
       <body>
+        <Script id="gwap-intro-state" strategy="beforeInteractive">
+          {'try{if(sessionStorage.getItem("gwap-premium-intro-seen-v1")==="true")document.documentElement.dataset.gwapIntroSeen="true"}catch(e){}'}
+        </Script>
         <PremiumSplash />
         {children}
         <Telemetry />
