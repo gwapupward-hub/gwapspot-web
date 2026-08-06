@@ -218,7 +218,7 @@ export default function PremiumSplash() {
       ) : (
         <div className="premium-splash__route-mark">
           <span className="premium-splash__logo-shell">
-            <Image src="/logo.png" alt="" width={76} height={76} />
+            <Image src="/logos/gwap-agent-clear.svg" alt="" width={76} height={76} unoptimized />
           </span>
           <strong>GWAP</strong>
           <small>Grind With A Purpose</small>

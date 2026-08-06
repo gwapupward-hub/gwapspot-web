@@ -69,13 +69,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
         </div>
         <div className="product-hero-grid">
           <div>
-            <div className="product-hero-logo">
+            <div className={`product-hero-logo product-hero-logo--${product.slug}`}>
               <Image
                 src={product.logo}
                 alt={`${product.name} logo`}
                 width={180}
                 height={180}
                 priority
+                unoptimized
               />
             </div>
             <span className="product-eyebrow">{product.eyebrow}</span>

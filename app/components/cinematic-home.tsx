@@ -182,7 +182,7 @@ export function CinematicHome() {
 
       <header className={`cinematic-nav${scrolled ? " is-scrolled" : ""}`}>
         <Link className="cinematic-brand" href="#top" aria-label="GWAPSpot home">
-          <span className="cinematic-brand-mark"><Image src="/logo.png" alt="" width={44} height={44} priority /></span>
+          <span className="cinematic-brand-mark"><Image src="/logos/gwap-agent-clear.svg" alt="" width={44} height={44} priority /></span>
           <span><strong>GWAP</strong><small>SPOT</small></span>
         </Link>
 
@@ -227,7 +227,7 @@ export function CinematicHome() {
           <div className="emblem-halo halo-two" />
           <div className="emblem-ring ring-a"><span>GNS</span><span>DIMI</span></div>
           <div className="emblem-ring ring-b"><span>SCORE</span><span>AI</span></div>
-          <div className="emblem-core"><Image src="/logo.png" alt="GWAP" width={280} height={280} priority /></div>
+          <div className="emblem-core"><Image src="/logos/gwap-agent-clear.svg" alt="GWAP" width={280} height={280} priority /></div>
           <div className="emblem-caption"><span>GWAP CORE</span><small>ECOSYSTEM ONLINE</small></div>
         </div>
 
@@ -251,7 +251,7 @@ export function CinematicHome() {
         </div>
         <div className="depth-window">
           <div className="depth-grid" />
-          <div className="depth-orbit"><div className="depth-core"><Image src="/logo.png" alt="" width={90} height={90} /></div>{["IDENTITY", "REPUTATION", "COMMERCE", "CREATIVITY", "INTELLIGENCE"].map((label, index) => <span style={{ "--node-index": index } as CSSProperties} key={label}>{label}</span>)}</div>
+          <div className="depth-orbit"><div className="depth-core"><Image src="/logos/gwap-agent-clear.svg" alt="" width={90} height={90} /></div>{["IDENTITY", "REPUTATION", "COMMERCE", "CREATIVITY", "INTELLIGENCE"].map((label, index) => <span style={{ "--node-index": index } as CSSProperties} key={label}>{label}</span>)}</div>
           <div className="depth-label"><small>CONNECTED INFRASTRUCTURE</small><strong>Purpose compounds<br />when systems connect.</strong></div>
         </div>
       </section>
@@ -310,7 +310,7 @@ export function CinematicHome() {
       </section>
 
       <footer className="cinematic-footer">
-        <div className="footer-lockup"><Image src="/logo.png" alt="" width={42} height={42} /><span><strong>GWAP</strong><small>GRIND WITH A PURPOSE</small></span></div>
+        <div className="footer-lockup"><Image src="/logos/gwap-agent-clear.svg" alt="" width={42} height={42} /><span><strong>GWAP</strong><small>GRIND WITH A PURPOSE</small></span></div>
         <div className="footer-nav"><Link href="/ecosystem">Ecosystem</Link><Link href="/about">About</Link><Link href="/roadmap">Roadmap</Link><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link></div>
         <small>© {new Date().getFullYear()} GWAP. The future rewards purpose.</small>
       </footer>

@@ -25,7 +25,7 @@ export const ecosystemProducts: EcosystemProduct[] = [
     eyebrow: "Digital identity",
     status: "Live",
     accent: "green",
-    logo: "/logos/gns.webp",
+    logo: "/logos/gns-clear.svg",
     summary: ".gwap names, wallet-linked profiles, and a portable identity layer for the open web.",
     description:
       "GNS turns a wallet into a readable, portable identity. Each .gwap name can connect addresses, public profile information, links, payments, and reputation into one recognizable destination.",
@@ -179,7 +179,7 @@ export const ecosystemProducts: EcosystemProduct[] = [
     eyebrow: "Credit infrastructure",
     status: "Planned",
     accent: "purple",
-    logo: "/logos/occo.webp",
+    logo: "/logos/occo-clear.svg",
     summary: "An on-chain credit bureau designed to make wallet-level risk and credibility understandable.",
     description:
       "OCCO will provide institutional-grade wallet lookup, score interpretation, and credit intelligence for users, partners, and regulated decision-makers.",
