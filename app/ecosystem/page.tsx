@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ArrowIcon,
@@ -8,13 +7,14 @@ import {
   SparkIcon,
 } from "../components/site-shell";
 import { ecosystemProducts } from "../lib/ecosystem";
+import { createPageMetadata } from "../lib/metadata";
 
-export const metadata: Metadata = {
+export const metadata = createPageMetadata({
   title: "Ecosystem",
   description:
     "Explore every product and infrastructure layer within the GWAP ecosystem.",
-  alternates: { canonical: "/ecosystem" },
-};
+  path: "/ecosystem",
+});
 
 export default function EcosystemPage() {
   const liveCount = ecosystemProducts.filter(
