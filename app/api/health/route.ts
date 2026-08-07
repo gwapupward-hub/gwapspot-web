@@ -1,6 +1,10 @@
+import { getClerkConfigurationStatus } from "../../lib/auth-config";
+
 export const dynamic = "force-dynamic";
 
 export function GET() {
+  const authentication = getClerkConfigurationStatus();
+
   return Response.json(
     {
       status: "ok",
@@ -8,9 +12,13 @@ export function GET() {
       timestamp: new Date().toISOString(),
       deployment: process.env.VERCEL_URL ?? null,
       commit: process.env.VERCEL_GIT_COMMIT_SHA ?? null,
+      authentication: {
+        configured: authentication.configured,
+        keyMode: authentication.keyMode,
+        reason: authentication.reason,
+      },
     },
     {
-      status: 200,
       headers: {
         "Cache-Control": "no-store, max-age=0",
       },

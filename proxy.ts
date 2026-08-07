@@ -2,9 +2,7 @@ import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server";
 import { isClerkConfigured } from "./app/lib/auth-config";
 
-const handleClerkRequest = clerkMiddleware({
-  frontendApiProxy: { enabled: true },
-});
+const handleClerkRequest = clerkMiddleware();
 
 export default function proxy(request: NextRequest, event: NextFetchEvent) {
   if (!isClerkConfigured()) return NextResponse.next();
