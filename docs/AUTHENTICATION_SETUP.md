@@ -1,49 +1,89 @@
-# GWAP OS authentication activation
+# Sprint 5 wallet authentication activation
+
+GWAP OS is wallet-first. External Solana wallets connect through Solana Wallet
+Adapter and authenticate by signing a Sign-In with Solana message. People who do
+not have a wallet can verify an existing email address; Privy then creates an
+embedded Solana wallet for that account. GWAPSpot does not offer a separate
+username/password identity.
 
 The codebase is safe to merge before credentials exist. `/app` stays locked until
-both Clerk keys are present.
+both wallet authentication and workspace storage are configured.
 
-## Required production setup
+## Privy setup
 
-1. Create or select the Clerk **production** instance for GWAPSpot.
-2. Add its matching `pk_live_...` and `sk_live_...` keys to the Vercel
-   **Production** environment. Never use `pk_test_...` or `sk_test_...` on
-   `gwapspot.com`.
-3. Keep local and preview deployments on a matching test-key pair.
-4. In Clerk, enable email, Google, GitHub, and Solana wallet sign-in.
-5. Add `https://www.gwapspot.com/sign-in` and the active Vercel preview pattern
-   to Clerk's allowed redirect URLs.
-6. Add Clerk's production Google and GitHub OAuth credentials. Never place them
-   in this repository.
-7. Confirm self-service account deletion is enabled.
-8. Make `www.gwapspot.com` the primary Clerk application domain. The app
-   permanently redirects the apex domain to `www`.
+1. Create separate Privy apps for local/preview and production.
+2. Enable **Email** as the only dashboard login method. External wallet login is
+   handled headlessly by the Solana Wallet Adapter + Privy SIWS flow in this app.
+3. Enable automatic **Solana** embedded wallet creation for users without a
+   wallet. Keep automatic Ethereum wallet creation off.
+4. Enable cookie-based authentication. Register the root domain `gwapspot.com`
+   (without the protocol or `www`) and add the DNS records Privy provides. The
+   production app runs on `www.gwapspot.com` and expects the HttpOnly
+   `privy-token` and `privy-session` cookies for server rendering and session
+   refresh.
+5. Add the production app ID, optional web client ID, and app secret to Vercel.
+   Never place the app secret in a `NEXT_PUBLIC_` variable.
+6. Keep the production and preview credentials isolated. Add each preview origin
+   required by Privy before testing its login flow.
 
-GWAPSpot does not require a custom Clerk Frontend API proxy. Do not set
-`NEXT_PUBLIC_CLERK_PROXY_URL` unless proxying is deliberately enabled in the
-Clerk Dashboard and implemented end-to-end. A half-configured proxy produces
-Clerk's raw `host_invalid` JSON response.
+Required authentication variables:
+
+```text
+NEXT_PUBLIC_PRIVY_APP_ID
+NEXT_PUBLIC_PRIVY_CLIENT_ID  # optional
+PRIVY_APP_SECRET
+```
+
+## Workspace storage and rate limits
+
+Install an Upstash Redis integration from the Vercel Marketplace and connect it
+to the project. Add these variables to every environment that should unlock
+GWAP OS:
+
+```text
+UPSTASH_REDIS_REST_URL
+UPSTASH_REDIS_REST_TOKEN
+```
+
+Redis stores normalized workspace state under a SHA-256-derived account key. It
+also stores five-minute identity cache entries and distributed fixed-window rate
+limits. Raw Privy user IDs, access tokens, wallet signatures, and wallet private
+keys are never stored in workspace records or application logs.
+
+## Solana RPC
+
+Set `NEXT_PUBLIC_SOLANA_RPC_URL` to a dedicated mainnet RPC endpoint in
+production. The public Solana endpoint in `.env.example` is a development
+fallback and can be rate limited.
+
+Wallet Adapter is configured with an empty adapter list so Wallet Standard
+wallets are discovered directly. Do not add the legacy
+`@solana/wallet-adapter-wallets` bundle.
 
 ## Release verification
 
-- Signed-out users are redirected from `/app`, `/app/profile`, and `/app/settings`.
-- `/api/health` returns `authentication.configured: true`, `keyMode: "live"`,
-  and `reason: "ready"` in production.
-- Email, Google, GitHub, and Solana wallet sign-in complete successfully.
-- Existing local workspace data offers a one-time account migration.
-- Profile, favorites, recent activity, and settings survive another device login.
-- Sign-out, account deletion, expired sessions, and rejected writes show safe errors.
-- Public marketing, ecosystem, launchpad, and legal routes remain public.
+- Signed-out users are redirected from `/app`, `/app/profile`, and
+  `/app/settings`.
+- `/api/health` returns `authentication.provider: "privy-siws"`,
+  `configured: true`, and `reason: "ready"`.
+- Phantom, Solflare, Backpack, and another Wallet Standard-compatible wallet can
+  connect, sign a message, enter GWAP OS, sign out, and reconnect.
+- Rejecting a signature leaves the user signed out and shows a safe error.
+- Email OTP login creates a Solana embedded wallet and enters GWAP OS without a
+  browser extension.
+- The embedded-wallet export control opens before destructive account deletion.
+- Existing local Sprint 5 state offers a one-time migration after first login.
+- Profile, favorites, recent activity, and settings survive another-device login.
+- Expired access tokens refresh through `/refresh`; invalid sessions return to
+  `/sign-in` without an open redirect.
+- API writes reject cross-origin requests, oversized payloads, invalid tokens,
+  and rate-limit excesses.
+- Public marketing, ecosystem, launchpad, and legal routes remain public and do
+  not mount the wallet authentication providers.
 
-## Cost boundary
+## Account deletion boundary
 
-Workspace state uses protected Clerk metadata and is capped below Clerk's 8 KB
-metadata limit. Add a database only when the state model outgrows that ceiling or
-needs relational queries.
-
-## `host_invalid` recovery
-
-If Clerk returns `Invalid host`, verify that Vercel Production contains a
-matching live key pair from the same Clerk production instance, remove any stale
-`NEXT_PUBLIC_CLERK_PROXY_URL`, and redeploy. The app intentionally leaves GWAP OS
-inactive when production receives test keys so public pages remain available.
+Deleting a GWAP OS account removes the Privy user and Redis workspace. An
+external wallet is not deleted. An email-created embedded wallet can become
+inaccessible after deletion, so the settings screen explicitly offers export
+and warns the user first. GWAPSpot never receives the exported private key.

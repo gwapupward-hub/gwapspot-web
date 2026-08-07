@@ -1,59 +1,51 @@
-type ClerkKeyMode = "test" | "live";
-
-export type ClerkConfigurationStatus = {
+export type WalletAuthConfigurationStatus = {
   configured: boolean;
-  keyMode: ClerkKeyMode | null;
+  authenticationConfigured: boolean;
+  storageConfigured: boolean;
   reason:
     | "ready"
-    | "missing_or_invalid_keys"
-    | "mismatched_key_modes"
-    | "production_keys_required";
+    | "missing_privy_configuration"
+    | "missing_workspace_storage";
 };
 
-function getKeyMode(key: string | undefined, prefix: "pk" | "sk") {
-  if (!key) return null;
-
-  const testPrefix = `${prefix}_test_`;
-  const livePrefix = `${prefix}_live_`;
-  if (key.startsWith(testPrefix) && key.length > testPrefix.length + 20) return "test";
-  if (key.startsWith(livePrefix) && key.length > livePrefix.length + 20) return "live";
-  return null;
+function hasValue(value: string | undefined) {
+  return Boolean(value?.trim());
 }
 
-export function getClerkConfigurationStatus(): ClerkConfigurationStatus {
-  const publishableMode = getKeyMode(
-    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
-    "pk",
-  );
-  const secretMode = getKeyMode(process.env.CLERK_SECRET_KEY, "sk");
+export function getWalletAuthConfigurationStatus(): WalletAuthConfigurationStatus {
+  const authenticationConfigured =
+    hasValue(process.env.NEXT_PUBLIC_PRIVY_APP_ID) &&
+    hasValue(process.env.PRIVY_APP_SECRET);
+  const storageConfigured =
+    hasValue(process.env.UPSTASH_REDIS_REST_URL) &&
+    hasValue(process.env.UPSTASH_REDIS_REST_TOKEN);
 
-  if (!publishableMode || !secretMode) {
+  if (!authenticationConfigured) {
     return {
       configured: false,
-      keyMode: null,
-      reason: "missing_or_invalid_keys",
+      authenticationConfigured,
+      storageConfigured,
+      reason: "missing_privy_configuration",
     };
   }
 
-  if (publishableMode !== secretMode) {
+  if (!storageConfigured) {
     return {
       configured: false,
-      keyMode: null,
-      reason: "mismatched_key_modes",
+      authenticationConfigured,
+      storageConfigured,
+      reason: "missing_workspace_storage",
     };
   }
 
-  if (process.env.VERCEL_ENV === "production" && publishableMode !== "live") {
-    return {
-      configured: false,
-      keyMode: publishableMode,
-      reason: "production_keys_required",
-    };
-  }
-
-  return { configured: true, keyMode: publishableMode, reason: "ready" };
+  return {
+    configured: true,
+    authenticationConfigured,
+    storageConfigured,
+    reason: "ready",
+  };
 }
 
-export function isClerkConfigured() {
-  return getClerkConfigurationStatus().configured;
+export function isWalletAuthConfigured() {
+  return getWalletAuthConfigurationStatus().configured;
 }

@@ -1,18 +1,19 @@
-import { clerkMiddleware } from "@clerk/nextjs/server";
-import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server";
-import { isClerkConfigured } from "./app/lib/auth-config";
+import { NextResponse, type NextRequest } from "next/server";
+import { isWalletAuthConfigured } from "./app/lib/auth-config";
 
-const handleClerkRequest = clerkMiddleware();
+export default function proxy(request: NextRequest) {
+  if (!isWalletAuthConfigured()) return NextResponse.next();
 
-export default function proxy(request: NextRequest, event: NextFetchEvent) {
-  if (!isClerkConfigured()) return NextResponse.next();
-  return handleClerkRequest(request, event);
+  const redirectPath = `${request.nextUrl.pathname}${request.nextUrl.search}`;
+  if (request.cookies.has("privy-token")) return NextResponse.next();
+
+  const target = request.nextUrl.clone();
+  target.pathname = request.cookies.has("privy-session") ? "/refresh" : "/sign-in";
+  target.search = "";
+  target.searchParams.set("redirect_url", redirectPath);
+  return NextResponse.redirect(target);
 }
 
 export const config = {
-  matcher: [
-    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
-    "/(api|trpc)(.*)",
-    "/__clerk/(.*)",
-  ],
+  matcher: ["/app/:path*"],
 };

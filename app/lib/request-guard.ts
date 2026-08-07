@@ -1,43 +1,12 @@
 import { createHash } from "node:crypto";
-
-type RateBucket = { count: number; resetAt: number };
-
-const globalRateStore = globalThis as typeof globalThis & {
-  gwapRateBuckets?: Map<string, RateBucket>;
-};
-
-const buckets = globalRateStore.gwapRateBuckets ?? new Map<string, RateBucket>();
-globalRateStore.gwapRateBuckets = buckets;
+import { checkDistributedRateLimit } from "./redis";
 
 export function checkRateLimit(
   key: string,
   limit: number,
   windowMs: number,
 ) {
-  const now = Date.now();
-  const current = buckets.get(key);
-
-  if (!current || current.resetAt <= now) {
-    buckets.set(key, { count: 1, resetAt: now + windowMs });
-    return { allowed: true, retryAfter: 0 };
-  }
-
-  if (current.count >= limit) {
-    return {
-      allowed: false,
-      retryAfter: Math.max(1, Math.ceil((current.resetAt - now) / 1000)),
-    };
-  }
-
-  current.count += 1;
-
-  if (buckets.size > 5_000) {
-    for (const [bucketKey, bucket] of buckets) {
-      if (bucket.resetAt <= now) buckets.delete(bucketKey);
-    }
-  }
-
-  return { allowed: true, retryAfter: 0 };
+  return checkDistributedRateLimit(key, limit, windowMs);
 }
 
 export function hasValidOrigin(request: Request) {

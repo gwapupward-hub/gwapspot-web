@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
-import { SignIn } from "@clerk/nextjs";
 import { AuthSetupRequired } from "../../components/auth-setup-required";
-import { isClerkConfigured } from "../../lib/auth-config";
+import { WalletAuthProvider } from "../../components/wallet-auth-provider";
+import { WalletSignIn } from "../../components/wallet-sign-in";
+import { isWalletAuthConfigured } from "../../lib/auth-config";
+import { getSafeRedirectPath } from "../../lib/safe-redirect";
 
 export const metadata: Metadata = {
   title: "Sign in to GWAP OS",
@@ -10,17 +12,31 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default function SignInPage() {
-  if (!isClerkConfigured()) return <AuthSetupRequired />;
+export default async function SignInPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ redirect_url?: string | string[] }>;
+}) {
+  if (!isWalletAuthConfigured()) return <AuthSetupRequired />;
+
+  const query = await searchParams;
+  const redirectPath = getSafeRedirectPath(
+    Array.isArray(query.redirect_url) ? query.redirect_url[0] : query.redirect_url,
+  );
 
   return (
-    <main className="auth-page">
-      <div className="auth-page-brand">
-        <span>GWAP OS</span>
-        <h1>One secure identity. Every GWAP product.</h1>
-        <p>Continue with email, Google, GitHub, or a verified Solana wallet.</p>
-      </div>
-      <SignIn />
-    </main>
+    <WalletAuthProvider>
+      <main className="auth-page">
+        <div className="auth-page-brand">
+          <span>GWAP OS / WALLET-FIRST ACCESS</span>
+          <h1>One Solana identity. Every GWAP product.</h1>
+          <p>
+            Your wallet signs you in and out. If you do not have one yet, create
+            an embedded Solana wallet with the email address you already use.
+          </p>
+        </div>
+        <WalletSignIn redirectPath={redirectPath} />
+      </main>
+    </WalletAuthProvider>
   );
 }

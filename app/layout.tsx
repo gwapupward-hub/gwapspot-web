@@ -1,11 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-import { ClerkProvider } from "@clerk/nextjs";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import PremiumSplash from "./components/premium-splash";
-import { isClerkConfigured } from "./lib/auth-config";
 import { Telemetry } from "./telemetry";
+import "@solana/wallet-adapter-react-ui/styles.css";
 import "./styles.css";
 
 const siteUrl = "https://www.gwapspot.com";
@@ -43,42 +42,17 @@ export const metadata: Metadata = {
 export const viewport: Viewport = { themeColor: "#030504", colorScheme: "dark", width: "device-width", initialScale: 1 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const content = (
-    <>
-      <Script id="gwap-intro-state" strategy="beforeInteractive">
-        {'try{if(sessionStorage.getItem("gwap-premium-intro-seen-v1")==="true")document.documentElement.dataset.gwapIntroSeen="true"}catch(e){}'}
-      </Script>
-      <PremiumSplash />
-      {children}
-      <Telemetry />
-      <Analytics />
-      <SpeedInsights />
-    </>
-  );
-
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
-        {isClerkConfigured() ? (
-          <ClerkProvider
-            afterSignOutUrl="/"
-            signInUrl="/sign-in"
-            signUpUrl="/sign-up"
-            appearance={{
-              variables: {
-                colorPrimary: "#13dd13",
-                colorBackground: "#070a08",
-                colorForeground: "#f5f8f5",
-                colorMutedForeground: "#8d978f",
-                borderRadius: "1rem",
-              },
-            }}
-          >
-            {content}
-          </ClerkProvider>
-        ) : (
-          content
-        )}
+        <Script id="gwap-intro-state" strategy="beforeInteractive">
+          {'try{if(sessionStorage.getItem("gwap-premium-intro-seen-v1")==="true")document.documentElement.dataset.gwapIntroSeen="true"}catch(e){}'}
+        </Script>
+        <PremiumSplash />
+        {children}
+        <Telemetry />
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
