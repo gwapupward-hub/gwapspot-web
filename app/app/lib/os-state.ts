@@ -30,7 +30,9 @@ export type GwapOsState = {
 export type GwapAccount = {
   displayName: string;
   email: string;
+  embeddedWallet: string | null;
   verifiedWallet: string;
+  walletProvider: "embedded" | "external";
 };
 
 export const GWAP_OS_STORAGE_KEY = "gwap-os-state-v1";

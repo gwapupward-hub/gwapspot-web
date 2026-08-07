@@ -1,6 +1,7 @@
 import "server-only";
 
-import { clerkClient } from "@clerk/nextjs/server";
+import type { WalletIdentity } from "../../lib/privy-server";
+import { getPrivateStorageKey, getWorkspaceRedis } from "../../lib/redis";
 import {
   defaultGwapOsState,
   createDefaultGwapOsState,
@@ -9,20 +10,21 @@ import {
   type GwapOsState,
 } from "./os-state";
 
-const STATE_METADATA_KEY = "gwapOsState";
+function workspaceKey(userId: string) {
+  return getPrivateStorageKey("workspace", userId);
+}
 
-export async function loadAccountWorkspace(userId: string) {
-  const client = await clerkClient();
-  const user = await client.users.getUser(userId);
-  const storedState = user.privateMetadata[STATE_METADATA_KEY];
+export async function loadAccountWorkspace(identity: WalletIdentity) {
+  const storedState = await getWorkspaceRedis().get<unknown>(
+    workspaceKey(identity.userId),
+  );
   const hasCloudState = Boolean(storedState && typeof storedState === "object");
-  const verifiedWallet =
-    user.primaryWeb3Wallet?.web3Wallet ?? user.web3Wallets[0]?.web3Wallet ?? "";
-  const displayName = user.fullName || user.username || "GWAP Builder";
   const account: GwapAccount = {
-    displayName,
-    email: user.primaryEmailAddress?.emailAddress ?? "Wallet account",
-    verifiedWallet,
+    displayName: identity.displayName,
+    email: identity.email,
+    embeddedWallet: identity.embeddedWallet,
+    verifiedWallet: identity.verifiedWallet,
+    walletProvider: identity.walletProvider,
   };
 
   const state = hasCloudState
@@ -31,29 +33,25 @@ export async function loadAccountWorkspace(userId: string) {
         ...createDefaultGwapOsState(),
         profile: {
           ...defaultGwapOsState.profile,
-          displayName,
-          handle: user.username ?? defaultGwapOsState.profile.handle,
-          primaryWallet: verifiedWallet,
+          displayName: identity.displayName,
+          primaryWallet: identity.verifiedWallet,
         },
       };
 
-  if (verifiedWallet && state.profile.primaryWallet !== verifiedWallet) {
-    state.profile = { ...state.profile, primaryWallet: verifiedWallet };
+  if (state.profile.primaryWallet !== identity.verifiedWallet) {
+    state.profile = {
+      ...state.profile,
+      primaryWallet: identity.verifiedWallet,
+    };
   }
 
   return { account, hasCloudState, state };
 }
 
 export async function saveAccountWorkspace(userId: string, state: GwapOsState) {
-  const client = await clerkClient();
-  await client.users.updateUserMetadata(userId, {
-    privateMetadata: { [STATE_METADATA_KEY]: state },
-  });
+  await getWorkspaceRedis().set(workspaceKey(userId), state);
 }
 
 export async function clearAccountWorkspace(userId: string) {
-  const client = await clerkClient();
-  await client.users.updateUserMetadata(userId, {
-    privateMetadata: { [STATE_METADATA_KEY]: null },
-  });
+  await getWorkspaceRedis().del(workspaceKey(userId));
 }

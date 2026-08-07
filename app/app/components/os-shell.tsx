@@ -1,11 +1,11 @@
 "use client";
 
-import { UserButton } from "@clerk/nextjs";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { useGwapOs } from "./os-provider";
+import { SignOutButton } from "./sign-out-button";
 
 const navigation = [
   { href: "/app", label: "Overview", icon: "◫" },
@@ -73,12 +73,19 @@ export function OsShell({ children }: { children: ReactNode }) {
         </div>
 
         <div className="os-account-card">
-          <UserButton showName={false} />
+          <span className="os-account-avatar" aria-hidden="true">
+            {account.displayName.slice(0, 1).toUpperCase() || "G"}
+          </span>
           <span>
             <strong>{account.displayName || state.profile.displayName}</strong>
-            <small>{account.email}</small>
+            <small>
+              {account.verifiedWallet.slice(0, 4)}…{account.verifiedWallet.slice(-4)}
+            </small>
           </span>
-          <i>{syncStatus === "error" ? "Offline" : "Synced"}</i>
+          <div className="os-account-card-actions">
+            <i>{syncStatus === "error" ? "Offline" : "Synced"}</i>
+            <SignOutButton compact />
+          </div>
         </div>
       </aside>
 
@@ -107,7 +114,7 @@ export function OsShell({ children }: { children: ReactNode }) {
               </Link>
             ))}
           </nav>
-          <UserButton showName={false} />
+          <SignOutButton compact />
         </header>
         {migrationAvailable ? (
           <section className="os-sync-banner" role="status">

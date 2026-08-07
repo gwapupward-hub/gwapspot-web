@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { AuthSetupRequired } from "../components/auth-setup-required";
-import { isClerkConfigured } from "../lib/auth-config";
+import { WalletAuthProvider } from "../components/wallet-auth-provider";
+import { isWalletAuthConfigured } from "../lib/auth-config";
+import { getAuthenticatedWalletIdentity } from "../lib/privy-server";
 import { GwapOsProvider } from "./components/os-provider";
 import { OsShell } from "./components/os-shell";
 import { loadAccountWorkspace } from "./lib/os-server";
@@ -18,20 +19,22 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function GwapOsLayout({ children }: { children: ReactNode }) {
-  if (!isClerkConfigured()) return <AuthSetupRequired />;
+  if (!isWalletAuthConfigured()) return <AuthSetupRequired />;
 
-  const { userId } = await auth();
-  if (!userId) redirect("/sign-in?redirect_url=/app");
+  const identity = await getAuthenticatedWalletIdentity();
+  if (!identity) redirect("/sign-in?redirect_url=/app");
 
-  const { account, hasCloudState, state } = await loadAccountWorkspace(userId);
+  const { account, hasCloudState, state } = await loadAccountWorkspace(identity);
 
   return (
-    <GwapOsProvider
-      account={account}
-      hasCloudState={hasCloudState}
-      initialState={state}
-    >
-      <OsShell>{children}</OsShell>
-    </GwapOsProvider>
+    <WalletAuthProvider>
+      <GwapOsProvider
+        account={account}
+        hasCloudState={hasCloudState}
+        initialState={state}
+      >
+        <OsShell>{children}</OsShell>
+      </GwapOsProvider>
+    </WalletAuthProvider>
   );
 }

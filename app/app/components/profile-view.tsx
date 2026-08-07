@@ -1,6 +1,6 @@
 "use client";
 
-import { useClerk } from "@clerk/nextjs";
+import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { getProfileCompletion, type GwapProfile } from "../lib/os-state";
 import { useGwapOs } from "./os-provider";
@@ -29,7 +29,6 @@ function ProfileForm({
   syncStatus: "idle" | "saving" | "saved" | "error";
   onSave: (profile: Omit<GwapProfile, "updatedAt">) => void;
 }) {
-  const clerk = useClerk();
   const [saved, setSaved] = useState(false);
   const completion = getProfileCompletion(profile);
 
@@ -124,8 +123,8 @@ function ProfileForm({
                 spellCheck={false}
               />
               <small>
-                Wallet ownership is verified by a signed Clerk challenge; signatures
-                are never stored by GWAPSpot.
+                Wallet ownership is verified by a Sign-In with Solana challenge;
+                signatures are never stored by GWAPSpot.
               </small>
             </label>
             <label>
@@ -177,16 +176,12 @@ function ProfileForm({
             <span>SECURITY & IDENTITY</span>
             <h2>Verified connections</h2>
             <p>
-              Manage email, Google, GitHub, Solana wallets, active sessions, and
-              account security from one protected profile.
+              Your verified Solana wallet is the account identity. Email is used
+              only to unlock and recover an embedded wallet when you create one.
             </p>
-            <button
-              className="os-secondary-action"
-              type="button"
-              onClick={() => clerk.openUserProfile()}
-            >
-              Manage sign-in methods
-            </button>
+            <Link className="os-secondary-action" href="/app/settings">
+              Review wallet security
+            </Link>
           </section>
         </aside>
       </section>

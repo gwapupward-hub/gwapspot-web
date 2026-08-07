@@ -1,5 +1,6 @@
 "use client";
 
+import { usePrivy } from "@privy-io/react-auth";
 import {
   createContext,
   useCallback,
@@ -75,6 +76,7 @@ export function GwapOsProvider({
   hasCloudState: boolean;
   initialState: GwapOsState;
 }) {
+  const { getAccessToken } = usePrivy();
   const [state, setState] = useState(initialState);
   const [migrationAvailable, setMigrationAvailable] = useState(false);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>(
@@ -90,15 +92,25 @@ export function GwapOsProvider({
     setState(nextState);
   }, []);
 
+  const authenticatedFetch = useCallback(
+    async (input: RequestInfo | URL, init?: RequestInit) => {
+      const token = await getAccessToken();
+      const headers = new Headers(init?.headers);
+      if (token) headers.set("Authorization", `Bearer ${token}`);
+
+      return fetch(input, { ...init, headers, credentials: "same-origin" });
+    },
+    [getAccessToken],
+  );
+
   const saveNow = useCallback((nextState: GwapOsState) => {
     setSyncStatus("saving");
 
     const operation = saveQueueRef.current.catch(() => undefined).then(async () => {
-      const response = await fetch("/api/os-state", {
+      const response = await authenticatedFetch("/api/os-state", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ state: nextState }),
-        credentials: "same-origin",
       });
       if (!response.ok) throw new Error("Workspace sync failed");
 
@@ -112,7 +124,7 @@ export function GwapOsProvider({
     void operation.catch(() => {
       if (areGwapOsStatesEqual(stateRef.current, nextState)) setSyncStatus("error");
     });
-  }, []);
+  }, [authenticatedFetch]);
 
   const scheduleSave = useCallback(
     (nextState: GwapOsState) => {
@@ -243,16 +255,15 @@ export function GwapOsProvider({
     if (timerRef.current) clearTimeout(timerRef.current);
     setSyncStatus("saving");
     const operation = saveQueueRef.current.catch(() => undefined).then(async () => {
-      const response = await fetch("/api/os-state", {
+      const response = await authenticatedFetch("/api/os-state", {
         method: "DELETE",
-        credentials: "same-origin",
       });
       if (!response.ok) throw new Error("Workspace reset failed");
       setSyncStatus("saved");
     });
     saveQueueRef.current = operation;
     void operation.catch(() => setSyncStatus("error"));
-  }, [updateState]);
+  }, [authenticatedFetch, updateState]);
 
   const retrySync = useCallback(() => saveNow(stateRef.current), [saveNow]);
 

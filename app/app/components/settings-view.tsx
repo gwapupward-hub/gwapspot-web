@@ -1,32 +1,57 @@
 "use client";
 
-import { useClerk } from "@clerk/nextjs";
+import { usePrivy } from "@privy-io/react-auth";
+import { useExportWallet } from "@privy-io/react-auth/solana";
+import { useWallet } from "@solana/wallet-adapter-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { GWAP_OS_STORAGE_KEY } from "../lib/os-state";
 import { useGwapOs } from "./os-provider";
+import { SignOutButton } from "./sign-out-button";
 
 export function SettingsView() {
-  const clerk = useClerk();
   const router = useRouter();
+  const { getAccessToken, logout } = usePrivy();
+  const { exportWallet } = useExportWallet();
+  const { connected, disconnect } = useWallet();
   const { account, state, syncStatus, updateSettings, resetWorkspace } = useGwapOs();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [accountError, setAccountError] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  async function exportEmbeddedWallet() {
+    if (!account.embeddedWallet) return;
+    setExporting(true);
+    setAccountError("");
+    try {
+      await exportWallet({ address: account.embeddedWallet });
+    } catch {
+      setAccountError("We could not open the wallet export. Please retry.");
+    } finally {
+      setExporting(false);
+    }
+  }
 
   async function deleteAccount() {
     setDeleting(true);
     setAccountError("");
 
     try {
+      const token = await getAccessToken();
       const response = await fetch("/api/account", {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ confirmation: "DELETE" }),
         credentials: "same-origin",
       });
       if (!response.ok) throw new Error("Account deletion failed");
 
+      if (connected) await disconnect().catch(() => undefined);
+      await logout().catch(() => undefined);
       window.localStorage.removeItem(GWAP_OS_STORAGE_KEY);
       router.replace("/");
       router.refresh();
@@ -41,10 +66,10 @@ export function SettingsView() {
       <section className="os-page-heading">
         <div>
           <span className="os-kicker">WORKSPACE SETTINGS</span>
-          <h1>Control motion, density, and update preferences.</h1>
+          <h1>Control motion, density, and wallet security.</h1>
           <p>
-            These preferences sync securely across every device signed in to your
-            GWAP OS account.
+            These preferences sync securely across every device signed in with
+            your Solana identity.
           </p>
         </div>
       </section>
@@ -100,25 +125,37 @@ export function SettingsView() {
         <div className="os-panel os-settings-panel">
           <div className="os-panel-heading">
             <div>
-              <span>ACCOUNT & SESSIONS</span>
+              <span>WALLET & SESSION</span>
               <h2>{account.displayName}</h2>
             </div>
-            <small>{syncStatus === "error" ? "Sync paused" : "Protected"}</small>
+            <small>{syncStatus === "error" ? "Sync paused" : "Verified"}</small>
           </div>
           <p className="os-settings-note">
-            {account.email}
-            {account.verifiedWallet
-              ? ` · Wallet ${account.verifiedWallet.slice(0, 4)}…${account.verifiedWallet.slice(-4)}`
-              : " · No Solana wallet linked"}
+            {account.email} ·{" "}
+            {account.walletProvider === "embedded"
+              ? "Email-created wallet"
+              : "External wallet"}
+            {` · ${account.verifiedWallet.slice(0, 4)}…${account.verifiedWallet.slice(-4)}`}
           </p>
           <div className="os-account-actions">
-            <button type="button" onClick={() => clerk.openUserProfile()}>
-              Manage account
-            </button>
-            <button type="button" onClick={() => void clerk.signOut({ redirectUrl: "/" })}>
-              Sign out
-            </button>
+            {account.embeddedWallet ? (
+              <button
+                type="button"
+                disabled={exporting}
+                onClick={() => void exportEmbeddedWallet()}
+              >
+                {exporting ? "Opening export…" : "Export embedded wallet"}
+              </button>
+            ) : null}
+            <SignOutButton />
           </div>
+          {account.embeddedWallet ? (
+            <p className="os-settings-note">
+              Store an exported private key somewhere secure before deleting this
+              account. GWAPSpot never receives the key.
+            </p>
+          ) : null}
+          {accountError ? <small role="alert">{accountError}</small> : null}
         </div>
 
         <div className="os-panel os-danger-panel">
@@ -127,7 +164,7 @@ export function SettingsView() {
             <h2>Reset this workspace</h2>
             <p>
               Clear the synced profile, favorites, activity, and settings while
-              keeping the account active.
+              keeping the wallet account active.
             </p>
           </div>
           <button type="button" onClick={resetWorkspace}>
@@ -140,17 +177,27 @@ export function SettingsView() {
             <span>PERMANENT ACTION</span>
             <h2>Delete GWAP OS account</h2>
             <p>
-              Permanently delete the account, sessions, verified connections, and
-              workspace data. This cannot be undone.
+              Permanently delete the account, active sessions, verified wallet
+              connection, and workspace data. This cannot be undone.
+              {account.embeddedWallet
+                ? " Deleting before export can permanently remove access to the email-created wallet."
+                : " Your external wallet itself is not deleted."}
             </p>
-            {accountError ? <small role="alert">{accountError}</small> : null}
           </div>
           {confirmDelete ? (
             <div className="os-delete-confirmation">
-              <button type="button" onClick={() => setConfirmDelete(false)} disabled={deleting}>
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(false)}
+                disabled={deleting}
+              >
                 Cancel
               </button>
-              <button type="button" onClick={() => void deleteAccount()} disabled={deleting}>
+              <button
+                type="button"
+                onClick={() => void deleteAccount()}
+                disabled={deleting}
+              >
                 {deleting ? "Deleting…" : "Delete permanently"}
               </button>
             </div>
