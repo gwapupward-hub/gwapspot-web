@@ -6,8 +6,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
 const INTRO_SESSION_KEY = "gwap-premium-intro-seen-v1";
-const INTRO_HOLD_MS = 2100;
-const INTRO_EXIT_MS = 720;
+const INTRO_MIN_HOLD_MS = 950;
+const INTRO_MAX_HOLD_MS = 2800;
+const INTRO_SETTLE_MS = 160;
+const INTRO_EXIT_MS = 1100;
 const ROUTE_HOLD_MS = 260;
 const ROUTE_EXIT_MS = 520;
 const ROUTE_FALLBACK_MS = 1800;
@@ -19,9 +21,11 @@ export default function PremiumSplash() {
   const pathname = usePathname();
   const previousPathname = useRef(pathname);
   const routePending = useRef(false);
+  const introExitStarted = useRef(false);
   const timers = useRef<number[]>([]);
   const previousBodyOverflow = useRef<string | null>(null);
   const [mode, setMode] = useState<OverlayMode>("intro");
+  const [ready, setReady] = useState(false);
   const [leaving, setLeaving] = useState(false);
 
   const clearTimers = useCallback(() => {
@@ -35,6 +39,26 @@ export default function PremiumSplash() {
     previousBodyOverflow.current = null;
   }, []);
 
+  const beginIntroExit = useCallback(
+    (settleDelay = INTRO_SETTLE_MS) => {
+      if (introExitStarted.current) return;
+      introExitStarted.current = true;
+      clearTimers();
+      setReady(true);
+
+      const leaveTimer = window.setTimeout(() => setLeaving(true), settleDelay);
+      const hideTimer = window.setTimeout(() => {
+        setMode(null);
+        setReady(false);
+        setLeaving(false);
+        unlockBody();
+      }, settleDelay + INTRO_EXIT_MS);
+
+      timers.current.push(leaveTimer, hideTimer);
+    },
+    [clearTimers, unlockBody],
+  );
+
   const dismissIntro = useCallback(() => {
     try {
       window.sessionStorage.setItem(INTRO_SESSION_KEY, "true");
@@ -42,19 +66,13 @@ export default function PremiumSplash() {
       // The experience still works when storage is unavailable.
     }
 
-    clearTimers();
-    setLeaving(true);
-    const timer = window.setTimeout(() => {
-      setMode(null);
-      setLeaving(false);
-      unlockBody();
-    }, INTRO_EXIT_MS);
-    timers.current.push(timer);
-  }, [clearTimers, unlockBody]);
+    beginIntroExit(0);
+  }, [beginIntroExit]);
 
   useEffect(() => {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let hasSeenIntro = false;
+    let removeLoadListener = () => {};
 
     try {
       hasSeenIntro = window.sessionStorage.getItem(INTRO_SESSION_KEY) === "true";
@@ -65,10 +83,13 @@ export default function PremiumSplash() {
     if (hasSeenIntro || reducedMotion) {
       const frame = window.requestAnimationFrame(() => {
         setMode(null);
+        setReady(false);
         setLeaving(false);
       });
       return () => window.cancelAnimationFrame(frame);
     }
+
+    introExitStarted.current = false;
 
     try {
       window.sessionStorage.setItem(INTRO_SESSION_KEY, "true");
@@ -79,19 +100,40 @@ export default function PremiumSplash() {
     previousBodyOverflow.current = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
-    const exitTimer = window.setTimeout(() => setLeaving(true), INTRO_HOLD_MS);
-    const hideTimer = window.setTimeout(() => {
-      setMode(null);
-      setLeaving(false);
-      unlockBody();
-    }, INTRO_HOLD_MS + INTRO_EXIT_MS);
-    timers.current.push(exitTimer, hideTimer);
+    const minimumHold = new Promise<void>((resolve) => {
+      const timer = window.setTimeout(resolve, INTRO_MIN_HOLD_MS);
+      timers.current.push(timer);
+    });
+
+    const pageReady = new Promise<void>((resolve) => {
+      if (document.readyState === "complete") {
+        resolve();
+        return;
+      }
+
+      const handleLoad = () => resolve();
+      window.addEventListener("load", handleLoad, { once: true });
+      removeLoadListener = () => window.removeEventListener("load", handleLoad);
+    });
+
+    const fontsReady = document.fonts?.ready
+      .then(() => undefined)
+      .catch(() => undefined) ?? Promise.resolve();
+
+    Promise.all([minimumHold, pageReady, fontsReady]).then(() => beginIntroExit());
+
+    const fallbackTimer = window.setTimeout(
+      () => beginIntroExit(),
+      INTRO_MAX_HOLD_MS,
+    );
+    timers.current.push(fallbackTimer);
 
     return () => {
+      removeLoadListener();
       clearTimers();
       unlockBody();
     };
-  }, [clearTimers, unlockBody]);
+  }, [beginIntroExit, clearTimers, unlockBody]);
 
   useEffect(() => {
     const handleInternalNavigation = (event: MouseEvent) => {
@@ -131,6 +173,7 @@ export default function PremiumSplash() {
       clearTimers();
       routePending.current = true;
       flushSync(() => {
+        setReady(false);
         setLeaving(false);
         setMode("route");
       });
@@ -158,6 +201,7 @@ export default function PremiumSplash() {
     clearTimers();
 
     if (!routePending.current) {
+      setReady(false);
       setLeaving(false);
       setMode("route");
     }
@@ -177,10 +221,11 @@ export default function PremiumSplash() {
 
   return (
     <div
-      className={`premium-splash premium-splash--${mode}${leaving ? " is-leaving" : ""}`}
+      className={`premium-splash premium-splash--${mode}${ready ? " is-ready" : ""}${leaving ? " is-leaving" : ""}`}
       role="status"
       aria-live="polite"
-      aria-label={mode === "intro" ? "Entering the GWAP ecosystem" : "Loading the next page"}
+      aria-busy={mode === "intro" && !ready}
+      aria-label={mode === "intro" ? "Preparing the GWAP ecosystem" : "Loading the next page"}
     >
       <div
         className="premium-splash__backdrop"
@@ -209,7 +254,7 @@ export default function PremiumSplash() {
           </button>
           <div className="premium-splash__intro-copy">
             <span>GWAP ECOSYSTEM</span>
-            <strong>Built with purpose.</strong>
+            <strong>{ready ? "Ready with purpose." : "Built with purpose."}</strong>
           </div>
           <div className="premium-splash__progress" aria-hidden="true">
             <i />
