@@ -73,6 +73,17 @@ function getWorkspaceStorageCandidates() {
 }
 
 export function getWorkspaceStorageConfigurationStatus(): WorkspaceStorageConfigurationStatus {
+  const directValue = normalizeValue(process.env.REDIS_URL);
+  const directUrl = normalizeDirectRedisUrl(process.env.REDIS_URL);
+  if (directUrl) {
+    return {
+      configured: true,
+      source: "redis-url",
+      urlConfigured: true,
+      tokenConfigured: true,
+    };
+  }
+
   const candidates = getWorkspaceStorageCandidates();
   const complete = candidates.find((candidate) => candidate.url && candidate.token);
 
@@ -80,17 +91,6 @@ export function getWorkspaceStorageConfigurationStatus(): WorkspaceStorageConfig
     return {
       configured: true,
       source: complete.source,
-      urlConfigured: true,
-      tokenConfigured: true,
-    };
-  }
-
-  const directValue = normalizeValue(process.env.REDIS_URL);
-  const directUrl = normalizeDirectRedisUrl(process.env.REDIS_URL);
-  if (directUrl) {
-    return {
-      configured: true,
-      source: "redis-url",
       urlConfigured: true,
       tokenConfigured: true,
     };
@@ -115,6 +115,11 @@ export function getWorkspaceStorageConfigurationStatus(): WorkspaceStorageConfig
 }
 
 export function getWorkspaceStorageCredentials(): WorkspaceStorageCredentials | null {
+  const directUrl = normalizeDirectRedisUrl(process.env.REDIS_URL);
+  if (directUrl) {
+    return { kind: "direct", source: "redis-url", url: directUrl };
+  }
+
   const complete = getWorkspaceStorageCandidates().find(
     (candidate) => candidate.url && candidate.token,
   );
@@ -128,9 +133,7 @@ export function getWorkspaceStorageCredentials(): WorkspaceStorageCredentials | 
     };
   }
 
-  const directUrl = normalizeDirectRedisUrl(process.env.REDIS_URL);
-  if (!directUrl) return null;
-  return { kind: "direct", source: "redis-url", url: directUrl };
+  return null;
 }
 
 export function getWalletAuthConfigurationStatus(): WalletAuthConfigurationStatus {

@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test app/lib/auth-config.test.mjs"
   },
   "dependencies": {
     "@privy-io/node": "^0.28.0",
