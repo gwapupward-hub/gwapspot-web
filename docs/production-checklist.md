@@ -10,6 +10,8 @@
   `redis-url` without returning credentials.
 - Privy production cookie auth is active for `www.gwapspot.com`; preview uses a
   separate Privy app.
+- Privy production has both email and Solana wallet authentication enabled; its
+  public configuration reports `solana_wallet_auth: true`.
 - The selected Redis credentials are scoped to the Vercel project and use a
   separate Preview database or namespace.
 - A dedicated Solana mainnet RPC is configured.
