@@ -1,4 +1,8 @@
-export type WorkspaceStorageSource = "upstash" | "vercel-kv" | "none";
+export type WorkspaceStorageSource =
+  | "upstash"
+  | "vercel-kv"
+  | "redis-url"
+  | "none";
 
 export type WorkspaceStorageConfigurationStatus = {
   configured: boolean;
@@ -7,11 +11,18 @@ export type WorkspaceStorageConfigurationStatus = {
   tokenConfigured: boolean;
 };
 
-export type WorkspaceStorageCredentials = {
-  source: Exclude<WorkspaceStorageSource, "none">;
-  url: string;
-  token: string;
-};
+export type WorkspaceStorageCredentials =
+  | {
+      kind: "rest";
+      source: "upstash" | "vercel-kv";
+      url: string;
+      token: string;
+    }
+  | {
+      kind: "direct";
+      source: "redis-url";
+      url: string;
+    };
 
 export type WalletAuthConfigurationStatus = {
   configured: boolean;
@@ -29,6 +40,21 @@ export type WalletAuthConfigurationStatus = {
 function normalizeValue(value: string | undefined) {
   const normalized = value?.trim();
   return normalized || null;
+}
+
+function normalizeDirectRedisUrl(value: string | undefined) {
+  const normalized = normalizeValue(value);
+  if (!normalized) return null;
+
+  try {
+    const url = new URL(normalized);
+    if (!url.hostname || (url.protocol !== "redis:" && url.protocol !== "rediss:")) {
+      return null;
+    }
+    return normalized;
+  } catch {
+    return null;
+  }
 }
 
 function getWorkspaceStorageCandidates() {
@@ -59,7 +85,27 @@ export function getWorkspaceStorageConfigurationStatus(): WorkspaceStorageConfig
     };
   }
 
+  const directValue = normalizeValue(process.env.REDIS_URL);
+  const directUrl = normalizeDirectRedisUrl(process.env.REDIS_URL);
+  if (directUrl) {
+    return {
+      configured: true,
+      source: "redis-url",
+      urlConfigured: true,
+      tokenConfigured: true,
+    };
+  }
+
   const partial = candidates.find((candidate) => candidate.url || candidate.token);
+  if (!partial && directValue) {
+    return {
+      configured: false,
+      source: "redis-url",
+      urlConfigured: true,
+      tokenConfigured: false,
+    };
+  }
+
   return {
     configured: false,
     source: partial?.source ?? "none",
@@ -73,12 +119,18 @@ export function getWorkspaceStorageCredentials(): WorkspaceStorageCredentials | 
     (candidate) => candidate.url && candidate.token,
   );
 
-  if (!complete?.url || !complete.token) return null;
-  return {
-    source: complete.source,
-    url: complete.url,
-    token: complete.token,
-  };
+  if (complete?.url && complete.token) {
+    return {
+      kind: "rest",
+      source: complete.source,
+      url: complete.url,
+      token: complete.token,
+    };
+  }
+
+  const directUrl = normalizeDirectRedisUrl(process.env.REDIS_URL);
+  if (!directUrl) return null;
+  return { kind: "direct", source: "redis-url", url: directUrl };
 }
 
 export function getWalletAuthConfigurationStatus(): WalletAuthConfigurationStatus {

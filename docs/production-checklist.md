@@ -6,11 +6,12 @@
   promoted preview branch.
 - `/api/health` returns 200 and reports `privy-siws` authentication and workspace
   storage as ready.
-- `/api/health` reports `storageSource` as `upstash` or `vercel-kv` without
-  returning credentials.
+- `/api/health` reports `storageSource` as `upstash`, `vercel-kv`, or
+  `redis-url` without returning credentials.
 - Privy production cookie auth is active for `www.gwapspot.com`; preview uses a
   separate Privy app.
-- Upstash Redis production credentials are scoped to the Vercel project.
+- The selected Redis credentials are scoped to the Vercel project and use a
+  separate Preview database or namespace.
 - A dedicated Solana mainnet RPC is configured.
 - External-wallet SIWS, email-created embedded wallet, session refresh, sign-out,
   wallet export, workspace reset, and account deletion pass smoke tests.

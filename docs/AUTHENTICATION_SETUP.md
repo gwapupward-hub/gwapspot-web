@@ -49,6 +49,12 @@ Existing Vercel KV integrations that provide `KV_REST_API_URL` and
 `KV_REST_API_TOKEN` are also accepted. A URL and token must come from the same
 variable pair; incomplete or mixed pairs keep the workspace locked.
 
+Redis Cloud and other direct Redis providers are supported through a server-only
+`REDIS_URL`. Use the provider's complete connection URL and prefer `rediss://`
+when TLS is available. A complete Upstash or Vercel KV REST pair takes precedence
+when more than one backend is configured. Never commit or share a connection URL;
+it contains the database password.
+
 Redis stores normalized workspace state under a SHA-256-derived account key. It
 also stores five-minute identity cache entries and distributed fixed-window rate
 limits. Raw Privy user IDs, access tokens, wallet signatures, and wallet private
@@ -71,8 +77,8 @@ wallets are discovered directly. Do not add the legacy
   `/app/settings`.
 - `/api/health` returns `authentication.provider: "privy-siws"`,
   `configured: true`, and `reason: "ready"`.
-- `storageSource` reports `upstash` or `vercel-kv`; URL/token readiness is shown
-  as booleans, and secret values are never returned.
+- `storageSource` reports `upstash`, `vercel-kv`, or `redis-url`; URL/credential
+  readiness is shown only as booleans, and secret values are never returned.
 - Phantom, Solflare, Backpack, and another Wallet Standard-compatible wallet can
   connect, sign a message, enter GWAP OS, sign out, and reconnect.
 - Rejecting a signature leaves the user signed out and shows a safe error.

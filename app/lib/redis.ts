@@ -1,12 +1,162 @@
 import "server-only";
 
 import { createHash } from "node:crypto";
-import { Redis } from "@upstash/redis";
+import { Redis as UpstashRedis } from "@upstash/redis";
+import { createClient } from "redis";
 import { getWorkspaceStorageCredentials } from "./auth-config";
 
 const STORAGE_NAMESPACE = "gwap:sprint5:v1";
+const DIRECT_REDIS_CONNECT_TIMEOUT_MS = 5_000;
 
-let redisClient: Redis | null = null;
+type SetOptions = { ex?: number };
+
+export type WorkspaceRedis = {
+  del(key: string): Promise<number>;
+  expire(key: string, seconds: number): Promise<number>;
+  get<T>(key: string): Promise<T | null>;
+  incr(key: string): Promise<number>;
+  ping(): Promise<boolean>;
+  set<T>(key: string, value: T, options?: SetOptions): Promise<void>;
+};
+
+class RestWorkspaceRedis implements WorkspaceRedis {
+  constructor(private readonly client: UpstashRedis) {}
+
+  async get<T>(key: string) {
+    return this.client.get<T>(key);
+  }
+
+  async set<T>(key: string, value: T, options?: SetOptions) {
+    if (options?.ex) {
+      await this.client.set(key, value, { ex: options.ex });
+      return;
+    }
+    await this.client.set(key, value);
+  }
+
+  async del(key: string) {
+    return this.client.del(key);
+  }
+
+  async incr(key: string) {
+    return this.client.incr(key);
+  }
+
+  async expire(key: string, seconds: number) {
+    return this.client.expire(key, seconds);
+  }
+
+  async ping() {
+    return (await this.client.ping()) === "PONG";
+  }
+}
+
+type DirectRedisClient = ReturnType<typeof createClient>;
+
+function getSafeRedisErrorDetails(error: unknown) {
+  const code =
+    error && typeof error === "object" && "code" in error
+      ? String((error as { code?: unknown }).code).slice(0, 40)
+      : undefined;
+
+  return {
+    provider: "redis-url",
+    name: error instanceof Error ? error.name : "Error",
+    ...(code ? { code } : {}),
+  };
+}
+
+class DirectWorkspaceRedis implements WorkspaceRedis {
+  private client: DirectRedisClient | null = null;
+  private connection: Promise<DirectRedisClient> | null = null;
+
+  constructor(private readonly url: string) {}
+
+  private getClient() {
+    if (this.client?.isReady) return Promise.resolve(this.client);
+
+    if (!this.client) {
+      this.client = createClient({
+        url: this.url,
+        disableOfflineQueue: true,
+        socket: {
+          connectTimeout: DIRECT_REDIS_CONNECT_TIMEOUT_MS,
+          reconnectStrategy: (retries) =>
+            retries >= 2 ? false : Math.min(100 * 2 ** retries, 500),
+        },
+      });
+      this.client.on("error", (error: unknown) => {
+        console.error("gwap_redis_error", getSafeRedisErrorDetails(error));
+      });
+    }
+
+    if (!this.connection) {
+      const client = this.client;
+      this.connection = client
+        .connect()
+        .then(() => client)
+        .catch((error: unknown) => {
+          this.connection = null;
+          if (client.isOpen) client.destroy();
+          if (this.client === client) this.client = null;
+          throw error;
+        });
+    }
+
+    return this.connection;
+  }
+
+  async get<T>(key: string) {
+    const value = await (await this.getClient()).sendCommand(["GET", key]);
+    if (value === null) return null;
+
+    try {
+      return JSON.parse(String(value)) as T;
+    } catch {
+      return String(value) as T;
+    }
+  }
+
+  async set<T>(key: string, value: T, options?: SetOptions) {
+    const serialized = JSON.stringify(value);
+    if (serialized === undefined) {
+      throw new TypeError("Workspace storage value is not serializable");
+    }
+
+    const command = ["SET", key, serialized];
+    if (options?.ex) command.push("EX", String(options.ex));
+    const result = await (await this.getClient()).sendCommand(command);
+    if (String(result) !== "OK") {
+      throw new Error("Workspace storage write failed");
+    }
+  }
+
+  async del(key: string) {
+    const result = await (await this.getClient()).sendCommand(["DEL", key]);
+    return Number(result);
+  }
+
+  async incr(key: string) {
+    const result = await (await this.getClient()).sendCommand(["INCR", key]);
+    return Number(result);
+  }
+
+  async expire(key: string, seconds: number) {
+    const result = await (await this.getClient()).sendCommand([
+      "EXPIRE",
+      key,
+      String(seconds),
+    ]);
+    return Number(result);
+  }
+
+  async ping() {
+    const result = await (await this.getClient()).sendCommand(["PING"]);
+    return String(result) === "PONG";
+  }
+}
+
+let redisClient: WorkspaceRedis | null = null;
 
 export function getWorkspaceRedis() {
   if (redisClient) return redisClient;
@@ -14,7 +164,12 @@ export function getWorkspaceRedis() {
   const storage = getWorkspaceStorageCredentials();
   if (!storage) throw new Error("Workspace storage is not configured");
 
-  redisClient = new Redis({ url: storage.url, token: storage.token });
+  redisClient =
+    storage.kind === "direct"
+      ? new DirectWorkspaceRedis(storage.url)
+      : new RestWorkspaceRedis(
+          new UpstashRedis({ url: storage.url, token: storage.token }),
+        );
   return redisClient;
 }
 
