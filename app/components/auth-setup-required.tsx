@@ -9,7 +9,7 @@ export function AuthSetupRequired() {
         <h1>Wallet access is ready for activation.</h1>
         <p>
           The workspace stays locked until Privy wallet authentication and
-          Upstash workspace storage are configured for this environment. Public
+          server-side Redis storage are configured for this environment. Public
           GWAP pages remain available.
         </p>
         <div>
