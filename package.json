@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test app/lib/auth-config.test.mjs"
+    "test": "node --experimental-strip-types --test app/lib/auth-config.test.mjs app/lib/wallet-auth-error.test.mjs"
   },
   "dependencies": {
     "@privy-io/node": "^0.28.0",

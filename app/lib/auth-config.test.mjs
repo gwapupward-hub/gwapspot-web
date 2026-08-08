@@ -49,6 +49,19 @@ test("an explicit direct Redis URL overrides auto-provisioned REST credentials",
   });
 });
 
+test("a quoted direct Redis URL is normalized before provider selection", () => {
+  clearStorageEnvironment();
+  process.env.REDIS_URL = '"rediss://user:password@redis.example.com:6380"';
+  process.env.UPSTASH_REDIS_REST_URL = "https://upstash.example.com";
+  process.env.UPSTASH_REDIS_REST_TOKEN = "upstash-token";
+
+  assert.deepEqual(getWorkspaceStorageCredentials(), {
+    kind: "direct",
+    source: "redis-url",
+    url: "rediss://user:password@redis.example.com:6380",
+  });
+});
+
 test("an invalid direct URL does not shadow complete Upstash credentials", () => {
   clearStorageEnvironment();
   process.env.REDIS_URL = "https://not-a-redis-endpoint.example.com";

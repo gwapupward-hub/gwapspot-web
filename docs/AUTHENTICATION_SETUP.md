@@ -12,8 +12,9 @@ both wallet authentication and workspace storage are configured.
 ## Privy setup
 
 1. Create separate Privy apps for local/preview and production.
-2. Enable **Email** as the only dashboard login method. External wallet login is
-   handled headlessly by the Solana Wallet Adapter + Privy SIWS flow in this app.
+2. Enable both **Email** and **Solana wallet** authentication in the Privy
+   Dashboard. The wallet UI is headless, but Privy must still allow SIWS. Confirm
+   the public app configuration reports `solana_wallet_auth: true` before release.
 3. Enable automatic **Solana** embedded wallet creation for users without a
    wallet. Keep automatic Ethereum wallet creation off.
 4. Enable cookie-based authentication. Register the root domain `gwapspot.com`
@@ -53,7 +54,9 @@ Redis Cloud and other direct Redis providers are supported through a server-only
 `REDIS_URL`. Use the provider's complete connection URL and prefer `rediss://`
 when TLS is available. A valid `REDIS_URL` is an explicit override and takes
 precedence over auto-provisioned Upstash or Vercel KV variables. Never commit or
-share a connection URL; it contains the database password.
+share a connection URL; it contains the database password. In the Vercel form,
+paste only the URL as the value. Matching outer quotes are tolerated but are not
+required.
 
 Redis stores normalized workspace state under a SHA-256-derived account key. It
 also stores five-minute identity cache entries and distributed fixed-window rate
@@ -77,6 +80,7 @@ wallets are discovered directly. Do not add the legacy
   `/app/settings`.
 - `/api/health` returns `authentication.provider: "privy-siws"`,
   `configured: true`, and `reason: "ready"`.
+- Privy's public production configuration reports `solana_wallet_auth: true`.
 - `storageSource` reports `upstash`, `vercel-kv`, or `redis-url`; URL/credential
   readiness is shown only as booleans, and secret values are never returned.
 - Phantom, Solflare, Backpack, and another Wallet Standard-compatible wallet can

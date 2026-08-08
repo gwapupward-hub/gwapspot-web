@@ -7,6 +7,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { getWalletAuthErrorMessage } from "../lib/wallet-auth-error";
 
 function encodeBase64(bytes: Uint8Array) {
   let binary = "";
@@ -14,13 +15,6 @@ function encodeBase64(bytes: Uint8Array) {
     binary += String.fromCharCode(bytes[index]);
   }
   return window.btoa(binary);
-}
-
-function getErrorMessage(error: unknown) {
-  if (error instanceof Error && /reject|cancel/i.test(error.message)) {
-    return "The signature request was cancelled. Nothing was changed.";
-  }
-  return "We could not verify that wallet. Reconnect it and try again.";
 }
 
 export function WalletSignIn({ redirectPath }: { redirectPath: string }) {
@@ -60,11 +54,9 @@ export function WalletSignIn({ redirectPath }: { redirectPath: string }) {
       await loginWithSiws({
         message,
         signature: encodeBase64(signature),
-        walletClientType: wallet?.adapter.name.toLowerCase().replace(/\s+/g, "_"),
-        connectorType: "wallet_standard",
       });
     } catch (loginError) {
-      setError(getErrorMessage(loginError));
+      setError(getWalletAuthErrorMessage(loginError));
     } finally {
       setSigning(false);
     }
