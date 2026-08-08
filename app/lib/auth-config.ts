@@ -1,47 +1,171 @@
+export type WorkspaceStorageSource =
+  | "upstash"
+  | "vercel-kv"
+  | "redis-url"
+  | "none";
+
+export type WorkspaceStorageConfigurationStatus = {
+  configured: boolean;
+  source: WorkspaceStorageSource;
+  urlConfigured: boolean;
+  tokenConfigured: boolean;
+};
+
+export type WorkspaceStorageCredentials =
+  | {
+      kind: "rest";
+      source: "upstash" | "vercel-kv";
+      url: string;
+      token: string;
+    }
+  | {
+      kind: "direct";
+      source: "redis-url";
+      url: string;
+    };
+
 export type WalletAuthConfigurationStatus = {
   configured: boolean;
   authenticationConfigured: boolean;
   storageConfigured: boolean;
+  storageSource: WorkspaceStorageSource;
+  storageUrlConfigured: boolean;
+  storageTokenConfigured: boolean;
   reason:
     | "ready"
     | "missing_privy_configuration"
     | "missing_workspace_storage";
 };
 
-function hasValue(value: string | undefined) {
-  return Boolean(value?.trim());
+function normalizeValue(value: string | undefined) {
+  const normalized = value?.trim();
+  return normalized || null;
+}
+
+function normalizeDirectRedisUrl(value: string | undefined) {
+  const normalized = normalizeValue(value);
+  if (!normalized) return null;
+
+  try {
+    const url = new URL(normalized);
+    if (!url.hostname || (url.protocol !== "redis:" && url.protocol !== "rediss:")) {
+      return null;
+    }
+    return normalized;
+  } catch {
+    return null;
+  }
+}
+
+function getWorkspaceStorageCandidates() {
+  return [
+    {
+      source: "upstash" as const,
+      url: normalizeValue(process.env.UPSTASH_REDIS_REST_URL),
+      token: normalizeValue(process.env.UPSTASH_REDIS_REST_TOKEN),
+    },
+    {
+      source: "vercel-kv" as const,
+      url: normalizeValue(process.env.KV_REST_API_URL),
+      token: normalizeValue(process.env.KV_REST_API_TOKEN),
+    },
+  ];
+}
+
+export function getWorkspaceStorageConfigurationStatus(): WorkspaceStorageConfigurationStatus {
+  const candidates = getWorkspaceStorageCandidates();
+  const complete = candidates.find((candidate) => candidate.url && candidate.token);
+
+  if (complete) {
+    return {
+      configured: true,
+      source: complete.source,
+      urlConfigured: true,
+      tokenConfigured: true,
+    };
+  }
+
+  const directValue = normalizeValue(process.env.REDIS_URL);
+  const directUrl = normalizeDirectRedisUrl(process.env.REDIS_URL);
+  if (directUrl) {
+    return {
+      configured: true,
+      source: "redis-url",
+      urlConfigured: true,
+      tokenConfigured: true,
+    };
+  }
+
+  const partial = candidates.find((candidate) => candidate.url || candidate.token);
+  if (!partial && directValue) {
+    return {
+      configured: false,
+      source: "redis-url",
+      urlConfigured: true,
+      tokenConfigured: false,
+    };
+  }
+
+  return {
+    configured: false,
+    source: partial?.source ?? "none",
+    urlConfigured: Boolean(partial?.url),
+    tokenConfigured: Boolean(partial?.token),
+  };
+}
+
+export function getWorkspaceStorageCredentials(): WorkspaceStorageCredentials | null {
+  const complete = getWorkspaceStorageCandidates().find(
+    (candidate) => candidate.url && candidate.token,
+  );
+
+  if (complete?.url && complete.token) {
+    return {
+      kind: "rest",
+      source: complete.source,
+      url: complete.url,
+      token: complete.token,
+    };
+  }
+
+  const directUrl = normalizeDirectRedisUrl(process.env.REDIS_URL);
+  if (!directUrl) return null;
+  return { kind: "direct", source: "redis-url", url: directUrl };
 }
 
 export function getWalletAuthConfigurationStatus(): WalletAuthConfigurationStatus {
   const authenticationConfigured =
-    hasValue(process.env.NEXT_PUBLIC_PRIVY_APP_ID) &&
-    hasValue(process.env.PRIVY_APP_SECRET);
-  const storageConfigured =
-    hasValue(process.env.UPSTASH_REDIS_REST_URL) &&
-    hasValue(process.env.UPSTASH_REDIS_REST_TOKEN);
+    Boolean(normalizeValue(process.env.NEXT_PUBLIC_PRIVY_APP_ID)) &&
+    Boolean(normalizeValue(process.env.PRIVY_APP_SECRET));
+  const storage = getWorkspaceStorageConfigurationStatus();
+
+  const baseStatus = {
+    authenticationConfigured,
+    storageConfigured: storage.configured,
+    storageSource: storage.source,
+    storageUrlConfigured: storage.urlConfigured,
+    storageTokenConfigured: storage.tokenConfigured,
+  };
 
   if (!authenticationConfigured) {
     return {
+      ...baseStatus,
       configured: false,
-      authenticationConfigured,
-      storageConfigured,
       reason: "missing_privy_configuration",
     };
   }
 
-  if (!storageConfigured) {
+  if (!storage.configured) {
     return {
+      ...baseStatus,
       configured: false,
-      authenticationConfigured,
-      storageConfigured,
       reason: "missing_workspace_storage",
     };
   }
 
   return {
+    ...baseStatus,
     configured: true,
-    authenticationConfigured,
-    storageConfigured,
     reason: "ready",
   };
 }
