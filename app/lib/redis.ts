@@ -2,6 +2,7 @@ import "server-only";
 
 import { createHash } from "node:crypto";
 import { Redis } from "@upstash/redis";
+import { getWorkspaceStorageCredentials } from "./auth-config";
 
 const STORAGE_NAMESPACE = "gwap:sprint5:v1";
 
@@ -10,11 +11,10 @@ let redisClient: Redis | null = null;
 export function getWorkspaceRedis() {
   if (redisClient) return redisClient;
 
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (!url || !token) throw new Error("Workspace storage is not configured");
+  const storage = getWorkspaceStorageCredentials();
+  if (!storage) throw new Error("Workspace storage is not configured");
 
-  redisClient = new Redis({ url, token });
+  redisClient = new Redis({ url: storage.url, token: storage.token });
   return redisClient;
 }
 
