@@ -43,8 +43,15 @@ function normalizeValue(value: string | undefined) {
 }
 
 function normalizeDirectRedisUrl(value: string | undefined) {
-  const normalized = normalizeValue(value);
-  if (!normalized) return null;
+  const rawValue = normalizeValue(value);
+  if (!rawValue) return null;
+
+  const firstCharacter = rawValue[0];
+  const normalized =
+    (firstCharacter === '"' || firstCharacter === "'") &&
+    rawValue.at(-1) === firstCharacter
+      ? rawValue.slice(1, -1).trim()
+      : rawValue;
 
   try {
     const url = new URL(normalized);
