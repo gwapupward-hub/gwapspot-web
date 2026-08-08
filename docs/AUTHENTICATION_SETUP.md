@@ -51,9 +51,9 @@ variable pair; incomplete or mixed pairs keep the workspace locked.
 
 Redis Cloud and other direct Redis providers are supported through a server-only
 `REDIS_URL`. Use the provider's complete connection URL and prefer `rediss://`
-when TLS is available. A complete Upstash or Vercel KV REST pair takes precedence
-when more than one backend is configured. Never commit or share a connection URL;
-it contains the database password.
+when TLS is available. A valid `REDIS_URL` is an explicit override and takes
+precedence over auto-provisioned Upstash or Vercel KV variables. Never commit or
+share a connection URL; it contains the database password.
 
 Redis stores normalized workspace state under a SHA-256-derived account key. It
 also stores five-minute identity cache entries and distributed fixed-window rate
