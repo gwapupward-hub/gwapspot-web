@@ -2,8 +2,12 @@
 
 - GitHub Quality workflow passes.
 - Vercel preview is READY.
+- The production deployment is built from the latest `main` commit, not a
+  promoted preview branch.
 - `/api/health` returns 200 and reports `privy-siws` authentication and workspace
   storage as ready.
+- `/api/health` reports `storageSource` as `upstash` or `vercel-kv` without
+  returning credentials.
 - Privy production cookie auth is active for `www.gwapspot.com`; preview uses a
   separate Privy app.
 - Upstash Redis production credentials are scoped to the Vercel project.
