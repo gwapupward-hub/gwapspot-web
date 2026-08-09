@@ -6,6 +6,10 @@ import {
   PublicLookupValidationError,
   shortAddress,
 } from "./public-lookup.ts";
+import {
+  buildPublicLookupShareUrl,
+  readPublicLookupDeepLink,
+} from "./public-share.ts";
 
 test("normalizes .gwap names", () => {
   assert.deepEqual(normalizePublicLookup("name", " Tha-General.GWAP "), {
@@ -52,5 +56,29 @@ test("shortens long public addresses", () => {
   assert.equal(
     shortAddress("11111111111111111111111111111111"),
     "111111…1111",
+  );
+});
+
+test("builds a canonical share link for a public lookup", () => {
+  assert.equal(
+    buildPublicLookupShareUrl(
+      "https://www.gwapspot.com/ecosystem?old=value",
+      "name",
+      "tha-general.gwap",
+    ),
+    "https://www.gwapspot.com/?lookup=name&q=tha-general.gwap#top",
+  );
+});
+
+test("reads valid lookup deep links and rejects incomplete ones", () => {
+  assert.deepEqual(
+    readPublicLookupDeepLink(
+      "https://www.gwapspot.com/?lookup=wallet&q=11111111111111111111111111111111#top",
+    ),
+    { mode: "wallet", query: "11111111111111111111111111111111" },
+  );
+  assert.equal(
+    readPublicLookupDeepLink("https://www.gwapspot.com/?lookup=name"),
+    null,
   );
 });

@@ -6,7 +6,11 @@ import {
   ProductCard,
   SparkIcon,
 } from "../components/site-shell";
-import { ecosystemProducts } from "../lib/ecosystem";
+import {
+  ecosystemProductGroups,
+  ecosystemProductIndexBySlug,
+  ecosystemProducts,
+} from "../lib/ecosystem";
 import { createPageMetadata } from "../lib/metadata";
 
 export const metadata = createPageMetadata({
@@ -28,8 +32,8 @@ export default function EcosystemPage() {
     <PageShell>
       <PageHero
         eyebrow="Ecosystem directory"
-        title="Eight ventures. One connected strategy."
-        description="Each GWAP product has a defined role. Together they form a network for identity, reputation, creativity, knowledge, commerce, verification, and culture."
+        title="Eight ventures. Two connected layers."
+        description="GWAP Infrastructure supplies identity, reputation, intelligence, and verification. GWAP Experiences turn those systems into products people can use."
       >
         <Link className="primary-button" href="/roadmap">
           See how it connects <ArrowIcon />
@@ -58,17 +62,48 @@ export default function EcosystemPage() {
       <section className="inner-section">
         <div className="inner-section-heading">
           <span className="eyebrow">
-            <SparkIcon /> Complete directory
+            <SparkIcon /> Organized ecosystem
           </span>
-          <h2>Choose a layer of the network.</h2>
+          <h2>Start with the layer you need.</h2>
           <p>
-            Open any product page to see its purpose, current capabilities,
-            audience, development roadmap, and live destination when available.
+            Infrastructure powers the network. Experiences put that foundation
+            in front of users, creators, communities, and businesses.
           </p>
         </div>
-        <div className="ecosystem-grid">
-          {ecosystemProducts.map((product, index) => (
-            <ProductCard product={product} index={index} key={product.slug} />
+        <div className="ecosystem-groups directory-ecosystem-groups">
+          {ecosystemProductGroups.map((group, groupIndex) => (
+            <section
+              className={`ecosystem-group ecosystem-group-${group.id}`}
+              aria-labelledby={`directory-group-${group.id}`}
+              key={group.id}
+            >
+              <header className="ecosystem-group-header">
+                <div className="ecosystem-group-index">
+                  <span>{String(groupIndex + 1).padStart(2, "0")}</span>
+                  <small>{group.eyebrow}</small>
+                </div>
+                <div className="ecosystem-group-copy">
+                  <h3 id={`directory-group-${group.id}`}>{group.label}</h3>
+                  <p>{group.description}</p>
+                </div>
+                <ul className="ecosystem-group-signals" aria-label={`${group.label} layers`}>
+                  {group.signals.map((signal) => <li key={signal}>{signal}</li>)}
+                </ul>
+              </header>
+              <div className="ecosystem-grid directory-group-products">
+                {group.products.map((product) => {
+                  const productIndex = ecosystemProductIndexBySlug.get(product.slug) ?? 0;
+                  return (
+                    <ProductCard
+                      product={product}
+                      index={productIndex}
+                      headingLevel="h4"
+                      key={product.slug}
+                    />
+                  );
+                })}
+              </div>
+            </section>
           ))}
         </div>
       </section>
