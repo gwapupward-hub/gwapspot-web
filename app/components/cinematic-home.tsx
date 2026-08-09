@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState, type ChangeEvent, type CSSProperties, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
+import { formatBuildLogDate, latestBuildLogEntry } from "../lib/changelog";
 import { ecosystemProductGroups, ecosystemProductIndexBySlug, ecosystemProducts, socialLinks } from "../lib/ecosystem";
 import { CountUp } from "./count-up";
 import { HomeUtility } from "./home-utility";
@@ -152,6 +153,7 @@ export function CinematicHome() {
           <Link href="#ecosystem" onClick={() => setMenuOpen(false)}>Ecosystem</Link>
           <Link href="#trust" onClick={() => setMenuOpen(false)}>Infrastructure</Link>
           <Link href="#roadmap" onClick={() => setMenuOpen(false)}>Roadmap</Link>
+          <Link href="/changelog" onClick={() => setMenuOpen(false)}>Build Log</Link>
           <Link href="/community" onClick={() => setMenuOpen(false)}>Community</Link>
         </nav>
 
@@ -286,6 +288,15 @@ export function CinematicHome() {
           <article className="phase-card current"><span>PHASE 02</span><div className="phase-orb"><i /></div><h3>Expansion</h3><p>Premium discovery, product surfaces, community, and partner-ready storytelling.</p><small>Current</small></article>
           <article className="phase-card started"><span>PHASE 03</span><div className="phase-orb"><i /></div><h3>Integration</h3><p>Wallet authentication and the GWAP OS identity runtime are live; shared profiles and cross-product data continue rolling out.</p><small>Underway</small></article>
         </div>
+        <Link className="latest-build-card" href={`/changelog#${latestBuildLogEntry.slug}`}>
+          <span className="latest-build-signal" aria-hidden="true"><i /></span>
+          <span className="latest-build-copy">
+            <small>Latest build · {formatBuildLogDate(latestBuildLogEntry.releasedAt)}</small>
+            <strong>{latestBuildLogEntry.title}</strong>
+            <p>{latestBuildLogEntry.summary}</p>
+          </span>
+          <span className="latest-build-action">View build log <Icon name="arrow" /></span>
+        </Link>
       </section>
 
       <section className="story-section community-story" data-story-section>
@@ -301,7 +312,7 @@ export function CinematicHome() {
 
       <footer className="cinematic-footer">
         <div className="footer-lockup"><Image src="/logos/gwap-agent-clear.svg" alt="" width={42} height={42} /><span><strong>GWAP</strong><small>GRIND WITH A PURPOSE</small></span></div>
-        <div className="footer-nav"><Link href="/ecosystem">Ecosystem</Link><Link href="/about">About</Link><Link href="/roadmap">Roadmap</Link><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link></div>
+        <div className="footer-nav"><Link href="/ecosystem">Ecosystem</Link><Link href="/about">About</Link><Link href="/roadmap">Roadmap</Link><Link href="/changelog">Build Log</Link><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link></div>
         <small>© {new Date().getFullYear()} GWAP. The future rewards purpose.</small>
       </footer>
     </main>
