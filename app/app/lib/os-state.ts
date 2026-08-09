@@ -16,6 +16,7 @@ export type GwapProfile = {
 export type GwapSettings = {
   compactMode: boolean;
   reduceMotion: boolean;
+  bootAnimation: boolean;
   productUpdates: boolean;
   communityUpdates: boolean;
 };
@@ -33,6 +34,21 @@ export type GwapAccount = {
   embeddedWallet: string | null;
   verifiedWallet: string;
   walletProvider: "embedded" | "external";
+};
+
+export type GnsIdentity = {
+  status: "found" | "none" | "unavailable";
+  name: string | null;
+  fullName: string | null;
+  avatar: string | null;
+  bio: string | null;
+  score: number | null;
+  scoreTier: string | null;
+  verified: boolean;
+  isGenesis: boolean;
+  tier: "premium" | "free" | null;
+  profileUrl: string | null;
+  updatedAt: string | null;
 };
 
 export const GWAP_OS_STORAGE_KEY = "gwap-os-state-v1";
@@ -62,6 +78,7 @@ export const defaultGwapOsState: GwapOsState = {
   settings: {
     compactMode: false,
     reduceMotion: false,
+    bootAnimation: true,
     productUpdates: true,
     communityUpdates: true,
   },
@@ -132,6 +149,10 @@ export function normalizeGwapOsState(value: unknown): GwapOsState {
       reduceMotion: safeBoolean(
         settings.reduceMotion,
         defaultGwapOsState.settings.reduceMotion,
+      ),
+      bootAnimation: safeBoolean(
+        settings.bootAnimation,
+        defaultGwapOsState.settings.bootAnimation,
       ),
       productUpdates: safeBoolean(
         settings.productUpdates,
