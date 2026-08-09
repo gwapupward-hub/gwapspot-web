@@ -40,17 +40,24 @@ export function BootSequence({
   useEffect(() => {
     if (!enabled || reduceMotion) return;
 
-    let seen = false;
-    try {
-      seen = window.localStorage.getItem(BOOT_KEY) === "true";
-      window.localStorage.setItem(BOOT_KEY, "true");
-    } catch {
-      // Storage restrictions should never block entry into the OS.
-    }
+    let hideTimer: number | undefined;
+    const startupTimer = window.setTimeout(() => {
+      let seen = false;
+      try {
+        seen = window.localStorage.getItem(BOOT_KEY) === "true";
+        window.localStorage.setItem(BOOT_KEY, "true");
+      } catch {
+        // Storage restrictions should never block entry into the OS.
+      }
 
-    setMode(seen ? "flash" : "full");
-    const timer = window.setTimeout(() => setMode(null), seen ? 760 : 2500);
-    return () => window.clearTimeout(timer);
+      setMode(seen ? "flash" : "full");
+      hideTimer = window.setTimeout(() => setMode(null), seen ? 760 : 2500);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(startupTimer);
+      if (hideTimer) window.clearTimeout(hideTimer);
+    };
   }, [enabled, reduceMotion]);
 
   if (!mode) return null;
