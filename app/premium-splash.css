@@ -86,7 +86,8 @@ html[data-gwap-intro-seen="true"] .premium-splash--intro {
 }
 
 .premium-splash__art img {
-  position: relative;
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   max-width: none;
