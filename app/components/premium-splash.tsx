@@ -200,8 +200,8 @@ export default function PremiumSplash() {
         <Image
           src={SPLASH_SRC}
           alt=""
-          width={400}
-          height={864}
+          fill
+          sizes="100vw"
           priority
           unoptimized
         />
