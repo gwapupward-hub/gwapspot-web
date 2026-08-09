@@ -1,202 +1,105 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useMemo } from "react";
 import type { EcosystemProduct } from "../../lib/ecosystem";
-import { getProfileCompletion } from "../lib/os-state";
 import { useGwapOs } from "./os-provider";
 
+const coreApps = [
+  { href: "/app/marketplace", label: "Marketplace", command: "~/marketplace/browse", icon: "▤", note: "Deals, escrow, disputes" },
+  { href: "/app/identity", label: "Identity / GNS", command: "~/identity", icon: "◎", note: ".gwap identity and profile" },
+  { href: "/app/vault", label: "Private Proof Vault", command: "~/vault", icon: "◇", note: "Selective proof workspace" },
+  { href: "/app/score", label: "GwapScore", command: "~/score", icon: "↗", note: "300–900 reputation signal" },
+] as const;
+
+function shortWallet(wallet: string) {
+  return `${wallet.slice(0, 5)}…${wallet.slice(-5)}`;
+}
+
 export function DashboardView({ products }: { products: EcosystemProduct[] }) {
-  const { state, recordLaunch, toggleFavorite } = useGwapOs();
-  const profileCompletion = getProfileCompletion(state.profile);
+  const { account, gnsIdentity, state, syncStatus } = useGwapOs();
   const liveProducts = products.filter((product) => product.status === "Live").length;
+  const recentNames = useMemo(() => {
+    return state.recent
+      .map((item) => products.find((product) => product.slug === item.slug)?.name)
+      .filter((value): value is string => Boolean(value))
+      .slice(0, 3);
+  }, [products, state.recent]);
 
-  const orderedProducts = useMemo(
-    () =>
-      [...products].sort((a, b) => {
-        const aFavorite = state.favorites.includes(a.slug) ? 1 : 0;
-        const bFavorite = state.favorites.includes(b.slug) ? 1 : 0;
-        if (aFavorite !== bFavorite) return bFavorite - aFavorite;
-        return a.name.localeCompare(b.name);
-      }),
-    [products, state.favorites],
-  );
+  const identityTitle = gnsIdentity.fullName || (gnsIdentity.status === "none" ? "UNINITIALIZED" : shortWallet(account.verifiedWallet));
+  const identityStatus = gnsIdentity.status === "found" ? "IDENTITY VERIFIED" : gnsIdentity.status === "none" ? "SYSTEM INITIALIZATION REQUIRED" : "LIMITED MODE";
 
-  const recentProducts = state.recent
-    .map((recent) => ({
-      recent,
-      product: products.find((product) => product.slug === recent.slug),
-    }))
-    .filter((item): item is { recent: typeof item.recent; product: EcosystemProduct } =>
-      Boolean(item.product),
-    );
+  const logs = [
+    `[auth] wallet verified: ${shortWallet(account.verifiedWallet)}`,
+    gnsIdentity.status === "found"
+      ? `[gns] reverse-resolve: ${gnsIdentity.fullName ?? gnsIdentity.name}`
+      : gnsIdentity.status === "none"
+        ? "[gns] no .gwap identity detected"
+        : "[gns] registry lookup timed out; entry not blocked",
+    gnsIdentity.score === null
+      ? "[score] GwapScore signal unavailable"
+      : `[score] protocol score: ${gnsIdentity.score}${gnsIdentity.scoreTier ? ` (${gnsIdentity.scoreTier})` : ""}`,
+    `[sync] workspace: ${syncStatus}`,
+    `[apps] ${liveProducts} ecosystem products currently live`,
+    ...(recentNames.length ? [`[recent] ${recentNames.join(" · ")}`] : []),
+  ];
 
   return (
-    <div className="os-page">
-      <section className="os-page-heading">
+    <div className="os-page os-home-v2">
+      <section className="os-v2-hero">
         <div>
-          <span className="os-kicker">GWAP OS / SECURE WORKSPACE</span>
-          <h1>Your ecosystem. One command center.</h1>
-          <p>
-            Launch products, organize favorites, track recent activity, and prepare
-            your unified GWAP identity from one secure account workspace.
-          </p>
+          <span className="os-terminal-label">GWAP://SECURE_WORKSPACE</span>
+          <h1>Welcome to your <span>Gwap OS.</span></h1>
+          <p>Identity, reputation, commerce, and proofs share one wallet-native runtime.</p>
         </div>
-        <Link className="os-primary-action" href="/launch">
-          Open full launchpad <span aria-hidden="true">↗</span>
-        </Link>
+        <div className={`os-runtime-badge state-${gnsIdentity.status}`}>
+          <i />
+          <span><small>RUNTIME</small><strong>{gnsIdentity.status === "unavailable" ? "LIMITED" : "ONLINE"}</strong></span>
+        </div>
       </section>
 
-      <section className="os-stat-grid" aria-label="Workspace summary">
-        <article>
-          <span>AVAILABLE NOW</span>
-          <strong>{liveProducts}</strong>
-          <small>Live ecosystem products</small>
-        </article>
-        <article>
-          <span>FAVORITES</span>
-          <strong>{state.favorites.length}</strong>
-          <small>Synced to your account</small>
-        </article>
-        <article>
-          <span>RECENT</span>
-          <strong>{state.recent.length}</strong>
-          <small>Product launches tracked</small>
-        </article>
-        <article>
-          <span>PROFILE</span>
-          <strong>{profileCompletion}%</strong>
-          <small>Identity foundation complete</small>
-        </article>
-      </section>
-
-      <section className="os-content-grid">
-        <div className="os-panel os-app-panel">
-          <div className="os-panel-heading">
-            <div>
-              <span>QUICK LAUNCH</span>
-              <h2>Ecosystem applications</h2>
+      <section className="os-v2-layout">
+        <article className="os-identity-console">
+          <div className="os-console-chrome"><span>~/identity/current</span><span>{identityStatus}</span></div>
+          <div className="os-identity-body">
+            <div className="os-v2-avatar" aria-hidden="true">{(gnsIdentity.name || account.displayName || "G").slice(0, 1).toUpperCase()}</div>
+            <div className="os-identity-copy">
+              <span className="os-terminal-label">CONNECTED IDENTITY</span>
+              <h2>{identityTitle}</h2>
+              <p>{gnsIdentity.bio || state.profile.bio || "No public bio has been published for this identity yet."}</p>
+              <div className="os-identity-meta">
+                <span><small>WALLET</small><strong>{shortWallet(account.verifiedWallet)}</strong></span>
+                <span><small>GWAPSCORE</small><strong>{gnsIdentity.score ?? "—"}</strong></span>
+                <span><small>TIER</small><strong>{gnsIdentity.scoreTier || gnsIdentity.tier || "—"}</strong></span>
+                <span><small>SYNC</small><strong>{syncStatus.toUpperCase()}</strong></span>
+              </div>
+              <div className="os-inline-actions">
+                {gnsIdentity.status === "found" && gnsIdentity.profileUrl ? <a href={gnsIdentity.profileUrl} target="_blank" rel="noreferrer">Public profile ↗</a> : <Link href="/app/identity">Initialize identity →</Link>}
+                <Link href="/app/score">Inspect score</Link>
+              </div>
             </div>
-            <small>Favorites appear first</small>
           </div>
+        </article>
 
-          <div className="os-app-grid">
-            {orderedProducts.map((product) => {
-              const favorite = state.favorites.includes(product.slug);
-              return (
-                <article className={`os-app-card accent-${product.accent}`} key={product.slug}>
-                  <div className="os-app-card-top">
-                    <span className="os-app-icon">
-                      <Image
-                        src={product.logo}
-                        alt={`${product.name} logo`}
-                        width={66}
-                        height={66}
-                        sizes="66px"
-                        unoptimized
-                      />
-                    </span>
-                    <button
-                      type="button"
-                      aria-label={`${favorite ? "Remove" : "Add"} ${product.name} ${
-                        favorite ? "from" : "to"
-                      } favorites`}
-                      aria-pressed={favorite}
-                      onClick={() => toggleFavorite(product.slug)}
-                    >
-                      {favorite ? "★" : "☆"}
-                    </button>
-                  </div>
-                  <div>
-                    <span className={`os-product-status status-${product.status.toLowerCase().replaceAll(" ", "-")}`}>
-                      {product.status}
-                    </span>
-                    <h3>{product.name}</h3>
-                    <p>{product.summary}</p>
-                  </div>
-                  <div className="os-app-actions">
-                    {product.externalUrl ? (
-                      <a
-                        href={product.externalUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        onClick={() => recordLaunch(product.slug)}
-                      >
-                        Launch <span aria-hidden="true">↗</span>
-                      </a>
-                    ) : (
-                      <span>Not available yet</span>
-                    )}
-                    <Link href={`/ecosystem/${product.slug}`}>Details</Link>
-                  </div>
-                </article>
-              );
-            })}
+        <aside className="os-system-log" aria-label="System activity log">
+          <div className="os-console-chrome"><span>~/var/log/gwap</span><span>LIVE</span></div>
+          <div className="os-log-lines">
+            {logs.map((line, index) => <p key={`${line}-${index}`}><span>{String(index + 1).padStart(2, "0")}</span>{line}</p>)}
           </div>
-        </div>
-
-        <aside className="os-side-stack">
-          <section className="os-panel os-identity-panel">
-            <div className="os-panel-heading">
-              <div>
-                <span>UNIFIED IDENTITY</span>
-                <h2>Profile readiness</h2>
-              </div>
-              <strong>{profileCompletion}%</strong>
-            </div>
-            <div className="os-progress" aria-label={`${profileCompletion}% profile complete`}>
-              <i style={{ width: `${profileCompletion}%` }} />
-            </div>
-            <p>
-              Add a bio, verified wallet, website, and location to prepare the
-              profile that can later connect to GNS.
-            </p>
-            <Link href="/app/profile">Complete profile</Link>
-          </section>
-
-          <section className="os-panel os-activity-panel">
-            <div className="os-panel-heading">
-              <div>
-                <span>RECENT ACTIVITY</span>
-                <h2>Last opened</h2>
-              </div>
-            </div>
-            {recentProducts.length ? (
-              <ol>
-                {recentProducts.map(({ product, recent }) => (
-                  <li key={product.slug}>
-                    <Image
-                      src={product.logo}
-                      alt=""
-                      width={34}
-                      height={34}
-                      unoptimized
-                    />
-                    <span>
-                      <strong>{product.name}</strong>
-                      <small>{new Date(recent.openedAt).toLocaleString()}</small>
-                    </span>
-                  </li>
-                ))}
-              </ol>
-            ) : (
-              <div className="os-empty-state">
-                <strong>No launches yet</strong>
-                <p>Open a live product and it will appear here.</p>
-              </div>
-            )}
-          </section>
-
-          <section className="os-panel os-account-panel">
-            <span>ACCOUNT MODE</span>
-            <h2>Secure sync active</h2>
-            <p>
-              Profile, favorites, recent activity, and settings follow your verified
-              account across devices.
-            </p>
-          </section>
         </aside>
+      </section>
+
+      <section className="os-app-launcher">
+        <div className="os-section-heading-v2"><span className="os-terminal-label">APPLICATIONS</span><p>Select a process to open inside the workspace.</p></div>
+        <div className="os-process-grid">
+          {coreApps.map((app) => (
+            <Link href={app.href} key={app.href} className="os-process-tile">
+              <span className="os-process-icon" aria-hidden="true">{app.icon}</span>
+              <span><strong>{app.label}</strong><small>{app.command}</small><em>{app.note}</em></span>
+              <i aria-hidden="true">→</i>
+            </Link>
+          ))}
+        </div>
       </section>
     </div>
   );

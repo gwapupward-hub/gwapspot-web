@@ -6,6 +6,7 @@ import {
   defaultGwapOsState,
   createDefaultGwapOsState,
   normalizeGwapOsState,
+  type GnsIdentity,
   type GwapAccount,
   type GwapOsState,
 } from "./os-state";
@@ -46,6 +47,25 @@ export async function loadAccountWorkspace(identity: WalletIdentity) {
   }
 
   return { account, hasCloudState, state };
+}
+
+export function seedNewWorkspaceFromGns(
+  state: GwapOsState,
+  hasCloudState: boolean,
+  identity: GnsIdentity,
+) {
+  if (hasCloudState || identity.status !== "found") return state;
+
+  return {
+    ...state,
+    profile: {
+      ...state.profile,
+      displayName: identity.fullName || state.profile.displayName,
+      handle: identity.name || state.profile.handle,
+      bio: identity.bio || state.profile.bio,
+      website: identity.profileUrl || state.profile.website,
+    },
+  };
 }
 
 export async function saveAccountWorkspace(userId: string, state: GwapOsState) {

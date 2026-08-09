@@ -7,12 +7,13 @@ import { isWalletAuthConfigured } from "../lib/auth-config";
 import { getAuthenticatedWalletIdentity } from "../lib/privy-server";
 import { GwapOsProvider } from "./components/os-provider";
 import { OsShell } from "./components/os-shell";
-import { loadAccountWorkspace } from "./lib/os-server";
+import { resolveGnsIdentity } from "./lib/gns";
+import { loadAccountWorkspace, seedNewWorkspaceFromGns } from "./lib/os-server";
 
 export const metadata: Metadata = {
   title: "GWAP OS",
   description:
-    "A secure command center for launching products and managing a unified GWAP identity.",
+    "The wallet-native operating layer for GWAP identity, reputation, commerce, and proofs.",
   robots: { index: false, follow: false },
 };
 
@@ -24,13 +25,22 @@ export default async function GwapOsLayout({ children }: { children: ReactNode }
   const identity = await getAuthenticatedWalletIdentity();
   if (!identity) redirect("/sign-in?redirect_url=/app");
 
-  const { account, hasCloudState, state } = await loadAccountWorkspace(identity);
+  const [workspace, gnsIdentity] = await Promise.all([
+    loadAccountWorkspace(identity),
+    resolveGnsIdentity(identity.verifiedWallet),
+  ]);
+  const state = seedNewWorkspaceFromGns(
+    workspace.state,
+    workspace.hasCloudState,
+    gnsIdentity,
+  );
 
   return (
     <WalletAuthProvider>
       <GwapOsProvider
-        account={account}
-        hasCloudState={hasCloudState}
+        account={workspace.account}
+        gnsIdentity={gnsIdentity}
+        hasCloudState={workspace.hasCloudState}
         initialState={state}
       >
         <OsShell>{children}</OsShell>

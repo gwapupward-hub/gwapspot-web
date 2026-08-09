@@ -16,6 +16,7 @@ import {
   createDefaultGwapOsState,
   GWAP_OS_STORAGE_KEY,
   normalizeGwapOsState,
+  type GnsIdentity,
   type GwapAccount,
   type GwapOsState,
   type GwapProfile,
@@ -50,6 +51,7 @@ function clearPendingState() {
 
 type OsContextValue = {
   account: GwapAccount;
+  gnsIdentity: GnsIdentity;
   migrationAvailable: boolean;
   retrySync: () => void;
   state: GwapOsState;
@@ -68,11 +70,13 @@ const OsContext = createContext<OsContextValue | null>(null);
 export function GwapOsProvider({
   account,
   children,
+  gnsIdentity,
   hasCloudState,
   initialState,
 }: {
   account: GwapAccount;
   children: ReactNode;
+  gnsIdentity: GnsIdentity;
   hasCloudState: boolean;
   initialState: GwapOsState;
 }) {
@@ -103,28 +107,31 @@ export function GwapOsProvider({
     [getAccessToken],
   );
 
-  const saveNow = useCallback((nextState: GwapOsState) => {
-    setSyncStatus("saving");
+  const saveNow = useCallback(
+    (nextState: GwapOsState) => {
+      setSyncStatus("saving");
 
-    const operation = saveQueueRef.current.catch(() => undefined).then(async () => {
-      const response = await authenticatedFetch("/api/os-state", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ state: nextState }),
+      const operation = saveQueueRef.current.catch(() => undefined).then(async () => {
+        const response = await authenticatedFetch("/api/os-state", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ state: nextState }),
+        });
+        if (!response.ok) throw new Error("Workspace sync failed");
+
+        if (areGwapOsStatesEqual(stateRef.current, nextState)) {
+          clearPendingState();
+          setSyncStatus("saved");
+        }
       });
-      if (!response.ok) throw new Error("Workspace sync failed");
 
-      if (areGwapOsStatesEqual(stateRef.current, nextState)) {
-        clearPendingState();
-        setSyncStatus("saved");
-      }
-    });
-
-    saveQueueRef.current = operation;
-    void operation.catch(() => {
-      if (areGwapOsStatesEqual(stateRef.current, nextState)) setSyncStatus("error");
-    });
-  }, [authenticatedFetch]);
+      saveQueueRef.current = operation;
+      void operation.catch(() => {
+        if (areGwapOsStatesEqual(stateRef.current, nextState)) setSyncStatus("error");
+      });
+    },
+    [authenticatedFetch],
+  );
 
   const scheduleSave = useCallback(
     (nextState: GwapOsState) => {
@@ -270,6 +277,7 @@ export function GwapOsProvider({
   const value = useMemo(
     () => ({
       account,
+      gnsIdentity,
       keepAccountState,
       migrateLocalState,
       migrationAvailable,
@@ -284,6 +292,7 @@ export function GwapOsProvider({
     }),
     [
       account,
+      gnsIdentity,
       keepAccountState,
       migrateLocalState,
       migrationAvailable,
