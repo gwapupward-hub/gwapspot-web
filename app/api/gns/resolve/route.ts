@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { getGnsApiBase } from "../../../app/lib/gns";
+import {
+  isValidGnsName,
+  normalizeGnsName,
+} from "../../../app/lib/gns-registration";
 import { getAuthenticatedWalletIdentity } from "../../../lib/privy-server";
 import { checkRateLimit } from "../../../lib/request-guard";
-
-const NAME_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?$/;
 
 export async function GET(request: Request) {
   const identity = await getAuthenticatedWalletIdentity(request);
@@ -18,10 +20,10 @@ export async function GET(request: Request) {
   }
 
   const url = new URL(request.url);
-  const name = (url.searchParams.get("name") || "").trim().toLowerCase().replace(/\.gwap$/, "");
-  if (!NAME_PATTERN.test(name)) {
+  const name = normalizeGnsName(url.searchParams.get("name") || "");
+  if (!isValidGnsName(name)) {
     return NextResponse.json(
-      { error: "Use 1–40 lowercase letters, numbers, or internal hyphens." },
+      { error: "Use 1–32 lowercase letters, numbers, or internal hyphens." },
       { status: 400 },
     );
   }
