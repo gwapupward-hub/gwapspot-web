@@ -187,6 +187,7 @@ export function CinematicHome() {
         </Link>
 
         <nav className={`cinematic-links${menuOpen ? " is-open" : ""}`} aria-label="Primary navigation">
+          <Link className="cinematic-os-menu-link" href="/app" onClick={() => setMenuOpen(false)}>Open GWAP OS <Icon name="arrow" /></Link>
           <Link href="#ecosystem" onClick={() => setMenuOpen(false)}>Ecosystem</Link>
           <Link href="#trust" onClick={() => setMenuOpen(false)}>Infrastructure</Link>
           <Link href="#roadmap" onClick={() => setMenuOpen(false)}>Roadmap</Link>
@@ -195,7 +196,7 @@ export function CinematicHome() {
 
         <div className="cinematic-nav-actions">
           <button ref={searchButtonRef} className="icon-button" type="button" aria-label="Search GWAP products" onClick={() => setSearchOpen(true)}><Icon name="search" /></button>
-          <Link className="nav-contact" href="/contact">Enter GWAP <Icon name="arrow" /></Link>
+          <Link className="nav-contact nav-os-entry" href="/app">Open GWAP OS <Icon name="arrow" /></Link>
           <button className="icon-button menu-button" type="button" aria-label={menuOpen ? "Close menu" : "Open menu"} aria-expanded={menuOpen} onClick={() => setMenuOpen((current) => !current)}><Icon name={menuOpen ? "close" : "menu"} /></button>
         </div>
       </header>
@@ -227,7 +228,7 @@ export function CinematicHome() {
           <div className="emblem-halo halo-two" />
           <div className="emblem-ring ring-a"><span>GNS</span><span>DIMI</span></div>
           <div className="emblem-ring ring-b"><span>SCORE</span><span>AI</span></div>
-          <div className="emblem-core"><Image src="/logos/gwap-agent-clear.svg" alt="GWAP" width={280} height={280} priority /></div>
+          <Link className="emblem-core emblem-core-link" href="/app" aria-label="Open GWAP OS"><Image src="/logos/gwap-agent-clear.svg" alt="GWAP" width={280} height={280} priority /></Link>
           <div className="emblem-caption"><span>GWAP CORE</span><small>ECOSYSTEM ONLINE</small></div>
         </div>
 
