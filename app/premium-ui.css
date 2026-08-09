@@ -159,8 +159,11 @@ button { color: inherit; }
 .hero-utility-result small { color: var(--gwap-green); font-size: 7px; font-weight: 850; letter-spacing: .14em; }
 .hero-utility-result strong { overflow-wrap: anywhere; font-size: 12px; }
 .hero-utility-result p { margin: 0; color: #818b84; font-size: 9px; line-height: 1.45; }
-.hero-utility-result > a { flex: 0 0 auto; padding: 9px 10px; border: 1px solid rgba(255,255,255,.11); border-radius: 10px; color: #d8ded9; font-size: 8px; font-weight: 800; }
-.hero-utility-result > a:hover { border-color: rgba(19,221,19,.35); color: var(--gwap-green); }
+.hero-utility-result-actions { flex: 0 0 auto; display: grid; gap: 6px; }
+.hero-utility-result-actions > a, .hero-utility-result-actions > button { min-width: 92px; padding: 9px 10px; border: 1px solid rgba(255,255,255,.11); border-radius: 10px; background: rgba(255,255,255,.025); color: #d8ded9; font-size: 8px; font-weight: 800; text-align: center; cursor: pointer; }
+.hero-utility-result-actions > a:hover, .hero-utility-result-actions > button:hover:not(:disabled) { border-color: rgba(19,221,19,.35); color: var(--gwap-green); }
+.hero-utility-result-actions > button:disabled { cursor: wait; opacity: .68; }
+.hero-utility-result-actions > a:focus-visible, .hero-utility-result-actions > button:focus-visible { outline: 2px solid var(--gwap-green); outline-offset: 2px; }
 .hero-utility-identity dl { display: flex; flex-wrap: wrap; gap: 14px; margin: 5px 0 0; }
 .hero-utility-identity dl > div { display: grid; gap: 2px; }
 .hero-utility-identity dt { color: #69736c; font-size: 7px; text-transform: uppercase; letter-spacing: .1em; }
@@ -183,5 +186,7 @@ button { color: inherit; }
   .hero-utility-form { grid-template-columns: 1fr 44px; }
   .hero-utility-form input { padding-inline: 13px; font-size: 11px; }
   .hero-utility-result { align-items: flex-start; flex-direction: column; }
-  .hero-utility-result > a { width: 100%; text-align: center; }
+  .hero-utility-result-actions { width: 100%; grid-template-columns: 1fr 1fr; }
+  .hero-utility-result-actions > a, .hero-utility-result-actions > button { width: 100%; }
+  .hero-utility-result-actions > :only-child { grid-column: 1 / -1; }
 }

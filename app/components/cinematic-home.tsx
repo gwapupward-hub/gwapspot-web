@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState, type ChangeEvent, type CSSProperties, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
-import { ecosystemProducts, socialLinks } from "../lib/ecosystem";
+import { ecosystemProductGroups, ecosystemProductIndexBySlug, ecosystemProducts, socialLinks } from "../lib/ecosystem";
 import { CountUp } from "./count-up";
 import { HomeUtility } from "./home-utility";
 
@@ -223,17 +223,44 @@ export function CinematicHome() {
         <div className="section-kicker"><span>02</span><p>Explore the product network.</p></div>
         <div className="premium-heading">
           <div><span className="eyebrow-premium"><Icon name="network" /> GWAP ecosystem</span><h2>Independent products.<br /><em>Shared momentum.</em></h2></div>
-          <p>Move through the ecosystem one layer at a time. Each product is designed to become more valuable as the network expands.</p>
+          <p>GWAP is an ecosystem studio building infrastructure and experiences around identity, reputation, commerce, creativity, and community.</p>
         </div>
-        <div className="premium-product-grid">
-          {ecosystemProducts.map((product, index) => (
-            <Link className={`premium-product-card accent-${product.accent}`} href={`/ecosystem/${product.slug}`} key={product.slug}>
-              <div className="card-reflection" />
-              <div className="product-card-header"><span>{String(index + 1).padStart(2, "0")}</span><small>{product.status}</small></div>
-              <div className="product-glyph"><i /><b>{product.name.slice(0, 2).toUpperCase()}</b></div>
-              <div><span className="product-category">{product.eyebrow}</span><h3>{product.name}</h3><p>{product.summary}</p></div>
-              <div className="product-card-footer"><span>Explore product</span><Icon name="arrow" /></div>
-            </Link>
+        <div className="ecosystem-groups">
+          {ecosystemProductGroups.map((group, groupIndex) => (
+            <section
+              className={`ecosystem-group ecosystem-group-${group.id}`}
+              aria-labelledby={`ecosystem-group-${group.id}`}
+              key={group.id}
+            >
+              <header className="ecosystem-group-header">
+                <div className="ecosystem-group-index">
+                  <span>{String(groupIndex + 1).padStart(2, "0")}</span>
+                  <small>{group.eyebrow}</small>
+                </div>
+                <div className="ecosystem-group-copy">
+                  <h3 id={`ecosystem-group-${group.id}`}>{group.label}</h3>
+                  <p>{group.description}</p>
+                </div>
+                <ul className="ecosystem-group-signals" aria-label={`${group.label} layers`}>
+                  {group.signals.map((signal) => <li key={signal}>{signal}</li>)}
+                </ul>
+              </header>
+
+              <div className="premium-product-grid ecosystem-group-products">
+                {group.products.map((product) => {
+                  const productIndex = ecosystemProductIndexBySlug.get(product.slug) ?? 0;
+                  return (
+                    <Link className={`premium-product-card accent-${product.accent}`} href={`/ecosystem/${product.slug}`} key={product.slug}>
+                      <div className="card-reflection" />
+                      <div className="product-card-header"><span>{String(productIndex + 1).padStart(2, "0")}</span><small>{product.status}</small></div>
+                      <div className="product-glyph"><i /><b>{product.name.slice(0, 2).toUpperCase()}</b></div>
+                      <div className="product-copy"><span className="product-category">{product.eyebrow}</span><h4>{product.name}</h4><p>{product.summary}</p></div>
+                      <div className="product-card-footer"><span>Explore product</span><Icon name="arrow" /></div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </section>
           ))}
         </div>
       </section>

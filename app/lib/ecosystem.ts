@@ -1,10 +1,12 @@
 export type ProductStatus = "Live" | "Beta" | "In Development" | "Planned";
 export type ProductAccent = "green" | "purple" | "orange";
+export type ProductCategory = "infrastructure" | "experience";
 
 export type EcosystemProduct = {
   slug: string;
   name: string;
   eyebrow: string;
+  category: ProductCategory;
   status: ProductStatus;
   accent: ProductAccent;
   logo: string;
@@ -23,6 +25,7 @@ export const ecosystemProducts: EcosystemProduct[] = [
     slug: "gns",
     name: "GNS",
     eyebrow: "Digital identity",
+    category: "infrastructure",
     status: "Live",
     accent: "green",
     logo: "/logos/gns.png",
@@ -49,6 +52,7 @@ export const ecosystemProducts: EcosystemProduct[] = [
     slug: "gwapscore",
     name: "GwapScore",
     eyebrow: "On-chain reputation",
+    category: "infrastructure",
     status: "Live",
     accent: "green",
     logo: "/logos/gwapscore.svg",
@@ -75,6 +79,7 @@ export const ecosystemProducts: EcosystemProduct[] = [
     slug: "dimi",
     name: "DIMI",
     eyebrow: "Creator technology",
+    category: "experience",
     status: "Beta",
     accent: "purple",
     logo: "/logos/dimi.webp",
@@ -101,6 +106,7 @@ export const ecosystemProducts: EcosystemProduct[] = [
     slug: "isnad-sunnah",
     name: "Isnad Sunnah",
     eyebrow: "Islamic AI",
+    category: "experience",
     status: "Live",
     accent: "green",
     logo: "/logos/isnad-sunnah.svg",
@@ -127,6 +133,7 @@ export const ecosystemProducts: EcosystemProduct[] = [
     slug: "money-neva-sleeps",
     name: "Money Neva $leeps",
     eyebrow: "Lifestyle brand",
+    category: "experience",
     status: "Live",
     accent: "orange",
     logo: "/logos/money-neva-sleeps.webp",
@@ -153,6 +160,7 @@ export const ecosystemProducts: EcosystemProduct[] = [
     slug: "marketplace",
     name: "GwapSpot Marketplace",
     eyebrow: "Digital commerce",
+    category: "experience",
     status: "In Development",
     accent: "orange",
     logo: "/logos/marketplace.webp",
@@ -177,6 +185,7 @@ export const ecosystemProducts: EcosystemProduct[] = [
     slug: "occo",
     name: "OCCO",
     eyebrow: "Credit infrastructure",
+    category: "infrastructure",
     status: "Planned",
     accent: "purple",
     logo: "/logos/occo.png",
@@ -201,6 +210,7 @@ export const ecosystemProducts: EcosystemProduct[] = [
     slug: "private-proof-vault",
     name: "Private Proof Vault",
     eyebrow: "Verification layer",
+    category: "infrastructure",
     status: "Planned",
     accent: "purple",
     logo: "/logos/private-proof-vault.webp",
@@ -222,6 +232,40 @@ export const ecosystemProducts: EcosystemProduct[] = [
     ],
   },
 ];
+
+export const ecosystemGroups = [
+  {
+    id: "infrastructure",
+    label: "GWAP Infrastructure",
+    eyebrow: "Core protocol layer",
+    description:
+      "Identity, reputation, wallet intelligence, credit context, and private verification—the rails that make the ecosystem trustworthy.",
+    signals: ["GNS", "GwapScore", "Wallet Intelligence", "OCCO", "PPV"],
+  },
+  {
+    id: "experience",
+    label: "GWAP Experiences",
+    eyebrow: "Products people use",
+    description:
+      "Creative, knowledge, commerce, and lifestyle products that turn the shared infrastructure into useful everyday experiences.",
+    signals: ["DIMI", "Isnad", "Marketplace", "Lifestyle"],
+  },
+] as const satisfies ReadonlyArray<{
+  id: ProductCategory;
+  label: string;
+  eyebrow: string;
+  description: string;
+  signals: readonly string[];
+}>;
+
+export const ecosystemProductGroups = ecosystemGroups.map((group) => ({
+  ...group,
+  products: ecosystemProducts.filter((product) => product.category === group.id),
+}));
+
+export const ecosystemProductIndexBySlug = new Map(
+  ecosystemProducts.map((product, index) => [product.slug, index]),
+);
 
 export const productBySlug = new Map(
   ecosystemProducts.map((product) => [product.slug, product]),

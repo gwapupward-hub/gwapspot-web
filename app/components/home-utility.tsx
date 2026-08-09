@@ -2,11 +2,16 @@
 
 import Link from "next/link";
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
   type FormEvent,
 } from "react";
+import {
+  buildPublicLookupShareUrl,
+  readPublicLookupDeepLink,
+} from "../lib/public-share";
 
 type PublicLookupMode = "wallet" | "name";
 
@@ -59,8 +64,65 @@ type WalletResult = {
 
 type LookupResult = NameResult | WalletResult;
 type LookupStatus = "idle" | "loading" | "success" | "error";
+type ShareStatus = "idle" | "sharing" | "copied" | "shared" | "error";
 
-function NameResultCard({ result }: { result: NameResult }) {
+type ResultCardActions = {
+  onShare: () => void;
+  shareStatus: ShareStatus;
+};
+
+function ShareButton({ onShare, shareStatus }: ResultCardActions) {
+  const labels: Record<ShareStatus, string> = {
+    idle: "Share result",
+    sharing: "Opening…",
+    copied: "Link copied",
+    shared: "Shared",
+    error: "Try again",
+  };
+
+  return (
+    <button
+      className="hero-utility-share"
+      type="button"
+      disabled={shareStatus === "sharing"}
+      onClick={onShare}
+    >
+      {labels[shareStatus]} <span aria-hidden="true">↗</span>
+    </button>
+  );
+}
+
+function getShareCopy(result: LookupResult) {
+  if (result.kind === "name") {
+    return result.available
+      ? {
+          title: `${result.fullName} is available`,
+          text: `${result.fullName} is available on GNS. Check it on GWAP.`,
+        }
+      : {
+          title: `${result.fullName} on GNS`,
+          text: `${result.fullName} is a registered identity on the GWAP network.`,
+        };
+  }
+
+  if (result.identity.status === "none") {
+    return {
+      title: "GWAP wallet result",
+      text: `${shortAddress(result.wallet)} does not have a .gwap identity yet.`,
+    };
+  }
+
+  return {
+    title: `${result.identity.fullName || "GWAP identity"} reputation result`,
+    text: `${result.identity.fullName || shortAddress(result.wallet)} · GwapScore ${result.identity.score ?? "unscored"} · ${result.identity.scoreTier || "public"}.`,
+  };
+}
+
+function NameResultCard({
+  result,
+  onShare,
+  shareStatus,
+}: { result: NameResult } & ResultCardActions) {
   if (result.available) {
     return (
       <div className="hero-utility-result is-positive">
@@ -69,9 +131,12 @@ function NameResultCard({ result }: { result: NameResult }) {
           <strong>{result.fullName} is ready.</strong>
           <p>Claim it inside GWAP OS and turn it into your identity hub.</p>
         </div>
-        <Link href={`/app/identity?name=${encodeURIComponent(result.name)}`}>
-          Claim name <span aria-hidden="true">↗</span>
-        </Link>
+        <div className="hero-utility-result-actions">
+          <Link href={`/app/identity?name=${encodeURIComponent(result.name)}`}>
+            Claim name <span aria-hidden="true">↗</span>
+          </Link>
+          <ShareButton onShare={onShare} shareStatus={shareStatus} />
+        </div>
       </div>
     );
   }
@@ -87,16 +152,23 @@ function NameResultCard({ result }: { result: NameResult }) {
             : "Registry ownership confirmed."}
         </p>
       </div>
-      {result.profileUrl ? (
-        <a href={result.profileUrl} target="_blank" rel="noreferrer">
-          View profile <span aria-hidden="true">↗</span>
-        </a>
-      ) : null}
+      <div className="hero-utility-result-actions">
+        {result.profileUrl ? (
+          <a href={result.profileUrl} target="_blank" rel="noreferrer">
+            View profile <span aria-hidden="true">↗</span>
+          </a>
+        ) : null}
+        <ShareButton onShare={onShare} shareStatus={shareStatus} />
+      </div>
     </div>
   );
 }
 
-function WalletResultCard({ result }: { result: WalletResult }) {
+function WalletResultCard({
+  result,
+  onShare,
+  shareStatus,
+}: { result: WalletResult } & ResultCardActions) {
   const { identity } = result;
 
   if (identity.status === "none") {
@@ -107,9 +179,12 @@ function WalletResultCard({ result }: { result: WalletResult }) {
           <strong>No .gwap identity is linked yet.</strong>
           <p>{shortAddress(result.wallet)} can initialize one inside GWAP OS.</p>
         </div>
-        <Link href="/app/identity">
-          Initialize <span aria-hidden="true">↗</span>
-        </Link>
+        <div className="hero-utility-result-actions">
+          <Link href="/app/identity">
+            Initialize <span aria-hidden="true">↗</span>
+          </Link>
+          <ShareButton onShare={onShare} shareStatus={shareStatus} />
+        </div>
       </div>
     );
   }
@@ -134,11 +209,14 @@ function WalletResultCard({ result }: { result: WalletResult }) {
           </div>
         </dl>
       </div>
-      {identity.profileUrl ? (
-        <a href={identity.profileUrl} target="_blank" rel="noreferrer">
-          Open profile <span aria-hidden="true">↗</span>
-        </a>
-      ) : null}
+      <div className="hero-utility-result-actions">
+        {identity.profileUrl ? (
+          <a href={identity.profileUrl} target="_blank" rel="noreferrer">
+            Open profile <span aria-hidden="true">↗</span>
+          </a>
+        ) : null}
+        <ShareButton onShare={onShare} shareStatus={shareStatus} />
+      </div>
     </div>
   );
 }
@@ -149,31 +227,27 @@ export function HomeUtility() {
   const [status, setStatus] = useState<LookupStatus>("idle");
   const [message, setMessage] = useState("");
   const [result, setResult] = useState<LookupResult | null>(null);
+  const [shareStatus, setShareStatus] = useState<ShareStatus>("idle");
   const controllerRef = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const shareResetRef = useRef<number | null>(null);
 
   useEffect(
     () => () => {
       controllerRef.current?.abort();
+      if (shareResetRef.current) window.clearTimeout(shareResetRef.current);
     },
     [],
   );
 
-  function selectMode(nextMode: PublicLookupMode) {
-    controllerRef.current?.abort();
-    setMode(nextMode);
-    setQuery("");
-    setStatus("idle");
-    setMessage("");
-    setResult(null);
-    requestAnimationFrame(() => inputRef.current?.focus());
-  }
-
-  async function submitLookup(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  const runLookup = useCallback(async (
+    nextMode: PublicLookupMode,
+    nextQuery: string,
+    syncUrl = true,
+  ) => {
     controllerRef.current?.abort();
 
-    const validationMessage = getValidationMessage(mode, query);
+    const validationMessage = getValidationMessage(nextMode, nextQuery);
     if (validationMessage) {
       setResult(null);
       setStatus("error");
@@ -186,10 +260,11 @@ export function HomeUtility() {
     setStatus("loading");
     setMessage("");
     setResult(null);
+    setShareStatus("idle");
 
     try {
       const response = await fetch(
-        `/api/public/lookup?type=${mode}&q=${encodeURIComponent(query.trim())}`,
+        `/api/public/lookup?type=${nextMode}&q=${encodeURIComponent(nextQuery.trim())}`,
         { signal: controller.signal, headers: { Accept: "application/json" } },
       );
       const payload = (await response.json().catch(() => ({}))) as
@@ -206,6 +281,17 @@ export function HomeUtility() {
 
       setResult(payload);
       setStatus("success");
+      if (syncUrl) {
+        const shareQuery = payload.kind === "name" ? payload.fullName : payload.wallet;
+        const shareUrl = new URL(
+          buildPublicLookupShareUrl(window.location.origin, payload.kind, shareQuery),
+        );
+        window.history.replaceState(
+          window.history.state,
+          "",
+          `${shareUrl.pathname}${shareUrl.search}${shareUrl.hash}`,
+        );
+      }
     } catch (error) {
       if (controller.signal.aborted) return;
       setStatus("error");
@@ -218,6 +304,86 @@ export function HomeUtility() {
       if (controllerRef.current === controller) {
         controllerRef.current = null;
       }
+    }
+  }, []);
+
+  useEffect(() => {
+    const deepLink = readPublicLookupDeepLink(window.location.href);
+    if (!deepLink || getValidationMessage(deepLink.mode, deepLink.query)) return;
+
+    const frame = requestAnimationFrame(() => {
+      setMode(deepLink.mode);
+      setQuery(deepLink.query);
+      void runLookup(deepLink.mode, deepLink.query, false);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [runLookup]);
+
+  function selectMode(nextMode: PublicLookupMode) {
+    controllerRef.current?.abort();
+    setMode(nextMode);
+    setQuery("");
+    setStatus("idle");
+    setMessage("");
+    setResult(null);
+    setShareStatus("idle");
+
+    const url = new URL(window.location.href);
+    url.searchParams.delete("lookup");
+    url.searchParams.delete("q");
+    window.history.replaceState(
+      window.history.state,
+      "",
+      `${url.pathname}${url.search}${url.hash}`,
+    );
+    requestAnimationFrame(() => inputRef.current?.focus());
+  }
+
+  function submitLookup(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    void runLookup(mode, query);
+  }
+
+  function setTransientShareStatus(nextStatus: ShareStatus) {
+    setShareStatus(nextStatus);
+    if (shareResetRef.current) window.clearTimeout(shareResetRef.current);
+    shareResetRef.current = window.setTimeout(() => {
+      setShareStatus("idle");
+      shareResetRef.current = null;
+    }, 2_400);
+  }
+
+  async function shareResult() {
+    if (!result) return;
+
+    const shareQuery = result.kind === "name" ? result.fullName : result.wallet;
+    const shareUrl = buildPublicLookupShareUrl(
+      window.location.origin,
+      result.kind,
+      shareQuery,
+    );
+    const shareCopy = getShareCopy(result);
+    setShareStatus("sharing");
+
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({ ...shareCopy, url: shareUrl });
+        setTransientShareStatus("shared");
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          setShareStatus("idle");
+          return;
+        }
+      }
+    }
+
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
+      await navigator.clipboard.writeText(shareUrl);
+      setTransientShareStatus("copied");
+    } catch {
+      setTransientShareStatus("error");
     }
   }
 
@@ -290,10 +456,18 @@ export function HomeUtility() {
         {status === "loading" ? <p>Querying the GWAP network…</p> : null}
         {status === "error" ? <p className="is-error">{message}</p> : null}
         {status === "success" && result?.kind === "name" ? (
-          <NameResultCard result={result} />
+          <NameResultCard
+            result={result}
+            onShare={shareResult}
+            shareStatus={shareStatus}
+          />
         ) : null}
         {status === "success" && result?.kind === "wallet" ? (
-          <WalletResultCard result={result} />
+          <WalletResultCard
+            result={result}
+            onShare={shareResult}
+            shareStatus={shareStatus}
+          />
         ) : null}
       </div>
 

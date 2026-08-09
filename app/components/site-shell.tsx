@@ -127,10 +127,14 @@ export function PageHero({ eyebrow, title, description, children }: PageHeroProp
 export function ProductCard({
   product,
   index,
+  headingLevel = "h3",
 }: {
   product: EcosystemProduct;
   index: number;
+  headingLevel?: "h3" | "h4";
 }) {
+  const ProductHeading = headingLevel;
+
   return (
     <Link
       className={`product-card product-card--${product.slug} accent-${product.accent}`}
@@ -156,7 +160,7 @@ export function ProductCard({
       </div>
       <div>
         <span className="product-eyebrow">{product.eyebrow}</span>
-        <h3>{product.name}</h3>
+        <ProductHeading>{product.name}</ProductHeading>
         <p>{product.summary}</p>
       </div>
       <span className="product-link">
