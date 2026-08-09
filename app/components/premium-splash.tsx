@@ -5,10 +5,8 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
-const INTRO_SESSION_KEY = "gwap-premium-intro-seen-v1";
-const INTRO_MIN_HOLD_MS = 950;
-const INTRO_MAX_HOLD_MS = 2800;
-const INTRO_SETTLE_MS = 160;
+const INTRO_SESSION_KEY = "gwap-premium-intro-seen-v2";
+const INTRO_ENTER_DELAY_MS = 2750;
 const INTRO_EXIT_MS = 1100;
 const ROUTE_HOLD_MS = 260;
 const ROUTE_EXIT_MS = 520;
@@ -39,25 +37,22 @@ export default function PremiumSplash() {
     previousBodyOverflow.current = null;
   }, []);
 
-  const beginIntroExit = useCallback(
-    (settleDelay = INTRO_SETTLE_MS) => {
-      if (introExitStarted.current) return;
-      introExitStarted.current = true;
-      clearTimers();
-      setReady(true);
+  const beginIntroExit = useCallback(() => {
+    if (introExitStarted.current) return;
+    introExitStarted.current = true;
+    clearTimers();
+    setReady(true);
+    setLeaving(true);
 
-      const leaveTimer = window.setTimeout(() => setLeaving(true), settleDelay);
-      const hideTimer = window.setTimeout(() => {
-        setMode(null);
-        setReady(false);
-        setLeaving(false);
-        unlockBody();
-      }, settleDelay + INTRO_EXIT_MS);
+    const hideTimer = window.setTimeout(() => {
+      setMode(null);
+      setReady(false);
+      setLeaving(false);
+      unlockBody();
+    }, INTRO_EXIT_MS);
 
-      timers.current.push(leaveTimer, hideTimer);
-    },
-    [clearTimers, unlockBody],
-  );
+    timers.current.push(hideTimer);
+  }, [clearTimers, unlockBody]);
 
   const dismissIntro = useCallback(() => {
     try {
@@ -66,13 +61,12 @@ export default function PremiumSplash() {
       // The experience still works when storage is unavailable.
     }
 
-    beginIntroExit(0);
+    beginIntroExit();
   }, [beginIntroExit]);
 
   useEffect(() => {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let hasSeenIntro = false;
-    let removeLoadListener = () => {};
 
     try {
       hasSeenIntro = window.sessionStorage.getItem(INTRO_SESSION_KEY) === "true";
@@ -90,50 +84,20 @@ export default function PremiumSplash() {
     }
 
     introExitStarted.current = false;
-
-    try {
-      window.sessionStorage.setItem(INTRO_SESSION_KEY, "true");
-    } catch {
-      // Ignore storage failures and continue with the visual experience.
-    }
-
     previousBodyOverflow.current = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
-    const minimumHold = new Promise<void>((resolve) => {
-      const timer = window.setTimeout(resolve, INTRO_MIN_HOLD_MS);
-      timers.current.push(timer);
-    });
-
-    const pageReady = new Promise<void>((resolve) => {
-      if (document.readyState === "complete") {
-        resolve();
-        return;
-      }
-
-      const handleLoad = () => resolve();
-      window.addEventListener("load", handleLoad, { once: true });
-      removeLoadListener = () => window.removeEventListener("load", handleLoad);
-    });
-
-    const fontsReady = document.fonts?.ready
-      .then(() => undefined)
-      .catch(() => undefined) ?? Promise.resolve();
-
-    Promise.all([minimumHold, pageReady, fontsReady]).then(() => beginIntroExit());
-
-    const fallbackTimer = window.setTimeout(
-      () => beginIntroExit(),
-      INTRO_MAX_HOLD_MS,
+    const enterTimer = window.setTimeout(
+      () => setReady(true),
+      INTRO_ENTER_DELAY_MS,
     );
-    timers.current.push(fallbackTimer);
+    timers.current.push(enterTimer);
 
     return () => {
-      removeLoadListener();
       clearTimers();
       unlockBody();
     };
-  }, [beginIntroExit, clearTimers, unlockBody]);
+  }, [clearTimers, unlockBody]);
 
   useEffect(() => {
     const handleInternalNavigation = (event: MouseEvent) => {
@@ -249,9 +213,11 @@ export default function PremiumSplash() {
 
       {mode === "intro" ? (
         <>
-          <button className="premium-splash__skip" type="button" onClick={dismissIntro}>
-            Skip intro
-          </button>
+          {ready ? (
+            <button className="premium-splash__skip" type="button" onClick={dismissIntro}>
+              Enter Tha GwapSpot
+            </button>
+          ) : null}
           <div className="premium-splash__intro-copy">
             <span>GWAP ECOSYSTEM</span>
             <strong>{ready ? "Ready with purpose." : "Built with purpose."}</strong>
