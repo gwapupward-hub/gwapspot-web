@@ -11,6 +11,7 @@ import type { GnsIdentity } from "./os-state";
 
 const DEFAULT_GNS_API_URL = "https://gns-backend-zh4o.onrender.com/api";
 const GNS_LOOKUP_TIMEOUT_MS = 2_500;
+const MAX_GNS_LOOKUP_TIMEOUT_MS = 10_000;
 const GNS_CONFIG_TIMEOUT_MS = 4_000;
 const GNS_REGISTER_TIMEOUT_MS = 18_000;
 
@@ -96,9 +97,16 @@ function identityFromDomain(domain: UnknownRecord): GnsIdentity {
   };
 }
 
-export async function resolveGnsIdentity(wallet: string): Promise<GnsIdentity> {
+export async function resolveGnsIdentity(
+  wallet: string,
+  options: { timeoutMs?: number } = {},
+): Promise<GnsIdentity> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), GNS_LOOKUP_TIMEOUT_MS);
+  const requestedTimeout = options.timeoutMs ?? GNS_LOOKUP_TIMEOUT_MS;
+  const timeoutMs = Number.isFinite(requestedTimeout)
+    ? Math.min(Math.max(requestedTimeout, 1_000), MAX_GNS_LOOKUP_TIMEOUT_MS)
+    : GNS_LOOKUP_TIMEOUT_MS;
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
   const apiBase = getApiBase();
 
   try {

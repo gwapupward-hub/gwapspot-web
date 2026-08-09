@@ -4,6 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState, type ChangeEvent, type CSSProperties, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 import { ecosystemProducts, socialLinks } from "../lib/ecosystem";
+import { CountUp } from "./count-up";
+import { HomeUtility } from "./home-utility";
 
 type IconName = "arrow" | "search" | "menu" | "close" | "spark" | "shield" | "network";
 
@@ -23,47 +25,6 @@ function Icon({ name }: { name: IconName }) {
       {paths[name]}
     </svg>
   );
-}
-
-function CountUp({ value, suffix = "" }: { value: number; suffix?: string }) {
-  const [display, setDisplay] = useState(0);
-  const ref = useRef<HTMLSpanElement>(null);
-
-  useEffect(() => {
-    const node = ref.current;
-    if (!node) return;
-
-    let frame = 0;
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduceMotion) {
-      frame = requestAnimationFrame(() => setDisplay(value));
-      return () => cancelAnimationFrame(frame);
-    }
-
-    let started = false;
-    const observer = new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting || started) return;
-      started = true;
-      const start = performance.now();
-      const duration = 1100;
-      const tick = (now: number) => {
-        const progress = Math.min((now - start) / duration, 1);
-        const eased = 1 - Math.pow(1 - progress, 3);
-        setDisplay(Math.round(value * eased));
-        if (progress < 1) frame = requestAnimationFrame(tick);
-      };
-      frame = requestAnimationFrame(tick);
-      observer.disconnect();
-    }, { threshold: 0.6 });
-
-    observer.observe(node);
-    return () => {
-      observer.disconnect();
-      cancelAnimationFrame(frame);
-    };
-  }, [value]);
-
-  return <span ref={ref}>{display}{suffix}</span>;
 }
 
 function GlassButton({ href, children, primary = false }: { href: string; children: ReactNode; primary?: boolean }) {
@@ -219,6 +180,7 @@ export function CinematicHome() {
           <span className="hero-pill"><i /> The flagship gateway to GWAP</span>
           <h1>Grind with<br /><em>a purpose.</em></h1>
           <p>Identity, reputation, commerce, creativity, intelligence, and community—connected inside one premium Web3 ecosystem.</p>
+          <HomeUtility />
           <div className="hero-ctas"><GlassButton href="#ecosystem" primary>Explore the ecosystem</GlassButton><GlassButton href="/about">Discover the vision</GlassButton></div>
           <div className="hero-trust"><span><Icon name="shield" /> Explainable trust</span><span><Icon name="network" /> Connected products</span><span><Icon name="spark" /> Built for what is next</span></div>
         </div>
@@ -295,7 +257,7 @@ export function CinematicHome() {
         <div className="roadmap-rail">
           <article className="phase-card complete"><span>PHASE 01</span><div className="phase-orb"><i /></div><h3>Foundation</h3><p>Flagship website, production foundation, analytics, and ecosystem positioning.</p><small>Complete</small></article>
           <article className="phase-card current"><span>PHASE 02</span><div className="phase-orb"><i /></div><h3>Expansion</h3><p>Premium discovery, product surfaces, community, and partner-ready storytelling.</p><small>Current</small></article>
-          <article className="phase-card"><span>PHASE 03</span><div className="phase-orb"><i /></div><h3>Integration</h3><p>Unified identity, wallet connectivity, profiles, and shared ecosystem data.</p><small>Next</small></article>
+          <article className="phase-card started"><span>PHASE 03</span><div className="phase-orb"><i /></div><h3>Integration</h3><p>Wallet authentication and the GWAP OS identity runtime are live; shared profiles and cross-product data continue rolling out.</p><small>Underway</small></article>
         </div>
       </section>
 
