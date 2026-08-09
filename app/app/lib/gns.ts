@@ -204,6 +204,9 @@ export async function getGnsRegistrationConfig(): Promise<GnsRegistrationConfig>
     const expectedTreasury =
       process.env.GNS_EXPECTED_TREASURY_PUBKEY?.trim() ||
       CANONICAL_GNS_TREASURY;
+    const expectedNetwork = asNetwork(
+      process.env.GNS_EXPECTED_NETWORK?.trim() || "devnet",
+    );
 
     if (
       payload?.on_chain_mode !== true ||
@@ -216,7 +219,8 @@ export async function getGnsRegistrationConfig(): Promise<GnsRegistrationConfig>
       !isPublicKey(programId) ||
       !isPublicKey(treasury) ||
       programId !== expectedProgramId ||
-      treasury !== expectedTreasury
+      treasury !== expectedTreasury ||
+      network !== expectedNetwork
     ) {
       throw new Error("GNS deployment configuration failed validation");
     }
