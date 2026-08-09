@@ -8,7 +8,12 @@ import {
 } from "@solana/wallet-adapter-react";
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
 import { clusterApiUrl } from "@solana/web3.js";
+import { Buffer } from "buffer";
 import type { ReactNode } from "react";
+
+// Privy's Solana transaction sender expects the Node-compatible Buffer global.
+// Install the browser polyfill once at the wallet-provider boundary.
+if (typeof globalThis.Buffer === "undefined") globalThis.Buffer = Buffer;
 
 const endpoint =
   process.env.NEXT_PUBLIC_SOLANA_RPC_URL?.trim() ||
