@@ -443,6 +443,13 @@ html[data-gwap-reduce-motion="true"] .gwap-os *::after { scroll-behavior: auto !
   backdrop-filter: blur(28px) saturate(150%);
   -webkit-backdrop-filter: blur(28px) saturate(150%);
 }
+.wallet-auth-navigation { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 22px; }
+.wallet-auth-navigation button,
+.wallet-auth-navigation a { min-height: 34px; display: inline-flex; align-items: center; padding: 0 10px; border: 1px solid rgba(255,255,255,.11); border-radius: 10px; background: rgba(255,255,255,.035); color: #aab4ac; font: inherit; font-size: 8px; font-weight: 850; cursor: pointer; transition: border-color .2s ease, background .2s ease, color .2s ease; }
+.wallet-auth-navigation button:hover,
+.wallet-auth-navigation a:hover { border-color: rgba(19,221,19,.3); background: rgba(19,221,19,.06); color: #eaf5eb; }
+.wallet-auth-navigation button:focus-visible,
+.wallet-auth-navigation a:focus-visible { outline: 2px solid #13dd13; outline-offset: 2px; }
 .wallet-auth-logo-row { display: flex; align-items: center; gap: 8px; margin-bottom: 24px; }
 .wallet-auth-logo-row img { border-radius: 11px; object-fit: cover; }
 .wallet-auth-logo-row span { width: 18px; height: 1px; background: rgba(19,221,19,.36); }
