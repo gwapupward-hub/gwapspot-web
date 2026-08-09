@@ -29,6 +29,9 @@
   .cinematic-brand-mark { width: 42px; height: 42px; border-radius: 13px; }
   .cinematic-brand > span:last-child { display: none; }
   .nav-contact { display: none; }
+  .cinematic-links .cinematic-os-menu-link { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; border: 1px solid rgba(19,221,19,.32); border-radius: 12px; background: rgba(19,221,19,.08); color: var(--gwap-green); font-weight: 850; }
+  .cinematic-links .cinematic-os-menu-link::after { display: none; }
+  .cinematic-os-menu-link svg { width: 16px; height: 16px; }
   .story-section { width: calc(100% - 20px); min-height: auto; padding: 115px 10px 85px; opacity: 1; filter: none; transform: none; transition: none; }
   .story-section.is-past:not(.is-active) { opacity: 1; filter: none; transform: none; }
   .hero-story { min-height: 100svh; padding-top: 105px; }

@@ -49,6 +49,9 @@ button { color: inherit; }
 .icon-button:hover { transform: translateY(-2px); border-color: rgba(19,221,19,.32); background: rgba(19,221,19,.08); }
 .nav-contact { min-height: 43px; display: inline-flex; align-items: center; gap: 9px; padding: 0 16px; border-radius: 14px; font-size: 12px; font-weight: 750; transition: transform .25s ease, box-shadow .25s ease; }
 .nav-contact:hover { transform: scale(1.025); box-shadow: 0 0 30px rgba(19,221,19,.12); }
+.nav-os-entry { border-color: rgba(19,221,19,.5); background: linear-gradient(135deg, #16ee2a, #0dbd18); color: #001802; box-shadow: inset 0 1px rgba(255,255,255,.3), 0 12px 34px rgba(19,221,19,.18); }
+.nav-os-entry:hover { box-shadow: inset 0 1px rgba(255,255,255,.34), 0 16px 42px rgba(19,221,19,.25); }
+.cinematic-links .cinematic-os-menu-link { display: none; }
 .menu-button { display: none; }
 
 .search-overlay { position: fixed; z-index: 300; inset: 0; display: grid; place-items: start center; padding: 110px 20px 20px; background: rgba(0,0,0,.65); backdrop-filter: blur(18px); animation: fadeIn .2s ease both; }
@@ -105,6 +108,14 @@ button { color: inherit; }
 .emblem-core { position: relative; z-index: 2; width: 48%; aspect-ratio: 1; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.14); border-radius: 33%; background: radial-gradient(circle at 35% 25%, rgba(255,255,255,.16), rgba(9,18,12,.82) 42%, rgba(4,7,5,.92)); box-shadow: inset 0 1px rgba(255,255,255,.18), inset 0 -30px 60px rgba(0,0,0,.35), 0 0 90px rgba(19,221,19,.12); backdrop-filter: blur(20px); animation: float 5s ease-in-out infinite; }
 .emblem-core::after { content: ""; position: absolute; inset: 6%; border: 1px solid rgba(19,221,19,.18); border-radius: 29%; }
 .emblem-core img { width: 78%; height: 78%; object-fit: contain; filter: drop-shadow(0 0 28px rgba(19,221,19,.22)); }
+.emblem-core-link { cursor: pointer; transition: border-color .25s ease, box-shadow .25s ease, filter .25s ease; }
+.emblem-core-link::before { content: "OPEN GWAP OS"; position: absolute; z-index: 3; right: 50%; bottom: 8%; padding: 5px 8px; transform: translateX(50%); border: 1px solid rgba(19,221,19,.28); border-radius: 999px; background: rgba(2,15,5,.78); color: var(--gwap-green); font-size: 6px; font-weight: 900; letter-spacing: .13em; white-space: nowrap; opacity: .78; transition: opacity .25s ease, border-color .25s ease; }
+.emblem-core-link::after { pointer-events: none; }
+.emblem-core-link:hover,
+.emblem-core-link:focus-visible { border-color: rgba(19,221,19,.52); box-shadow: inset 0 1px rgba(255,255,255,.22), inset 0 -30px 60px rgba(0,0,0,.32), 0 0 110px rgba(19,221,19,.25); filter: brightness(1.08); }
+.emblem-core-link:hover::before,
+.emblem-core-link:focus-visible::before { border-color: rgba(19,221,19,.6); opacity: 1; }
+.emblem-core-link:focus-visible { outline: 2px solid var(--gwap-green); outline-offset: 8px; }
 .emblem-caption { position: absolute; right: 2%; bottom: 11%; display: grid; gap: 4px; padding: 12px 14px; border: 1px solid rgba(255,255,255,.12); border-radius: 13px; background: rgba(7,10,8,.66); backdrop-filter: blur(20px); }
 .emblem-caption span { color: var(--gwap-green); font-size: 8px; font-weight: 800; letter-spacing: .18em; }
 .emblem-caption small { color: #6d766f; font-size: 7px; letter-spacing: .13em; }

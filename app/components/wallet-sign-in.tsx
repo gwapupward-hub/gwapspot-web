@@ -25,6 +25,7 @@ export function WalletSignIn({ redirectPath }: { redirectPath: string }) {
   const { setVisible } = useWalletModal();
   const [error, setError] = useState("");
   const [signing, setSigning] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
   const connectedAddress = publicKey?.toBase58();
 
   const hasSolanaWallet = user?.linkedAccounts.some(
@@ -33,9 +34,8 @@ export function WalletSignIn({ redirectPath }: { redirectPath: string }) {
 
   useEffect(() => {
     if (!ready || !authenticated || !hasSolanaWallet) return;
-    router.replace(redirectPath);
-    router.refresh();
-  }, [authenticated, hasSolanaWallet, ready, redirectPath, router]);
+    window.location.replace(redirectPath);
+  }, [authenticated, hasSolanaWallet, ready, redirectPath]);
 
   async function signInWithWallet() {
     if (!publicKey || !signMessage) {
@@ -55,11 +55,22 @@ export function WalletSignIn({ redirectPath }: { redirectPath: string }) {
         message,
         signature: encodeBase64(signature),
       });
+      setRedirecting(true);
+      window.location.replace(redirectPath);
     } catch (loginError) {
       setError(getWalletAuthErrorMessage(loginError));
     } finally {
       setSigning(false);
     }
+  }
+
+  function goBack() {
+    setError("");
+    if (window.history.length > 1) {
+      router.back();
+      return;
+    }
+    router.replace("/");
   }
 
   function createWalletWithEmail() {
@@ -78,6 +89,10 @@ export function WalletSignIn({ redirectPath }: { redirectPath: string }) {
 
   return (
     <section className="wallet-auth-card">
+      <nav className="wallet-auth-navigation" aria-label="Sign-in navigation">
+        <button type="button" onClick={goBack}>← Back</button>
+        <Link href="/">GWAPSpot home</Link>
+      </nav>
       <div className="wallet-auth-logo-row" aria-hidden="true">
         <Image src="/logos/gwap-agent.png" alt="" width={38} height={38} />
         <span />
@@ -115,10 +130,14 @@ export function WalletSignIn({ redirectPath }: { redirectPath: string }) {
             <button
               className="wallet-auth-primary"
               type="button"
-              disabled={signing}
+              disabled={signing || redirecting}
               onClick={() => void signInWithWallet()}
             >
-              {signing ? "Waiting for signature…" : "Sign message and continue"}
+              {redirecting
+                ? "Opening GWAP OS…"
+                : signing
+                  ? "Waiting for signature…"
+                  : "Sign message and continue"}
             </button>
           </>
         )}
