@@ -34,7 +34,6 @@ export function WalletSignIn({ redirectPath }: { redirectPath: string }) {
 
   useEffect(() => {
     if (!ready || !authenticated || !hasSolanaWallet) return;
-    setRedirecting(true);
     window.location.replace(redirectPath);
   }, [authenticated, hasSolanaWallet, ready, redirectPath]);
 
