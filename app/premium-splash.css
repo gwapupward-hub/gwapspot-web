@@ -1,6 +1,10 @@
 .premium-splash {
   position: fixed;
   inset: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 100svh;
   z-index: 9999;
   display: grid;
   place-items: center;
@@ -62,7 +66,7 @@ html[data-gwap-intro-seen="true"] .premium-splash--intro {
   z-index: -4;
   display: grid;
   place-items: center;
-  padding: clamp(16px, 3vw, 46px) clamp(18px, 8vw, 120px);
+  padding: 0;
   pointer-events: none;
   transition:
     opacity 1100ms cubic-bezier(.16, 1, .3, 1),
@@ -82,12 +86,13 @@ html[data-gwap-intro-seen="true"] .premium-splash--intro {
 }
 
 .premium-splash__art img {
-  position: relative;
-  width: auto;
-  height: min(91svh, 920px);
-  max-width: min(72vw, 520px);
-  object-fit: contain;
-  object-position: center;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  object-position: center 18%;
   filter:
     drop-shadow(0 34px 75px rgba(0, 0, 0, .72))
     drop-shadow(0 0 32px rgba(19, 221, 19, .08));
@@ -146,6 +151,7 @@ html[data-gwap-intro-seen="true"] .premium-splash--intro {
   letter-spacing: .13em;
   text-transform: uppercase;
   cursor: pointer;
+  animation: gwap-enter-cta 700ms cubic-bezier(.16, 1, .3, 1);
   transition:
     opacity 500ms ease,
     transform 700ms cubic-bezier(.16, 1, .3, 1),
@@ -354,6 +360,11 @@ body:has(.premium-splash--intro.is-leaving) .page-transition-shell {
   to { transform: scale(1.045) translateY(-4px); }
 }
 
+@keyframes gwap-enter-cta {
+  from { opacity: 0; transform: translateY(-12px) scale(.94); filter: blur(4px); }
+  to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+
 @keyframes gwap-copy-rise {
   from { opacity: 0; transform: translateY(18px); }
   to { opacity: 1; transform: translateY(0); }
@@ -371,7 +382,10 @@ body:has(.premium-splash--intro.is-leaving) .page-transition-shell {
 
 @media (max-width: 720px) {
   .premium-splash__frame { inset: 8px; }
-  .premium-splash__skip { top: 22px; right: 20px; }
+  .premium-splash__skip {
+    top: max(22px, calc(env(safe-area-inset-top) + 10px));
+    right: max(20px, calc(env(safe-area-inset-right) + 10px));
+  }
   .premium-splash__art { padding: 0; }
   .premium-splash__art img {
     width: 100%;
