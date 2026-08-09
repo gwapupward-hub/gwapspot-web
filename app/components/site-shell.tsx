@@ -52,6 +52,7 @@ export function SiteHeader() {
         <Link href="/ecosystem">Ecosystem</Link>
         <Link href="/about">About</Link>
         <Link href="/roadmap">Roadmap</Link>
+        <Link href="/changelog">Build Log</Link>
         <Link href="/community">Community</Link>
         <Link href="/contact">Contact</Link>
       </nav>
@@ -82,6 +83,7 @@ export function SiteFooter() {
         <Link href="/ecosystem">Ecosystem</Link>
         <Link href="/about">About</Link>
         <Link href="/roadmap">Roadmap</Link>
+        <Link href="/changelog">Build Log</Link>
         <Link href="/contact">Contact</Link>
         <Link href="/privacy">Privacy</Link>
         <Link href="/terms">Terms</Link>
