@@ -89,7 +89,7 @@ export async function GET(request: Request) {
     });
   }
 
-  const identity = await resolveGnsIdentity(lookup.value);
+  const identity = await resolveGnsIdentity(lookup.value, { timeoutMs: 7_500 });
   if (identity.status === "unavailable") {
     return json(
       { error: "Wallet intelligence is temporarily unavailable." },
