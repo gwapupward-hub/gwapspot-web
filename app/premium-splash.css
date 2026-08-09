@@ -25,7 +25,7 @@ html[data-gwap-intro-seen="true"] .premium-splash--intro {
 }
 
 .premium-splash--route {
-  transition-duration: 520ms;
+  transition-duration: 900ms;
 }
 
 .premium-splash.is-leaving {
@@ -307,47 +307,117 @@ body:has(.premium-splash--intro.is-leaving) .page-transition-shell {
 .premium-splash__route-mark {
   position: relative;
   z-index: 4;
+  width: min(340px, 88vw);
   display: grid;
   justify-items: center;
   text-align: center;
-  animation: gwap-route-pulse .75s cubic-bezier(.16, 1, .3, 1) both;
+  animation: gwap-route-pulse 1100ms cubic-bezier(.16, 1, .3, 1) both;
+  transition:
+    opacity 900ms cubic-bezier(.16, 1, .3, 1),
+    transform 900ms cubic-bezier(.16, 1, .3, 1),
+    filter 900ms cubic-bezier(.16, 1, .3, 1);
+}
+
+.premium-splash__route-logos {
+  height: 122px;
+  display: grid;
+  grid-template-columns: 88px 112px 88px;
+  align-items: center;
+  justify-content: center;
+  perspective: 900px;
 }
 
 .premium-splash__logo-shell {
-  width: 102px;
-  height: 102px;
+  width: 88px;
+  height: 88px;
   display: grid;
   place-items: center;
-  border: 1px solid rgba(19, 221, 19, .26);
-  border-radius: 28px;
-  background: rgba(8, 12, 8, .72);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 24px;
+  background: rgba(8, 12, 8, .78);
   box-shadow:
-    0 0 80px rgba(19, 221, 19, .16),
-    inset 0 0 32px rgba(19, 221, 19, .045);
+    0 18px 45px rgba(0, 0, 0, .34),
+    inset 0 1px 0 rgba(255, 255, 255, .08);
   backdrop-filter: blur(20px);
+  animation: gwap-route-logo-arrive 900ms cubic-bezier(.16, 1, .3, 1) both;
+}
+
+.premium-splash__logo-shell--occo {
+  animation-delay: 120ms;
+}
+
+.premium-splash__logo-shell--gwap {
+  z-index: 2;
+  width: 112px;
+  height: 112px;
+  border-color: rgba(19, 221, 19, .34);
+  border-radius: 31px;
+  box-shadow:
+    0 0 90px rgba(19, 221, 19, .2),
+    0 22px 55px rgba(0, 0, 0, .48),
+    inset 0 0 34px rgba(19, 221, 19, .06);
+  animation-delay: 40ms;
+}
+
+.premium-splash__logo-shell--gns {
+  animation-delay: 200ms;
 }
 
 .premium-splash__logo-shell img {
-  width: 76px;
-  height: 76px;
+  width: 86px;
+  height: 86px;
+  border-radius: 19px;
   object-fit: contain;
-  filter: drop-shadow(0 0 22px rgba(19, 221, 19, .34));
+  filter: drop-shadow(0 0 22px rgba(19, 221, 19, .2));
+}
+
+.premium-splash__logo-shell--gwap img {
+  width: 84px;
+  height: 84px;
+  border-radius: 22px;
+  filter: drop-shadow(0 0 26px rgba(19, 221, 19, .42));
 }
 
 .premium-splash__route-mark strong {
-  margin-top: 20px;
-  font-size: 18px;
-  letter-spacing: .22em;
-  text-indent: .22em;
+  margin-top: 18px;
+  font-size: 20px;
+  letter-spacing: .24em;
+  text-indent: .24em;
 }
 
 .premium-splash__route-mark small {
-  margin-top: 7px;
-  color: rgba(255, 255, 255, .5);
+  margin-top: 8px;
+  color: rgba(255, 255, 255, .58);
   font-size: 8px;
   font-weight: 800;
-  letter-spacing: .18em;
+  letter-spacing: .2em;
   text-transform: uppercase;
+}
+
+.premium-splash__route-line {
+  width: min(220px, 62vw);
+  height: 2px;
+  margin-top: 20px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, .1);
+}
+
+.premium-splash__route-line i {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform: scaleX(0);
+  transform-origin: left center;
+  background: linear-gradient(90deg, #13dd13, #ff8a24 52%, #9b6cff);
+  box-shadow: 0 0 18px rgba(19, 221, 19, .5);
+  animation: gwap-route-line 1500ms 120ms cubic-bezier(.2, .75, .2, 1) both;
+}
+
+.premium-splash--route.is-leaving .premium-splash__route-mark {
+  opacity: 0;
+  transform: translateY(-8px) scale(1.08);
+  filter: blur(8px);
 }
 
 @keyframes gwap-backdrop-breathe {
@@ -376,8 +446,18 @@ body:has(.premium-splash--intro.is-leaving) .page-transition-shell {
 }
 
 @keyframes gwap-route-pulse {
-  from { opacity: 0; transform: scale(.94); filter: blur(5px); }
-  to { opacity: 1; transform: scale(1); filter: blur(0); }
+  from { opacity: 0; transform: translateY(14px) scale(.9); filter: blur(12px); }
+  to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+
+@keyframes gwap-route-logo-arrive {
+  from { opacity: 0; transform: translateY(22px) scale(.72) rotateY(-18deg); }
+  to { opacity: 1; transform: translateY(0) scale(1) rotateY(0); }
+}
+
+@keyframes gwap-route-line {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
 }
 
 @media (max-width: 720px) {
@@ -425,6 +505,8 @@ body:has(.premium-splash--intro.is-leaving) .page-transition-shell {
   .premium-splash__intro-copy,
   .premium-splash__progress i,
   .premium-splash__route-mark,
+  .premium-splash__logo-shell,
+  .premium-splash__route-line i,
   body:has(.premium-splash--intro) .page-transition-shell {
     animation: none !important;
     transition-duration: 120ms !important;

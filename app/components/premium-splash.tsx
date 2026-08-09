@@ -8,9 +8,12 @@ import { flushSync } from "react-dom";
 const INTRO_SESSION_KEY = "gwap-premium-intro-seen-v2";
 const INTRO_ENTER_DELAY_MS = 2750;
 const INTRO_EXIT_MS = 1100;
-const ROUTE_HOLD_MS = 260;
-const ROUTE_EXIT_MS = 520;
-const ROUTE_FALLBACK_MS = 1800;
+const ROUTE_HOLD_MS = 900;
+const ROUTE_EXIT_MS = 900;
+const ROUTE_FALLBACK_MS = 2600;
+const ROUTE_REDUCED_HOLD_MS = 80;
+const ROUTE_REDUCED_EXIT_MS = 120;
+const ROUTE_REDUCED_FALLBACK_MS = 700;
 const SPLASH_SRC = "/gwap-splash.webp";
 
 type OverlayMode = "intro" | "route" | null;
@@ -142,15 +145,19 @@ export default function PremiumSplash() {
         setMode("route");
       });
 
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const fallbackMs = reducedMotion ? ROUTE_REDUCED_FALLBACK_MS : ROUTE_FALLBACK_MS;
+      const exitMs = reducedMotion ? ROUTE_REDUCED_EXIT_MS : ROUTE_EXIT_MS;
+
       const fallbackTimer = window.setTimeout(() => {
         setLeaving(true);
         const hideTimer = window.setTimeout(() => {
           setMode(null);
           setLeaving(false);
           routePending.current = false;
-        }, ROUTE_EXIT_MS);
+        }, exitMs);
         timers.current.push(hideTimer);
-      }, ROUTE_FALLBACK_MS);
+      }, fallbackMs);
       timers.current.push(fallbackTimer);
     };
 
@@ -171,12 +178,15 @@ export default function PremiumSplash() {
     }
 
     routePending.current = true;
-    const exitTimer = window.setTimeout(() => setLeaving(true), ROUTE_HOLD_MS);
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const holdMs = reducedMotion ? ROUTE_REDUCED_HOLD_MS : ROUTE_HOLD_MS;
+    const exitMs = reducedMotion ? ROUTE_REDUCED_EXIT_MS : ROUTE_EXIT_MS;
+    const exitTimer = window.setTimeout(() => setLeaving(true), holdMs);
     const hideTimer = window.setTimeout(() => {
       setMode(null);
       setLeaving(false);
       routePending.current = false;
-    }, ROUTE_HOLD_MS + ROUTE_EXIT_MS);
+    }, holdMs + exitMs);
 
     timers.current.push(exitTimer, hideTimer);
   }, [clearTimers, pathname]);
@@ -228,11 +238,20 @@ export default function PremiumSplash() {
         </>
       ) : (
         <div className="premium-splash__route-mark">
-          <span className="premium-splash__logo-shell">
-            <Image src="/logos/gwap-agent.png" alt="" width={76} height={76} unoptimized />
-          </span>
+          <div className="premium-splash__route-logos" aria-hidden="true">
+            <span className="premium-splash__logo-shell premium-splash__logo-shell--occo">
+              <Image src="/logos/occo.png" alt="" width={86} height={86} unoptimized />
+            </span>
+            <span className="premium-splash__logo-shell premium-splash__logo-shell--gwap">
+              <Image src="/logos/gwap-agent.png" alt="" width={84} height={84} unoptimized />
+            </span>
+            <span className="premium-splash__logo-shell premium-splash__logo-shell--gns">
+              <Image src="/logos/gns.png" alt="" width={86} height={86} unoptimized />
+            </span>
+          </div>
           <strong>GWAP</strong>
           <small>Grind With A Purpose</small>
+          <span className="premium-splash__route-line" aria-hidden="true"><i /></span>
         </div>
       )}
     </div>
