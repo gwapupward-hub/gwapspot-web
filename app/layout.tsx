@@ -25,8 +25,8 @@ export const metadata: Metadata = {
   formatDetection: { address: false, email: false, telephone: false },
   robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1, "max-video-preview": -1 } },
   verification: { ...(googleVerification ? { google: googleVerification } : {}), ...(bingVerification ? { other: { "msvalidate.01": bingVerification } } : {}) },
-  openGraph: { type: "website", url: siteUrl, siteName: "GWAP", title: "GWAP — The Future Rewards Purpose", description: "A premium Web3 ecosystem for identity, reputation, commerce, creativity, AI, and community.", images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "GWAP — Grind With A Purpose" }] },
-  twitter: { card: "summary_large_image", title: "GWAP — The Future Rewards Purpose", description: "Explore the connected GWAP ecosystem.", images: ["/opengraph-image"], creator: "@_gwapspot" },
+  openGraph: { type: "website", url: siteUrl, siteName: "GWAP", title: "GWAP — The Future Rewards Purpose", description: "A premium Web3 ecosystem for identity, reputation, commerce, creativity, AI, and community.", images: [{ url: "/opengraph-image?v=20260809", width: 1200, height: 630, alt: "GWAP — Grind With A Purpose" }] },
+  twitter: { card: "summary_large_image", title: "GWAP — The Future Rewards Purpose", description: "Explore the connected GWAP ecosystem.", images: ["/opengraph-image?v=20260809"], creator: "@_gwapspot" },
   icons: {
     icon: [
       { url: "/logos/gwap-agent.png", type: "image/png", sizes: "1024x1024" },
