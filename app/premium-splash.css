@@ -92,7 +92,7 @@ html[data-gwap-intro-seen="true"] .premium-splash--intro {
   height: 100%;
   max-width: none;
   object-fit: cover;
-  object-position: center 48%;
+  object-position: center 18%;
   filter:
     drop-shadow(0 34px 75px rgba(0, 0, 0, .72))
     drop-shadow(0 0 32px rgba(19, 221, 19, .08));
