@@ -61,7 +61,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   return (
     <PageShell>
-      <section className={`product-hero accent-${product.accent}`}>
+      <section
+        className={`product-hero accent-${product.accent}`}
+        data-gwap-product-hero={product.slug}
+      >
         <div className="product-hero-meta">
           <Link href="/ecosystem">GWAP ECOSYSTEM</Link>
           <span>/</span>
@@ -172,6 +175,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
           <Link
             className="primary-button"
             href={`/ecosystem/${nextProduct.slug}`}
+            data-gwap-product={nextProduct.slug}
+            data-gwap-product-source="sequence"
           >
             View {nextProduct.name} <ArrowIcon />
           </Link>
