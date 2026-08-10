@@ -15,6 +15,7 @@ const dock = [
   { href: "/app/identity", label: "Identity", icon: "◎" },
   { href: "/app/vault", label: "Vault", icon: "◇" },
   { href: "/app/score", label: "Score", icon: "↗" },
+  { href: "/app/developer", label: "API", icon: "{}" },
 ] as const;
 
 function compactWallet(wallet: string) {
