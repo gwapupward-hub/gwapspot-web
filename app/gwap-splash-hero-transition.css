@@ -1,0 +1,256 @@
+/* Cinematic splash-to-home handoff.
+   Reuses the existing intro exit window: no extra loading delay is introduced. */
+
+.premium-splash--intro::before,
+.premium-splash--intro::after {
+  content: "";
+  position: absolute;
+  z-index: 8;
+  left: 50%;
+  top: 50%;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.premium-splash--intro::before {
+  width: min(74vmin, 760px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, transparent 0 12%, rgba(255,255,255,.48) 12.35% 12.55%, transparent 13%),
+    radial-gradient(circle, transparent 0 23%, rgba(19,221,19,.3) 23.2% 23.45%, transparent 24%),
+    radial-gradient(circle, rgba(255,255,255,.12), rgba(19,221,19,.075) 30%, transparent 62%);
+  filter: blur(.2px) drop-shadow(0 0 22px rgba(19,221,19,.16));
+  transform: translate(-50%, -50%) scale(.28);
+}
+
+.premium-splash--intro::after {
+  width: min(84vw, 1180px);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(19,221,19,.18) 24%, rgba(255,255,255,.86) 50%, rgba(155,108,255,.2) 76%, transparent);
+  box-shadow: 0 0 16px rgba(255,255,255,.18), 0 0 34px rgba(19,221,19,.13);
+  transform: translate(-50%, -50%) scaleX(0);
+}
+
+.premium-splash--intro.is-leaving::before {
+  animation: gwapSplashEntryLens 920ms cubic-bezier(.16, 1, .3, 1) both;
+}
+
+.premium-splash--intro.is-leaving::after {
+  animation: gwapSplashEntrySeam 760ms cubic-bezier(.16, 1, .3, 1) both;
+}
+
+.premium-splash--intro.is-leaving .premium-splash__backdrop {
+  transform: scale(1.32);
+  filter: blur(72px) saturate(.92) contrast(.96) brightness(1.04);
+}
+
+.premium-splash--intro.is-leaving .premium-splash__art {
+  transform: translate3d(0, -4px, 0) scale(1.075);
+  filter: blur(14px) saturate(.88) brightness(1.06);
+}
+
+.premium-splash--intro.is-leaving .premium-splash__art img {
+  transform: scale(1.14) translateY(-7px);
+  filter:
+    blur(11px)
+    brightness(1.08)
+    drop-shadow(0 40px 90px rgba(0,0,0,.42))
+    drop-shadow(0 0 72px rgba(19,221,19,.16));
+}
+
+.premium-splash--intro.is-leaving .premium-splash__skip {
+  transform: translateY(-6px) scale(.94);
+}
+
+/* Prepare the hero behind the splash so it arrives as the splash clears. */
+body:has(.premium-splash--intro) .cinematic-home .living-background,
+body:has(.premium-splash--intro) .cinematic-home .cinematic-nav,
+body:has(.premium-splash--intro) .hero-story .hero-content,
+body:has(.premium-splash--intro) .hero-story .emblem-stage,
+body:has(.premium-splash--intro) .hero-story .hero-light,
+body:has(.premium-splash--intro) .hero-story .scroll-cue {
+  will-change: opacity, transform, filter;
+}
+
+body:has(.premium-splash--intro:not(.is-leaving)) .cinematic-home .living-background {
+  opacity: .38;
+  transform: scale(1.055);
+  filter: blur(7px) saturate(.82);
+}
+
+body:has(.premium-splash--intro:not(.is-leaving)) .cinematic-home .cinematic-nav {
+  opacity: 0;
+  transform: translate3d(0, -16px, 0);
+  filter: blur(9px);
+}
+
+body:has(.premium-splash--intro:not(.is-leaving)) .hero-story .hero-content {
+  opacity: .08;
+  transform: translate3d(0, 28px, 0) scale(.982);
+  filter: blur(14px) saturate(.75);
+}
+
+body:has(.premium-splash--intro:not(.is-leaving)) .hero-story .emblem-stage {
+  opacity: .12;
+  transform: translate3d(0, 12px, 0) scale(.84);
+  filter: blur(20px) saturate(.72);
+}
+
+body:has(.premium-splash--intro:not(.is-leaving)) .hero-story .hero-light {
+  opacity: .08;
+  transform: scale(.78);
+  filter: blur(18px);
+}
+
+body:has(.premium-splash--intro:not(.is-leaving)) .hero-story .scroll-cue {
+  opacity: 0;
+  transform: translate3d(0, 14px, 0);
+  filter: blur(6px);
+}
+
+body:has(.premium-splash--intro) .cinematic-home .living-background {
+  transition:
+    opacity 920ms cubic-bezier(.16, 1, .3, 1),
+    transform 1100ms cubic-bezier(.16, 1, .3, 1),
+    filter 920ms cubic-bezier(.16, 1, .3, 1);
+}
+
+body:has(.premium-splash--intro) .cinematic-home .cinematic-nav {
+  transition:
+    opacity 650ms cubic-bezier(.16, 1, .3, 1),
+    transform 820ms cubic-bezier(.16, 1, .3, 1),
+    filter 720ms cubic-bezier(.16, 1, .3, 1);
+}
+
+body:has(.premium-splash--intro) .hero-story .hero-content {
+  transition:
+    opacity 720ms cubic-bezier(.16, 1, .3, 1),
+    transform 980ms cubic-bezier(.16, 1, .3, 1),
+    filter 820ms cubic-bezier(.16, 1, .3, 1);
+}
+
+body:has(.premium-splash--intro) .hero-story .emblem-stage {
+  transition:
+    opacity 760ms cubic-bezier(.16, 1, .3, 1),
+    transform 1080ms cubic-bezier(.16, 1, .3, 1),
+    filter 900ms cubic-bezier(.16, 1, .3, 1);
+}
+
+body:has(.premium-splash--intro) .hero-story .hero-light,
+body:has(.premium-splash--intro) .hero-story .scroll-cue {
+  transition:
+    opacity 700ms cubic-bezier(.16, 1, .3, 1),
+    transform 900ms cubic-bezier(.16, 1, .3, 1),
+    filter 760ms cubic-bezier(.16, 1, .3, 1);
+}
+
+body:has(.premium-splash--intro.is-leaving) .cinematic-home .living-background {
+  opacity: 1;
+  transform: scale(1);
+  filter: none;
+}
+
+body:has(.premium-splash--intro.is-leaving) .hero-story .hero-light {
+  opacity: 1;
+  transform: scale(1);
+  filter: none;
+  transition-delay: 70ms;
+}
+
+body:has(.premium-splash--intro.is-leaving) .hero-story .emblem-stage {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+  filter: none;
+  transition-delay: 90ms;
+}
+
+body:has(.premium-splash--intro.is-leaving) .hero-story .hero-content {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+  filter: none;
+  transition-delay: 150ms;
+}
+
+body:has(.premium-splash--intro.is-leaving) .cinematic-home .cinematic-nav {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  filter: none;
+  transition-delay: 260ms;
+}
+
+body:has(.premium-splash--intro.is-leaving) .hero-story .scroll-cue {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  filter: none;
+  transition-delay: 430ms;
+}
+
+@keyframes gwapSplashEntryLens {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(.28);
+  }
+  24% {
+    opacity: .7;
+  }
+  58% {
+    opacity: .32;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(2.15);
+    filter: blur(1.5px) drop-shadow(0 0 38px rgba(19,221,19,.12));
+  }
+}
+
+@keyframes gwapSplashEntrySeam {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scaleX(0);
+  }
+  18% {
+    opacity: .82;
+  }
+  52% {
+    opacity: .34;
+    transform: translate(-50%, -50%) scaleX(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scaleX(.2);
+  }
+}
+
+@media (max-width: 720px) {
+  .premium-splash--intro::before {
+    width: 82vmin;
+  }
+
+  body:has(.premium-splash--intro:not(.is-leaving)) .hero-story .hero-content {
+    transform: translate3d(0, 20px, 0) scale(.988);
+  }
+
+  body:has(.premium-splash--intro:not(.is-leaving)) .hero-story .emblem-stage {
+    transform: translate3d(0, 8px, 0) scale(.9);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .premium-splash--intro::before,
+  .premium-splash--intro::after {
+    display: none;
+  }
+
+  body:has(.premium-splash--intro) .cinematic-home .living-background,
+  body:has(.premium-splash--intro) .cinematic-home .cinematic-nav,
+  body:has(.premium-splash--intro) .hero-story .hero-content,
+  body:has(.premium-splash--intro) .hero-story .emblem-stage,
+  body:has(.premium-splash--intro) .hero-story .hero-light,
+  body:has(.premium-splash--intro) .hero-story .scroll-cue {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    transition: none !important;
+  }
+}
