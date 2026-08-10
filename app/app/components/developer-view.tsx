@@ -65,7 +65,8 @@ export function DeveloperView() {
   }, [authHeaders]);
 
   useEffect(() => {
-    void loadKeys();
+    const timer = window.setTimeout(() => void loadKeys(), 0);
+    return () => window.clearTimeout(timer);
   }, [loadKeys]);
 
   async function createKey() {
