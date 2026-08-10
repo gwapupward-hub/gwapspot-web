@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { fetchAssetIntelligence, isValidSolanaWallet } from "../../../../app/lib/asset-intelligence";
+import {
+  fetchAssetIntelligence,
+  isValidSolanaWallet,
+} from "../../../../app/lib/asset-intelligence";
 import { getGnsApiBase, resolveGnsIdentity } from "../../../../app/lib/gns";
 import { getPublicLookupSubject } from "../../../../lib/public-lookup";
 import { checkRateLimit } from "../../../../lib/request-guard";
@@ -36,12 +39,11 @@ async function isScoreHidden(name: string | null, isGenesis: boolean) {
         signal: controller.signal,
       },
     );
-    if (!response.ok) return false;
+    if (!response.ok) return true;
     const profile = (await response.json()) as Record<string, unknown>;
     return profile.is_genesis === true && profile.score_hidden === true;
   } catch {
-    // The existing identity resolver does not expose score visibility yet. Fail
-    // closed for Genesis profiles if the visibility check cannot be completed.
+    // Fail closed for Genesis profiles if score visibility cannot be verified.
     return true;
   } finally {
     clearTimeout(timeout);
@@ -49,8 +51,8 @@ async function isScoreHidden(name: string | null, isGenesis: boolean) {
 }
 
 export async function GET(request: Request, context: RouteContext) {
-  const { wallet: encodedWallet } = await context.params;
-  const wallet = decodeURIComponent(encodedWallet).trim();
+  const { wallet: routeWallet } = await context.params;
+  const wallet = routeWallet.trim();
 
   if (!isValidSolanaWallet(wallet)) {
     return json({ error: "Enter a valid Solana wallet address." }, 400);
