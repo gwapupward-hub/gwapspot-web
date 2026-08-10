@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test app/lib/auth-config.test.mjs app/lib/wallet-auth-error.test.mjs app/lib/public-lookup.test.mjs app/lib/changelog.test.mjs app/lib/gwap-score.test.mjs app/lib/gns-profile-url.test.mjs app/app/lib/os-state.test.mjs app/app/lib/gns-registration.test.mjs app/app/lib/gns-profile.test.mjs"
+    "test": "node --experimental-strip-types --test app/lib/auth-config.test.mjs app/lib/wallet-auth-error.test.mjs app/lib/public-lookup.test.mjs app/lib/changelog.test.mjs app/lib/gwap-score.test.mjs app/lib/gns-profile-url.test.mjs app/lib/wallet-risk.test.mjs app/app/lib/os-state.test.mjs app/app/lib/gns-registration.test.mjs app/app/lib/gns-profile.test.mjs"
   },
   "dependencies": {
     "@privy-io/node": "^0.28.0",
