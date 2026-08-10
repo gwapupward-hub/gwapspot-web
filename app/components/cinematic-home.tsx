@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, type ChangeEvent, type CSSProperties, type
 import { formatBuildLogDate, latestBuildLogEntry } from "../lib/changelog";
 import { ecosystemProductGroups, ecosystemProductIndexBySlug, ecosystemProducts, socialLinks } from "../lib/ecosystem";
 import { CountUp } from "./count-up";
+import { GwapEcosystemGraph } from "./gwap-ecosystem-graph";
 import { HomeUtility } from "./home-utility";
 
 type IconName = "arrow" | "search" | "menu" | "close" | "spark" | "shield" | "network";
@@ -227,6 +228,7 @@ export function CinematicHome() {
           <div><span className="eyebrow-premium"><Icon name="network" /> GWAP ecosystem</span><h2>Independent products.<br /><em>Shared momentum.</em></h2></div>
           <p>GWAP is an ecosystem studio building infrastructure and experiences around identity, reputation, commerce, creativity, and community.</p>
         </div>
+        <GwapEcosystemGraph />
         <div className="ecosystem-groups">
           {ecosystemProductGroups.map((group, groupIndex) => (
             <section
@@ -252,7 +254,7 @@ export function CinematicHome() {
                 {group.products.map((product) => {
                   const productIndex = ecosystemProductIndexBySlug.get(product.slug) ?? 0;
                   return (
-                    <Link className={`premium-product-card accent-${product.accent}`} href={`/ecosystem/${product.slug}`} key={product.slug}>
+                    <Link className={`premium-product-card accent-${product.accent}`} href={`/ecosystem/${product.slug}`} data-gwap-product={product.slug} key={product.slug}>
                       <div className="card-reflection" />
                       <div className="product-card-header"><span>{String(productIndex + 1).padStart(2, "0")}</span><small>{product.status}</small></div>
                       <div className="product-glyph"><i /><b>{product.name.slice(0, 2).toUpperCase()}</b></div>
