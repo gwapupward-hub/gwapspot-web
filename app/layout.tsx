@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image", title: "GWAP — The Future Rewards Purpose", description: "Explore the connected GWAP ecosystem.", images: ["/opengraph-image?v=20260809"], creator: "@_gwapspot" },
   icons: {
     icon: [
-      { url: "/logos/gwap-agent.png", type: "image/png", sizes: "1024x1024" },
+      { url: "/logos/gwap-agent.png", type: "image/png", sizes: "512x512" },
       { url: "/logo.png", type: "image/png", sizes: "512x512" },
       { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
     ],

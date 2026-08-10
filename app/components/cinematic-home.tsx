@@ -301,7 +301,7 @@ export function CinematicHome() {
         </Link>
       </section>
 
-      <section className="story-section community-story" data-story-section>
+      <section className="story-section community-story" id="community" data-story-section>
         <div className="community-glow" />
         <div className="community-panel">
           <span className="eyebrow-premium"><Icon name="spark" /> The network is growing</span>
