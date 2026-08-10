@@ -1,0 +1,34 @@
+/* GWAP tap refinement — a restrained still-water ripple. */
+.gwap-tap-pulse {
+  width: 9px;
+  height: 9px;
+  margin: -4.5px 0 0 -4.5px;
+  border: 1px solid rgba(255,255,255,.34);
+  background: radial-gradient(
+    circle,
+    rgba(255,255,255,.16) 0 1px,
+    rgba(19,221,19,.055) 1px,
+    transparent 58%
+  );
+  box-shadow:
+    0 0 0 .5px rgba(19,221,19,.07),
+    0 0 7px rgba(19,221,19,.055);
+  opacity: .4;
+  mix-blend-mode: screen;
+  transform: translateZ(0) scale(.7);
+  animation: gwapTapPulse 420ms cubic-bezier(.18,.8,.24,1) forwards;
+}
+
+@keyframes gwapTapPulse {
+  0% {
+    opacity: .42;
+    transform: translateZ(0) scale(.7);
+  }
+  32% {
+    opacity: .28;
+  }
+  100% {
+    opacity: 0;
+    transform: translateZ(0) scale(4.7);
+  }
+}
