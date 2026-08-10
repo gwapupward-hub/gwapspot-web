@@ -162,6 +162,15 @@ export function GwapEcosystemGraph() {
 
   const relatedSlugs = useMemo(() => connectedSlugs(activeSlug), [activeSlug]);
 
+  const selectFromInspector = (slug: GraphSlug) => {
+    setHoverSlug(null);
+    setCardSlug(null);
+    setPinnedSlug(slug);
+    window.requestAnimationFrame(() => {
+      document.querySelector<HTMLButtonElement>(`[data-gwap-graph-node="${slug}"]`)?.focus();
+    });
+  };
+
   useEffect(() => {
     const groups = document.querySelector<HTMLElement>(".ecosystem-groups");
     const parent = groups?.parentElement;
@@ -313,6 +322,7 @@ export function GwapEcosystemGraph() {
                     type="button"
                     className={`gwap-graph-node accent-${product.accent}${isPrimary ? " is-primary" : ""}${isNeighbor ? " is-neighbor" : ""}${isMuted ? " is-muted" : ""}`}
                     style={style}
+                    data-gwap-graph-node={node.slug}
                     aria-pressed={pinnedSlug === node.slug}
                     aria-label={`${product.name}. ${product.status}. Show ecosystem relationships.`}
                     onPointerEnter={() => setHoverSlug(node.slug)}
@@ -348,7 +358,7 @@ export function GwapEcosystemGraph() {
               return (
                 <button
                   type="button"
-                  onClick={() => setPinnedSlug(neighborSlug)}
+                  onClick={() => selectFromInspector(neighborSlug)}
                   key={`${relation.from}-${relation.to}`}
                 >
                   <span>
