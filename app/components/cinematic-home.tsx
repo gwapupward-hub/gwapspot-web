@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState, type ChangeEvent, type CSSProperties, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 import { formatBuildLogDate, latestBuildLogEntry } from "../lib/changelog";
-import { ecosystemProductGroups, ecosystemProductIndexBySlug, ecosystemProducts, socialLinks } from "../lib/ecosystem";
+import { ecosystemProductGroups, ecosystemProductIndexBySlug, ecosystemProducts, getProductDestination, isExternalProductDestination, socialLinks } from "../lib/ecosystem";
 import { CountUp } from "./count-up";
 import { GwapEcosystemGraph } from "./gwap-ecosystem-graph";
 import { HomeUtility } from "./home-utility";
@@ -254,7 +254,7 @@ export function CinematicHome() {
                 {group.products.map((product) => {
                   const productIndex = ecosystemProductIndexBySlug.get(product.slug) ?? 0;
                   return (
-                    <Link className={`premium-product-card accent-${product.accent}`} href={`/ecosystem/${product.slug}`} data-gwap-product={product.slug} key={product.slug}>
+                    <Link className={`premium-product-card accent-${product.accent}`} href={getProductDestination(product)} target={isExternalProductDestination(product) ? "_blank" : undefined} rel={isExternalProductDestination(product) ? "noreferrer" : undefined} data-gwap-product={product.slug} key={product.slug}>
                       <div className="card-reflection" />
                       <div className="product-card-header"><span>{String(productIndex + 1).padStart(2, "0")}</span><small>{product.status}</small></div>
                       <div className="product-glyph"><i /><b>{product.name.slice(0, 2).toUpperCase()}</b></div>
