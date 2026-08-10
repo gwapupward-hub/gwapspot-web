@@ -53,7 +53,7 @@ const graphRelations = [
     from: "gns",
     to: "isnad-sunnah",
     label: "Portable identity",
-    detail: "Identity rails can support saved learning context, profiles, and community participation across experiences.",
+    detail: "A shared identity layer could support saved learning context, profiles, and community participation across experiences.",
   },
   {
     from: "gns",
@@ -253,7 +253,7 @@ export function GwapEcosystemGraph() {
     <section className="gwap-ecosystem-graph" aria-labelledby="gwap-graph-heading">
       <header className="gwap-graph-header">
         <div>
-          <span>03 / RELATIONSHIP MAP</span>
+          <span>NETWORK / RELATIONSHIP MAP</span>
           <h3 id="gwap-graph-heading">See how the ecosystem compounds.</h3>
         </div>
         <p>
@@ -262,7 +262,7 @@ export function GwapEcosystemGraph() {
       </header>
 
       <div className="gwap-graph-layout">
-        <div className="gwap-graph-viewport" aria-label="Interactive GWAP product relationship map">
+        <div className="gwap-graph-viewport" role="group" aria-label="Interactive GWAP product relationship map">
           <div className="gwap-graph-stage" data-active-product={activeSlug}>
             <svg className="gwap-graph-svg" viewBox="0 0 1000 590" role="img" aria-labelledby="gwap-graph-svg-title gwap-graph-svg-desc">
               <title id="gwap-graph-svg-title">GWAP ecosystem relationship paths</title>
@@ -349,10 +349,6 @@ export function GwapEcosystemGraph() {
                 <button
                   type="button"
                   onClick={() => setPinnedSlug(neighborSlug)}
-                  onPointerEnter={() => setHoverSlug(neighborSlug)}
-                  onPointerLeave={() => setHoverSlug(null)}
-                  onFocus={() => setHoverSlug(neighborSlug)}
-                  onBlur={() => setHoverSlug(null)}
                   key={`${relation.from}-${relation.to}`}
                 >
                   <span>
