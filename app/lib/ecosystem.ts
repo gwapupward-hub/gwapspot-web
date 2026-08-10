@@ -45,7 +45,7 @@ export const ecosystemProducts: EcosystemProduct[] = [
       "Release developer SDKs and partner integration tools",
       "Add broader chain and application support",
     ],
-    externalUrl: "https://gwapspot.fun/",
+    externalUrl: "https://gwapspot.fun/name",
     externalLabel: "Launch GNS",
   },
   {
@@ -72,7 +72,7 @@ export const ecosystemProducts: EcosystemProduct[] = [
       "Ship issuer and partner onboarding tools",
       "Introduce deeper risk and reputation analytics",
     ],
-    externalUrl: "https://gwapspot.fun/",
+    externalUrl: "https://gwapscore.live/",
     externalLabel: "Explore GwapScore",
   },
   {
@@ -180,6 +180,8 @@ export const ecosystemProducts: EcosystemProduct[] = [
       "Integrate GNS, GwapScore, and payment rails",
       "Add escrow, disputes, rewards, and partner tools",
     ],
+    externalUrl: "https://gwapspot.store/",
+    externalLabel: "Open Marketplace",
   },
   {
     slug: "occo",
@@ -262,6 +264,14 @@ export const ecosystemProductGroups = ecosystemGroups.map((group) => ({
   ...group,
   products: ecosystemProducts.filter((product) => product.category === group.id),
 }));
+
+export function getProductDestination(product: EcosystemProduct) {
+  return product.externalUrl ?? `/ecosystem/${product.slug}`;
+}
+
+export function isExternalProductDestination(product: EcosystemProduct) {
+  return Boolean(product.externalUrl);
+}
 
 export const ecosystemProductIndexBySlug = new Map(
   ecosystemProducts.map((product, index) => [product.slug, index]),
