@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 
 type BootPhase = "idle" | "booting" | "online" | "done";
 
@@ -57,7 +57,7 @@ export function GwapBootSequence() {
         </div>
         <div className="gwap-boot-modules">
           {bootModules.map((module, index) => (
-            <div key={module} style={{ "--gwap-boot-index": index } as React.CSSProperties}>
+            <div key={module} style={{ "--gwap-boot-index": index } as CSSProperties}>
               <span>{module}</span>
               <i />
               <b>{phase === "online" ? "ONLINE" : "SYNC"}</b>
