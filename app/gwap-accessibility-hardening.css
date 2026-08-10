@@ -1,0 +1,15 @@
+/* Phase 10 — accessibility hardening that should apply after all motion layers. */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+@media (forced-colors: active) {
+  [data-gwap-interactive]:focus-visible,
+  .story-chapters a:focus-visible {
+    outline: 2px solid CanvasText !important;
+    outline-offset: 3px;
+  }
+}

@@ -12,8 +12,8 @@ const chapters = [
 ] as const;
 
 type ChapterId = (typeof chapters)[number]["id"];
-
 type SectionMeasurement = { top: number; bottom: number };
+type ScrollState = "incoming" | "past" | "active";
 
 const chapterNavSelectors: Partial<Record<ChapterId, string>> = {
   ecosystem: '.cinematic-links a[href="#ecosystem"]',
@@ -22,9 +22,30 @@ const chapterNavSelectors: Partial<Record<ChapterId, string>> = {
   community: '.cinematic-links a[href="/community"]',
 };
 
+const storyProperties = [
+  "--story-focus",
+  "--story-opacity",
+  "--story-scale",
+  "--story-z",
+  "--story-y",
+  "--story-blur",
+  "--story-rotate",
+  "--story-veil",
+] as const;
+
 const clamp = (value: number, minimum: number, maximum: number) =>
   Math.min(Math.max(value, minimum), maximum);
 const smoothstep = (value: number) => value * value * (3 - 2 * value);
+
+function setCssVariable(element: HTMLElement, property: string, value: string) {
+  if (element.style.getPropertyValue(property) !== value) {
+    element.style.setProperty(property, value);
+  }
+}
+
+function setScrollState(section: HTMLElement, state: ScrollState) {
+  if (section.dataset.scrollState !== state) section.dataset.scrollState = state;
+}
 
 function getContinuousChapterProgress(focusLine: number, measurements: SectionMeasurement[]) {
   if (measurements.length <= 1) return 0;
@@ -46,24 +67,42 @@ function getContinuousChapterProgress(focusLine: number, measurements: SectionMe
 
 export function ScrollDirector() {
   const [activeChapter, setActiveChapter] = useState(0);
+  const [reduceMotion, setReduceMotion] = useState<boolean | null>(null);
   const activeChapterRef = useRef(-1);
 
   useEffect(() => {
+    const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const syncPreference = () => setReduceMotion(motionPreference.matches);
+
+    syncPreference();
+    motionPreference.addEventListener("change", syncPreference);
+    return () => motionPreference.removeEventListener("change", syncPreference);
+  }, []);
+
+  useEffect(() => {
+    if (reduceMotion === null) return;
+
     const main = document.querySelector<HTMLElement>(".cinematic-home");
     const sections = Array.from(document.querySelectorAll<HTMLElement>("[data-story-section]"));
-    const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (!main || sections.length === 0) return;
 
-    if (!main || sections.length === 0 || motionPreference.matches) return;
-
+    const root = document.documentElement;
     const nav = document.querySelector<HTMLElement>(".cinematic-nav");
     const brand = nav?.querySelector<HTMLAnchorElement>(".cinematic-brand") ?? null;
     const navLinks = nav?.querySelector<HTMLElement>(".cinematic-links") ?? null;
 
     sections.forEach((section, index) => {
       if (!section.id && chapters[index]) section.id = chapters[index].id;
-      section.dataset.scrollState = "incoming";
+      setScrollState(section, "incoming");
     });
-    main.classList.add("scroll-directed");
+
+    main.classList.toggle("scroll-directed", !reduceMotion);
+    if (reduceMotion) {
+      root.style.removeProperty("--page-scroll-progress");
+      root.style.removeProperty("--gwap-chapter-progress");
+      root.style.removeProperty("--gwap-chapter-position");
+      nav?.style.removeProperty("--gwap-nav-beacon-x");
+    }
 
     let frame = 0;
     let measurements: SectionMeasurement[] = [];
@@ -86,7 +125,7 @@ export function ScrollDirector() {
       if (!chapter) return;
 
       clearTopNavState();
-      document.documentElement.dataset.gwapChapter = chapter.id;
+      root.dataset.gwapChapter = chapter.id;
 
       if (nav) nav.dataset.gwapChapter = chapter.id;
       if (brand) {
@@ -105,27 +144,29 @@ export function ScrollDirector() {
         }
       }
 
-      if (navLinks && activeLink) {
+      if (!reduceMotion && navLinks && activeLink) {
         const linksRect = navLinks.getBoundingClientRect();
         const linkRect = activeLink.getBoundingClientRect();
-        navLinks.style.setProperty("--gwap-nav-lens-x", `${Math.max(linkRect.left - linksRect.left, 0)}px`);
-        navLinks.style.setProperty("--gwap-nav-lens-width", `${linkRect.width}px`);
-        navLinks.style.setProperty("--gwap-nav-lens-opacity", "1");
-      } else {
-        navLinks?.style.setProperty("--gwap-nav-lens-opacity", "0");
+        setCssVariable(navLinks, "--gwap-nav-lens-x", `${Math.max(linkRect.left - linksRect.left, 0)}px`);
+        setCssVariable(navLinks, "--gwap-nav-lens-width", `${linkRect.width}px`);
+        setCssVariable(navLinks, "--gwap-nav-lens-opacity", "1");
+      } else if (navLinks) {
+        setCssVariable(navLinks, "--gwap-nav-lens-opacity", "0");
       }
 
       if (emitEvent) {
-        window.dispatchEvent(new CustomEvent("gwap:chapterchange", {
-          detail: { id: chapter.id, index: chapterIndex, label: chapter.label },
-        }));
+        window.dispatchEvent(
+          new CustomEvent("gwap:chapterchange", {
+            detail: { id: chapter.id, index: chapterIndex, label: chapter.label },
+          }),
+        );
       }
     };
 
     const measure = () => {
       viewportHeight = Math.max(window.innerHeight, 1);
       isMobile = window.innerWidth <= 680;
-      pageRange = Math.max(document.documentElement.scrollHeight - viewportHeight, 1);
+      pageRange = Math.max(root.scrollHeight - viewportHeight, 1);
       const scrollY = window.scrollY;
       measurements = sections.map((section) => {
         const rect = section.getBoundingClientRect();
@@ -136,19 +177,18 @@ export function ScrollDirector() {
     const update = () => {
       const scrollY = window.scrollY;
       const focusLine = scrollY + viewportHeight * 0.52;
-      const chapterProgress = getContinuousChapterProgress(focusLine, measurements);
-      const navRect = nav?.getBoundingClientRect();
 
-      document.documentElement.style.setProperty(
-        "--page-scroll-progress",
-        String(clamp(scrollY / pageRange, 0, 1)),
-      );
-      document.documentElement.style.setProperty("--gwap-chapter-progress", chapterProgress.toFixed(4));
-      document.documentElement.style.setProperty("--gwap-chapter-position", `${(chapterProgress * 100).toFixed(3)}%`);
+      if (!reduceMotion) {
+        const chapterProgress = getContinuousChapterProgress(focusLine, measurements);
+        setCssVariable(root, "--page-scroll-progress", String(clamp(scrollY / pageRange, 0, 1)));
+        setCssVariable(root, "--gwap-chapter-progress", chapterProgress.toFixed(4));
+        setCssVariable(root, "--gwap-chapter-position", `${(chapterProgress * 100).toFixed(3)}%`);
 
-      if (nav && navRect) {
-        const trackWidth = Math.max(navRect.width - 36, 0);
-        nav.style.setProperty("--gwap-nav-beacon-x", `${18 + chapterProgress * trackWidth}px`);
+        if (nav) {
+          const navRect = nav.getBoundingClientRect();
+          const trackWidth = Math.max(navRect.width - 36, 0);
+          setCssVariable(nav, "--gwap-nav-beacon-x", `${18 + chapterProgress * trackWidth}px`);
+        }
       }
 
       let nearestIndex = 0;
@@ -166,6 +206,11 @@ export function ScrollDirector() {
           nearestIndex = index;
         }
 
+        const state: ScrollState = distance > 0 ? "incoming" : distance < 0 ? "past" : "active";
+        setScrollState(section, state);
+
+        if (reduceMotion) return;
+
         const focus = smoothstep(1 - clamp(absoluteDistance / 0.68, 0, 1));
         const incoming = distance > 0;
         const unfocused = 1 - focus;
@@ -176,12 +221,21 @@ export function ScrollDirector() {
         const opacity = (isMobile ? 0.42 : 0.05) + focus * (isMobile ? 0.58 : 0.95);
         const rotate = isMobile ? 0 : incoming ? 4 * unfocused : -2.2 * unfocused;
 
-        section.style.cssText += `;--story-focus:${focus.toFixed(4)};--story-opacity:${opacity.toFixed(4)};--story-scale:${scale.toFixed(4)};--story-z:${z.toFixed(2)}px;--story-y:${y.toFixed(2)}px;--story-blur:${blur.toFixed(2)}px;--story-rotate:${rotate.toFixed(2)}deg;--story-veil:${unfocused.toFixed(4)}`;
-        section.dataset.scrollState = incoming ? "incoming" : distance < 0 ? "past" : "active";
+        setCssVariable(section, "--story-focus", focus.toFixed(4));
+        setCssVariable(section, "--story-opacity", opacity.toFixed(4));
+        setCssVariable(section, "--story-scale", scale.toFixed(4));
+        setCssVariable(section, "--story-z", `${z.toFixed(2)}px`);
+        setCssVariable(section, "--story-y", `${y.toFixed(2)}px`);
+        setCssVariable(section, "--story-blur", `${blur.toFixed(2)}px`);
+        setCssVariable(section, "--story-rotate", `${rotate.toFixed(2)}deg`);
+        setCssVariable(section, "--story-veil", unfocused.toFixed(4));
       });
 
-      sections.forEach((section, index) => section.classList.toggle("is-scroll-active", index === nearestIndex));
       if (activeChapterRef.current !== nearestIndex) {
+        if (activeChapterRef.current >= 0) {
+          sections[activeChapterRef.current]?.classList.remove("is-scroll-active");
+        }
+        sections[nearestIndex]?.classList.add("is-scroll-active");
         activeChapterRef.current = nearestIndex;
         syncTopNavState(nearestIndex);
         setActiveChapter(nearestIndex);
@@ -192,12 +246,14 @@ export function ScrollDirector() {
     const scheduleUpdate = () => {
       if (!frame) frame = window.requestAnimationFrame(update);
     };
+
     const handleResize = () => {
       measure();
       syncTopNavState(Math.max(activeChapterRef.current, 0), false);
       scheduleUpdate();
     };
 
+    activeChapterRef.current = -1;
     measure();
     update();
     window.addEventListener("scroll", scheduleUpdate, { passive: true });
@@ -208,10 +264,10 @@ export function ScrollDirector() {
       window.removeEventListener("resize", handleResize);
       window.cancelAnimationFrame(frame);
       main.classList.remove("scroll-directed");
-      document.documentElement.style.removeProperty("--page-scroll-progress");
-      document.documentElement.style.removeProperty("--gwap-chapter-progress");
-      document.documentElement.style.removeProperty("--gwap-chapter-position");
-      delete document.documentElement.dataset.gwapChapter;
+      root.style.removeProperty("--page-scroll-progress");
+      root.style.removeProperty("--gwap-chapter-progress");
+      root.style.removeProperty("--gwap-chapter-position");
+      delete root.dataset.gwapChapter;
       if (nav) {
         nav.style.removeProperty("--gwap-nav-beacon-x");
         delete nav.dataset.gwapChapter;
@@ -223,17 +279,23 @@ export function ScrollDirector() {
       sections.forEach((section) => {
         section.classList.remove("is-scroll-active");
         delete section.dataset.scrollState;
-        ["--story-focus", "--story-opacity", "--story-scale", "--story-z", "--story-y", "--story-blur", "--story-rotate", "--story-veil"].forEach((property) => section.style.removeProperty(property));
+        storyProperties.forEach((property) => section.style.removeProperty(property));
       });
+      activeChapterRef.current = -1;
     };
-  }, []);
+  }, [reduceMotion]);
 
   return (
     <aside className="story-chapters" aria-label="Page chapters">
       <span className="story-progress-track" aria-hidden="true"><i /></span>
       <nav>
         {chapters.map((chapter, index) => (
-          <a className={index === activeChapter ? "is-current" : undefined} href={`#${chapter.id}`} aria-current={index === activeChapter ? "step" : undefined} key={chapter.id}>
+          <a
+            className={index === activeChapter ? "is-current" : undefined}
+            href={`#${chapter.id}`}
+            aria-current={index === activeChapter ? "location" : undefined}
+            key={chapter.id}
+          >
             <span>{String(index + 1).padStart(2, "0")}</span><b>{chapter.label}</b>
           </a>
         ))}
