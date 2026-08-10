@@ -139,7 +139,7 @@ function parseTokenAccounts(payload: UnknownRecord) {
     }
 
     const amount = BigInt(rawAmount);
-    if (amount === 0n) continue;
+    if (amount === BigInt(0)) continue;
     const current = holdings.get(mint);
     if (current && current.decimals === decimals) {
       current.amount += amount;
@@ -215,10 +215,13 @@ export async function fetchAssetIntelligence(
       tokensResult.status === "fulfilled"
         ? parseTokenAccounts(tokensResult.value)
         : { tokens: [], tokenAccountCount: null, uniqueMintCount: null };
-    const succeeded = Number(balanceResult.status === "fulfilled") + Number(tokensResult.status === "fulfilled");
+    const succeeded =
+      Number(balanceResult.status === "fulfilled") +
+      Number(tokensResult.status === "fulfilled");
 
     return {
-      status: succeeded === 2 ? "available" : succeeded === 1 ? "partial" : "unavailable",
+      status:
+        succeeded === 2 ? "available" : succeeded === 1 ? "partial" : "unavailable",
       source: "solana-rpc",
       network: "mainnet-beta",
       sol,
