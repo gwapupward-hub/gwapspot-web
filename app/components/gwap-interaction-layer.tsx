@@ -26,6 +26,7 @@ const INTERACTIVE_SELECTOR = [
 
 const REACTIVE_SELECTOR = ".premium-product-card";
 const PRODUCT_TRANSITION_KEY = "gwap-product-transition-v1";
+const PRODUCT_TRANSITION_MAX_AGE = 8_000;
 
 type ProductTransition = {
   slug: string;
@@ -51,23 +52,34 @@ function writeProductTransition(slug: string) {
   }
 }
 
-function readProductTransition() {
-  try {
-    const raw = window.sessionStorage.getItem(PRODUCT_TRANSITION_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<ProductTransition>;
-    if (typeof parsed.slug !== "string" || typeof parsed.at !== "number") return null;
-    return parsed as ProductTransition;
-  } catch {
-    return null;
-  }
-}
-
 function clearProductTransition() {
   try {
     window.sessionStorage.removeItem(PRODUCT_TRANSITION_KEY);
   } catch {
     // No-op when storage is unavailable.
+  }
+}
+
+function readProductTransition() {
+  try {
+    const raw = window.sessionStorage.getItem(PRODUCT_TRANSITION_KEY);
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw) as Partial<ProductTransition>;
+    if (typeof parsed.slug !== "string" || typeof parsed.at !== "number") {
+      clearProductTransition();
+      return null;
+    }
+
+    if (Date.now() - parsed.at > PRODUCT_TRANSITION_MAX_AGE) {
+      clearProductTransition();
+      return null;
+    }
+
+    return parsed as ProductTransition;
+  } catch {
+    clearProductTransition();
+    return null;
   }
 }
 
@@ -91,7 +103,12 @@ function enhanceProductHero(root: ParentNode) {
   if (hero.dataset.gwapArrivalSeen === "true") return;
 
   const transition = readProductTransition();
-  if (!transition || transition.slug !== slug || Date.now() - transition.at > 8_000) return;
+  if (!transition) return;
+
+  if (transition.slug !== slug) {
+    clearProductTransition();
+    return;
+  }
 
   hero.dataset.gwapArrivalSeen = "true";
   window.requestAnimationFrame(() => hero.classList.add("gwap-product-arrival"));
@@ -122,6 +139,14 @@ function enhanceTree(root: ParentNode) {
 function getInteractiveTarget(target: EventTarget | null) {
   if (!(target instanceof Element)) return null;
   return target.closest<HTMLElement>("[data-gwap-interactive]");
+}
+
+function isDisabled(element: HTMLElement) {
+  return element.hasAttribute("disabled") || element.getAttribute("aria-disabled") === "true";
+}
+
+function supportsSpaceActivation(element: HTMLElement) {
+  return element.tagName === "BUTTON" || element.getAttribute("role") === "button";
 }
 
 function getPoint(element: HTMLElement, clientX?: number, clientY?: number) {
@@ -219,13 +244,15 @@ export function GwapInteractionLayer() {
       }, 190);
       pressTimers.set(element, timer);
 
-      activateProduct(element);
       if (!reduceMotion.matches) createPulse(element, clientX, clientY);
     };
 
     const onPointerDown = (event: PointerEvent) => {
+      if (event.button !== 0) return;
+
       const element = getInteractiveTarget(event.target);
-      if (!element || element.hasAttribute("disabled") || element.getAttribute("aria-disabled") === "true") return;
+      if (!element || isDisabled(element)) return;
+
       setPointerVariables(element, event.clientX, event.clientY);
       activate(element, event.clientX, event.clientY);
     };
@@ -237,21 +264,37 @@ export function GwapInteractionLayer() {
       setPointerVariables(reactive, event.clientX, event.clientY);
     };
 
+    const onClick = (event: MouseEvent) => {
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
+
+      const element = getInteractiveTarget(event.target);
+      if (!element || isDisabled(element)) return;
+
+      // Product launch state only starts after a real click. This avoids false
+      // activations when a touch gesture begins on a card but becomes a scroll.
+      activateProduct(element);
+    };
+
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.repeat || (event.key !== "Enter" && event.key !== " ")) return;
+
       const element = getInteractiveTarget(event.target);
-      if (!element || element.hasAttribute("disabled") || element.getAttribute("aria-disabled") === "true") return;
+      if (!element || isDisabled(element)) return;
+      if (event.key === " " && !supportsSpaceActivation(element)) return;
+
       activate(element);
     };
 
     document.addEventListener("pointerdown", onPointerDown, { capture: true });
     document.addEventListener("pointermove", onPointerMove, { passive: true });
+    document.addEventListener("click", onClick, { capture: true });
     document.addEventListener("keydown", onKeyDown, { capture: true });
 
     return () => {
       observer.disconnect();
       document.removeEventListener("pointerdown", onPointerDown, { capture: true });
       document.removeEventListener("pointermove", onPointerMove);
+      document.removeEventListener("click", onClick, { capture: true });
       document.removeEventListener("keydown", onKeyDown, { capture: true });
     };
   }, []);
