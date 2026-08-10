@@ -100,7 +100,7 @@ body:has(.premium-splash--intro:not(.is-leaving)) .hero-story .emblem-stage {
 body:has(.premium-splash--intro:not(.is-leaving)) .hero-story .hero-light {
   opacity: .08;
   transform: scale(.78);
-  filter: blur(18px);
+  filter: blur(36px);
 }
 
 body:has(.premium-splash--intro:not(.is-leaving)) .hero-story .scroll-cue {
@@ -153,7 +153,7 @@ body:has(.premium-splash--intro.is-leaving) .cinematic-home .living-background {
 body:has(.premium-splash--intro.is-leaving) .hero-story .hero-light {
   opacity: 1;
   transform: scale(1);
-  filter: none;
+  filter: blur(25px);
   transition-delay: 70ms;
 }
 
@@ -242,11 +242,17 @@ body:has(.premium-splash--intro.is-leaving) .hero-story .scroll-cue {
 
   body:has(.premium-splash--intro) .cinematic-home .living-background,
   body:has(.premium-splash--intro) .hero-story .hero-content,
-  body:has(.premium-splash--intro) .hero-story .hero-light,
   body:has(.premium-splash--intro) .hero-story .scroll-cue {
     opacity: 1 !important;
     transform: none !important;
     filter: none !important;
+    transition: none !important;
+  }
+
+  body:has(.premium-splash--intro) .hero-story .hero-light {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: blur(25px) !important;
     transition: none !important;
   }
 
