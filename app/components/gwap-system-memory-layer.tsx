@@ -8,6 +8,7 @@ const MEMORY_MAX_AGE = 12 * 60 * 60 * 1_000;
 const RESUME_MAX_AGE = 30_000;
 
 const chapterIds = new Set(["top", "overview", "ecosystem", "trust", "roadmap", "community"]);
+const chapterOrder = ["top", "overview", "ecosystem", "trust", "roadmap", "community"] as const;
 const graphModes = new Set(["all", "identity", "trust", "commerce", "intelligence"]);
 const productSlugs = new Set([
   "gns",
@@ -133,6 +134,8 @@ function persistGraphState() {
 }
 
 function restoreGraphContext(memory: SystemMemory) {
+  if (!memory.graphMode && !memory.graphProduct) return;
+
   let attempts = 0;
   const tryRestore = () => {
     const graph = document.querySelector<HTMLElement>(".gwap-ecosystem-graph");
@@ -164,32 +167,55 @@ function restoreGraphContext(memory: SystemMemory) {
   window.requestAnimationFrame(tryRestore);
 }
 
+function findRememberedChapter(chapter: string) {
+  const byId = document.getElementById(chapter);
+  if (byId) return byId;
+
+  const index = chapterOrder.indexOf(chapter as (typeof chapterOrder)[number]);
+  if (index < 0) return null;
+  return document.querySelectorAll<HTMLElement>("[data-story-section]")[index] ?? null;
+}
+
 function restoreHomeResume(memory: SystemMemory) {
-  if (
-    memory.resumeTarget !== "home" ||
-    typeof memory.resumeAt !== "number" ||
-    Date.now() - memory.resumeAt > RESUME_MAX_AGE ||
-    !memory.chapter ||
-    memory.chapter === "top" ||
-    window.location.hash
-  ) {
+  if (memory.resumeTarget !== "home") return;
+
+  const isFreshResume =
+    typeof memory.resumeAt === "number" && Date.now() - memory.resumeAt <= RESUME_MAX_AGE;
+  if (!isFreshResume) {
+    consumeResume("home");
     return;
   }
 
-  const target = document.getElementById(memory.chapter);
-  if (!target) return;
+  if (!memory.chapter || memory.chapter === "top" || window.location.hash) {
+    consumeResume("home");
+    return;
+  }
 
-  window.requestAnimationFrame(() => {
+  let attempts = 0;
+  const tryRestore = () => {
+    const target = findRememberedChapter(memory.chapter ?? "top");
+    if (!target) {
+      attempts += 1;
+      if (attempts < 8) window.requestAnimationFrame(tryRestore);
+      else consumeResume("home");
+      return;
+    }
+
     target.scrollIntoView({ block: "start", behavior: "auto" });
     document.documentElement.dataset.gwapMemoryReturn = memory.chapter ?? "ecosystem";
     window.setTimeout(() => delete document.documentElement.dataset.gwapMemoryReturn, 1_900);
     consumeResume("home");
-  });
+  };
+
+  window.requestAnimationFrame(tryRestore);
 }
 
 function restoreEcosystemResume(memory: SystemMemory) {
   const product = memory.lastProduct ?? memory.graphProduct;
-  if (!product || !productSlugs.has(product)) return;
+  if (!product || !productSlugs.has(product)) {
+    if (memory.resumeTarget === "ecosystem") consumeResume("ecosystem");
+    return;
+  }
 
   let attempts = 0;
   const tryRestore = () => {
@@ -197,6 +223,7 @@ function restoreEcosystemResume(memory: SystemMemory) {
     if (!card) {
       attempts += 1;
       if (attempts < 8) window.requestAnimationFrame(tryRestore);
+      else if (memory.resumeTarget === "ecosystem") consumeResume("ecosystem");
       return;
     }
 
@@ -208,10 +235,8 @@ function restoreEcosystemResume(memory: SystemMemory) {
       typeof memory.resumeAt === "number" &&
       Date.now() - memory.resumeAt <= RESUME_MAX_AGE;
 
-    if (shouldResume) {
-      card.scrollIntoView({ block: "center", behavior: "auto" });
-      consumeResume("ecosystem");
-    }
+    if (shouldResume) card.scrollIntoView({ block: "center", behavior: "auto" });
+    if (memory.resumeTarget === "ecosystem") consumeResume("ecosystem");
   };
 
   window.requestAnimationFrame(tryRestore);
@@ -230,13 +255,18 @@ export function GwapSystemMemoryLayer() {
       const detail = (event as CustomEvent<ProductHandoffDetail>).detail;
       if (!detail?.slug || !productSlugs.has(detail.slug)) return;
 
-      writeMemory({
+      const patch: Partial<Omit<SystemMemory, "at">> = {
         lastProduct: detail.slug,
         lastProductSource: isProductSource(detail.source) ? detail.source : undefined,
         lastProductLens: detail.lens && graphModes.has(detail.lens) ? detail.lens : undefined,
-        graphMode: detail.source === "graph" && detail.lens && graphModes.has(detail.lens) ? detail.lens : undefined,
-        graphProduct: detail.source === "graph" ? detail.slug : undefined,
-      });
+      };
+
+      if (detail.source === "graph") {
+        patch.graphProduct = detail.slug;
+        if (detail.lens && graphModes.has(detail.lens)) patch.graphMode = detail.lens;
+      }
+
+      writeMemory(patch);
     };
 
     const onClick = (event: MouseEvent) => {
@@ -287,6 +317,7 @@ export function GwapSystemMemoryLayer() {
       document.querySelectorAll<HTMLElement>("[data-gwap-memory-restored]").forEach((element) => {
         delete element.dataset.gwapMemoryRestored;
       });
+      delete document.documentElement.dataset.gwapMemoryReturn;
     };
   }, [pathname]);
 
