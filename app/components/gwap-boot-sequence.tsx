@@ -4,14 +4,31 @@ import { useEffect, useState, type CSSProperties } from "react";
 
 type BootPhase = "idle" | "booting" | "online" | "done";
 
+const BOOT_SEEN_KEY = "gwap-system-boot-seen-v1";
 const bootModules = ["GNS", "GWAPSCORE", "DIMI", "ISNAD"] as const;
+
+function hasBootedThisSession() {
+  try {
+    return window.sessionStorage.getItem(BOOT_SEEN_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function markBootSeen() {
+  try {
+    window.sessionStorage.setItem(BOOT_SEEN_KEY, "true");
+  } catch {
+    // Storage can be unavailable in privacy-restricted browsing contexts.
+  }
+}
 
 export function GwapBootSequence() {
   const [phase, setPhase] = useState<BootPhase>("idle");
 
   useEffect(() => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (reduceMotion.matches) return;
+    if (reduceMotion.matches || hasBootedThisSession()) return;
 
     const overview = document.getElementById("overview");
     if (!overview) return;
@@ -30,6 +47,7 @@ export function GwapBootSequence() {
       if (!enteringSystem) return;
 
       hasRun = true;
+      markBootSeen();
       setPhase("booting");
       onlineTimer = window.setTimeout(() => setPhase("online"), 520);
       doneTimer = window.setTimeout(() => setPhase("done"), 1080);
