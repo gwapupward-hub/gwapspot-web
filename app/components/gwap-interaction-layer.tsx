@@ -25,6 +25,7 @@ const INTERACTIVE_SELECTOR = [
 ].join(",");
 
 const REACTIVE_SELECTOR = ".premium-product-card";
+const DECORATIVE_GLYPH_SELECTOR = ".product-glyph";
 const PRODUCT_TRANSITION_KEY = "gwap-product-transition-v1";
 const PRODUCT_TRANSITION_MAX_AGE = 8_000;
 
@@ -118,6 +119,10 @@ function enhanceProductHero(root: ParentNode) {
 function enhanceElement(element: Element) {
   if (!(element instanceof HTMLElement)) return;
 
+  if (element.matches(DECORATIVE_GLYPH_SELECTOR)) {
+    element.setAttribute("aria-hidden", "true");
+  }
+
   if (element.matches(INTERACTIVE_SELECTOR)) {
     element.dataset.gwapInteractive ||= "auto";
   }
@@ -133,6 +138,7 @@ function enhanceTree(root: ParentNode) {
   if (root instanceof Element) enhanceElement(root);
   root.querySelectorAll(INTERACTIVE_SELECTOR).forEach(enhanceElement);
   root.querySelectorAll(REACTIVE_SELECTOR).forEach(enhanceElement);
+  root.querySelectorAll(DECORATIVE_GLYPH_SELECTOR).forEach(enhanceElement);
   enhanceProductHero(root);
 }
 
