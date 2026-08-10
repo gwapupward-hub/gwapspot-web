@@ -1,0 +1,285 @@
+/* Phase 4 — operational relationship lenses for the GWAP ecosystem graph. */
+
+.gwap-graph-modebar {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, .62fr);
+  align-items: stretch;
+  gap: 14px;
+  padding: 16px 0 0;
+}
+
+.gwap-graph-mode-controls,
+.gwap-graph-mode-readout {
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 20px;
+  background: rgba(4,9,5,.46);
+  box-shadow: inset 0 1px rgba(255,255,255,.055);
+}
+
+.gwap-graph-mode-controls {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.gwap-graph-mode-controls::-webkit-scrollbar {
+  display: none;
+}
+
+.gwap-graph-mode-controls > span {
+  flex: 0 0 auto;
+  padding: 0 8px;
+  color: rgba(255,255,255,.34);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 6px;
+  font-weight: 900;
+  letter-spacing: .18em;
+}
+
+.gwap-graph-mode-controls button {
+  position: relative;
+  flex: 0 0 auto;
+  min-width: 96px;
+  min-height: 48px;
+  display: grid;
+  align-content: center;
+  gap: 3px;
+  padding: 8px 11px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 13px;
+  background: rgba(255,255,255,.018);
+  color: rgba(255,255,255,.66);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color var(--gwap-motion-fast) ease,
+    background var(--gwap-motion-fast) ease,
+    color var(--gwap-motion-fast) ease,
+    transform var(--gwap-motion-fast) var(--gwap-ease-out),
+    box-shadow var(--gwap-motion-normal) ease;
+}
+
+.gwap-graph-mode-controls button::after {
+  content: "";
+  position: absolute;
+  right: 10px;
+  bottom: 7px;
+  width: 18px;
+  height: 1px;
+  background: var(--gwap-green);
+  opacity: 0;
+  transform: scaleX(.2);
+  transform-origin: right center;
+  transition: opacity var(--gwap-motion-fast) ease, transform var(--gwap-motion-normal) var(--gwap-ease-out);
+}
+
+.gwap-graph-mode-controls button b,
+.gwap-graph-mode-controls button em {
+  position: relative;
+  z-index: 1;
+}
+
+.gwap-graph-mode-controls button b {
+  color: var(--gwap-green);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 6px;
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+
+.gwap-graph-mode-controls button em {
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 760;
+  letter-spacing: -.01em;
+}
+
+.gwap-graph-mode-controls button:hover,
+.gwap-graph-mode-controls button:focus-visible {
+  border-color: rgba(19,221,19,.24);
+  background: rgba(19,221,19,.035);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.gwap-graph-mode-controls button:focus-visible {
+  outline: 1px solid rgba(19,221,19,.68);
+  outline-offset: 2px;
+}
+
+.gwap-graph-mode-controls button.is-active {
+  border-color: rgba(19,221,19,.35);
+  background:
+    radial-gradient(circle at 20% 0%, rgba(19,221,19,.12), transparent 60%),
+    rgba(19,221,19,.055);
+  color: #fff;
+  box-shadow: inset 0 1px rgba(255,255,255,.08), 0 0 28px rgba(19,221,19,.055);
+}
+
+.gwap-graph-mode-controls button.is-active::after {
+  opacity: .72;
+  transform: scaleX(1);
+}
+
+.gwap-graph-mode-readout {
+  display: grid;
+  align-content: center;
+  gap: 5px;
+  padding: 12px 15px;
+}
+
+.gwap-graph-mode-readout > span,
+.gwap-graph-mode-readout > strong {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+
+.gwap-graph-mode-readout > span {
+  color: var(--gwap-green);
+  font-size: 6px;
+}
+
+.gwap-graph-mode-readout > strong {
+  color: rgba(255,255,255,.74);
+  font-size: 7px;
+}
+
+.gwap-graph-mode-readout > p {
+  max-width: 520px;
+  margin: 0;
+  color: #7d8780;
+  font-size: 8px;
+  line-height: 1.55;
+}
+
+.gwap-graph-edge {
+  transition: opacity var(--gwap-motion-normal) ease;
+}
+
+.gwap-graph-edge.is-filtered-out {
+  opacity: .08;
+}
+
+.gwap-graph-edge.is-filtered-out .gwap-graph-edge-base {
+  stroke: rgba(255,255,255,.045);
+}
+
+.gwap-graph-edge.is-in-mode:not(.is-active) .gwap-graph-edge-base {
+  stroke: rgba(255,255,255,.11);
+}
+
+.gwap-graph-stage[data-graph-mode="identity"] {
+  --gwap-graph-mode-hint: "IDENTITY RAILS";
+}
+
+.gwap-graph-stage[data-graph-mode="trust"] {
+  --gwap-graph-mode-hint: "TRUST RAILS";
+}
+
+.gwap-graph-stage[data-graph-mode="commerce"] {
+  --gwap-graph-mode-hint: "COMMERCE RAILS";
+}
+
+.gwap-graph-stage[data-graph-mode="intelligence"] {
+  --gwap-graph-mode-hint: "INTELLIGENCE RAILS";
+}
+
+.gwap-graph-stage[data-graph-mode]:not([data-graph-mode="all"])::after {
+  content: var(--gwap-graph-mode-hint) " // FILTER ACTIVE";
+  color: rgba(19,221,19,.38);
+}
+
+.gwap-graph-node.is-mode-disabled,
+.gwap-graph-node.is-mode-disabled:hover,
+.gwap-graph-node.is-mode-disabled:focus-visible {
+  opacity: .16;
+  filter: grayscale(.72) saturate(.28);
+  border-color: rgba(255,255,255,.065);
+  box-shadow: inset 0 1px rgba(255,255,255,.035);
+  cursor: default;
+  transform: translate(-50%,-50%) scale(.96);
+}
+
+.gwap-graph-node.is-mode-disabled::before,
+.gwap-graph-node.is-mode-disabled::after,
+.gwap-graph-node.is-mode-disabled > i {
+  opacity: 0;
+}
+
+.gwap-graph-empty {
+  margin: 2px 0 0;
+  padding: 11px;
+  border: 1px dashed rgba(255,255,255,.08);
+  border-radius: 12px;
+  color: #747e77;
+  font-size: 8px;
+  line-height: 1.55;
+}
+
+.premium-product-card.gwap-graph-mode-muted {
+  opacity: .52;
+  filter: saturate(.68) brightness(.88);
+}
+
+.premium-product-card.gwap-graph-mode-muted:hover,
+.premium-product-card.gwap-graph-mode-muted:focus-visible {
+  opacity: .78;
+  filter: saturate(.84) brightness(.94);
+}
+
+.premium-product-card.gwap-graph-mode-member:not(.gwap-graph-primary):not(.gwap-graph-linked) {
+  border-color: rgba(255,255,255,.13);
+}
+
+@media (max-width: 980px) {
+  .gwap-graph-modebar {
+    grid-template-columns: 1fr;
+  }
+
+  .gwap-graph-mode-readout {
+    min-height: 72px;
+  }
+}
+
+@media (max-width: 620px) {
+  .gwap-graph-modebar {
+    gap: 9px;
+    padding-top: 11px;
+  }
+
+  .gwap-graph-mode-controls {
+    margin-inline: -2px;
+    border-radius: 16px;
+  }
+
+  .gwap-graph-mode-controls button {
+    min-width: 90px;
+    min-height: 45px;
+  }
+
+  .gwap-graph-mode-readout {
+    border-radius: 16px;
+    padding: 11px 13px;
+  }
+
+  .premium-product-card.gwap-graph-mode-muted {
+    opacity: .62;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gwap-graph-mode-controls button,
+  .gwap-graph-edge,
+  .premium-product-card.gwap-graph-mode-muted,
+  .premium-product-card.gwap-graph-mode-member {
+    transition: none !important;
+  }
+}
