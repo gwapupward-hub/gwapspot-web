@@ -7,6 +7,7 @@ import { getGnsApiBase, resolveGnsIdentity } from "../../../../app/lib/gns";
 import { enrichPortfolio } from "../../../../app/lib/token-enrichment";
 import { getPublicLookupSubject } from "../../../../lib/public-lookup";
 import { checkRateLimit } from "../../../../lib/request-guard";
+import { assessWalletRisk } from "../../../../lib/wallet-risk";
 
 export const dynamic = "force-dynamic";
 
@@ -92,6 +93,7 @@ export async function GET(request: Request, context: RouteContext) {
     isScoreHidden(identity.name, identity.isGenesis),
     enrichPortfolio(assets, { timeoutMs: 8_000 }),
   ]);
+  const risk = assessWalletRisk(portfolio);
 
   return json({
     wallet,
@@ -119,6 +121,7 @@ export async function GET(request: Request, context: RouteContext) {
         },
     assets,
     portfolio,
+    risk,
     meta: {
       version: "v1",
       network: "mainnet-beta",
