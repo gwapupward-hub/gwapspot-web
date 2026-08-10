@@ -63,6 +63,7 @@ type OsContextValue = {
   toggleFavorite: (slug: string) => void;
   recordLaunch: (slug: string) => void;
   resetWorkspace: () => void;
+  updateGnsIdentity: (identity: Partial<GnsIdentity>) => void;
 };
 
 const OsContext = createContext<OsContextValue | null>(null);
@@ -82,6 +83,7 @@ export function GwapOsProvider({
 }) {
   const { getAccessToken } = usePrivy();
   const [state, setState] = useState(initialState);
+  const [identityOverride, setIdentityOverride] = useState<Partial<GnsIdentity>>({});
   const [migrationAvailable, setMigrationAvailable] = useState(false);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>(
     hasCloudState ? "saved" : "idle",
@@ -94,6 +96,10 @@ export function GwapOsProvider({
   const updateState = useCallback((nextState: GwapOsState) => {
     stateRef.current = nextState;
     setState(nextState);
+  }, []);
+
+  const updateGnsIdentity = useCallback((identity: Partial<GnsIdentity>) => {
+    setIdentityOverride((current) => ({ ...current, ...identity }));
   }, []);
 
   const authenticatedFetch = useCallback(
@@ -277,7 +283,7 @@ export function GwapOsProvider({
   const value = useMemo(
     () => ({
       account,
-      gnsIdentity,
+      gnsIdentity: { ...gnsIdentity, ...identityOverride },
       keepAccountState,
       migrateLocalState,
       migrationAvailable,
@@ -288,11 +294,13 @@ export function GwapOsProvider({
       syncStatus,
       toggleFavorite,
       updateProfile,
+      updateGnsIdentity,
       updateSettings,
     }),
     [
       account,
       gnsIdentity,
+      identityOverride,
       keepAccountState,
       migrateLocalState,
       migrationAvailable,
@@ -303,6 +311,7 @@ export function GwapOsProvider({
       syncStatus,
       toggleFavorite,
       updateProfile,
+      updateGnsIdentity,
       updateSettings,
     ],
   );

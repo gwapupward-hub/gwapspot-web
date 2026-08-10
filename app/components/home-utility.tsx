@@ -8,15 +8,17 @@ import {
   useState,
   type FormEvent,
 } from "react";
+import type { GwapScoreResult } from "../lib/gwap-score";
 import {
   buildPublicLookupShareUrl,
   readPublicLookupDeepLink,
 } from "../lib/public-share";
+import { GwapScoreDisplay } from "./gwap-score-display";
 
 type PublicLookupMode = "wallet" | "name";
 
 const GNS_NAME_PATTERN =
-  /^[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?$/;
+  /^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$/;
 const SOLANA_ADDRESS_PATTERN = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 
 function getValidationMessage(mode: PublicLookupMode, value: string) {
@@ -30,7 +32,7 @@ function getValidationMessage(mode: PublicLookupMode, value: string) {
   const name = input.toLowerCase().replace(/\.gwap$/, "");
   return GNS_NAME_PATTERN.test(name)
     ? ""
-    : "Use 1–40 letters, numbers, or internal hyphens.";
+    : "Use 1–32 letters, numbers, or internal hyphens.";
 }
 
 function shortAddress(value: string) {
@@ -46,17 +48,20 @@ type NameResult = {
   available: boolean;
   owner: string | null;
   profileUrl: string | null;
+  score: GwapScoreResult | null;
 };
 
 type WalletResult = {
   kind: "wallet";
   wallet: string;
   identity: {
-    status: "found" | "none";
+    status: "found" | "none" | "unavailable";
     name: string | null;
     fullName: string | null;
     score: number | null;
-    scoreTier: string | null;
+    scoreTier: GwapScoreResult["tier"];
+    scoreStatus: GwapScoreResult["status"];
+    scoreMessage: string;
     verified: boolean;
     profileUrl: string | null;
   };
@@ -101,14 +106,14 @@ function getShareCopy(result: LookupResult) {
         }
       : {
           title: `${result.fullName} on GNS`,
-          text: `${result.fullName} is a registered identity on the GWAP network.`,
+          text: `${result.fullName} is registered with GwapScore ${result.score?.score ?? (result.score?.status === "unscored" ? "Unscored" : "Unavailable")}.`,
         };
   }
 
-  if (result.identity.status === "none") {
+  if (result.identity.status !== "found") {
     return {
       title: "GWAP wallet result",
-      text: `${shortAddress(result.wallet)} does not have a .gwap identity yet.`,
+      text: `${shortAddress(result.wallet)} · GwapScore ${result.identity.score ?? (result.identity.scoreStatus === "unscored" ? "Unscored" : "Unavailable")}.`,
     };
   }
 
@@ -151,6 +156,7 @@ function NameResultCard({
             ? `Owner ${shortAddress(result.owner)}`
             : "Registry ownership confirmed."}
         </p>
+        {result.score ? <GwapScoreDisplay result={result.score} variant="card" /> : null}
       </div>
       <div className="hero-utility-result-actions">
         {result.profileUrl ? (
@@ -171,18 +177,32 @@ function WalletResultCard({
 }: { result: WalletResult } & ResultCardActions) {
   const { identity } = result;
 
-  if (identity.status === "none") {
+  const score: GwapScoreResult = {
+    status: identity.scoreStatus,
+    score: identity.score,
+    tier: identity.scoreTier,
+    message: identity.scoreMessage,
+  };
+
+  if (identity.status !== "found") {
     return (
       <div className="hero-utility-result">
         <div>
           <small>WALLET FOUND</small>
-          <strong>No .gwap identity is linked yet.</strong>
-          <p>{shortAddress(result.wallet)} can initialize one inside GWAP OS.</p>
+          <strong>
+            {identity.status === "none"
+              ? "No .gwap identity is linked yet."
+              : "Identity registry temporarily unavailable."}
+          </strong>
+          <p>{shortAddress(result.wallet)} was checked directly with GwapScore.</p>
+          <GwapScoreDisplay result={score} variant="card" />
         </div>
         <div className="hero-utility-result-actions">
-          <Link href="/app/identity">
-            Initialize <span aria-hidden="true">↗</span>
-          </Link>
+          {identity.status === "none" ? (
+            <Link href="/app/identity">
+              Initialize <span aria-hidden="true">↗</span>
+            </Link>
+          ) : null}
           <ShareButton onShare={onShare} shareStatus={shareStatus} />
         </div>
       </div>
@@ -194,15 +214,8 @@ function WalletResultCard({
       <div className="hero-utility-identity">
         <small>IDENTITY + REPUTATION SIGNAL</small>
         <strong>{identity.fullName || shortAddress(result.wallet)}</strong>
+        <GwapScoreDisplay result={score} variant="card" />
         <dl>
-          <div>
-            <dt>GwapScore</dt>
-            <dd>{identity.score ?? "—"}</dd>
-          </div>
-          <div>
-            <dt>Tier</dt>
-            <dd>{identity.scoreTier || "—"}</dd>
-          </div>
           <div>
             <dt>Status</dt>
             <dd>{identity.verified ? "Verified" : "Public"}</dd>

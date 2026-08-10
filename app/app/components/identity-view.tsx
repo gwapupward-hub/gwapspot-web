@@ -16,6 +16,8 @@ import {
   useState,
   type FormEvent,
 } from "react";
+import { GwapScoreDisplay } from "../../components/gwap-score-display";
+import type { GwapScoreResult } from "../../lib/gwap-score";
 import {
   GNS_PENDING_REGISTRATION_STORAGE_KEY,
   buildGnsRegistrationTransaction,
@@ -31,6 +33,7 @@ import {
   type PendingGnsRegistration,
 } from "../lib/gns-registration";
 import { useGwapOs } from "./os-provider";
+import { GnsProfileEditor } from "./gns-profile-editor";
 
 type SearchState =
   | { status: "idle"; message: string }
@@ -471,6 +474,12 @@ export function IdentityView() {
   }
 
   if (gnsIdentity.status === "found") {
+    const score: GwapScoreResult = {
+      status: gnsIdentity.scoreStatus,
+      score: gnsIdentity.score,
+      tier: gnsIdentity.scoreTier,
+      message: gnsIdentity.scoreMessage,
+    };
     return (
       <div className="os-page os-runtime-page">
         <header className="os-runtime-heading">
@@ -491,9 +500,8 @@ export function IdentityView() {
             <dl>
               <div><dt>Wallet</dt><dd>{account.verifiedWallet}</dd></div>
               <div><dt>Verified</dt><dd>{gnsIdentity.verified ? "YES" : "PENDING"}</dd></div>
-              <div><dt>GwapScore</dt><dd>{gnsIdentity.score ?? "UNAVAILABLE"}</dd></div>
-              <div><dt>Score tier</dt><dd>{gnsIdentity.scoreTier || "UNSET"}</dd></div>
             </dl>
+            <GwapScoreDisplay result={score} variant="card" />
             <div className="os-inline-actions">
               {gnsIdentity.profileUrl ? <a href={gnsIdentity.profileUrl} target="_blank" rel="noreferrer">Open public profile ↗</a> : null}
               <a href="https://gwapspot.fun/" target="_blank" rel="noreferrer">Manage in GNS ↗</a>
@@ -506,6 +514,7 @@ export function IdentityView() {
             <code>wallet → /domains/:wallet → /profile/:name → OS</code>
           </aside>
         </section>
+        {gnsIdentity.name ? <GnsProfileEditor name={gnsIdentity.name} /> : null}
       </div>
     );
   }

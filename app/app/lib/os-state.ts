@@ -1,3 +1,5 @@
+import type { GwapScoreStatus, GwapScoreTier } from "../../lib/gwap-score";
+
 export type RecentLaunch = {
   slug: string;
   openedAt: string;
@@ -43,7 +45,9 @@ export type GnsIdentity = {
   avatar: string | null;
   bio: string | null;
   score: number | null;
-  scoreTier: string | null;
+  scoreTier: GwapScoreTier | null;
+  scoreStatus: GwapScoreStatus;
+  scoreMessage: string;
   verified: boolean;
   isGenesis: boolean;
   tier: "premium" | "free" | null;

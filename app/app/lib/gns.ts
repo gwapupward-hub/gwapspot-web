@@ -1,6 +1,8 @@
 import "server-only";
 
 import { PublicKey } from "@solana/web3.js";
+import { buildGnsPublicProfileUrl } from "../../lib/gns-profile-url";
+import type { GwapScoreResult } from "../../lib/gwap-score";
 import {
   CANONICAL_GNS_PROGRAM_ID,
   CANONICAL_GNS_TREASURY,
@@ -8,6 +10,7 @@ import {
   type GnsRegistrationConfig,
 } from "./gns-registration";
 import type { GnsIdentity } from "./os-state";
+import { fetchGwapScore } from "./gwap-score";
 
 const DEFAULT_GNS_API_URL = "https://gns-backend-zh4o.onrender.com/api";
 const GNS_LOOKUP_TIMEOUT_MS = 2_500;
@@ -54,21 +57,27 @@ function getApiBase() {
   return (process.env.GNS_API_URL || DEFAULT_GNS_API_URL).replace(/\/+$/, "");
 }
 
-function getProfileBase() {
-  return (
-    process.env.NEXT_PUBLIC_GNS_PROFILE_BASE_URL || "https://gwapspot.fun"
-  ).replace(/\/+$/, "");
+export function getGnsProfileUrl(name: string) {
+  return buildGnsPublicProfileUrl(name, {
+    baseUrl: process.env.NEXT_PUBLIC_GNS_PROFILE_BASE_URL,
+    pathTemplate: process.env.NEXT_PUBLIC_GNS_PROFILE_PATH_TEMPLATE,
+  });
 }
 
-function emptyIdentity(status: GnsIdentity["status"]): GnsIdentity {
+function emptyIdentity(
+  status: GnsIdentity["status"],
+  score: GwapScoreResult,
+): GnsIdentity {
   return {
     status,
     name: null,
     fullName: null,
     avatar: null,
     bio: null,
-    score: null,
-    scoreTier: null,
+    score: score.score,
+    scoreTier: score.tier,
+    scoreStatus: score.status,
+    scoreMessage: score.message,
     verified: false,
     isGenesis: false,
     tier: null,
@@ -77,7 +86,10 @@ function emptyIdentity(status: GnsIdentity["status"]): GnsIdentity {
   };
 }
 
-function identityFromDomain(domain: UnknownRecord): GnsIdentity {
+function identityFromDomain(
+  domain: UnknownRecord,
+  score: GwapScoreResult,
+): GnsIdentity {
   const name = asString(domain.name);
   const fullName = asString(domain.full_name) || (name ? `${name}.gwap` : null);
 
@@ -87,20 +99,25 @@ function identityFromDomain(domain: UnknownRecord): GnsIdentity {
     fullName,
     avatar: asString(domain.avatar),
     bio: null,
-    score: null,
-    scoreTier: null,
+    score: score.score,
+    scoreTier: score.tier,
+    scoreStatus: score.status,
+    scoreMessage: score.message,
     verified: false,
     isGenesis: asBoolean(domain.is_genesis),
     tier: domain.tier === "premium" || domain.tier === "free" ? domain.tier : null,
-    profileUrl: name ? `${getProfileBase()}/${encodeURIComponent(name)}` : null,
+    profileUrl: name ? getGnsProfileUrl(name) : null,
     updatedAt: null,
   };
 }
 
 export async function resolveGnsIdentity(
   wallet: string,
-  options: { timeoutMs?: number } = {},
+  options: { timeoutMs?: number; scoreTimeoutMs?: number } = {},
 ): Promise<GnsIdentity> {
+  const scorePromise = fetchGwapScore(wallet, {
+    timeoutMs: options.scoreTimeoutMs,
+  });
   const controller = new AbortController();
   const requestedTimeout = options.timeoutMs ?? GNS_LOOKUP_TIMEOUT_MS;
   const timeoutMs = Number.isFinite(requestedTimeout)
@@ -119,7 +136,9 @@ export async function resolveGnsIdentity(
       },
     );
 
-    if (!domainsResponse.ok) return emptyIdentity("unavailable");
+    if (!domainsResponse.ok) {
+      return emptyIdentity("unavailable", await scorePromise);
+    }
 
     const domainsPayload = asRecord(await domainsResponse.json());
     const domains = Array.isArray(domainsPayload?.domains)
@@ -131,46 +150,41 @@ export async function resolveGnsIdentity(
     const primary =
       activeDomains.find((domain) => domain.is_primary === true) || activeDomains[0];
 
-    if (!primary) return emptyIdentity("none");
+    if (!primary) return emptyIdentity("none", await scorePromise);
+    const name = asString(primary.name);
+    if (!name) return emptyIdentity("none", await scorePromise);
 
-    const baseIdentity = identityFromDomain(primary);
-    if (!baseIdentity.name) return emptyIdentity("none");
+    const profilePromise = fetch(
+      `${apiBase}/profile/${encodeURIComponent(name)}`,
+      {
+        cache: "no-store",
+        headers: { Accept: "application/json" },
+        signal: controller.signal,
+      },
+    )
+      .then(async (response) =>
+        response.ok ? asRecord(await response.json()) : null,
+      )
+      .catch(() => null);
+    const [score, profile] = await Promise.all([scorePromise, profilePromise]);
+    const baseIdentity = identityFromDomain(primary, score);
+    if (!profile) return baseIdentity;
 
-    try {
-      const profileResponse = await fetch(
-        `${apiBase}/profile/${encodeURIComponent(baseIdentity.name)}`,
-        {
-          cache: "no-store",
-          headers: { Accept: "application/json" },
-          signal: controller.signal,
-        },
-      );
-
-      if (!profileResponse.ok) return baseIdentity;
-
-      const profile = asRecord(await profileResponse.json());
-      if (!profile) return baseIdentity;
-
-      return {
-        ...baseIdentity,
-        fullName: asString(profile.full_name) || baseIdentity.fullName,
-        avatar: asString(profile.avatar) || baseIdentity.avatar,
-        bio: asString(profile.bio),
-        score: asNumber(profile.score),
-        scoreTier: asString(profile.score_tier),
-        verified: asBoolean(profile.verified),
-        isGenesis: asBoolean(profile.is_genesis) || baseIdentity.isGenesis,
-        tier:
-          profile.tier === "premium" || profile.tier === "free"
-            ? profile.tier
-            : baseIdentity.tier,
-        updatedAt: asString(profile.updated_at),
-      };
-    } catch {
-      return baseIdentity;
-    }
+    return {
+      ...baseIdentity,
+      fullName: asString(profile.full_name) || baseIdentity.fullName,
+      avatar: asString(profile.avatar) || baseIdentity.avatar,
+      bio: asString(profile.bio),
+      verified: asBoolean(profile.verified),
+      isGenesis: asBoolean(profile.is_genesis) || baseIdentity.isGenesis,
+      tier:
+        profile.tier === "premium" || profile.tier === "free"
+          ? profile.tier
+          : baseIdentity.tier,
+      updatedAt: asString(profile.updated_at),
+    };
   } catch {
-    return emptyIdentity("unavailable");
+    return emptyIdentity("unavailable", await scorePromise);
   } finally {
     clearTimeout(timeout);
   }

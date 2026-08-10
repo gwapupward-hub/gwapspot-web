@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import {
+  getGnsProfileUrl,
   resolveGnsIdentity,
   resolveGnsName,
 } from "../../../app/lib/gns";
+import { fetchGwapScore } from "../../../app/lib/gwap-score";
 import {
   getPublicLookupSubject,
   isPublicLookupMode,
@@ -23,13 +25,6 @@ function json(payload: unknown, status = 200, headers?: HeadersInit) {
     status,
     headers: { ...responseHeaders, ...headers },
   });
-}
-
-function getProfileUrl(name: string) {
-  const base = (
-    process.env.NEXT_PUBLIC_GNS_PROFILE_BASE_URL || "https://gwapspot.fun"
-  ).replace(/\/+$/, "");
-  return `${base}/${encodeURIComponent(name)}`;
 }
 
 export async function GET(request: Request) {
@@ -79,23 +74,29 @@ export async function GET(request: Request) {
       return json({ error: "The GNS registry is temporarily unavailable." }, 503);
     }
 
+    if (resolved.found && !resolved.owner) {
+      return json({ error: "The registered name has no valid owner." }, 502);
+    }
+
+    const score = resolved.owner
+      ? await fetchGwapScore(resolved.owner, { timeoutMs: 12_000 })
+      : null;
+
     return json({
       kind: "name",
       name: lookup.value,
       fullName: lookup.fullName,
       available: !resolved.found,
       owner: resolved.found ? resolved.owner : null,
-      profileUrl: resolved.found ? getProfileUrl(lookup.value) : null,
+      profileUrl: resolved.found ? getGnsProfileUrl(lookup.value) : null,
+      score,
     });
   }
 
-  const identity = await resolveGnsIdentity(lookup.value, { timeoutMs: 7_500 });
-  if (identity.status === "unavailable") {
-    return json(
-      { error: "Wallet intelligence is temporarily unavailable." },
-      503,
-    );
-  }
+  const identity = await resolveGnsIdentity(lookup.value, {
+    timeoutMs: 7_500,
+    scoreTimeoutMs: 12_000,
+  });
 
   return json({
     kind: "wallet",
@@ -106,6 +107,8 @@ export async function GET(request: Request) {
       fullName: identity.fullName,
       score: identity.score,
       scoreTier: identity.scoreTier,
+      scoreStatus: identity.scoreStatus,
+      scoreMessage: identity.scoreMessage,
       verified: identity.verified,
       profileUrl: identity.profileUrl,
     },

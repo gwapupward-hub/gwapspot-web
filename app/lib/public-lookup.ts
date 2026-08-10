@@ -1,7 +1,7 @@
 import { PublicKey } from "@solana/web3.js";
 
 export const GNS_NAME_PATTERN =
-  /^[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?$/;
+  /^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$/;
 
 export type PublicLookupMode = "wallet" | "name";
 
@@ -26,7 +26,7 @@ export function normalizeGnsName(rawValue: string) {
   const value = rawValue.trim().toLowerCase().replace(/\.gwap$/, "");
   if (!GNS_NAME_PATTERN.test(value)) {
     throw new PublicLookupValidationError(
-      "Use 1–40 letters, numbers, or internal hyphens.",
+      "Use 1–32 letters, numbers, or internal hyphens.",
     );
   }
   return value;
