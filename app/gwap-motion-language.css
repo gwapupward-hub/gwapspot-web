@@ -1,0 +1,236 @@
+/* GWAP Motion Language (GML)
+   Interaction primitives layer on top of the existing cinematic motion system. */
+:root {
+  --gwap-motion-instant: 120ms;
+  --gwap-motion-fast: 180ms;
+  --gwap-motion-normal: 320ms;
+  --gwap-motion-deliberate: 520ms;
+  --gwap-motion-cinematic: 780ms;
+  --gwap-ease-out: cubic-bezier(.16, 1, .3, 1);
+  --gwap-ease-in-out: cubic-bezier(.65, 0, .35, 1);
+}
+
+[data-gwap-interactive] {
+  position: relative;
+  isolation: isolate;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.gwap-tap-pulse {
+  position: absolute;
+  z-index: 7;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border: 1px solid rgba(255,255,255,.72);
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(255,255,255,.24), rgba(19,221,19,.12) 36%, transparent 68%);
+  box-shadow: 0 0 0 1px rgba(19,221,19,.18), 0 0 24px rgba(19,221,19,.22);
+  opacity: .78;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  transform: translateZ(0) scale(.2);
+  animation: gwapTapPulse var(--gwap-motion-deliberate) var(--gwap-ease-out) forwards;
+}
+
+@keyframes gwapTapPulse {
+  0% { opacity: .82; transform: translateZ(0) scale(.2); }
+  58% { opacity: .34; }
+  100% { opacity: 0; transform: translateZ(0) scale(18); }
+}
+
+.glass-button.gwap-pressing,
+.nav-contact.gwap-pressing,
+.icon-button.gwap-pressing,
+.hero-utility-tabs button.gwap-pressing,
+.hero-utility-form button.gwap-pressing,
+.hero-utility-result-actions a.gwap-pressing,
+.hero-utility-result-actions button.gwap-pressing,
+.social-row a.gwap-pressing,
+.story-chapters a.gwap-pressing,
+.cinematic-links a.gwap-pressing,
+.footer-nav a.gwap-pressing,
+.header-cta.gwap-pressing,
+.primary-button.gwap-pressing,
+.secondary-button.gwap-pressing,
+.product-link.gwap-pressing {
+  transform: translateY(1px) scale(.97);
+  filter: brightness(1.06);
+}
+
+.premium-product-card[data-gwap-reactive="true"]::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    430px circle at var(--gwap-pointer-x, 50%) var(--gwap-pointer-y, 50%),
+    rgba(255,255,255,.13),
+    rgba(19,221,19,.055) 19%,
+    transparent 48%
+  );
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--gwap-motion-fast) ease;
+}
+
+.premium-product-card[data-gwap-reactive="true"]:hover::before,
+.premium-product-card[data-gwap-reactive="true"]:focus-visible::before,
+.premium-product-card[data-gwap-reactive="true"].gwap-pressing::before {
+  opacity: 1;
+}
+
+.premium-product-card.gwap-pressing {
+  transform: translateY(-2px) scale(.985);
+  border-color: rgba(19,221,19,.42);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.15),
+    0 22px 58px rgba(0,0,0,.34),
+    0 0 38px rgba(19,221,19,.12);
+}
+
+.premium-product-card .product-glyph i,
+.premium-product-card .product-glyph b,
+.premium-product-card .product-card-footer svg {
+  transition:
+    transform var(--gwap-motion-normal) var(--gwap-ease-out),
+    opacity var(--gwap-motion-fast) ease,
+    filter var(--gwap-motion-fast) ease;
+}
+
+.premium-product-card:hover .product-glyph i,
+.premium-product-card:focus-visible .product-glyph i {
+  transform: rotate(38deg) scale(.9);
+  opacity: .52;
+}
+
+.premium-product-card:hover .product-glyph b,
+.premium-product-card:focus-visible .product-glyph b,
+.premium-product-card.gwap-pressing .product-glyph b {
+  transform: scale(1.09);
+  filter: drop-shadow(0 0 10px currentColor);
+}
+
+.premium-product-card:hover .product-card-footer svg,
+.premium-product-card:focus-visible .product-card-footer svg {
+  transform: translateX(4px);
+}
+
+.premium-product-card.gwap-pressing .card-reflection {
+  left: calc(100% + 50px);
+  transition-duration: 280ms;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ecosystem-group-products:has(.premium-product-card:hover) .premium-product-card:not(:hover) {
+    opacity: .72;
+    transform: translateY(2px) scale(.992);
+    filter: saturate(.82);
+  }
+
+  .ecosystem-group:has(.premium-product-card:hover) .ecosystem-group-signals li {
+    border-color: rgba(19,221,19,.3);
+    color: #b9cabc;
+    box-shadow: 0 0 18px rgba(19,221,19,.06);
+  }
+}
+
+/* The current lookup request becomes a compact network scan instead of a generic loading sentence. */
+.hero-utility-feedback > p:not(.is-error) {
+  position: relative;
+  min-height: 58px;
+  margin-top: 11px;
+  padding: 11px 13px;
+  overflow: hidden;
+  border: 1px solid rgba(19,221,19,.14);
+  border-radius: 13px;
+  background:
+    linear-gradient(90deg, rgba(19,221,19,.045), transparent 42%),
+    rgba(0,0,0,.2);
+  color: #a7b0aa;
+  line-height: 1.5;
+}
+
+.hero-utility-feedback > p:not(.is-error)::before {
+  content: "SOLANA  /  GNS  /  GWAPSCORE";
+  display: block;
+  margin-bottom: 4px;
+  color: var(--gwap-green);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 7px;
+  font-weight: 850;
+  letter-spacing: .13em;
+}
+
+.hero-utility-feedback > p:not(.is-error)::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -18%;
+  width: 18%;
+  background: linear-gradient(90deg, transparent, rgba(19,221,19,.28), rgba(255,255,255,.12), transparent);
+  filter: blur(2px);
+  animation: gwapNetworkScan 1.15s var(--gwap-ease-in-out) infinite;
+}
+
+@keyframes gwapNetworkScan {
+  from { transform: translateX(0); }
+  to { transform: translateX(680%); }
+}
+
+.hero-utility-result {
+  transform-origin: 50% 0;
+  animation: gwapResultReveal 440ms var(--gwap-ease-out) both;
+}
+
+@keyframes gwapResultReveal {
+  from { opacity: 0; transform: translateY(9px) scale(.985); filter: blur(5px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+
+.hero-utility-result .gwap-score-display > span:first-child strong {
+  display: inline-block;
+  transform-origin: left center;
+  animation: gwapScoreLock 520ms var(--gwap-ease-out) 90ms both;
+}
+
+@keyframes gwapScoreLock {
+  0% { opacity: .2; transform: translateY(5px) scale(.9); filter: blur(4px); }
+  72% { opacity: 1; transform: translateY(0) scale(1.07); filter: blur(0); }
+  100% { opacity: 1; transform: scale(1); filter: none; }
+}
+
+.hero-utility-form:focus-within {
+  filter: drop-shadow(0 0 18px rgba(19,221,19,.06));
+}
+
+/* Keep tap physics tactile on touch without relying on hover states. */
+@media (hover: none) {
+  .premium-product-card.gwap-pressing {
+    transform: scale(.982);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gwap-tap-pulse { display: none; }
+
+  [data-gwap-interactive].gwap-pressing {
+    filter: brightness(1.04);
+  }
+
+  .premium-product-card[data-gwap-reactive="true"]::before,
+  .premium-product-card .product-glyph i,
+  .premium-product-card .product-glyph b,
+  .premium-product-card .product-card-footer svg {
+    transition: none;
+  }
+
+  .hero-utility-feedback > p:not(.is-error)::after,
+  .hero-utility-result,
+  .hero-utility-result .gwap-score-display > span:first-child strong {
+    animation: none;
+  }
+}
