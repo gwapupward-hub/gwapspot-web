@@ -7,7 +7,7 @@ import { flushSync } from "react-dom";
 
 const INTRO_SESSION_KEY = "gwap-premium-intro-seen-v2";
 const INTRO_ENTER_DELAY_MS = 2750;
-const INTRO_EXIT_MS = 1100;
+const INTRO_EXIT_MS = 1750;
 const ROUTE_HOLD_MS = 900;
 const ROUTE_EXIT_MS = 900;
 const ROUTE_FALLBACK_MS = 2600;
