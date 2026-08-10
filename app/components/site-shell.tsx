@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { EcosystemProduct } from "../lib/ecosystem";
-import { socialLinks } from "../lib/ecosystem";
+import { getProductDestination, isExternalProductDestination, socialLinks } from "../lib/ecosystem";
 
 export function ArrowIcon() {
   return (
@@ -142,7 +142,9 @@ export function ProductCard({
   return (
     <Link
       className={`product-card product-card--${product.slug} accent-${product.accent}`}
-      href={`/ecosystem/${product.slug}`}
+      href={getProductDestination(product)}
+      target={isExternalProductDestination(product) ? "_blank" : undefined}
+      rel={isExternalProductDestination(product) ? "noreferrer" : undefined}
     >
       <div className="product-card-top">
         <span className="product-number">{String(index + 1).padStart(2, "0")}</span>

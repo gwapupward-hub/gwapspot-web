@@ -7,7 +7,7 @@ import {
   useState,
   type CSSProperties,
 } from "react";
-import { productBySlug } from "../lib/ecosystem";
+import { getProductDestination, isExternalProductDestination, productBySlug } from "../lib/ecosystem";
 
 const graphNodes = [
   { slug: "isnad-sunnah", shortLabel: "ISNAD", x: 104, y: 136 },
@@ -479,7 +479,11 @@ export function GwapEcosystemGraph() {
           </div>
 
           <div className="gwap-graph-inspector-actions">
-            <Link href={`/ecosystem/${activeSlug}`}>Open {activeProduct.name}</Link>
+            <Link
+              href={getProductDestination(activeProduct)}
+              target={isExternalProductDestination(activeProduct) ? "_blank" : undefined}
+              rel={isExternalProductDestination(activeProduct) ? "noreferrer" : undefined}
+            >Open {activeProduct.name}</Link>
             <span>Select a system lens, hover a participating product card, or pin another node to reroute the signal.</span>
           </div>
         </aside>
