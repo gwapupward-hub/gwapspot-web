@@ -4,6 +4,7 @@ import {
   isValidSolanaWallet,
 } from "../../../../app/lib/asset-intelligence";
 import { getGnsApiBase, resolveGnsIdentity } from "../../../../app/lib/gns";
+import { enrichPortfolio } from "../../../../app/lib/token-enrichment";
 import { getPublicLookupSubject } from "../../../../lib/public-lookup";
 import { checkRateLimit } from "../../../../lib/request-guard";
 
@@ -87,7 +88,10 @@ export async function GET(request: Request, context: RouteContext) {
     }),
     fetchAssetIntelligence(wallet, { timeoutMs: 8_000 }),
   ]);
-  const scoreHidden = await isScoreHidden(identity.name, identity.isGenesis);
+  const [scoreHidden, portfolio] = await Promise.all([
+    isScoreHidden(identity.name, identity.isGenesis),
+    enrichPortfolio(assets, { timeoutMs: 8_000 }),
+  ]);
 
   return json({
     wallet,
@@ -114,6 +118,7 @@ export async function GET(request: Request, context: RouteContext) {
           message: identity.scoreMessage,
         },
     assets,
+    portfolio,
     meta: {
       version: "v1",
       network: "mainnet-beta",
