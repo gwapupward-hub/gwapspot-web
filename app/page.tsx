@@ -1,5 +1,6 @@
 import { GwapBootSequence } from "./components/gwap-boot-sequence";
 import { CinematicHome } from "./components/cinematic-home";
+import { GwapEcosystemGraph } from "./components/gwap-ecosystem-graph";
 import { ScrollDirector } from "./components/scroll-director";
 
 export default function Home() {
@@ -7,6 +8,7 @@ export default function Home() {
     <>
       <ScrollDirector />
       <GwapBootSequence />
+      <GwapEcosystemGraph />
       <CinematicHome />
     </>
   );
