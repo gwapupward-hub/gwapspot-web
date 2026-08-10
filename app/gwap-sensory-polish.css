@@ -13,10 +13,14 @@
 .premium-product-card[data-gwap-interactive]:focus-visible,
 .product-card[data-gwap-interactive]:focus-visible,
 .primary-button[data-gwap-interactive]:focus-visible,
-.premium-splash__skip[data-gwap-interactive]:focus-visible,
-.gwap-graph-node[data-gwap-interactive]:focus-visible {
+.premium-splash__skip[data-gwap-interactive]:focus-visible {
   outline-color: rgba(19,221,19,.88);
   outline-offset: 4px;
+}
+
+.gwap-graph-node[data-gwap-interactive]:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--gwap-node-accent) 72%, white);
+  outline-offset: 3px;
 }
 
 .accent-purple[data-gwap-interactive]:focus-visible,
@@ -73,11 +77,23 @@
 
 /* Graph controls entered after Phase 1 and now receive the same tactile compression language. */
 .gwap-graph-mode-controls button.gwap-pressing,
-.gwap-graph-node.gwap-pressing,
 .gwap-graph-relations button.gwap-pressing,
 .gwap-graph-inspector-actions a.gwap-pressing,
 .premium-splash__skip.gwap-pressing {
   transform: translateY(1px) scale(.985);
+}
+
+.gwap-graph-node.gwap-pressing {
+  transform: translate(-50%,-50%) translateY(1px) scale(.985);
+}
+
+.gwap-graph-node:is(:hover, :focus-visible, .is-primary).gwap-pressing {
+  transform: translate(-50%,-50%) translateY(1px) scale(1.035);
+}
+
+/* The cinematic splash exit owns its transform once ENTER has been committed. */
+.premium-splash--intro.is-leaving .premium-splash__skip.gwap-pressing {
+  transform: translateY(-8px) scale(.925);
 }
 
 @media (hover: hover) and (pointer: fine) {
