@@ -7,7 +7,6 @@ import {
   useState,
   type CSSProperties,
 } from "react";
-import { createPortal } from "react-dom";
 import { productBySlug } from "../lib/ecosystem";
 
 const graphNodes = [
@@ -147,7 +146,6 @@ function productStatusLabel(status: string) {
 }
 
 export function GwapEcosystemGraph() {
-  const [portalHost, setPortalHost] = useState<HTMLElement | null>(null);
   const [pinnedSlug, setPinnedSlug] = useState<GraphSlug>("gwapscore");
   const [hoverSlug, setHoverSlug] = useState<GraphSlug | null>(null);
   const [cardSlug, setCardSlug] = useState<GraphSlug | null>(null);
@@ -170,26 +168,6 @@ export function GwapEcosystemGraph() {
       document.querySelector<HTMLButtonElement>(`[data-gwap-graph-node="${slug}"]`)?.focus();
     });
   };
-
-  useEffect(() => {
-    const groups = document.querySelector<HTMLElement>(".ecosystem-groups");
-    const parent = groups?.parentElement;
-    if (!groups || !parent) return;
-
-    const host = document.createElement("div");
-    host.className = "gwap-ecosystem-graph-host";
-    parent.insertBefore(host, groups);
-
-    document.querySelectorAll<HTMLElement>(".premium-product-card[href^='/ecosystem/']").forEach((card) => {
-      if (card.dataset.gwapProduct) return;
-      const href = card.getAttribute("href");
-      const match = href?.match(/^\/ecosystem\/([^/?#]+)/);
-      if (isGraphSlug(match?.[1])) card.dataset.gwapProduct = match[1];
-    });
-
-    setPortalHost(host);
-    return () => host.remove();
-  }, []);
 
   useEffect(() => {
     const findCardSlug = (target: EventTarget | null) => {
@@ -254,11 +232,9 @@ export function GwapEcosystemGraph() {
         card.classList.remove("gwap-graph-primary", "gwap-graph-linked");
       });
     };
-  }, [activeSlug, relatedSlugs, portalHost]);
+  }, [activeSlug, relatedSlugs]);
 
-  if (!portalHost) return null;
-
-  return createPortal(
+  return (
     <section className="gwap-ecosystem-graph" aria-labelledby="gwap-graph-heading">
       <header className="gwap-graph-header">
         <div>
@@ -377,7 +353,6 @@ export function GwapEcosystemGraph() {
           </div>
         </aside>
       </div>
-    </section>,
-    portalHost,
+    </section>
   );
 }
