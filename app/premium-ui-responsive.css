@@ -88,3 +88,61 @@
   .ecosystem-group-products .premium-product-card:nth-child(1),
   .ecosystem-group-products .premium-product-card:nth-child(2) { grid-column: 1; min-height: 330px; }
 }
+
+
+/*
+ * Mobile performance profile
+ * Safari can promote every blurred, continuously animated surface to its own
+ * compositing layer. Keep the glass hierarchy while removing persistent GPU work
+ * on touch and narrow devices.
+ */
+@media (hover: none) and (pointer: coarse), (max-width: 820px) {
+  .aurora,
+  .light-streak,
+  .emblem-halo,
+  .emblem-ring,
+  .depth-orbit,
+  .orbit-ring,
+  .community-glow,
+  .gwap-graph-core-ring,
+  .gwap-graph-edge-signal {
+    animation: none !important;
+  }
+
+  .aurora,
+  .light-streak,
+  .community-glow {
+    filter: none !important;
+  }
+
+  .cinematic-nav,
+  .cinematic-links,
+  .story-chapters,
+  .gwap-ecosystem-graph,
+  .metrics-glass,
+  .premium-product-card,
+  .community-panel {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  .cinematic-nav,
+  .cinematic-links,
+  .story-chapters {
+    background-color: rgba(6, 9, 7, .94);
+  }
+
+  .cinematic-home.scroll-directed,
+  .cinematic-home.scroll-directed .story-section[data-scroll-state] {
+    perspective: none;
+  }
+
+  .cinematic-home.scroll-directed .story-section[data-scroll-state],
+  .cinematic-home.scroll-directed .story-section[data-scroll-state] * {
+    will-change: auto !important;
+  }
+
+  .noise-layer {
+    display: none;
+  }
+}
