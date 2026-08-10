@@ -27,6 +27,15 @@ type DeveloperKeyRecord = {
 
 export type DeveloperKeySummary = Omit<DeveloperKeyRecord, "ownerId">;
 
+export type DeveloperKeyView = DeveloperKeySummary & {
+  usage: {
+    used: number;
+    limit: number;
+    remaining: number;
+    resetAt: string;
+  };
+};
+
 type DeveloperAccountRecord = {
   ownerId: string;
   keys: DeveloperKeySummary[];
@@ -79,18 +88,35 @@ async function readAccount(ownerId: string): Promise<DeveloperAccountRecord> {
   );
 }
 
-export async function listDeveloperApiKeys(ownerId: string) {
+export async function listDeveloperApiKeys(ownerId: string): Promise<DeveloperKeyView[]> {
+  const redis = getWorkspaceRedis();
   const account = await readAccount(ownerId);
-  return account.keys;
+  const window = getDeveloperUsageWindow();
+
+  return Promise.all(
+    account.keys.map(async (key) => {
+      const rawUsed = await redis.get<number | string>(usageStorageKey(key.id, window.id));
+      const usedValue = Number(rawUsed ?? 0);
+      const used = Number.isFinite(usedValue) && usedValue > 0 ? Math.floor(usedValue) : 0;
+      const limits = getDeveloperPlanLimits(key.plan);
+      return {
+        ...key,
+        usage: {
+          used,
+          limit: limits.requestsPerMonth,
+          remaining: Math.max(0, limits.requestsPerMonth - used),
+          resetAt: window.reset.toISOString(),
+        },
+      };
+    }),
+  );
 }
 
 export async function createDeveloperApiKey(ownerId: string, label?: unknown) {
   const redis = getWorkspaceRedis();
   const account = await readAccount(ownerId);
   const activeCount = account.keys.filter((key) => key.status === "active").length;
-  if (activeCount >= MAX_KEYS_PER_OWNER) {
-    throw new Error("API_KEY_LIMIT");
-  }
+  if (activeCount >= MAX_KEYS_PER_OWNER) throw new Error("API_KEY_LIMIT");
 
   const material = createDeveloperApiKeyMaterial();
   const record: DeveloperKeyRecord = {
@@ -130,9 +156,6 @@ export async function revokeDeveloperApiKey(ownerId: string, keyId: string) {
   const target = account.keys.find((key) => key.id === keyId);
   if (!target || target.status !== "active") return false;
 
-  // The raw key hash is intentionally not recoverable from the account index.
-  // Marking the account summary revoked immediately removes it from active use
-  // once the per-key record is located through a presented credential.
   const revokedAt = new Date().toISOString();
   const keys = account.keys.map((key) =>
     key.id === keyId ? { ...key, status: "revoked" as const, revokedAt } : key,
@@ -217,11 +240,10 @@ export async function authorizeDeveloperApiRequest(
     const usageKey = usageStorageKey(record.id, window.id);
     const used = await redis.incr(usageKey);
     if (used === 1) await redis.expire(usageKey, window.ttlSeconds);
-    const remaining = Math.max(0, limits.requestsPerMonth - used);
     const usage = {
       used,
       limit: limits.requestsPerMonth,
-      remaining,
+      remaining: Math.max(0, limits.requestsPerMonth - used),
       resetAt: window.reset.toISOString(),
     };
 
