@@ -214,6 +214,405 @@
   }
 }
 
+/* Phase 2: Scroll-to-enter becomes a compact system boot sequence. */
+.gwap-boot-sequence {
+  position: fixed;
+  z-index: 240;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  padding: 24px;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(19,221,19,.1), transparent 42%),
+    rgba(1,5,2,.72);
+  backdrop-filter: blur(10px) saturate(115%);
+  -webkit-backdrop-filter: blur(10px) saturate(115%);
+  animation: gwapBootBackdropIn 180ms ease both;
+}
+
+.gwap-boot-sequence.is-online {
+  animation: gwapBootBackdropOut 560ms var(--gwap-ease-out) forwards;
+}
+
+.gwap-boot-grid {
+  position: absolute;
+  inset: -12%;
+  background-image:
+    linear-gradient(rgba(19,221,19,.065) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(19,221,19,.065) 1px, transparent 1px);
+  background-size: 54px 54px;
+  mask-image: radial-gradient(circle at center, black, transparent 68%);
+  opacity: .6;
+  transform: perspective(900px) rotateX(64deg) translateY(18%);
+  animation: gwapBootGrid 920ms var(--gwap-ease-out) both;
+}
+
+.gwap-boot-panel {
+  position: relative;
+  width: min(620px, calc(100vw - 42px));
+  overflow: hidden;
+  padding: 22px;
+  border: 1px solid rgba(19,221,19,.24);
+  border-radius: 22px;
+  background: linear-gradient(145deg, rgba(15,23,17,.92), rgba(3,7,4,.86));
+  box-shadow:
+    inset 0 1px rgba(255,255,255,.11),
+    0 38px 100px rgba(0,0,0,.55),
+    0 0 80px rgba(19,221,19,.08);
+  transform-origin: center;
+  animation: gwapBootPanelIn 420ms var(--gwap-ease-out) both;
+}
+
+.gwap-boot-panel::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -22%;
+  width: 20%;
+  background: linear-gradient(90deg, transparent, rgba(19,221,19,.2), rgba(255,255,255,.08), transparent);
+  filter: blur(3px);
+  animation: gwapBootSweep 850ms var(--gwap-ease-in-out) both;
+}
+
+.gwap-boot-heading {
+  display: grid;
+  gap: 7px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+
+.gwap-boot-heading span,
+.gwap-boot-panel footer span {
+  color: var(--gwap-green);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 8px;
+  font-weight: 850;
+  letter-spacing: .16em;
+}
+
+.gwap-boot-heading strong {
+  font-size: clamp(22px, 4vw, 38px);
+  letter-spacing: -.04em;
+}
+
+.gwap-boot-modules {
+  display: grid;
+  gap: 1px;
+  margin-top: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 14px;
+  background: rgba(255,255,255,.06);
+}
+
+.gwap-boot-modules > div {
+  display: grid;
+  grid-template-columns: minmax(90px, .5fr) 1fr auto;
+  align-items: center;
+  gap: 13px;
+  min-height: 45px;
+  padding: 0 13px;
+  background: rgba(3,8,4,.92);
+  opacity: 0;
+  transform: translateX(-10px);
+  animation: gwapBootModule 280ms var(--gwap-ease-out) forwards;
+  animation-delay: calc(80ms + var(--gwap-boot-index) * 72ms);
+}
+
+.gwap-boot-modules span,
+.gwap-boot-modules b,
+.gwap-boot-panel footer b {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 8px;
+  font-weight: 850;
+  letter-spacing: .11em;
+}
+
+.gwap-boot-modules span { color: #c4cbc6; }
+.gwap-boot-modules b { color: #6e7871; }
+.gwap-boot-modules i {
+  position: relative;
+  height: 1px;
+  overflow: visible;
+  background: rgba(255,255,255,.09);
+}
+.gwap-boot-modules i::after {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--gwap-green);
+  box-shadow: 0 0 13px var(--gwap-green);
+  animation: gwapBootSignal 520ms var(--gwap-ease-in-out) infinite alternate;
+}
+
+.gwap-boot-sequence.is-online .gwap-boot-modules b,
+.gwap-boot-sequence.is-online .gwap-boot-panel footer b {
+  color: var(--gwap-green);
+}
+
+.gwap-boot-panel footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 14px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+
+.gwap-boot-panel footer b { color: #747e76; }
+
+@keyframes gwapBootBackdropIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes gwapBootBackdropOut {
+  0%, 34% { opacity: 1; }
+  100% { opacity: 0; filter: blur(4px); }
+}
+
+@keyframes gwapBootGrid {
+  from { opacity: 0; transform: perspective(900px) rotateX(72deg) translateY(28%) scale(1.08); }
+  to { opacity: .6; transform: perspective(900px) rotateX(64deg) translateY(18%) scale(1); }
+}
+
+@keyframes gwapBootPanelIn {
+  from { opacity: 0; transform: translateY(18px) scale(.96); filter: blur(9px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+
+@keyframes gwapBootSweep {
+  from { transform: translateX(0); }
+  to { transform: translateX(720%); }
+}
+
+@keyframes gwapBootModule {
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes gwapBootSignal {
+  from { transform: translateX(0); opacity: .5; }
+  to { transform: translateX(90px); opacity: 1; }
+}
+
+/* Phase 2: each product gets a signature activation while keeping shared physics. */
+.premium-product-card[data-gwap-product] .product-glyph::after {
+  position: absolute;
+  right: 7px;
+  bottom: 5px;
+  max-width: 58px;
+  color: currentColor;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 6px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  line-height: 1;
+  text-align: right;
+  opacity: 0;
+  transform: translateY(5px) scale(.9);
+  filter: blur(3px);
+  pointer-events: none;
+}
+
+.premium-product-card[data-gwap-product="gns"] .product-glyph::after { content: ".GWAP"; }
+.premium-product-card[data-gwap-product="gwapscore"] .product-glyph::after { content: "300—900"; }
+.premium-product-card[data-gwap-product="dimi"] .product-glyph::after { content: "▁▃▆▂▅"; letter-spacing: -.03em; }
+.premium-product-card[data-gwap-product="isnad-sunnah"] .product-glyph::after { content: "01·02·03"; }
+.premium-product-card[data-gwap-product="money-neva-sleeps"] .product-glyph::after { content: "MN$"; }
+.premium-product-card[data-gwap-product="marketplace"] .product-glyph::after { content: "▦  ▦"; }
+.premium-product-card[data-gwap-product="occo"] .product-glyph::after { content: "A+ / RISK"; }
+.premium-product-card[data-gwap-product="private-proof-vault"] .product-glyph::after { content: "LOCKED"; }
+
+.premium-product-card[data-gwap-product]:hover .product-glyph::after,
+.premium-product-card[data-gwap-product]:focus-visible .product-glyph::after,
+.premium-product-card[data-gwap-product].gwap-product-activating .product-glyph::after {
+  animation: gwapSignatureIn 420ms var(--gwap-ease-out) both;
+}
+
+.premium-product-card[data-gwap-product="gns"].gwap-product-activating .product-glyph i {
+  transform: rotate(92deg) scale(.84);
+}
+
+.premium-product-card[data-gwap-product="gwapscore"].gwap-product-activating .product-glyph::after {
+  animation: gwapScoreSignature 520ms var(--gwap-ease-out) both;
+}
+
+.premium-product-card[data-gwap-product="dimi"].gwap-product-activating .product-glyph::after {
+  animation: gwapWaveSignature 430ms ease-in-out 2 alternate;
+}
+
+.premium-product-card[data-gwap-product="isnad-sunnah"].gwap-product-activating .product-glyph::after {
+  animation: gwapNodeSignature 560ms var(--gwap-ease-out) both;
+}
+
+.premium-product-card[data-gwap-product="marketplace"].gwap-product-activating .product-glyph::after {
+  animation: gwapGridSignature 440ms var(--gwap-ease-out) both;
+}
+
+.premium-product-card[data-gwap-product="occo"].gwap-product-activating .product-glyph::after {
+  animation: gwapCreditSignature 500ms steps(4, end) both;
+}
+
+.premium-product-card[data-gwap-product="private-proof-vault"].gwap-product-activating .product-glyph i {
+  transform: rotate(135deg) scale(.8);
+  border-radius: 50%;
+}
+
+.premium-product-card[data-gwap-product="money-neva-sleeps"].gwap-product-activating .product-glyph::after {
+  animation: gwapBrandSignature 520ms steps(2, end) both;
+}
+
+.ecosystem-group[data-gwap-active-product] {
+  border-color: rgba(19,221,19,.28);
+  box-shadow:
+    inset 0 1px rgba(255,255,255,.1),
+    0 32px 85px rgba(0,0,0,.28),
+    0 0 44px rgba(19,221,19,.07);
+}
+
+.ecosystem-group[data-gwap-active-product] .ecosystem-group-header::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gwap-green), rgba(255,255,255,.45), transparent);
+  transform-origin: left;
+  animation: gwapGroupRelay 620ms var(--gwap-ease-in-out) both;
+}
+
+.ecosystem-group[data-gwap-active-product] .ecosystem-group-signals li {
+  animation: gwapSignalPill 460ms var(--gwap-ease-out) both;
+}
+.ecosystem-group[data-gwap-active-product] .ecosystem-group-signals li:nth-child(2) { animation-delay: 45ms; }
+.ecosystem-group[data-gwap-active-product] .ecosystem-group-signals li:nth-child(3) { animation-delay: 90ms; }
+.ecosystem-group[data-gwap-active-product] .ecosystem-group-signals li:nth-child(4) { animation-delay: 135ms; }
+.ecosystem-group[data-gwap-active-product] .ecosystem-group-signals li:nth-child(5) { animation-delay: 180ms; }
+
+@keyframes gwapSignatureIn {
+  from { opacity: 0; transform: translateY(5px) scale(.9); filter: blur(3px); }
+  to { opacity: .88; transform: none; filter: none; }
+}
+
+@keyframes gwapScoreSignature {
+  0% { opacity: 0; transform: translateY(4px) scale(.82); filter: blur(3px); }
+  70% { opacity: 1; transform: translateY(0) scale(1.08); filter: none; }
+  100% { opacity: .9; transform: scale(1); filter: none; }
+}
+
+@keyframes gwapWaveSignature {
+  from { opacity: .35; transform: translateY(3px) scaleY(.65); filter: blur(1px); }
+  to { opacity: 1; transform: translateY(-1px) scaleY(1.18); filter: none; }
+}
+
+@keyframes gwapNodeSignature {
+  0% { opacity: 0; letter-spacing: .28em; transform: translateX(-5px); }
+  100% { opacity: .95; letter-spacing: .08em; transform: none; }
+}
+
+@keyframes gwapGridSignature {
+  from { opacity: 0; transform: rotate(-8deg) scale(.74); }
+  to { opacity: .95; transform: none; }
+}
+
+@keyframes gwapCreditSignature {
+  0% { opacity: 0; transform: translateX(-8px); }
+  100% { opacity: .9; transform: none; }
+}
+
+@keyframes gwapBrandSignature {
+  0%, 30% { opacity: 0; transform: skewX(-8deg); }
+  31%, 65% { opacity: 1; transform: skewX(4deg); }
+  66%, 100% { opacity: .92; transform: none; }
+}
+
+@keyframes gwapGroupRelay {
+  from { opacity: 0; transform: scaleX(0); }
+  55% { opacity: 1; }
+  to { opacity: 0; transform: scaleX(1); }
+}
+
+@keyframes gwapSignalPill {
+  0% { transform: translateY(3px); filter: brightness(.8); }
+  55% { transform: translateY(-2px); filter: brightness(1.3); }
+  100% { transform: none; filter: none; }
+}
+
+/* Cross-page handoff: destination product heroes receive the launched identity. */
+.product-hero[data-gwap-product-hero] {
+  --gwap-arrival-x: 0px;
+  --gwap-arrival-y: 14px;
+  --gwap-arrival-scale: .96;
+  --gwap-arrival-rotate: 0deg;
+  --gwap-arrival-glow: rgba(19,221,19,.2);
+}
+
+.product-hero[data-gwap-product-hero="gns"] { --gwap-arrival-x: -12px; --gwap-arrival-rotate: -3deg; --gwap-arrival-glow: rgba(19,221,19,.22); }
+.product-hero[data-gwap-product-hero="gwapscore"] { --gwap-arrival-scale: .88; --gwap-arrival-glow: rgba(19,221,19,.28); }
+.product-hero[data-gwap-product-hero="dimi"] { --gwap-arrival-y: 22px; --gwap-arrival-rotate: 2deg; --gwap-arrival-glow: rgba(141,92,255,.25); }
+.product-hero[data-gwap-product-hero="isnad-sunnah"] { --gwap-arrival-x: -18px; --gwap-arrival-glow: rgba(19,221,19,.18); }
+.product-hero[data-gwap-product-hero="money-neva-sleeps"] { --gwap-arrival-x: 14px; --gwap-arrival-rotate: 2deg; --gwap-arrival-glow: rgba(255,133,46,.24); }
+.product-hero[data-gwap-product-hero="marketplace"] { --gwap-arrival-y: 18px; --gwap-arrival-scale: .92; --gwap-arrival-glow: rgba(255,133,46,.24); }
+.product-hero[data-gwap-product-hero="occo"] { --gwap-arrival-y: -12px; --gwap-arrival-scale: .93; --gwap-arrival-glow: rgba(141,92,255,.25); }
+.product-hero[data-gwap-product-hero="private-proof-vault"] { --gwap-arrival-rotate: 7deg; --gwap-arrival-scale: .88; --gwap-arrival-glow: rgba(141,92,255,.3); }
+
+.product-hero.gwap-product-arrival .product-hero-logo {
+  animation: gwapProductReceiver 720ms var(--gwap-ease-out) both;
+}
+
+.product-hero.gwap-product-arrival .product-eyebrow,
+.product-hero.gwap-product-arrival h1,
+.product-hero.gwap-product-arrival .product-hero-grid > div > p,
+.product-hero.gwap-product-arrival .inner-hero-actions {
+  animation: gwapProductCopyArrival 640ms var(--gwap-ease-out) both;
+}
+.product-hero.gwap-product-arrival h1 { animation-delay: 45ms; }
+.product-hero.gwap-product-arrival .product-hero-grid > div > p { animation-delay: 90ms; }
+.product-hero.gwap-product-arrival .inner-hero-actions { animation-delay: 135ms; }
+
+.product-hero.gwap-product-arrival .product-brief {
+  animation: gwapProductBriefArrival 700ms var(--gwap-ease-out) 110ms both;
+}
+
+@keyframes gwapProductReceiver {
+  from {
+    opacity: .3;
+    transform: translate3d(var(--gwap-arrival-x), var(--gwap-arrival-y), 0) scale(var(--gwap-arrival-scale)) rotate(var(--gwap-arrival-rotate));
+    filter: blur(9px) drop-shadow(0 0 0 transparent);
+  }
+  72% {
+    opacity: 1;
+    transform: translate3d(0,0,0) scale(1.035) rotate(0deg);
+    filter: blur(0) drop-shadow(0 0 24px var(--gwap-arrival-glow));
+  }
+  to { opacity: 1; transform: none; filter: none; }
+}
+
+@keyframes gwapProductCopyArrival {
+  from { opacity: 0; transform: translateY(13px); filter: blur(5px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+
+@keyframes gwapProductBriefArrival {
+  from { opacity: 0; transform: translateX(18px) scale(.98); filter: blur(6px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+
+@media (max-width: 680px) {
+  .gwap-boot-sequence { padding: 18px; }
+  .gwap-boot-panel { padding: 17px; border-radius: 18px; }
+  .gwap-boot-panel footer { display: grid; }
+  .gwap-boot-modules > div { grid-template-columns: 88px 1fr auto; gap: 8px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .gwap-tap-pulse { display: none; }
 
@@ -230,7 +629,22 @@
 
   .hero-utility-feedback > p:not(.is-error)::after,
   .hero-utility-result,
-  .hero-utility-result .gwap-score-display > span:first-child strong {
+  .hero-utility-result .gwap-score-display > span:first-child strong,
+  .gwap-boot-sequence,
+  .gwap-boot-grid,
+  .gwap-boot-panel,
+  .gwap-boot-panel::after,
+  .gwap-boot-modules > div,
+  .gwap-boot-modules i::after,
+  .premium-product-card[data-gwap-product] .product-glyph::after,
+  .ecosystem-group[data-gwap-active-product] .ecosystem-group-header::after,
+  .ecosystem-group[data-gwap-active-product] .ecosystem-group-signals li,
+  .product-hero.gwap-product-arrival .product-hero-logo,
+  .product-hero.gwap-product-arrival .product-eyebrow,
+  .product-hero.gwap-product-arrival h1,
+  .product-hero.gwap-product-arrival .product-hero-grid > div > p,
+  .product-hero.gwap-product-arrival .inner-hero-actions,
+  .product-hero.gwap-product-arrival .product-brief {
     animation: none;
   }
 }
