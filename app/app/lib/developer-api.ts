@@ -9,8 +9,10 @@ import {
   type DeveloperPlan,
 } from "../../lib/developer-api-core";
 import { getPrivateStorageKey, getWorkspaceRedis } from "../../lib/redis";
+import { resolveDeveloperPlan } from "./developer-billing";
 
 const MAX_KEYS_PER_OWNER = 3;
+const DAILY_ANALYTICS_TTL_SECONDS = 45 * 24 * 60 * 60;
 
 type DeveloperKeyStatus = "active" | "revoked";
 
@@ -27,13 +29,15 @@ type DeveloperKeyRecord = {
 
 export type DeveloperKeySummary = Omit<DeveloperKeyRecord, "ownerId">;
 
+export type DeveloperUsage = {
+  used: number;
+  limit: number;
+  remaining: number;
+  resetAt: string;
+};
+
 export type DeveloperKeyView = DeveloperKeySummary & {
-  usage: {
-    used: number;
-    limit: number;
-    remaining: number;
-    resetAt: string;
-  };
+  usage: DeveloperUsage;
 };
 
 type DeveloperAccountRecord = {
@@ -48,12 +52,7 @@ export type DeveloperApiAuthorization = {
   keyId: string | null;
   ownerId: string | null;
   plan: DeveloperPlan | null;
-  usage: {
-    used: number;
-    limit: number;
-    remaining: number;
-    resetAt: string;
-  } | null;
+  usage: DeveloperUsage | null;
 };
 
 function ownerStorageKey(ownerId: string) {
@@ -64,8 +63,12 @@ function apiKeyStorageKey(hash: string) {
   return getPrivateStorageKey("developer-key", hash);
 }
 
-function usageStorageKey(keyId: string, windowId: string) {
-  return getPrivateStorageKey("developer-usage", `${keyId}:${windowId}`);
+function usageStorageKey(ownerId: string, windowId: string) {
+  return getPrivateStorageKey("developer-usage-account", `${ownerId}:${windowId}`);
+}
+
+function dailyUsageStorageKey(ownerId: string, dateId: string) {
+  return getPrivateStorageKey("developer-usage-day", `${ownerId}:${dateId}`);
 }
 
 function minuteStorageKey(keyId: string, minute: number) {
@@ -78,6 +81,10 @@ function sanitizeLabel(value: unknown) {
   return label || "Default";
 }
 
+function utcDateId(date = new Date()) {
+  return date.toISOString().slice(0, 10);
+}
+
 async function readAccount(ownerId: string): Promise<DeveloperAccountRecord> {
   const redis = getWorkspaceRedis();
   return (
@@ -88,33 +95,70 @@ async function readAccount(ownerId: string): Promise<DeveloperAccountRecord> {
   );
 }
 
-export async function listDeveloperApiKeys(ownerId: string): Promise<DeveloperKeyView[]> {
+async function getAccountUsage(ownerId: string, plan: DeveloperPlan) {
   const redis = getWorkspaceRedis();
-  const account = await readAccount(ownerId);
   const window = getDeveloperUsageWindow();
+  const rawUsed = await redis.get<number | string>(usageStorageKey(ownerId, window.id));
+  const usedValue = Number(rawUsed ?? 0);
+  const used = Number.isFinite(usedValue) && usedValue > 0 ? Math.floor(usedValue) : 0;
+  const limits = getDeveloperPlanLimits(plan);
+  return {
+    used,
+    limit: limits.requestsPerMonth,
+    remaining: Math.max(0, limits.requestsPerMonth - used),
+    resetAt: window.reset.toISOString(),
+  } satisfies DeveloperUsage;
+}
 
-  return Promise.all(
-    account.keys.map(async (key) => {
-      const rawUsed = await redis.get<number | string>(usageStorageKey(key.id, window.id));
-      const usedValue = Number(rawUsed ?? 0);
-      const used = Number.isFinite(usedValue) && usedValue > 0 ? Math.floor(usedValue) : 0;
-      const limits = getDeveloperPlanLimits(key.plan);
-      return {
-        ...key,
-        usage: {
-          used,
-          limit: limits.requestsPerMonth,
-          remaining: Math.max(0, limits.requestsPerMonth - used),
-          resetAt: window.reset.toISOString(),
-        },
-      };
-    }),
+export async function getDeveloperApiAccount(ownerId: string) {
+  const [account, plan] = await Promise.all([
+    readAccount(ownerId),
+    resolveDeveloperPlan(ownerId),
+  ]);
+  const usage = await getAccountUsage(ownerId, plan);
+  const keys: DeveloperKeyView[] = account.keys.map((key) => ({
+    ...key,
+    plan,
+    usage,
+  }));
+  return { plan, usage, keys };
+}
+
+export async function listDeveloperApiKeys(ownerId: string) {
+  return (await getDeveloperApiAccount(ownerId)).keys;
+}
+
+export async function getDeveloperUsageAnalytics(ownerId: string, days = 30) {
+  const safeDays = Math.max(1, Math.min(30, Math.floor(days)));
+  const today = new Date();
+  const dates = Array.from({ length: safeDays }, (_, index) => {
+    const date = new Date(Date.UTC(
+      today.getUTCFullYear(),
+      today.getUTCMonth(),
+      today.getUTCDate() - (safeDays - 1 - index),
+    ));
+    return utcDateId(date);
+  });
+  const redis = getWorkspaceRedis();
+  const values = await Promise.all(
+    dates.map((date) => redis.get<number | string>(dailyUsageStorageKey(ownerId, date))),
   );
+
+  return dates.map((date, index) => {
+    const parsed = Number(values[index] ?? 0);
+    return {
+      date,
+      requests: Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 0,
+    };
+  });
 }
 
 export async function createDeveloperApiKey(ownerId: string, label?: unknown) {
   const redis = getWorkspaceRedis();
-  const account = await readAccount(ownerId);
+  const [account, plan] = await Promise.all([
+    readAccount(ownerId),
+    resolveDeveloperPlan(ownerId),
+  ]);
   const activeCount = account.keys.filter((key) => key.status === "active").length;
   if (activeCount >= MAX_KEYS_PER_OWNER) throw new Error("API_KEY_LIMIT");
 
@@ -124,7 +168,7 @@ export async function createDeveloperApiKey(ownerId: string, label?: unknown) {
     ownerId,
     label: sanitizeLabel(label),
     preview: material.preview,
-    plan: "developer",
+    plan,
     status: "active",
     createdAt: new Date().toISOString(),
     revokedAt: null,
@@ -219,7 +263,8 @@ export async function authorizeDeveloperApiRequest(
       };
     }
 
-    const limits = getDeveloperPlanLimits(record.plan);
+    const plan = await resolveDeveloperPlan(record.ownerId);
+    const limits = getDeveloperPlanLimits(plan);
     const minute = Math.floor(Date.now() / 60_000);
     const minuteKey = minuteStorageKey(record.id, minute);
     const minuteCount = await redis.incr(minuteKey);
@@ -231,13 +276,13 @@ export async function authorizeDeveloperApiRequest(
         error: "Per-minute API limit exceeded.",
         keyId: record.id,
         ownerId: record.ownerId,
-        plan: record.plan,
+        plan,
         usage: null,
       };
     }
 
     const window = getDeveloperUsageWindow();
-    const usageKey = usageStorageKey(record.id, window.id);
+    const usageKey = usageStorageKey(record.ownerId, window.id);
     const used = await redis.incr(usageKey);
     if (used === 1) await redis.expire(usageKey, window.ttlSeconds);
     const usage = {
@@ -254,10 +299,14 @@ export async function authorizeDeveloperApiRequest(
         error: "Monthly API quota exceeded.",
         keyId: record.id,
         ownerId: record.ownerId,
-        plan: record.plan,
+        plan,
         usage,
       };
     }
+
+    const dailyKey = dailyUsageStorageKey(record.ownerId, utcDateId());
+    const dailyCount = await redis.incr(dailyKey);
+    if (dailyCount === 1) await redis.expire(dailyKey, DAILY_ANALYTICS_TTL_SECONDS);
 
     return {
       allowed: true,
@@ -265,7 +314,7 @@ export async function authorizeDeveloperApiRequest(
       error: null,
       keyId: record.id,
       ownerId: record.ownerId,
-      plan: record.plan,
+      plan,
       usage,
     };
   } catch {
