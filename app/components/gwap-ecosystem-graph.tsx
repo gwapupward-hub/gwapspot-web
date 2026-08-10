@@ -7,6 +7,7 @@ import {
   useState,
   type CSSProperties,
 } from "react";
+import { createPortal } from "react-dom";
 import { productBySlug } from "../lib/ecosystem";
 
 const graphNodes = [
@@ -146,6 +147,7 @@ function productStatusLabel(status: string) {
 }
 
 export function GwapEcosystemGraph() {
+  const [portalHost, setPortalHost] = useState<HTMLElement | null>(null);
   const [pinnedSlug, setPinnedSlug] = useState<GraphSlug>("gwapscore");
   const [hoverSlug, setHoverSlug] = useState<GraphSlug | null>(null);
   const [cardSlug, setCardSlug] = useState<GraphSlug | null>(null);
@@ -159,6 +161,26 @@ export function GwapEcosystemGraph() {
   );
 
   const relatedSlugs = useMemo(() => connectedSlugs(activeSlug), [activeSlug]);
+
+  useEffect(() => {
+    const groups = document.querySelector<HTMLElement>(".ecosystem-groups");
+    const parent = groups?.parentElement;
+    if (!groups || !parent) return;
+
+    const host = document.createElement("div");
+    host.className = "gwap-ecosystem-graph-host";
+    parent.insertBefore(host, groups);
+
+    document.querySelectorAll<HTMLElement>(".premium-product-card[href^='/ecosystem/']").forEach((card) => {
+      if (card.dataset.gwapProduct) return;
+      const href = card.getAttribute("href");
+      const match = href?.match(/^\/ecosystem\/([^/?#]+)/);
+      if (isGraphSlug(match?.[1])) card.dataset.gwapProduct = match[1];
+    });
+
+    setPortalHost(host);
+    return () => host.remove();
+  }, []);
 
   useEffect(() => {
     const findCardSlug = (target: EventTarget | null) => {
@@ -175,8 +197,9 @@ export function GwapEcosystemGraph() {
 
     const onPointerOut = (event: PointerEvent) => {
       const slug = findCardSlug(event.target);
-      if (!slug) return;
-      if (event.relatedTarget instanceof Node && (event.target as Element).closest(".premium-product-card")?.contains(event.relatedTarget)) return;
+      if (!slug || !(event.target instanceof Element)) return;
+      const card = event.target.closest(".premium-product-card");
+      if (event.relatedTarget instanceof Node && card?.contains(event.relatedTarget)) return;
       setCardSlug((current) => (current === slug ? null : current));
     };
 
@@ -187,8 +210,9 @@ export function GwapEcosystemGraph() {
 
     const onFocusOut = (event: FocusEvent) => {
       const slug = findCardSlug(event.target);
-      if (!slug) return;
-      if (event.relatedTarget instanceof Node && (event.target as Element).closest(".premium-product-card")?.contains(event.relatedTarget)) return;
+      if (!slug || !(event.target instanceof Element)) return;
+      const card = event.target.closest(".premium-product-card");
+      if (event.relatedTarget instanceof Node && card?.contains(event.relatedTarget)) return;
       setCardSlug((current) => (current === slug ? null : current));
     };
 
@@ -214,17 +238,18 @@ export function GwapEcosystemGraph() {
       const isLinked = isGraphSlug(slug) && relatedSlugs.has(slug) && !isPrimary;
       card.classList.toggle("gwap-graph-primary", isPrimary);
       card.classList.toggle("gwap-graph-linked", isLinked);
-      card.classList.toggle("gwap-graph-muted", !isPrimary && !isLinked);
     });
 
     return () => {
       cards.forEach((card) => {
-        card.classList.remove("gwap-graph-primary", "gwap-graph-linked", "gwap-graph-muted");
+        card.classList.remove("gwap-graph-primary", "gwap-graph-linked");
       });
     };
-  }, [activeSlug, relatedSlugs]);
+  }, [activeSlug, relatedSlugs, portalHost]);
 
-  return (
+  if (!portalHost) return null;
+
+  return createPortal(
     <section className="gwap-ecosystem-graph" aria-labelledby="gwap-graph-heading">
       <header className="gwap-graph-header">
         <div>
@@ -308,7 +333,7 @@ export function GwapEcosystemGraph() {
           </div>
         </div>
 
-        <aside className="gwap-graph-inspector" aria-live="polite">
+        <aside className="gwap-graph-inspector" aria-label={`Selected product relationships for ${activeProduct.name}`}>
           <div className="gwap-graph-inspector-heading">
             <span>{activeProduct.status}</span>
             <strong>{activeProduct.name}</strong>
@@ -346,6 +371,7 @@ export function GwapEcosystemGraph() {
           </div>
         </aside>
       </div>
-    </section>
+    </section>,
+    portalHost,
   );
 }
