@@ -5,6 +5,13 @@ import { useEffect } from "react";
 const TAP_MAX_DISTANCE = 10;
 const TAP_MAX_DURATION_MS = 650;
 const HAPTIC_THROTTLE_MS = 90;
+const SENSORY_TARGET_SELECTOR = [
+  ".premium-splash__skip",
+  ".gwap-graph-mode-controls button",
+  ".gwap-graph-node",
+  ".gwap-graph-relations button",
+  ".gwap-graph-inspector-actions a",
+].join(",");
 
 type TapCandidate = {
   element: HTMLElement;
@@ -43,6 +50,17 @@ function getFeedbackTier(element: HTMLElement) {
   return "utility";
 }
 
+function enhanceElement(element: Element) {
+  if (!(element instanceof HTMLElement) || !element.matches(SENSORY_TARGET_SELECTOR)) return;
+  element.dataset.gwapInteractive ||= "sensory";
+  element.dataset.gwapFeedbackTier ||= getFeedbackTier(element);
+}
+
+function enhanceTree(root: ParentNode) {
+  if (root instanceof Element) enhanceElement(root);
+  root.querySelectorAll(SENSORY_TARGET_SELECTOR).forEach(enhanceElement);
+}
+
 function getHapticDuration(tier: string) {
   if (tier === "primary") return 8;
   if (tier === "system") return 6;
@@ -56,8 +74,18 @@ export function GwapSensoryPolishLayer() {
     const feedbackTimers = new WeakMap<HTMLElement, number>();
     let lastHapticAt = 0;
 
+    enhanceTree(document.body);
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+          if (node instanceof Element) enhanceTree(node);
+        });
+      });
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
     const confirmFeedback = (element: HTMLElement, allowHaptic: boolean) => {
-      const tier = getFeedbackTier(element);
+      const tier = element.dataset.gwapFeedbackTier || getFeedbackTier(element);
       element.dataset.gwapFeedbackTier = tier;
 
       const existingTimer = feedbackTimers.get(element);
@@ -143,6 +171,7 @@ export function GwapSensoryPolishLayer() {
     document.addEventListener("click", onClick, { capture: true });
 
     return () => {
+      observer.disconnect();
       document.removeEventListener("pointerdown", onPointerDown, { capture: true });
       document.removeEventListener("pointerup", onPointerUp, { capture: true });
       document.removeEventListener("pointercancel", onPointerCancel, { capture: true });
