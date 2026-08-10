@@ -50,6 +50,7 @@ export function SiteHeader() {
       <nav className="desktop-nav" aria-label="Primary navigation">
         <Link href="/launch">Launch</Link>
         <Link href="/ecosystem">Ecosystem</Link>
+        <Link href="/developers">Developers</Link>
         <Link href="/about">About</Link>
         <Link href="/roadmap">Roadmap</Link>
         <Link href="/changelog">Build Log</Link>
@@ -81,6 +82,7 @@ export function SiteFooter() {
         <Link href="/app">GWAP OS</Link>
         <Link href="/launch">Launchpad</Link>
         <Link href="/ecosystem">Ecosystem</Link>
+        <Link href="/developers">Developers</Link>
         <Link href="/about">About</Link>
         <Link href="/roadmap">Roadmap</Link>
         <Link href="/changelog">Build Log</Link>

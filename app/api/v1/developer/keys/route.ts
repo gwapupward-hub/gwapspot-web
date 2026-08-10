@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   createDeveloperApiKey,
-  listDeveloperApiKeys,
+  getDeveloperApiAccount,
   revokeDeveloperApiKey,
 } from "../../../../app/lib/developer-api";
 import { getAuthenticatedWalletIdentity } from "../../../../lib/privy-server";
@@ -31,8 +31,8 @@ export async function GET(request: Request) {
   if (!identity) return json({ error: "Unauthorized" }, 401);
 
   try {
-    const keys = await listDeveloperApiKeys(identity.userId);
-    return json({ keys });
+    const account = await getDeveloperApiAccount(identity.userId);
+    return json(account);
   } catch {
     return json({ error: "Developer API storage is temporarily unavailable." }, 503);
   }
