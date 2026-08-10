@@ -25,6 +25,78 @@ const INTERACTIVE_SELECTOR = [
 ].join(",");
 
 const REACTIVE_SELECTOR = ".premium-product-card";
+const PRODUCT_TRANSITION_KEY = "gwap-product-transition-v1";
+
+type ProductTransition = {
+  slug: string;
+  at: number;
+};
+
+function getProductSlugFromHref(element: HTMLElement) {
+  const href = element.getAttribute("href");
+  const match = href?.match(/^\/ecosystem\/([^/?#]+)/);
+  return match?.[1] ?? null;
+}
+
+function getProductSlug(element: HTMLElement) {
+  return element.dataset.gwapProduct || getProductSlugFromHref(element);
+}
+
+function writeProductTransition(slug: string) {
+  try {
+    const transition: ProductTransition = { slug, at: Date.now() };
+    window.sessionStorage.setItem(PRODUCT_TRANSITION_KEY, JSON.stringify(transition));
+  } catch {
+    // Storage can be unavailable in privacy-restricted browsing contexts.
+  }
+}
+
+function readProductTransition() {
+  try {
+    const raw = window.sessionStorage.getItem(PRODUCT_TRANSITION_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<ProductTransition>;
+    if (typeof parsed.slug !== "string" || typeof parsed.at !== "number") return null;
+    return parsed as ProductTransition;
+  } catch {
+    return null;
+  }
+}
+
+function clearProductTransition() {
+  try {
+    window.sessionStorage.removeItem(PRODUCT_TRANSITION_KEY);
+  } catch {
+    // No-op when storage is unavailable.
+  }
+}
+
+function getCurrentProductSlug() {
+  const match = window.location.pathname.match(/^\/ecosystem\/([^/?#]+)/);
+  return match?.[1] ?? null;
+}
+
+function enhanceProductHero(root: ParentNode) {
+  const slug = getCurrentProductSlug();
+  if (!slug) return;
+
+  const hero =
+    root instanceof HTMLElement && root.matches(".product-hero")
+      ? root
+      : root.querySelector<HTMLElement>(".product-hero");
+
+  if (!hero) return;
+
+  hero.dataset.gwapProductHero ||= slug;
+  if (hero.dataset.gwapArrivalSeen === "true") return;
+
+  const transition = readProductTransition();
+  if (!transition || transition.slug !== slug || Date.now() - transition.at > 8_000) return;
+
+  hero.dataset.gwapArrivalSeen = "true";
+  window.requestAnimationFrame(() => hero.classList.add("gwap-product-arrival"));
+  clearProductTransition();
+}
 
 function enhanceElement(element: Element) {
   if (!(element instanceof HTMLElement)) return;
@@ -35,6 +107,8 @@ function enhanceElement(element: Element) {
 
   if (element.matches(REACTIVE_SELECTOR)) {
     element.dataset.gwapReactive ||= "true";
+    const slug = getProductSlugFromHref(element);
+    if (slug) element.dataset.gwapProduct ||= slug;
   }
 }
 
@@ -42,6 +116,7 @@ function enhanceTree(root: ParentNode) {
   if (root instanceof Element) enhanceElement(root);
   root.querySelectorAll(INTERACTIVE_SELECTOR).forEach(enhanceElement);
   root.querySelectorAll(REACTIVE_SELECTOR).forEach(enhanceElement);
+  enhanceProductHero(root);
 }
 
 function getInteractiveTarget(target: EventTarget | null) {
@@ -98,6 +173,36 @@ export function GwapInteractionLayer() {
     observer.observe(document.body, { childList: true, subtree: true });
 
     const pressTimers = new WeakMap<HTMLElement, number>();
+    const launchTimers = new WeakMap<HTMLElement, number>();
+    const groupTimers = new WeakMap<HTMLElement, number>();
+
+    const activateProduct = (element: HTMLElement) => {
+      const slug = getProductSlug(element);
+      if (!slug) return;
+
+      writeProductTransition(slug);
+      element.classList.add("gwap-product-activating");
+
+      const existingLaunchTimer = launchTimers.get(element);
+      if (existingLaunchTimer) window.clearTimeout(existingLaunchTimer);
+      const launchTimer = window.setTimeout(() => {
+        element.classList.remove("gwap-product-activating");
+        launchTimers.delete(element);
+      }, 720);
+      launchTimers.set(element, launchTimer);
+
+      const group = element.closest<HTMLElement>(".ecosystem-group");
+      if (!group) return;
+
+      group.dataset.gwapActiveProduct = slug;
+      const existingGroupTimer = groupTimers.get(group);
+      if (existingGroupTimer) window.clearTimeout(existingGroupTimer);
+      const groupTimer = window.setTimeout(() => {
+        delete group.dataset.gwapActiveProduct;
+        groupTimers.delete(group);
+      }, 760);
+      groupTimers.set(group, groupTimer);
+    };
 
     const activate = (
       element: HTMLElement,
@@ -114,6 +219,7 @@ export function GwapInteractionLayer() {
       }, 190);
       pressTimers.set(element, timer);
 
+      activateProduct(element);
       if (!reduceMotion.matches) createPulse(element, clientX, clientY);
     };
 
