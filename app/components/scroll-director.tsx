@@ -150,8 +150,8 @@ export function ScrollDirector() {
         setCssVariable(navLinks, "--gwap-nav-lens-x", `${Math.max(linkRect.left - linksRect.left, 0)}px`);
         setCssVariable(navLinks, "--gwap-nav-lens-width", `${linkRect.width}px`);
         setCssVariable(navLinks, "--gwap-nav-lens-opacity", "1");
-      } else {
-        setCssVariable(navLinks ?? root, "--gwap-nav-lens-opacity", "0");
+      } else if (navLinks) {
+        setCssVariable(navLinks, "--gwap-nav-lens-opacity", "0");
       }
 
       if (emitEvent) {
