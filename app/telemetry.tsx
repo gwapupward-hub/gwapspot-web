@@ -192,11 +192,11 @@ export function Telemetry() {
       const relationButton = target.closest<HTMLButtonElement>(".gwap-graph-relations button");
       if (relationButton) {
         const relation = relationButton.querySelector("b")?.textContent?.trim().slice(0, 64);
-        const module = relationButton.querySelector("em")?.textContent?.trim().slice(0, 64);
-        if (relation && module) {
+        const neighborModule = relationButton.querySelector("em")?.textContent?.trim().slice(0, 64);
+        if (relation && neighborModule) {
           safeTrack("graph_relation_selected", {
             relation,
-            module,
+            module: neighborModule,
             mode: getCurrentGraphMode(),
           });
         }
