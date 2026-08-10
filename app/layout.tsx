@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { GwapContinuityLayer } from "./components/gwap-continuity-layer";
 import { GwapInteractionLayer } from "./components/gwap-interaction-layer";
+import { GwapSystemMemoryLayer } from "./components/gwap-system-memory-layer";
 import PremiumSplash from "./components/premium-splash";
 import { Telemetry } from "./telemetry";
 import "@solana/wallet-adapter-react-ui/styles.css";
@@ -52,6 +53,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         </Script>
         <PremiumSplash />
         <GwapInteractionLayer />
+        <GwapSystemMemoryLayer />
         <GwapContinuityLayer />
         {children}
         <Telemetry />
