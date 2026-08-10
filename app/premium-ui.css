@@ -168,6 +168,16 @@ button { color: inherit; }
 .hero-utility-identity dl > div { display: grid; gap: 2px; }
 .hero-utility-identity dt { color: #69736c; font-size: 7px; text-transform: uppercase; letter-spacing: .1em; }
 .hero-utility-identity dd { margin: 0; color: #e4eae5; font-size: 10px; font-weight: 800; }
+.gwap-score-display { min-width: 0; display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 1px; overflow: hidden; border: 1px solid rgba(255,255,255,.09); border-radius: 10px; background: rgba(255,255,255,.07); }
+.gwap-score-display > span { min-width: 0; display: grid; gap: 3px; padding: 8px 10px; background: rgba(4,8,5,.88); }
+.gwap-score-display small { color: #69736c; font-size: 6px; font-weight: 800; letter-spacing: .12em; }
+.gwap-score-display strong { overflow-wrap: anywhere; color: #e4eae5; font-size: 10px; }
+.gwap-score-display.is-scored > span:first-child strong { color: var(--gwap-green); }
+.gwap-score-display.is-unscored > span:first-child strong { color: #e5c27c; }
+.gwap-score-display.is-unavailable > span:first-child strong { color: #ff9b84; }
+.gwap-score-display > p { grid-column: 1 / -1; margin: 0; padding: 7px 10px; background: rgba(4,8,5,.72); color: #818b84; font-size: 8px; line-height: 1.45; }
+.hero-utility-identity > .gwap-score-display,
+.hero-utility-result > div > .gwap-score-display { margin-top: 5px; }
 .hero-utility footer { display: flex; justify-content: space-between; gap: 12px; margin-top: 12px; color: #667069; font-size: 8px; letter-spacing: .05em; }
 .hero-utility footer span { display: inline-flex; align-items: center; gap: 6px; }
 .hero-utility footer i { width: 5px; height: 5px; border-radius: 50%; background: var(--gwap-green); box-shadow: 0 0 10px var(--gwap-green); }

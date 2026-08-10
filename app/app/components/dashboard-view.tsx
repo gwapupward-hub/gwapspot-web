@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
+import { GwapScoreDisplay } from "../../components/gwap-score-display";
+import type { GwapScoreResult } from "../../lib/gwap-score";
 import type { EcosystemProduct } from "../../lib/ecosystem";
 import { useGwapOs } from "./os-provider";
 
@@ -28,6 +30,12 @@ export function DashboardView({ products }: { products: EcosystemProduct[] }) {
 
   const identityTitle = gnsIdentity.fullName || (gnsIdentity.status === "none" ? "UNINITIALIZED" : shortWallet(account.verifiedWallet));
   const identityStatus = gnsIdentity.status === "found" ? "IDENTITY VERIFIED" : gnsIdentity.status === "none" ? "SYSTEM INITIALIZATION REQUIRED" : "LIMITED MODE";
+  const score: GwapScoreResult = {
+    status: gnsIdentity.scoreStatus,
+    score: gnsIdentity.score,
+    tier: gnsIdentity.scoreTier,
+    message: gnsIdentity.scoreMessage,
+  };
 
   const logs = [
     `[auth] wallet verified: ${shortWallet(account.verifiedWallet)}`,
@@ -36,8 +44,8 @@ export function DashboardView({ products }: { products: EcosystemProduct[] }) {
       : gnsIdentity.status === "none"
         ? "[gns] no .gwap identity detected"
         : "[gns] registry lookup timed out; entry not blocked",
-    gnsIdentity.score === null
-      ? "[score] GwapScore signal unavailable"
+    gnsIdentity.scoreStatus !== "scored"
+      ? `[score] ${gnsIdentity.scoreMessage}`
       : `[score] protocol score: ${gnsIdentity.score}${gnsIdentity.scoreTier ? ` (${gnsIdentity.scoreTier})` : ""}`,
     `[sync] workspace: ${syncStatus}`,
     `[apps] ${liveProducts} ecosystem products currently live`,
@@ -69,8 +77,7 @@ export function DashboardView({ products }: { products: EcosystemProduct[] }) {
               <p>{gnsIdentity.bio || state.profile.bio || "No public bio has been published for this identity yet."}</p>
               <div className="os-identity-meta">
                 <span><small>WALLET</small><strong>{shortWallet(account.verifiedWallet)}</strong></span>
-                <span><small>GWAPSCORE</small><strong>{gnsIdentity.score ?? "—"}</strong></span>
-                <span><small>TIER</small><strong>{gnsIdentity.scoreTier || gnsIdentity.tier || "—"}</strong></span>
+                <GwapScoreDisplay result={score} />
                 <span><small>SYNC</small><strong>{syncStatus.toUpperCase()}</strong></span>
               </div>
               <div className="os-inline-actions">
