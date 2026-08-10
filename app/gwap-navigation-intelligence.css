@@ -173,6 +173,10 @@ html[data-gwap-chapter="roadmap"] {
 }
 
 @media (max-width: 1000px) {
+  .cinematic-links {
+    position: fixed;
+  }
+
   .cinematic-links::before,
   .cinematic-brand::after {
     display: none;
