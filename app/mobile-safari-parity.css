@@ -1,0 +1,160 @@
+/* Mobile Safari visual parity
+ * Preserve GWAP's cinematic language on touch devices without recreating the
+ * expensive full-screen blur/compositing profile that previously caused crashes.
+ */
+
+@media (hover: none) and (pointer: coarse), (max-width: 820px) {
+  .cinematic-home {
+    overflow-x: clip;
+  }
+
+  /* Keep ambient motion, but animate transforms/opacity rather than large blur surfaces. */
+  .aurora {
+    filter: none !important;
+    opacity: .62;
+    animation: gwapMobileAmbientDrift 16s ease-in-out infinite alternate !important;
+  }
+
+  .light-streak {
+    filter: none !important;
+    opacity: .44;
+    animation: gwapMobileLightSweep 12s ease-in-out infinite alternate !important;
+  }
+
+  .emblem-halo {
+    animation: gwapMobileHaloPulse 7s ease-in-out infinite !important;
+  }
+
+  .emblem-ring,
+  .gwap-graph-core-ring {
+    animation: gwapMobileRingSpin 24s linear infinite !important;
+  }
+
+  .depth-orbit,
+  .orbit-ring {
+    animation: orbitSpin 28s linear infinite !important;
+  }
+
+  .community-glow {
+    filter: none !important;
+    background: radial-gradient(circle at 50% 50%, rgba(19,221,19,.18), rgba(121,61,255,.08) 42%, transparent 72%);
+    animation: gwapMobileGlowPulse 8s ease-in-out infinite alternate !important;
+  }
+
+  .gwap-graph-edge-signal {
+    animation: gwapMobileSignalPulse 3.8s ease-in-out infinite !important;
+  }
+
+  /* Localized glass: keep blur on the small persistent navigation surfaces only. */
+  .cinematic-nav,
+  .cinematic-links,
+  .story-chapters {
+    -webkit-backdrop-filter: blur(10px) saturate(112%) !important;
+    backdrop-filter: blur(10px) saturate(112%) !important;
+    background-color: rgba(6, 9, 7, .82);
+  }
+
+  /* Larger surfaces retain the same glass read through gradients/borders instead
+   * of allocating a backdrop texture for every card. */
+  .gwap-ecosystem-graph,
+  .metrics-glass,
+  .premium-product-card,
+  .community-panel {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    background-image:
+      linear-gradient(145deg, rgba(255,255,255,.075), rgba(255,255,255,.018) 44%, rgba(19,221,19,.025)),
+      linear-gradient(180deg, rgba(7,12,8,.9), rgba(3,7,4,.82));
+  }
+
+  .cinematic-home.scroll-directed {
+    perspective: 1100px !important;
+  }
+
+  .cinematic-home.scroll-directed .story-section[data-scroll-state] {
+    opacity: var(--story-opacity, 1) !important;
+    filter: blur(var(--story-blur, 0)) !important;
+    transform: perspective(1100px)
+      translate3d(0, var(--story-y, 0), var(--story-z, 0))
+      scale(var(--story-scale, 1)) !important;
+    backface-visibility: hidden;
+    will-change: auto !important;
+  }
+
+  .cinematic-home.scroll-directed .story-section[data-scroll-state].is-scroll-active {
+    will-change: transform, opacity !important;
+  }
+
+  /* Static texture keeps depth without a continuously composited noise layer. */
+  .noise-layer {
+    display: block !important;
+    animation: none !important;
+    opacity: .09;
+  }
+}
+
+@media (max-width: 680px) {
+  /* Responsive geometry only. Motion remains controlled by ScrollDirector. */
+  .story-section {
+    width: calc(100% - 20px);
+    min-height: auto;
+    padding: 115px 10px 85px;
+  }
+
+  .story-section.is-past:not(.is-active) {
+    opacity: var(--story-opacity, 1);
+    filter: blur(var(--story-blur, 0));
+    transform: perspective(1100px)
+      translate3d(0, var(--story-y, 0), var(--story-z, 0))
+      scale(var(--story-scale, 1));
+  }
+
+  .story-chapters {
+    -webkit-backdrop-filter: blur(8px) saturate(110%) !important;
+    backdrop-filter: blur(8px) saturate(110%) !important;
+  }
+}
+
+@keyframes gwapMobileAmbientDrift {
+  from { transform: translate3d(-2%, -1%, 0) scale(1); opacity: .48; }
+  to { transform: translate3d(3%, 2%, 0) scale(1.04); opacity: .66; }
+}
+
+@keyframes gwapMobileLightSweep {
+  from { transform: translate3d(-6%, 0, 0) rotate(-2deg); opacity: .28; }
+  to { transform: translate3d(7%, 2%, 0) rotate(2deg); opacity: .48; }
+}
+
+@keyframes gwapMobileHaloPulse {
+  0%, 100% { transform: scale(.97); opacity: .58; }
+  50% { transform: scale(1.035); opacity: .82; }
+}
+
+@keyframes gwapMobileRingSpin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes gwapMobileGlowPulse {
+  from { transform: scale(.9); opacity: .42; }
+  to { transform: scale(1.04); opacity: .72; }
+}
+
+@keyframes gwapMobileSignalPulse {
+  0%, 100% { opacity: .28; transform: scale(.92); }
+  50% { opacity: .8; transform: scale(1.05); }
+}
+
+/* Accessibility remains a user preference, not a device-performance switch. */
+@media (prefers-reduced-motion: reduce) {
+  .aurora,
+  .light-streak,
+  .emblem-halo,
+  .emblem-ring,
+  .depth-orbit,
+  .orbit-ring,
+  .community-glow,
+  .gwap-graph-core-ring,
+  .gwap-graph-edge-signal {
+    animation: none !important;
+  }
+}
