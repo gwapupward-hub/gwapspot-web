@@ -1,0 +1,393 @@
+/* Mobile Safari visual parity
+ * Preserve GWAP's cinematic language on touch devices without recreating the
+ * expensive full-screen blur/compositing profile that previously caused crashes.
+ */
+
+@media (hover: none) and (pointer: coarse), (max-width: 820px) {
+  .cinematic-home {
+    overflow-x: clip;
+  }
+
+  /* Keep ambient motion, but animate transforms/opacity rather than large blur surfaces. */
+  .aurora {
+    filter: none !important;
+    opacity: .62;
+    animation: gwapMobileAmbientDrift 16s ease-in-out infinite alternate !important;
+  }
+
+  .light-streak {
+    filter: none !important;
+    opacity: .44;
+    animation: gwapMobileLightSweep 12s ease-in-out infinite alternate !important;
+  }
+
+  .emblem-halo {
+    animation: gwapMobileHaloPulse 7s ease-in-out infinite !important;
+  }
+
+  .emblem-ring,
+  .gwap-graph-core-ring {
+    animation: gwapMobileRingSpin 24s linear infinite !important;
+  }
+
+  .depth-orbit,
+  .orbit-ring {
+    animation: orbitSpin 28s linear infinite !important;
+  }
+
+  .community-glow {
+    filter: none !important;
+    background: radial-gradient(circle at 50% 50%, rgba(19,221,19,.18), rgba(121,61,255,.08) 42%, transparent 72%);
+    animation: gwapMobileGlowPulse 8s ease-in-out infinite alternate !important;
+  }
+
+  .gwap-graph-edge-signal {
+    animation: gwapMobileSignalPulse 3.8s ease-in-out infinite !important;
+  }
+
+  .story-section:not(.is-active):not(.is-scroll-active) .emblem-halo,
+  .story-section:not(.is-active):not(.is-scroll-active) .emblem-ring,
+  .story-section:not(.is-active):not(.is-scroll-active) .depth-orbit,
+  .story-section:not(.is-active):not(.is-scroll-active) .orbit-ring,
+  .story-section:not(.is-active):not(.is-scroll-active) .community-glow,
+  .story-section:not(.is-active):not(.is-scroll-active) .gwap-graph-core-ring,
+  .story-section:not(.is-active):not(.is-scroll-active) .gwap-graph-edge-signal {
+    animation-play-state: paused !important;
+  }
+
+  /* Localized glass: keep blur on the small persistent navigation surfaces only. */
+  .cinematic-nav,
+  .cinematic-links,
+  .story-chapters,
+  .site-header,
+  .inner-main .site-header {
+    -webkit-backdrop-filter: blur(10px) saturate(112%) !important;
+    backdrop-filter: blur(10px) saturate(112%) !important;
+    background-color: rgba(6, 9, 7, .82);
+  }
+
+  .story-chapters a {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  /* Larger surfaces retain the same glass read through gradients/borders instead
+   * of allocating a backdrop texture for every card. */
+  .gwap-ecosystem-graph,
+  .hero-utility,
+  .metrics-glass,
+  .premium-product-card,
+  .ecosystem-group,
+  .stack-card,
+  .phase-card,
+  .community-panel,
+  .depth-window,
+  .product-card,
+  .mission-card,
+  .inner-main .inner-hero,
+  .inner-main .detail-card,
+  .inner-main .content-card,
+  .inner-main .community-card {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    background-image:
+      linear-gradient(145deg, rgba(255,255,255,.075), rgba(255,255,255,.018) 44%, rgba(19,221,19,.025)),
+      linear-gradient(180deg, rgba(7,12,8,.9), rgba(3,7,4,.82));
+  }
+
+  .cinematic-home.scroll-directed {
+    perspective: none !important;
+  }
+
+  .cinematic-home.scroll-directed .story-section[data-scroll-state] {
+    opacity: var(--story-opacity, 1) !important;
+    filter: none !important;
+    transform: translateY(var(--story-y, 0))
+      scale(var(--story-scale, 1)) !important;
+    backface-visibility: visible;
+    will-change: auto !important;
+  }
+
+  .cinematic-home.scroll-directed .story-section[data-scroll-state].is-scroll-active {
+    will-change: transform, opacity !important;
+  }
+
+  /* Preserve the chapter choreography with two-dimensional transforms. */
+  .scroll-directed .overview-story .overview-copy,
+  .scroll-directed .overview-story .metrics-glass,
+  .scroll-directed .overview-story .depth-window,
+  .scroll-directed .trust-story .trust-copy,
+  .scroll-directed .trust-story .layer-stack,
+  .scroll-directed .roadmap-story .phase-card,
+  .scroll-directed .community-story .community-panel {
+    filter: none !important;
+    transform: translateY(20px) scale(.985) !important;
+  }
+
+  .scroll-directed .overview-story.is-scroll-active .overview-copy,
+  .scroll-directed .overview-story.is-scroll-active .metrics-glass,
+  .scroll-directed .overview-story.is-scroll-active .depth-window,
+  .scroll-directed .trust-story.is-scroll-active .trust-copy,
+  .scroll-directed .trust-story.is-scroll-active .layer-stack,
+  .scroll-directed .roadmap-story.is-scroll-active .phase-card,
+  .scroll-directed .community-story.is-scroll-active .community-panel {
+    transform: translateY(0) scale(1) !important;
+  }
+
+  .scroll-directed .ecosystem-story .premium-product-card,
+  .scroll-directed .ecosystem-story .premium-product-card:nth-child(2n) {
+    transform: translateY(24px) scale(.98) !important;
+  }
+
+  .scroll-directed .ecosystem-story.is-scroll-active .premium-product-card {
+    transform: translateY(0) scale(1) !important;
+  }
+
+  /* Soft gradient glows avoid allocating blurred card-sized textures. */
+  .premium-product-card::after,
+  .ecosystem-group::before,
+  .os-app-card::before {
+    filter: none !important;
+  }
+
+  .premium-product-card.accent-green::after,
+  .ecosystem-group-infrastructure::before,
+  .os-app-card.accent-green::before {
+    background: radial-gradient(circle, rgba(19,221,19,.2), transparent 70%) !important;
+  }
+
+  .premium-product-card.accent-purple::after,
+  .os-app-card.accent-purple::before {
+    background: radial-gradient(circle, rgba(140,92,255,.2), transparent 70%) !important;
+  }
+
+  .premium-product-card.accent-orange::after,
+  .os-app-card.accent-orange::before {
+    background: radial-gradient(circle, rgba(255,138,43,.2), transparent 70%) !important;
+  }
+
+  .ecosystem-group-experience::before {
+    background: radial-gradient(circle at 35% 40%, rgba(140,92,255,.18), rgba(255,138,43,.1) 38%, transparent 72%) !important;
+  }
+
+  /* Splash and route transitions keep their timing, depth, and movement without
+   * full-screen filter animation or a second decoded background image. */
+  .premium-splash__backdrop {
+    inset: 0 !important;
+    background-image:
+      radial-gradient(circle at 18% 42%, rgba(19,221,19,.2), transparent 38%),
+      radial-gradient(circle at 82% 48%, rgba(155,108,255,.16), transparent 40%),
+      linear-gradient(180deg, #071008, #020302 72%) !important;
+    filter: none !important;
+    opacity: .62;
+    transform: scale(1.03) !important;
+  }
+
+  .premium-splash__art::before,
+  .premium-splash__art,
+  .premium-splash__art img,
+  .premium-splash__route-mark,
+  .page-transition-shell,
+  body:has(.premium-splash--intro) .cinematic-home .living-background,
+  body:has(.premium-splash--intro) .cinematic-home .cinematic-nav,
+  body:has(.premium-splash--intro) .hero-story .hero-content,
+  body:has(.premium-splash--intro) .hero-story .emblem-stage,
+  body:has(.premium-splash--intro) .hero-story .hero-light,
+  body:has(.premium-splash--intro) .hero-story .scroll-cue {
+    filter: none !important;
+  }
+
+  .premium-splash__art::before {
+    background: radial-gradient(circle, rgba(19,221,19,.14), transparent 68%);
+  }
+
+  .premium-splash__grain {
+    mix-blend-mode: normal;
+    opacity: .08;
+  }
+
+  .premium-splash__skip,
+  .premium-splash__logo-shell {
+    -webkit-backdrop-filter: blur(8px) saturate(110%) !important;
+    backdrop-filter: blur(8px) saturate(110%) !important;
+  }
+
+  .premium-splash--intro.is-leaving .premium-splash__backdrop {
+    opacity: 0;
+    transform: scale(1.08) !important;
+  }
+
+  body:has(.premium-splash--intro) .cinematic-home .cinematic-nav,
+  body:has(.premium-splash--intro) .hero-story .hero-content,
+  body:has(.premium-splash--intro) .hero-story .emblem-stage {
+    will-change: opacity, transform !important;
+  }
+
+  body:has(.premium-splash--intro) .cinematic-home .living-background,
+  body:has(.premium-splash--intro) .hero-story .hero-light,
+  body:has(.premium-splash--intro) .hero-story .scroll-cue {
+    will-change: auto !important;
+  }
+
+  body:has(.premium-splash:not(.is-leaving)) .aurora,
+  body:has(.premium-splash:not(.is-leaving)) .light-streak,
+  body:has(.wallet-adapter-modal-wrapper) .os-aurora {
+    animation-play-state: paused !important;
+  }
+
+  .page-transition-shell {
+    animation-name: gwapMobilePageReveal !important;
+  }
+
+  /* GWAP OS uses gradient glass and bounded glow fields on the same mobile tier. */
+  .os-aurora {
+    width: min(72vw, 32rem);
+    height: min(72vw, 32rem);
+    filter: none !important;
+    opacity: .34;
+    animation: gwapMobileOsDrift 18s ease-in-out infinite alternate !important;
+  }
+
+  .os-aurora-one {
+    top: -20vw;
+    right: -18vw;
+    background: radial-gradient(circle, rgba(19,221,19,.34), transparent 72%) !important;
+  }
+
+  .os-aurora-two {
+    bottom: -24vw;
+    left: -10vw;
+    background: radial-gradient(circle, rgba(140,92,255,.28), transparent 72%) !important;
+  }
+
+  .os-v2-glow {
+    width: min(78vw, 34rem);
+    top: -22vw;
+    background: radial-gradient(circle, rgba(19,221,19,.25), transparent 72%);
+    filter: none !important;
+  }
+
+  .os-v2-grid {
+    -webkit-mask-image: none;
+    mask-image: none;
+    opacity: .08;
+  }
+
+  .os-stat-grid article,
+  .os-panel,
+  .os-app-card,
+  .os-identity-console,
+  .os-system-log,
+  .os-runtime-panel,
+  .os-process-tile,
+  .os-command-palette,
+  .auth-gate-card,
+  .wallet-auth-card {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    background-image:
+      linear-gradient(145deg, rgba(255,255,255,.07), rgba(255,255,255,.018) 42%),
+      linear-gradient(180deg, rgba(7,14,9,.94), rgba(2,6,3,.9));
+  }
+
+  .os-mobile-header,
+  .os-menubar,
+  .os-dock {
+    -webkit-backdrop-filter: blur(8px) saturate(110%) !important;
+    backdrop-filter: blur(8px) saturate(110%) !important;
+    background-color: rgba(2, 8, 4, .88);
+  }
+
+  .os-command-backdrop {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    background: rgba(0, 0, 0, .86);
+  }
+
+  /* Static texture keeps depth without a continuously composited noise layer. */
+  .noise-layer {
+    display: block !important;
+    animation: none !important;
+    opacity: .09;
+  }
+}
+
+@media (max-width: 680px) {
+  /* Responsive geometry only. Motion remains controlled by ScrollDirector. */
+  .story-section {
+    width: calc(100% - 20px);
+    min-height: auto;
+    padding: 115px 10px 85px;
+  }
+
+  .story-section.is-past:not(.is-active) {
+    opacity: var(--story-opacity, 1);
+    filter: none;
+    transform: translateY(var(--story-y, 0))
+      scale(var(--story-scale, 1));
+  }
+
+  .story-chapters {
+    -webkit-backdrop-filter: blur(8px) saturate(110%) !important;
+    backdrop-filter: blur(8px) saturate(110%) !important;
+  }
+}
+
+@keyframes gwapMobilePageReveal {
+  from { opacity: 0; transform: translateY(12px) scale(.99); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes gwapMobileOsDrift {
+  from { transform: translate3d(-2%, -1%, 0) scale(.98); }
+  to { transform: translate3d(3%, 2%, 0) scale(1.04); }
+}
+
+@keyframes gwapMobileAmbientDrift {
+  from { transform: translate3d(-2%, -1%, 0) scale(1); opacity: .48; }
+  to { transform: translate3d(3%, 2%, 0) scale(1.04); opacity: .66; }
+}
+
+@keyframes gwapMobileLightSweep {
+  from { transform: translate3d(-6%, 0, 0) rotate(-2deg); opacity: .28; }
+  to { transform: translate3d(7%, 2%, 0) rotate(2deg); opacity: .48; }
+}
+
+@keyframes gwapMobileHaloPulse {
+  0%, 100% { transform: scale(.97); opacity: .58; }
+  50% { transform: scale(1.035); opacity: .82; }
+}
+
+@keyframes gwapMobileRingSpin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes gwapMobileGlowPulse {
+  from { transform: scale(.9); opacity: .42; }
+  to { transform: scale(1.04); opacity: .72; }
+}
+
+@keyframes gwapMobileSignalPulse {
+  0%, 100% { opacity: .28; transform: scale(.92); }
+  50% { opacity: .8; transform: scale(1.05); }
+}
+
+/* Accessibility remains a user preference, not a device-performance switch. */
+@media (prefers-reduced-motion: reduce) {
+  .aurora,
+  .light-streak,
+  .emblem-halo,
+  .emblem-ring,
+  .depth-orbit,
+  .orbit-ring,
+  .community-glow,
+  .gwap-graph-core-ring,
+  .gwap-graph-edge-signal,
+  .os-aurora {
+    animation: none !important;
+  }
+
+  .page-transition-shell {
+    animation: none !important;
+  }
+}

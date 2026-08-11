@@ -36,28 +36,28 @@ export function GwapBootSequence() {
     let hasRun = false;
     let onlineTimer = 0;
     let doneTimer = 0;
+    let observer: IntersectionObserver | null = null;
 
     const triggerBoot = () => {
-      if (hasRun || window.scrollY < 24) return;
-
-      const rect = overview.getBoundingClientRect();
-      const enteringSystem =
-        rect.top <= window.innerHeight * 0.78 && rect.bottom > 0;
-
-      if (!enteringSystem) return;
-
+      if (hasRun) return;
       hasRun = true;
+      observer?.disconnect();
       markBootSeen();
       setPhase("booting");
       onlineTimer = window.setTimeout(() => setPhase("online"), 520);
       doneTimer = window.setTimeout(() => setPhase("done"), 1080);
     };
 
-    triggerBoot();
-    window.addEventListener("scroll", triggerBoot, { passive: true });
+    observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) triggerBoot();
+      },
+      { rootMargin: "0px 0px -22% 0px", threshold: 0.01 },
+    );
+    observer.observe(overview);
 
     return () => {
-      window.removeEventListener("scroll", triggerBoot);
+      observer?.disconnect();
       window.clearTimeout(onlineTimer);
       window.clearTimeout(doneTimer);
     };
