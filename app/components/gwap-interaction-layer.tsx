@@ -34,6 +34,12 @@ type ProductTransition = {
   at: number;
 };
 
+type PendingPointerUpdate = {
+  element: HTMLElement;
+  clientX: number;
+  clientY: number;
+};
+
 function getProductSlugFromHref(element: HTMLElement) {
   const href = element.getAttribute("href");
   const match = href?.match(/^\/ecosystem\/([^/?#]+)/);
@@ -206,6 +212,16 @@ export function GwapInteractionLayer() {
     const pressTimers = new WeakMap<HTMLElement, number>();
     const launchTimers = new WeakMap<HTMLElement, number>();
     const groupTimers = new WeakMap<HTMLElement, number>();
+    let pointerFrame = 0;
+    let pendingPointerUpdate: PendingPointerUpdate | null = null;
+
+    const flushPointerUpdate = () => {
+      const pending = pendingPointerUpdate;
+      pendingPointerUpdate = null;
+      pointerFrame = 0;
+      if (!pending || !pending.element.isConnected) return;
+      setPointerVariables(pending.element, pending.clientX, pending.clientY);
+    };
 
     const activateProduct = (element: HTMLElement) => {
       const slug = getProductSlug(element);
@@ -267,7 +283,13 @@ export function GwapInteractionLayer() {
       if (reduceMotion.matches || !(event.target instanceof Element)) return;
       const reactive = event.target.closest<HTMLElement>("[data-gwap-reactive='true']");
       if (!reactive) return;
-      setPointerVariables(reactive, event.clientX, event.clientY);
+
+      pendingPointerUpdate = {
+        element: reactive,
+        clientX: event.clientX,
+        clientY: event.clientY,
+      };
+      if (!pointerFrame) pointerFrame = window.requestAnimationFrame(flushPointerUpdate);
     };
 
     const onClick = (event: MouseEvent) => {
@@ -302,6 +324,8 @@ export function GwapInteractionLayer() {
       document.removeEventListener("pointermove", onPointerMove);
       document.removeEventListener("click", onClick, { capture: true });
       document.removeEventListener("keydown", onKeyDown, { capture: true });
+      if (pointerFrame) window.cancelAnimationFrame(pointerFrame);
+      pendingPointerUpdate = null;
     };
   }, []);
 
