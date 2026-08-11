@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useRef, useState, type ChangeEvent, type CSSProperties, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { formatBuildLogDate, latestBuildLogEntry } from "../lib/changelog";
 import { ecosystemProductGroups, ecosystemProductIndexBySlug, ecosystemProducts, getProductDestination, isExternalProductDestination, socialLinks } from "../lib/ecosystem";
 import { CountUp } from "./count-up";
@@ -41,8 +41,8 @@ function GlassButton({ href, children, primary = false }: { href: string; childr
 export function CinematicHome() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const [query, setQuery] = useState("");
+  const navRef = useRef<HTMLElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchButtonRef = useRef<HTMLButtonElement>(null);
   const searchDialogRef = useRef<HTMLDivElement>(null);
@@ -75,10 +75,21 @@ export function CinematicHome() {
   }, []);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 48);
-    onScroll();
+    let frame = 0;
+    const updateNavState = () => {
+      frame = 0;
+      navRef.current?.classList.toggle("is-scrolled", window.scrollY > 48);
+    };
+    const onScroll = () => {
+      if (!frame) frame = window.requestAnimationFrame(updateNavState);
+    };
+
+    updateNavState();
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
   }, []);
 
   useEffect(() => {
@@ -143,7 +154,7 @@ export function CinematicHome() {
         <div className="noise-layer" />
       </div>
 
-      <header className={`cinematic-nav${scrolled ? " is-scrolled" : ""}`}>
+      <header ref={navRef} className="cinematic-nav">
         <Link className="cinematic-brand" href="#top" aria-label="GWAPSpot home">
           <span className="cinematic-brand-mark"><Image src="/logos/gwap-agent-clear.svg" alt="" width={44} height={44} priority /></span>
           <span><strong>GWAP</strong><small>SPOT</small></span>
@@ -166,7 +177,7 @@ export function CinematicHome() {
       </header>
 
       {searchOpen ? (
-        <div ref={searchDialogRef} className="search-overlay" role="dialog" aria-modal="true" aria-label="Search the GWAP ecosystem" onMouseDown={(event: ReactMouseEvent<HTMLDivElement>) => { if (event.target === event.currentTarget) setSearchOpen(false); }}>
+        <div ref={searchDialogRef} className="search-overlay" role="dialog" aria-modal="true" aria-label="Search the GWAP ecosystem" onPointerDown={(event: ReactPointerEvent<HTMLDivElement>) => { if (event.target === event.currentTarget) setSearchOpen(false); }}>
           <div className="search-panel">
             <div className="search-field"><Icon name="search" /><input ref={searchInputRef} aria-label="Search GWAP products" value={query} onChange={(event: ChangeEvent<HTMLInputElement>) => setQuery(event.target.value)} placeholder="Search GNS, GwapScore, DIMI…" /><button type="button" onClick={() => setSearchOpen(false)} aria-label="Close search"><Icon name="close" /></button></div>
             <div className="search-results">

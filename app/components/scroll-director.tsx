@@ -106,9 +106,15 @@ export function ScrollDirector() {
 
     let frame = 0;
     let measurements: SectionMeasurement[] = [];
+    const efficientVisualPipeline = window.matchMedia(
+      "(hover: none) and (pointer: coarse), (max-width: 820px)",
+    );
     let viewportHeight = Math.max(window.innerHeight, 1);
-    let isMobile = window.innerWidth <= 680;
+    let useEfficientVisualPipeline = efficientVisualPipeline.matches;
     let pageRange = 1;
+    let navTrackWidth = 0;
+    let needsMeasurement = false;
+    let needsNavGeometrySync = false;
 
     const clearTopNavState = () => {
       brand?.classList.remove("is-section-current");
@@ -165,8 +171,9 @@ export function ScrollDirector() {
 
     const measure = () => {
       viewportHeight = Math.max(window.innerHeight, 1);
-      isMobile = window.innerWidth <= 680;
+      useEfficientVisualPipeline = efficientVisualPipeline.matches;
       pageRange = Math.max(root.scrollHeight - viewportHeight, 1);
+      navTrackWidth = nav ? Math.max(nav.getBoundingClientRect().width - 36, 0) : 0;
       const scrollY = window.scrollY;
       measurements = sections.map((section) => {
         const rect = section.getBoundingClientRect();
@@ -175,6 +182,16 @@ export function ScrollDirector() {
     };
 
     const update = () => {
+      if (needsMeasurement) {
+        measure();
+        needsMeasurement = false;
+      }
+
+      if (needsNavGeometrySync) {
+        syncTopNavState(Math.max(activeChapterRef.current, 0), false);
+        needsNavGeometrySync = false;
+      }
+
       const scrollY = window.scrollY;
       const focusLine = scrollY + viewportHeight * 0.52;
 
@@ -185,9 +202,11 @@ export function ScrollDirector() {
         setCssVariable(root, "--gwap-chapter-position", `${(chapterProgress * 100).toFixed(3)}%`);
 
         if (nav) {
-          const navRect = nav.getBoundingClientRect();
-          const trackWidth = Math.max(navRect.width - 36, 0);
-          setCssVariable(nav, "--gwap-nav-beacon-x", `${18 + chapterProgress * trackWidth}px`);
+          setCssVariable(
+            nav,
+            "--gwap-nav-beacon-x",
+            `${18 + chapterProgress * navTrackWidth}px`,
+          );
         }
       }
 
@@ -214,12 +233,30 @@ export function ScrollDirector() {
         const focus = smoothstep(1 - clamp(absoluteDistance / 0.68, 0, 1));
         const incoming = distance > 0;
         const unfocused = 1 - focus;
-        const scale = isMobile ? 0.93 + focus * 0.07 : incoming ? 0.78 + focus * 0.22 : 1 + unfocused * 0.12;
-        const z = isMobile ? -110 * unfocused : incoming ? -340 * unfocused : 160 * unfocused;
-        const y = clamp(distance * (isMobile ? 40 : 96), isMobile ? -42 : -105, isMobile ? 42 : 105);
-        const blur = (isMobile ? 8 : 24) * unfocused;
-        const opacity = (isMobile ? 0.42 : 0.05) + focus * (isMobile ? 0.58 : 0.95);
-        const rotate = isMobile ? 0 : incoming ? 4 * unfocused : -2.2 * unfocused;
+        const scale = useEfficientVisualPipeline
+          ? 0.94 + focus * 0.06
+          : incoming
+            ? 0.78 + focus * 0.22
+            : 1 + unfocused * 0.12;
+        const z = useEfficientVisualPipeline
+          ? 0
+          : incoming
+            ? -340 * unfocused
+            : 160 * unfocused;
+        const y = clamp(
+          distance * (useEfficientVisualPipeline ? 34 : 96),
+          useEfficientVisualPipeline ? -36 : -105,
+          useEfficientVisualPipeline ? 36 : 105,
+        );
+        const blur = useEfficientVisualPipeline ? 0 : 24 * unfocused;
+        const opacity =
+          (useEfficientVisualPipeline ? 0.46 : 0.05) +
+          focus * (useEfficientVisualPipeline ? 0.54 : 0.95);
+        const rotate = useEfficientVisualPipeline
+          ? 0
+          : incoming
+            ? 4 * unfocused
+            : -2.2 * unfocused;
 
         setCssVariable(section, "--story-focus", focus.toFixed(4));
         setCssVariable(section, "--story-opacity", opacity.toFixed(4));
@@ -248,8 +285,8 @@ export function ScrollDirector() {
     };
 
     const handleResize = () => {
-      measure();
-      syncTopNavState(Math.max(activeChapterRef.current, 0), false);
+      needsMeasurement = true;
+      needsNavGeometrySync = true;
       scheduleUpdate();
     };
 
@@ -257,12 +294,14 @@ export function ScrollDirector() {
     measure();
     update();
     window.addEventListener("scroll", scheduleUpdate, { passive: true });
-    window.addEventListener("resize", handleResize);
+    window.addEventListener("resize", handleResize, { passive: true });
+    efficientVisualPipeline.addEventListener("change", handleResize);
 
     return () => {
       window.removeEventListener("scroll", scheduleUpdate);
       window.removeEventListener("resize", handleResize);
-      window.cancelAnimationFrame(frame);
+      efficientVisualPipeline.removeEventListener("change", handleResize);
+      if (frame) window.cancelAnimationFrame(frame);
       main.classList.remove("scroll-directed");
       root.style.removeProperty("--page-scroll-progress");
       root.style.removeProperty("--gwap-chapter-progress");
