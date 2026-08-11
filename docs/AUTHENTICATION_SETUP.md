@@ -100,7 +100,12 @@ wallets are discovered directly. Do not add the legacy
 
 ## Account deletion boundary
 
-Deleting a GWAP OS account removes the Privy user and Redis workspace. An
-external wallet is not deleted. An email-created embedded wallet can become
-inaccessible after deletion, so the settings screen explicitly offers export
-and warns the user first. GWAPSpot never receives the exported private key.
+Deleting a GWAP OS account first revokes its developer API access and removes
+its Redis workspace and inactive billing entitlement, then removes the Privy
+user. An active or past-due Stripe subscription blocks deletion because this
+billing slice does not hold a Stripe secret key and therefore cannot cancel the
+upstream subscription safely. The identity remains valid if application-data
+cleanup fails so the deletion can be retried. An external wallet is not
+deleted. An email-created embedded wallet can become inaccessible after
+deletion, so the settings screen explicitly offers export and warns the user
+first. GWAPSpot never receives the exported private key.

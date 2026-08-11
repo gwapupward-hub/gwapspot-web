@@ -3,6 +3,23 @@ import type { DeveloperPlan } from "./developer-api-core";
 
 export type PaidDeveloperPlan = Exclude<DeveloperPlan, "developer">;
 
+export type StripeBillingEventType =
+  | "checkout.session.completed"
+  | "customer.subscription.updated"
+  | "customer.subscription.deleted";
+
+export type BillingEventCursor = {
+  id: string;
+  created: number;
+  priority: number;
+};
+
+const EVENT_PRIORITY: Record<StripeBillingEventType, number> = {
+  "checkout.session.completed": 10,
+  "customer.subscription.updated": 20,
+  "customer.subscription.deleted": 30,
+};
+
 export function isPaidDeveloperPlan(value: unknown): value is PaidDeveloperPlan {
   return value === "growth" || value === "scale";
 }
@@ -16,6 +33,35 @@ export function appendClientReferenceId(paymentLink: string, reference: string) 
   if (url.protocol !== "https:") throw new Error("BILLING_LINK_INVALID");
   url.searchParams.set("client_reference_id", reference);
   return url.toString();
+}
+
+export function createBillingEventCursor(
+  id: string,
+  type: StripeBillingEventType,
+  created: unknown,
+): BillingEventCursor | null {
+  if (!id || typeof created !== "number" || !Number.isInteger(created) || created <= 0) {
+    return null;
+  }
+  return { id, created, priority: EVENT_PRIORITY[type] };
+}
+
+export function shouldApplyBillingEvent(
+  current: BillingEventCursor | null | undefined,
+  incoming: BillingEventCursor,
+) {
+  if (!current) return true;
+  if (incoming.created !== current.created) {
+    return incoming.created > current.created;
+  }
+  if (incoming.priority !== current.priority) {
+    return incoming.priority > current.priority;
+  }
+  if (incoming.id === current.id) return false;
+
+  // Stripe timestamps have one-second precision. Use the event ID only as a
+  // deterministic tie-breaker for two different same-type events in one second.
+  return incoming.id > current.id;
 }
 
 function parseStripeSignature(header: string) {

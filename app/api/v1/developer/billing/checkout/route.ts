@@ -66,6 +66,12 @@ export async function POST(request: Request) {
     if (error instanceof Error && error.message === "BILLING_LINK_INVALID") {
       return json({ error: "The configured checkout link is invalid." }, 503);
     }
+    if (error instanceof Error && error.message === "ACCOUNT_DELETION_PENDING") {
+      return json(
+        { error: "Checkout is unavailable while account deletion is pending." },
+        409,
+      );
+    }
     return json({ error: "Developer checkout is temporarily unavailable." }, 503);
   }
 }

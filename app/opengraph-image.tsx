@@ -28,7 +28,6 @@ export default async function OpenGraphImage() {
         }}
       >
         {/* ImageResponse renders raw image data and does not support next/image. */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={artworkData as unknown as string}
           alt=""

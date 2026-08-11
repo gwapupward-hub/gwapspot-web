@@ -44,4 +44,6 @@ No Stripe secret API key is required for this first billing slice.
 - Monthly quota is account-wide across all API keys.
 - Per-minute burst protection remains per API key.
 - A paid developer cannot start a second paid checkout while an active/past-due subscription exists. Paid plan changes/customer portal support belong in the next billing expansion.
+- Account deletion is blocked while a paid subscription is active or past due; deleting only GWAP's local entitlement would not cancel Stripe billing.
 - Webhook signature verification uses the raw request body and `Stripe-Signature` header before JSON parsing.
+- Supported webhook events are serialized per owner and compared by Stripe event timestamp, with terminal subscription events taking precedence over checkout activation in same-second races.

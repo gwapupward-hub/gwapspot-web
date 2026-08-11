@@ -10,13 +10,22 @@ const DIRECT_REDIS_CONNECT_TIMEOUT_MS = 5_000;
 
 type SetOptions = { ex?: number };
 
+const DELETE_IF_VALUE_SCRIPT = `
+if redis.call("GET", KEYS[1]) == ARGV[1] then
+  return redis.call("DEL", KEYS[1])
+end
+return 0
+`;
+
 export type WorkspaceRedis = {
+  deleteIfValue(key: string, value: string): Promise<boolean>;
   del(key: string): Promise<number>;
   expire(key: string, seconds: number): Promise<number>;
   get<T>(key: string): Promise<T | null>;
   incr(key: string): Promise<number>;
   ping(): Promise<boolean>;
   set<T>(key: string, value: T, options?: SetOptions): Promise<void>;
+  setIfAbsent(key: string, value: string, ttlSeconds: number): Promise<boolean>;
 };
 
 class RestWorkspaceRedis implements WorkspaceRedis {
@@ -32,6 +41,23 @@ class RestWorkspaceRedis implements WorkspaceRedis {
       return;
     }
     await this.client.set(key, value);
+  }
+
+  async setIfAbsent(key: string, value: string, ttlSeconds: number) {
+    const result = await this.client.set(key, value, {
+      ex: ttlSeconds,
+      nx: true,
+    });
+    return result === "OK";
+  }
+
+  async deleteIfValue(key: string, value: string) {
+    const result = await this.client.eval<[string], number>(
+      DELETE_IF_VALUE_SCRIPT,
+      [key],
+      [value],
+    );
+    return Number(result) > 0;
   }
 
   async del(key: string) {
@@ -129,6 +155,29 @@ class DirectWorkspaceRedis implements WorkspaceRedis {
     if (String(result) !== "OK") {
       throw new Error("Workspace storage write failed");
     }
+  }
+
+  async setIfAbsent(key: string, value: string, ttlSeconds: number) {
+    const result = await (await this.getClient()).sendCommand([
+      "SET",
+      key,
+      value,
+      "EX",
+      String(ttlSeconds),
+      "NX",
+    ]);
+    return String(result) === "OK";
+  }
+
+  async deleteIfValue(key: string, value: string) {
+    const result = await (await this.getClient()).sendCommand([
+      "EVAL",
+      DELETE_IF_VALUE_SCRIPT,
+      "1",
+      key,
+      value,
+    ]);
+    return Number(result) > 0;
   }
 
   async del(key: string) {
