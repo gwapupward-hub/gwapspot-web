@@ -72,24 +72,11 @@ export function ScrollDirector() {
 
   useEffect(() => {
     const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const touchPerformanceMode = window.matchMedia("(hover: none) and (pointer: coarse)");
-    const narrowPerformanceMode = window.matchMedia("(max-width: 820px)");
-    const syncPreference = () =>
-      setReduceMotion(
-        motionPreference.matches ||
-        touchPerformanceMode.matches ||
-        narrowPerformanceMode.matches,
-      );
+    const syncPreference = () => setReduceMotion(motionPreference.matches);
 
     syncPreference();
     motionPreference.addEventListener("change", syncPreference);
-    touchPerformanceMode.addEventListener("change", syncPreference);
-    narrowPerformanceMode.addEventListener("change", syncPreference);
-    return () => {
-      motionPreference.removeEventListener("change", syncPreference);
-      touchPerformanceMode.removeEventListener("change", syncPreference);
-      narrowPerformanceMode.removeEventListener("change", syncPreference);
-    };
+    return () => motionPreference.removeEventListener("change", syncPreference);
   }, []);
 
   useEffect(() => {
