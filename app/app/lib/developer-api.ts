@@ -9,6 +9,7 @@ import {
   type DeveloperPlan,
 } from "../../lib/developer-api-core";
 import { getPrivateStorageKey, getWorkspaceRedis } from "../../lib/redis";
+import { withWorkspaceLock } from "../../lib/workspace-lock";
 import { resolveDeveloperPlan } from "./developer-billing";
 
 const MAX_KEYS_PER_OWNER = 3;
@@ -29,6 +30,10 @@ type DeveloperKeyRecord = {
 
 export type DeveloperKeySummary = Omit<DeveloperKeyRecord, "ownerId">;
 
+type StoredDeveloperKeySummary = DeveloperKeySummary & {
+  storageHash?: string;
+};
+
 export type DeveloperUsage = {
   used: number;
   limit: number;
@@ -42,7 +47,7 @@ export type DeveloperKeyView = DeveloperKeySummary & {
 
 type DeveloperAccountRecord = {
   ownerId: string;
-  keys: DeveloperKeySummary[];
+  keys: StoredDeveloperKeySummary[];
 };
 
 export type DeveloperApiAuthorization = {
@@ -57,6 +62,10 @@ export type DeveloperApiAuthorization = {
 
 function ownerStorageKey(ownerId: string) {
   return getPrivateStorageKey("developer-account", ownerId);
+}
+
+function ownerLockKey(ownerId: string) {
+  return getPrivateStorageKey("developer-account-lock", ownerId);
 }
 
 function apiKeyStorageKey(hash: string) {
@@ -83,6 +92,18 @@ function sanitizeLabel(value: unknown) {
 
 function utcDateId(date = new Date()) {
   return date.toISOString().slice(0, 10);
+}
+
+function publicKeySummary(key: StoredDeveloperKeySummary): DeveloperKeySummary {
+  return {
+    id: key.id,
+    label: key.label,
+    preview: key.preview,
+    plan: key.plan,
+    status: key.status,
+    createdAt: key.createdAt,
+    revokedAt: key.revokedAt,
+  };
 }
 
 async function readAccount(ownerId: string): Promise<DeveloperAccountRecord> {
@@ -117,7 +138,7 @@ export async function getDeveloperApiAccount(ownerId: string) {
   ]);
   const usage = await getAccountUsage(ownerId, plan);
   const keys: DeveloperKeyView[] = account.keys.map((key) => ({
-    ...key,
+    ...publicKeySummary(key),
     plan,
     usage,
   }));
@@ -155,57 +176,110 @@ export async function getDeveloperUsageAnalytics(ownerId: string, days = 30) {
 
 export async function createDeveloperApiKey(ownerId: string, label?: unknown) {
   const redis = getWorkspaceRedis();
-  const [account, plan] = await Promise.all([
-    readAccount(ownerId),
-    resolveDeveloperPlan(ownerId),
-  ]);
-  const activeCount = account.keys.filter((key) => key.status === "active").length;
-  if (activeCount >= MAX_KEYS_PER_OWNER) throw new Error("API_KEY_LIMIT");
+  return withWorkspaceLock(redis, ownerLockKey(ownerId), async () => {
+    const [account, plan] = await Promise.all([
+      readAccount(ownerId),
+      resolveDeveloperPlan(ownerId),
+    ]);
+    const activeCount = account.keys.filter((key) => key.status === "active").length;
+    if (activeCount >= MAX_KEYS_PER_OWNER) throw new Error("API_KEY_LIMIT");
 
-  const material = createDeveloperApiKeyMaterial();
-  const record: DeveloperKeyRecord = {
-    id: material.id,
-    ownerId,
-    label: sanitizeLabel(label),
-    preview: material.preview,
-    plan,
-    status: "active",
-    createdAt: new Date().toISOString(),
-    revokedAt: null,
-  };
-  const summary: DeveloperKeySummary = {
-    id: record.id,
-    label: record.label,
-    preview: record.preview,
-    plan: record.plan,
-    status: record.status,
-    createdAt: record.createdAt,
-    revokedAt: record.revokedAt,
-  };
-
-  await Promise.all([
-    redis.set(apiKeyStorageKey(material.hash), record),
-    redis.set(ownerStorageKey(ownerId), {
+    const material = createDeveloperApiKeyMaterial();
+    const record: DeveloperKeyRecord = {
+      id: material.id,
       ownerId,
-      keys: [...account.keys, summary],
-    } satisfies DeveloperAccountRecord),
-  ]);
+      label: sanitizeLabel(label),
+      preview: material.preview,
+      plan,
+      status: "active",
+      createdAt: new Date().toISOString(),
+      revokedAt: null,
+    };
+    const summary: DeveloperKeySummary = {
+      id: record.id,
+      label: record.label,
+      preview: record.preview,
+      plan: record.plan,
+      status: record.status,
+      createdAt: record.createdAt,
+      revokedAt: record.revokedAt,
+    };
+    const storedSummary: StoredDeveloperKeySummary = {
+      ...summary,
+      storageHash: material.hash,
+    };
+    const keyStorage = apiKeyStorageKey(material.hash);
 
-  return { apiKey: material.apiKey, key: summary };
+    await redis.set(keyStorage, record);
+    try {
+      await redis.set(ownerStorageKey(ownerId), {
+        ownerId,
+        keys: [...account.keys, storedSummary],
+      } satisfies DeveloperAccountRecord);
+    } catch (error) {
+      await redis.del(keyStorage).catch(() => 0);
+      throw error;
+    }
+
+    return { apiKey: material.apiKey, key: summary };
+  });
 }
 
 export async function revokeDeveloperApiKey(ownerId: string, keyId: string) {
   const redis = getWorkspaceRedis();
-  const account = await readAccount(ownerId);
-  const target = account.keys.find((key) => key.id === keyId);
-  if (!target || target.status !== "active") return false;
+  return withWorkspaceLock(redis, ownerLockKey(ownerId), async () => {
+    const account = await readAccount(ownerId);
+    const target = account.keys.find((key) => key.id === keyId);
+    if (!target || target.status !== "active") return false;
 
-  const revokedAt = new Date().toISOString();
-  const keys = account.keys.map((key) =>
-    key.id === keyId ? { ...key, status: "revoked" as const, revokedAt } : key,
-  );
-  await redis.set(ownerStorageKey(ownerId), { ownerId, keys } satisfies DeveloperAccountRecord);
-  return true;
+    const revokedAt = new Date().toISOString();
+    const keys = account.keys.map((key) =>
+      key.id === keyId ? { ...key, status: "revoked" as const, revokedAt } : key,
+    );
+    await redis.set(ownerStorageKey(ownerId), {
+      ownerId,
+      keys,
+    } satisfies DeveloperAccountRecord);
+    return true;
+  });
+}
+
+export async function deleteDeveloperApiAccount(ownerId: string) {
+  const redis = getWorkspaceRedis();
+  return withWorkspaceLock(redis, ownerLockKey(ownerId), async () => {
+    const account = await readAccount(ownerId);
+    const now = new Date();
+    const priorMonth = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 15),
+    );
+    const usageWindows = new Set([
+      getDeveloperUsageWindow(now).id,
+      getDeveloperUsageWindow(priorMonth).id,
+    ]);
+    const dates = Array.from({ length: 45 }, (_, index) => {
+      const date = new Date(
+        Date.UTC(
+          now.getUTCFullYear(),
+          now.getUTCMonth(),
+          now.getUTCDate() - index,
+        ),
+      );
+      return utcDateId(date);
+    });
+    const minute = Math.floor(Date.now() / 60_000);
+    const relatedKeys = new Set<string>([
+      ...Array.from(usageWindows, (windowId) => usageStorageKey(ownerId, windowId)),
+      ...dates.map((date) => dailyUsageStorageKey(ownerId, date)),
+      ...account.keys.flatMap((key) => [
+        minuteStorageKey(key.id, minute),
+        minuteStorageKey(key.id, minute - 1),
+        ...(key.storageHash ? [apiKeyStorageKey(key.storageHash)] : []),
+      ]),
+    ]);
+
+    await Promise.all(Array.from(relatedKeys, (key) => redis.del(key)));
+    await redis.del(ownerStorageKey(ownerId));
+  });
 }
 
 function extractApiKey(request: Request) {
