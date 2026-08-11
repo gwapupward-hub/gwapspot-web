@@ -48,15 +48,28 @@ export function SettingsView() {
         body: JSON.stringify({ confirmation: "DELETE" }),
         credentials: "same-origin",
       });
-      if (!response.ok) throw new Error("Account deletion failed");
+      if (!response.ok) {
+        const body = (await response.json().catch(() => ({}))) as {
+          error?: unknown;
+        };
+        throw new Error(
+          typeof body.error === "string"
+            ? body.error
+            : "Account deletion failed",
+        );
+      }
 
       if (connected) await disconnect().catch(() => undefined);
       await logout().catch(() => undefined);
       window.localStorage.removeItem(GWAP_OS_STORAGE_KEY);
       router.replace("/");
       router.refresh();
-    } catch {
-      setAccountError("We could not delete the account. Please retry.");
+    } catch (error) {
+      setAccountError(
+        error instanceof Error
+          ? error.message
+          : "We could not delete the account. Please retry.",
+      );
       setDeleting(false);
     }
   }
@@ -98,7 +111,7 @@ export function SettingsView() {
         <div className="os-panel os-danger-panel"><div><span>ACCOUNT DATA</span><h2>Reset this workspace</h2><p>Clear the synced profile, favorites, activity, and settings while keeping the wallet account active.</p></div><button type="button" onClick={resetWorkspace}>Reset workspace data</button></div>
 
         <div className="os-panel os-danger-panel">
-          <div><span>PERMANENT ACTION</span><h2>Delete GWAP OS account</h2><p>Permanently delete the account, active sessions, verified wallet connection, and workspace data. This cannot be undone.{account.embeddedWallet ? " Deleting before export can permanently remove access to the email-created wallet." : " Your external wallet itself is not deleted."}</p></div>
+          <div><span>PERMANENT ACTION</span><h2>Delete GWAP OS account</h2><p>Permanently delete the account, active sessions, verified wallet connection, workspace data, and developer API keys. This cannot be undone. An active paid developer subscription must be canceled first.{account.embeddedWallet ? " Deleting before export can permanently remove access to the email-created wallet." : " Your external wallet itself is not deleted."}</p></div>
           {confirmDelete ? <div className="os-delete-confirmation"><button type="button" onClick={() => setConfirmDelete(false)} disabled={deleting}>Cancel</button><button type="button" onClick={() => void deleteAccount()} disabled={deleting}>{deleting ? "Deleting…" : "Delete permanently"}</button></div> : <button type="button" onClick={() => setConfirmDelete(true)}>Delete account</button>}
         </div>
       </section>
