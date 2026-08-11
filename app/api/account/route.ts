@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
+import { deleteDeveloperApiAccount } from "../../app/lib/developer-api";
+import { deleteDeveloperBillingAccount } from "../../app/lib/developer-billing";
 import { clearAccountWorkspace } from "../../app/lib/os-server";
+import { deleteAccountInRecoverableOrder } from "../../lib/account-deletion-core";
 import { isWalletAuthConfigured } from "../../lib/auth-config";
 import {
   clearWalletIdentityCache,
@@ -48,15 +51,37 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "Confirmation is required" }, { status: 400 });
     }
 
-    await getPrivyServerClient().users().delete(identity.userId);
-    await Promise.all([
-      clearAccountWorkspace(identity.userId),
-      clearWalletIdentityCache(identity.userId),
-    ]);
+    await deleteAccountInRecoverableOrder({
+      purgeApplicationData: async () => {
+        // Billing cleanup runs first because an active Stripe subscription must
+        // block deletion before any other account data is changed.
+        await deleteDeveloperBillingAccount(identity.userId);
+        await Promise.all([
+          deleteDeveloperApiAccount(identity.userId),
+          clearAccountWorkspace(identity.userId),
+          clearWalletIdentityCache(identity.userId),
+        ]);
+      },
+      deleteIdentity: async () => {
+        await getPrivyServerClient().users().delete(identity.userId);
+      },
+    });
     auditAuthEvent("account.delete", identity.userId, "success");
     return new NextResponse(null, { status: 204 });
-  } catch {
+  } catch (error) {
     auditAuthEvent("account.delete", identity.userId, "failed");
+    if (
+      error instanceof Error &&
+      error.message === "ACTIVE_DEVELOPER_SUBSCRIPTION"
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Cancel the active developer subscription before deleting this account.",
+        },
+        { status: 409 },
+      );
+    }
     return NextResponse.json({ error: "Account deletion failed" }, { status: 500 });
   }
 }
