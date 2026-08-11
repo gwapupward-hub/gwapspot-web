@@ -73,7 +73,7 @@
   aspect-ratio: 1.7;
 }
 
-/* The cinematic homepage already renders a glyph container. Replace initials with official logos. */
+/* Match stable product identity rather than link destination; live products may open external URLs. */
 .premium-product-card .product-glyph {
   position: relative;
   overflow: hidden;
@@ -88,14 +88,14 @@
   opacity: 0;
 }
 
-.premium-product-card[href="/ecosystem/gns"] .product-glyph { background-image: url("/logos/gns.png"); }
-.premium-product-card[href="/ecosystem/gwapscore"] .product-glyph { background-image: url("/logos/gwapscore.svg"); }
-.premium-product-card[href="/ecosystem/dimi"] .product-glyph { background-image: url("/logos/dimi.webp"); }
-.premium-product-card[href="/ecosystem/isnad-sunnah"] .product-glyph { background-image: url("/logos/isnad-sunnah.svg"); }
-.premium-product-card[href="/ecosystem/money-neva-sleeps"] .product-glyph { background-image: url("/logos/money-neva-sleeps.webp"); }
-.premium-product-card[href="/ecosystem/marketplace"] .product-glyph { background-image: url("/logos/marketplace.webp"); }
-.premium-product-card[href="/ecosystem/occo"] .product-glyph { background-image: url("/logos/occo.png"); }
-.premium-product-card[href="/ecosystem/private-proof-vault"] .product-glyph { background-image: url("/logos/private-proof-vault.webp"); }
+.premium-product-card[data-gwap-product="gns"] .product-glyph { background-image: url("/logos/gns.png"); }
+.premium-product-card[data-gwap-product="gwapscore"] .product-glyph { background-image: url("/logos/gwapscore.svg"); }
+.premium-product-card[data-gwap-product="dimi"] .product-glyph { background-image: url("/logos/dimi.webp"); }
+.premium-product-card[data-gwap-product="isnad-sunnah"] .product-glyph { background-image: url("/logos/isnad-sunnah.svg"); }
+.premium-product-card[data-gwap-product="money-neva-sleeps"] .product-glyph { background-image: url("/logos/money-neva-sleeps.webp"); }
+.premium-product-card[data-gwap-product="marketplace"] .product-glyph { background-image: url("/logos/marketplace.webp"); }
+.premium-product-card[data-gwap-product="occo"] .product-glyph { background-image: url("/logos/occo.png"); }
+.premium-product-card[data-gwap-product="private-proof-vault"] .product-glyph { background-image: url("/logos/private-proof-vault.webp"); }
 
 @media (max-width: 700px) {
   .product-logo-wrap {
