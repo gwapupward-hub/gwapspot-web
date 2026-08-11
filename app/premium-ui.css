@@ -81,12 +81,28 @@ button { color: inherit; }
 .hero-content h1 { margin: 28px 0 0; font-size: clamp(68px, 8.5vw, 132px); line-height: .78; letter-spacing: -.075em; font-weight: 800; }
 .hero-content h1 em {
   color: transparent;
-  background: linear-gradient(105deg, var(--gwap-green) 0%, var(--gwap-green) 34%, var(--gwap-purple) 68%, var(--gwap-orange) 100%);
+  background:
+    linear-gradient(rgba(1, 4, 2, .26), rgba(1, 4, 2, .26)),
+    linear-gradient(
+      105deg,
+      var(--gwap-green) 0%,
+      #32c54a 16%,
+      #5c9170 32%,
+      var(--gwap-purple) 50%,
+      #b8688f 68%,
+      #df7452 84%,
+      var(--gwap-orange) 100%
+    );
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: .75px rgba(1, 4, 2, .78);
   font-style: normal;
-  text-shadow: none;
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, .06),
+    0 2px 0 rgba(0, 0, 0, .7),
+    0 6px 12px rgba(0, 0, 0, .32),
+    0 12px 24px rgba(0, 0, 0, .2);
 }
 .premium-heading h2 em, .trust-copy h2 em, .community-panel h2 em { color: var(--gwap-green); font-style: normal; text-shadow: 0 0 55px rgba(19,221,19,.16); }
 .hero-content > p { max-width: 650px; margin: 34px 0 0; color: #aab2ac; font-size: clamp(16px, 1.6vw, 20px); line-height: 1.72; }
