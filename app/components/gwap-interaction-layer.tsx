@@ -41,6 +41,11 @@ type PendingPointerUpdate = {
   clientY: number;
 };
 
+type InteractionPoint = {
+  x: number;
+  y: number;
+};
+
 function getProductSlugFromHref(element: HTMLElement) {
   const href = element.getAttribute("href");
   const match = href?.match(/^\/ecosystem\/([^/?#]+)/);
@@ -172,27 +177,30 @@ function getPoint(element: HTMLElement, clientX?: number, clientY?: number) {
   };
 }
 
-function setPointerVariables(element: HTMLElement, clientX: number, clientY: number) {
-  const { x, y } = getPoint(element, clientX, clientY);
-  element.style.setProperty("--gwap-pointer-x", `${x}px`);
-  element.style.setProperty("--gwap-pointer-y", `${y}px`);
+function setPointerVariables(element: HTMLElement, point: InteractionPoint) {
+  element.style.setProperty("--gwap-pointer-x", `${point.x}px`);
+  element.style.setProperty("--gwap-pointer-y", `${point.y}px`);
 }
 
-function createPulse(element: HTMLElement, clientX?: number, clientY?: number) {
-  const { x, y } = getPoint(element, clientX, clientY);
-  element.style.setProperty("--gwap-tap-x", `${x}px`);
-  element.style.setProperty("--gwap-tap-y", `${y}px`);
+function getOrCreatePulse(element: HTMLElement) {
+  const existing = Array.from(element.children).find((child) =>
+    child.classList.contains("gwap-tap-pulse"),
+  );
+  if (existing instanceof HTMLElement) return existing;
 
   const pulse = document.createElement("span");
   pulse.className = "gwap-tap-pulse";
   pulse.setAttribute("aria-hidden", "true");
-  pulse.style.left = `${x}px`;
-  pulse.style.top = `${y}px`;
   element.appendChild(pulse);
+  return pulse;
+}
 
-  const removePulse = () => pulse.remove();
-  pulse.addEventListener("animationend", removePulse, { once: true });
-  window.setTimeout(removePulse, 900);
+function triggerPulse(element: HTMLElement, point: InteractionPoint) {
+  element.style.setProperty("--gwap-tap-x", `${point.x}px`);
+  element.style.setProperty("--gwap-tap-y", `${point.y}px`);
+
+  const pulse = getOrCreatePulse(element);
+  pulse.dataset.gwapPulseCycle = pulse.dataset.gwapPulseCycle === "a" ? "b" : "a";
 }
 
 export function GwapInteractionLayer() {
@@ -200,9 +208,9 @@ export function GwapInteractionLayer() {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const unsubscribeEnhancer = subscribeGwapTreeEnhancer(enhanceTree);
 
-    const pressTimers = new WeakMap<HTMLElement, number>();
-    const launchTimers = new WeakMap<HTMLElement, number>();
-    const groupTimers = new WeakMap<HTMLElement, number>();
+    const pressTimers = new Map<HTMLElement, number>();
+    const launchTimers = new Map<HTMLElement, number>();
+    const groupTimers = new Map<HTMLElement, number>();
     let pointerFrame = 0;
     let pendingPointerUpdate: PendingPointerUpdate | null = null;
 
@@ -211,7 +219,10 @@ export function GwapInteractionLayer() {
       pendingPointerUpdate = null;
       pointerFrame = 0;
       if (!pending || !pending.element.isConnected) return;
-      setPointerVariables(pending.element, pending.clientX, pending.clientY);
+      setPointerVariables(
+        pending.element,
+        getPoint(pending.element, pending.clientX, pending.clientY),
+      );
     };
 
     const activateProduct = (element: HTMLElement) => {
@@ -242,11 +253,7 @@ export function GwapInteractionLayer() {
       groupTimers.set(group, groupTimer);
     };
 
-    const activate = (
-      element: HTMLElement,
-      clientX?: number,
-      clientY?: number,
-    ) => {
+    const activate = (element: HTMLElement, point?: InteractionPoint) => {
       const existingTimer = pressTimers.get(element);
       if (existingTimer) window.clearTimeout(existingTimer);
 
@@ -257,7 +264,7 @@ export function GwapInteractionLayer() {
       }, 190);
       pressTimers.set(element, timer);
 
-      if (!reduceMotion.matches) createPulse(element, clientX, clientY);
+      if (!reduceMotion.matches && point) triggerPulse(element, point);
     };
 
     const onPointerDown = (event: PointerEvent) => {
@@ -266,8 +273,9 @@ export function GwapInteractionLayer() {
       const element = getInteractiveTarget(event.target);
       if (!element || isDisabled(element)) return;
 
-      setPointerVariables(element, event.clientX, event.clientY);
-      activate(element, event.clientX, event.clientY);
+      const point = getPoint(element, event.clientX, event.clientY);
+      setPointerVariables(element, point);
+      activate(element, point);
     };
 
     const onPointerMove = (event: PointerEvent) => {
@@ -301,7 +309,7 @@ export function GwapInteractionLayer() {
       if (!element || isDisabled(element)) return;
       if (event.key === " " && !supportsSpaceActivation(element)) return;
 
-      activate(element);
+      activate(element, reduceMotion.matches ? undefined : getPoint(element));
     };
 
     document.addEventListener("pointerdown", onPointerDown, { capture: true });
@@ -311,6 +319,22 @@ export function GwapInteractionLayer() {
 
     return () => {
       unsubscribeEnhancer();
+      pressTimers.forEach((timer, element) => {
+        window.clearTimeout(timer);
+        element.classList.remove("gwap-pressing");
+      });
+      launchTimers.forEach((timer, element) => {
+        window.clearTimeout(timer);
+        element.classList.remove("gwap-product-activating");
+      });
+      groupTimers.forEach((timer, group) => {
+        window.clearTimeout(timer);
+        delete group.dataset.gwapActiveProduct;
+      });
+      document.querySelectorAll(".gwap-tap-pulse").forEach((pulse) => pulse.remove());
+      pressTimers.clear();
+      launchTimers.clear();
+      groupTimers.clear();
       document.removeEventListener("pointerdown", onPointerDown, { capture: true });
       document.removeEventListener("pointermove", onPointerMove);
       document.removeEventListener("click", onClick, { capture: true });
