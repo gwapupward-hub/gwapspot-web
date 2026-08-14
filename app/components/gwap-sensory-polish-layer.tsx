@@ -161,7 +161,10 @@ export function GwapSensoryPolishLayer() {
     return () => {
       unsubscribeEnhancer();
       tapCandidates.clear();
-      feedbackTimers.forEach((timer) => window.clearTimeout(timer));
+      feedbackTimers.forEach((timer, element) => {
+        window.clearTimeout(timer);
+        element.classList.remove("gwap-feedback-confirmed");
+      });
       feedbackTimers.clear();
       unsubscribePointerDown();
       unsubscribeClick();
