@@ -55,7 +55,8 @@ type InteractionBounds = {
 
 type PendingPointerUpdate = {
   element: HTMLElement;
-  point: InteractionPoint;
+  clientX: number;
+  clientY: number;
 };
 
 function getProductSlugFromHref(element: HTMLElement) {
@@ -260,7 +261,13 @@ export function GwapInteractionLayer() {
       pendingPointerUpdate = null;
       pointerFrame = 0;
       if (!pending || !pending.element.isConnected) return;
-      setPointerVariables(pending.element, pending.point);
+
+      const point = getReactivePoint(
+        pending.element,
+        pending.clientX,
+        pending.clientY,
+      );
+      setPointerVariables(pending.element, point);
     };
 
     const activateProduct = (element: HTMLElement) => {
@@ -329,7 +336,8 @@ export function GwapInteractionLayer() {
 
       pendingPointerUpdate = {
         element: reactive,
-        point: getReactivePoint(reactive, event.clientX, event.clientY),
+        clientX: event.clientX,
+        clientY: event.clientY,
       };
       if (!pointerFrame) pointerFrame = window.requestAnimationFrame(flushPointerUpdate);
     };
