@@ -35,15 +35,21 @@ type ProductTransition = {
   at: number;
 };
 
-type PendingPointerUpdate = {
-  element: HTMLElement;
-  clientX: number;
-  clientY: number;
-};
-
 type InteractionPoint = {
   x: number;
   y: number;
+};
+
+type InteractionBounds = {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+};
+
+type PendingPointerUpdate = {
+  element: HTMLElement;
+  point: InteractionPoint;
 };
 
 function getProductSlugFromHref(element: HTMLElement) {
@@ -167,14 +173,26 @@ function supportsSpaceActivation(element: HTMLElement) {
   return element.tagName === "BUTTON" || element.getAttribute("role") === "button";
 }
 
-function getPoint(element: HTMLElement, clientX?: number, clientY?: number) {
-  const rect = element.getBoundingClientRect();
-  const x = clientX == null ? rect.width / 2 : clientX - rect.left;
-  const y = clientY == null ? rect.height / 2 : clientY - rect.top;
+function getBounds(element: HTMLElement): InteractionBounds {
+  const { left, top, width, height } = element.getBoundingClientRect();
+  return { left, top, width, height };
+}
+
+function getPointFromBounds(
+  bounds: InteractionBounds,
+  clientX?: number,
+  clientY?: number,
+): InteractionPoint {
+  const x = clientX == null ? bounds.width / 2 : clientX - bounds.left;
+  const y = clientY == null ? bounds.height / 2 : clientY - bounds.top;
   return {
-    x: Math.max(0, Math.min(rect.width, x)),
-    y: Math.max(0, Math.min(rect.height, y)),
+    x: Math.max(0, Math.min(bounds.width, x)),
+    y: Math.max(0, Math.min(bounds.height, y)),
   };
+}
+
+function getPoint(element: HTMLElement, clientX?: number, clientY?: number) {
+  return getPointFromBounds(getBounds(element), clientX, clientY);
 }
 
 function setPointerVariables(element: HTMLElement, point: InteractionPoint) {
@@ -211,18 +229,41 @@ export function GwapInteractionLayer() {
     const pressTimers = new Map<HTMLElement, number>();
     const launchTimers = new Map<HTMLElement, number>();
     const groupTimers = new Map<HTMLElement, number>();
+    const reactiveBounds = new WeakMap<
+      HTMLElement,
+      { bounds: InteractionBounds; epoch: number }
+    >();
+    let geometryEpoch = 0;
     let pointerFrame = 0;
     let pendingPointerUpdate: PendingPointerUpdate | null = null;
+
+    const invalidateReactiveBounds = () => {
+      geometryEpoch += 1;
+      pendingPointerUpdate = null;
+    };
+
+    const getReactivePoint = (
+      element: HTMLElement,
+      clientX: number,
+      clientY: number,
+    ) => {
+      const cached = reactiveBounds.get(element);
+      const bounds =
+        cached?.epoch === geometryEpoch ? cached.bounds : getBounds(element);
+
+      if (cached?.epoch !== geometryEpoch) {
+        reactiveBounds.set(element, { bounds, epoch: geometryEpoch });
+      }
+
+      return getPointFromBounds(bounds, clientX, clientY);
+    };
 
     const flushPointerUpdate = () => {
       const pending = pendingPointerUpdate;
       pendingPointerUpdate = null;
       pointerFrame = 0;
       if (!pending || !pending.element.isConnected) return;
-      setPointerVariables(
-        pending.element,
-        getPoint(pending.element, pending.clientX, pending.clientY),
-      );
+      setPointerVariables(pending.element, pending.point);
     };
 
     const activateProduct = (element: HTMLElement) => {
@@ -257,9 +298,11 @@ export function GwapInteractionLayer() {
       const existingTimer = pressTimers.get(element);
       if (existingTimer) window.clearTimeout(existingTimer);
 
+      reactiveBounds.delete(element);
       element.classList.add("gwap-pressing");
       const timer = window.setTimeout(() => {
         element.classList.remove("gwap-pressing");
+        reactiveBounds.delete(element);
         pressTimers.delete(element);
       }, 190);
       pressTimers.set(element, timer);
@@ -279,14 +322,20 @@ export function GwapInteractionLayer() {
     };
 
     const onPointerMove = (event: PointerEvent) => {
-      if (reduceMotion.matches || !(event.target instanceof Element)) return;
+      if (
+        reduceMotion.matches ||
+        event.pointerType === "touch" ||
+        !(event.target instanceof Element)
+      ) {
+        return;
+      }
+
       const reactive = event.target.closest<HTMLElement>("[data-gwap-reactive='true']");
       if (!reactive) return;
 
       pendingPointerUpdate = {
         element: reactive,
-        clientX: event.clientX,
-        clientY: event.clientY,
+        point: getReactivePoint(reactive, event.clientX, event.clientY),
       };
       if (!pointerFrame) pointerFrame = window.requestAnimationFrame(flushPointerUpdate);
     };
@@ -314,6 +363,17 @@ export function GwapInteractionLayer() {
 
     document.addEventListener("pointerdown", onPointerDown, { capture: true });
     document.addEventListener("pointermove", onPointerMove, { passive: true });
+    document.addEventListener("scroll", invalidateReactiveBounds, {
+      capture: true,
+      passive: true,
+    });
+    window.addEventListener("resize", invalidateReactiveBounds, { passive: true });
+    window.visualViewport?.addEventListener("resize", invalidateReactiveBounds, {
+      passive: true,
+    });
+    window.visualViewport?.addEventListener("scroll", invalidateReactiveBounds, {
+      passive: true,
+    });
     document.addEventListener("click", onClick, { capture: true });
     document.addEventListener("keydown", onKeyDown, { capture: true });
 
@@ -337,6 +397,10 @@ export function GwapInteractionLayer() {
       groupTimers.clear();
       document.removeEventListener("pointerdown", onPointerDown, { capture: true });
       document.removeEventListener("pointermove", onPointerMove);
+      document.removeEventListener("scroll", invalidateReactiveBounds, { capture: true });
+      window.removeEventListener("resize", invalidateReactiveBounds);
+      window.visualViewport?.removeEventListener("resize", invalidateReactiveBounds);
+      window.visualViewport?.removeEventListener("scroll", invalidateReactiveBounds);
       document.removeEventListener("click", onClick, { capture: true });
       document.removeEventListener("keydown", onKeyDown, { capture: true });
       if (pointerFrame) window.cancelAnimationFrame(pointerFrame);
