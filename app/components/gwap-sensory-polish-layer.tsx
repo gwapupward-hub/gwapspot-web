@@ -2,6 +2,12 @@
 
 import { useEffect } from "react";
 import { subscribeGwapTreeEnhancer } from "../lib/gwap-dom-observer";
+import {
+  getGwapInteractiveTarget,
+  isGwapInteractiveDisabled,
+  subscribeGwapClick,
+  subscribeGwapPointerDown,
+} from "../lib/gwap-interaction-events";
 
 const TAP_MAX_DISTANCE = 10;
 const TAP_MAX_DURATION_MS = 650;
@@ -21,15 +27,6 @@ type TapCandidate = {
   at: number;
   pointerType: string;
 };
-
-function isDisabled(element: HTMLElement) {
-  return element.hasAttribute("disabled") || element.getAttribute("aria-disabled") === "true";
-}
-
-function getInteractiveTarget(target: EventTarget | null) {
-  if (!(target instanceof Element)) return null;
-  return target.closest<HTMLElement>("[data-gwap-interactive]");
-}
 
 function getFeedbackTier(element: HTMLElement) {
   if (
@@ -108,10 +105,8 @@ export function GwapSensoryPolishLayer() {
       }
     };
 
-    const onPointerDown = (event: PointerEvent) => {
+    const onPointerDown = (event: PointerEvent, element: HTMLElement) => {
       if (event.button !== 0 || (event.pointerType !== "touch" && event.pointerType !== "pen")) return;
-      const element = getInteractiveTarget(event.target);
-      if (!element || isDisabled(element)) return;
 
       tapCandidates.set(event.pointerId, {
         element,
@@ -129,13 +124,13 @@ export function GwapSensoryPolishLayer() {
 
       const distance = Math.hypot(event.clientX - candidate.x, event.clientY - candidate.y);
       const duration = performance.now() - candidate.at;
-      const releasedTarget = getInteractiveTarget(event.target);
+      const releasedTarget = getGwapInteractiveTarget(event.target);
 
       if (
         distance > TAP_MAX_DISTANCE ||
         duration > TAP_MAX_DURATION_MS ||
         releasedTarget !== candidate.element ||
-        isDisabled(candidate.element)
+        isGwapInteractiveDisabled(candidate.element)
       ) {
         return;
       }
@@ -147,10 +142,8 @@ export function GwapSensoryPolishLayer() {
       tapCandidates.delete(event.pointerId);
     };
 
-    const onClick = (event: MouseEvent) => {
+    const onClick = (event: MouseEvent, element: HTMLElement) => {
       if (event.button !== 0 || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
-      const element = getInteractiveTarget(event.target);
-      if (!element || isDisabled(element)) return;
 
       // Pointer taps are confirmed on pointerup so haptics can be gated against scroll gestures.
       // Click still supplies the same visual confirmation for mouse and keyboard activation.
@@ -159,20 +152,20 @@ export function GwapSensoryPolishLayer() {
       }
     };
 
-    document.addEventListener("pointerdown", onPointerDown, { capture: true });
+    const unsubscribePointerDown = subscribeGwapPointerDown(onPointerDown);
+    const unsubscribeClick = subscribeGwapClick(onClick);
     document.addEventListener("pointerup", onPointerUp, { capture: true });
     document.addEventListener("pointercancel", onPointerCancel, { capture: true });
-    document.addEventListener("click", onClick, { capture: true });
 
     return () => {
       unsubscribeEnhancer();
       tapCandidates.clear();
       feedbackTimers.forEach((timer) => window.clearTimeout(timer));
       feedbackTimers.clear();
-      document.removeEventListener("pointerdown", onPointerDown, { capture: true });
+      unsubscribePointerDown();
+      unsubscribeClick();
       document.removeEventListener("pointerup", onPointerUp, { capture: true });
       document.removeEventListener("pointercancel", onPointerCancel, { capture: true });
-      document.removeEventListener("click", onClick, { capture: true });
     };
   }, []);
 

@@ -2,6 +2,12 @@
 
 import { useEffect } from "react";
 import { subscribeGwapTreeEnhancer } from "../lib/gwap-dom-observer";
+import {
+  getGwapInteractiveTarget,
+  isGwapInteractiveDisabled,
+  subscribeGwapClick,
+  subscribeGwapPointerDown,
+} from "../lib/gwap-interaction-events";
 
 const INTERACTIVE_SELECTOR = [
   ".glass-button",
@@ -160,15 +166,6 @@ function enhanceTree(root: ParentNode) {
   enhanceProductHero(root);
 }
 
-function getInteractiveTarget(target: EventTarget | null) {
-  if (!(target instanceof Element)) return null;
-  return target.closest<HTMLElement>("[data-gwap-interactive]");
-}
-
-function isDisabled(element: HTMLElement) {
-  return element.hasAttribute("disabled") || element.getAttribute("aria-disabled") === "true";
-}
-
 function supportsSpaceActivation(element: HTMLElement) {
   return element.tagName === "BUTTON" || element.getAttribute("role") === "button";
 }
@@ -310,11 +307,8 @@ export function GwapInteractionLayer() {
       if (!reduceMotion.matches && point) triggerPulse(element, point);
     };
 
-    const onPointerDown = (event: PointerEvent) => {
+    const onPointerDown = (event: PointerEvent, element: HTMLElement) => {
       if (event.button !== 0) return;
-
-      const element = getInteractiveTarget(event.target);
-      if (!element || isDisabled(element)) return;
 
       const point = getPoint(element, event.clientX, event.clientY);
       setPointerVariables(element, point);
@@ -340,11 +334,8 @@ export function GwapInteractionLayer() {
       if (!pointerFrame) pointerFrame = window.requestAnimationFrame(flushPointerUpdate);
     };
 
-    const onClick = (event: MouseEvent) => {
+    const onClick = (event: MouseEvent, element: HTMLElement) => {
       if (event.button !== 0 || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
-
-      const element = getInteractiveTarget(event.target);
-      if (!element || isDisabled(element)) return;
 
       // Product launch state only starts after a real click. This avoids false
       // activations when a touch gesture begins on a card but becomes a scroll.
@@ -354,14 +345,15 @@ export function GwapInteractionLayer() {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.repeat || (event.key !== "Enter" && event.key !== " ")) return;
 
-      const element = getInteractiveTarget(event.target);
-      if (!element || isDisabled(element)) return;
+      const element = getGwapInteractiveTarget(event.target);
+      if (!element || isGwapInteractiveDisabled(element)) return;
       if (event.key === " " && !supportsSpaceActivation(element)) return;
 
       activate(element, reduceMotion.matches ? undefined : getPoint(element));
     };
 
-    document.addEventListener("pointerdown", onPointerDown, { capture: true });
+    const unsubscribePointerDown = subscribeGwapPointerDown(onPointerDown);
+    const unsubscribeClick = subscribeGwapClick(onClick);
     document.addEventListener("pointermove", onPointerMove, { passive: true });
     document.addEventListener("scroll", invalidateReactiveBounds, {
       capture: true,
@@ -374,7 +366,6 @@ export function GwapInteractionLayer() {
     window.visualViewport?.addEventListener("scroll", invalidateReactiveBounds, {
       passive: true,
     });
-    document.addEventListener("click", onClick, { capture: true });
     document.addEventListener("keydown", onKeyDown, { capture: true });
 
     return () => {
@@ -395,13 +386,13 @@ export function GwapInteractionLayer() {
       pressTimers.clear();
       launchTimers.clear();
       groupTimers.clear();
-      document.removeEventListener("pointerdown", onPointerDown, { capture: true });
+      unsubscribePointerDown();
+      unsubscribeClick();
       document.removeEventListener("pointermove", onPointerMove);
       document.removeEventListener("scroll", invalidateReactiveBounds, { capture: true });
       window.removeEventListener("resize", invalidateReactiveBounds);
       window.visualViewport?.removeEventListener("resize", invalidateReactiveBounds);
       window.visualViewport?.removeEventListener("scroll", invalidateReactiveBounds);
-      document.removeEventListener("click", onClick, { capture: true });
       document.removeEventListener("keydown", onKeyDown, { capture: true });
       if (pointerFrame) window.cancelAnimationFrame(pointerFrame);
       pendingPointerUpdate = null;
