@@ -42,55 +42,9 @@ export function CinematicHome() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const navRef = useRef<HTMLElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchButtonRef = useRef<HTMLButtonElement>(null);
   const searchDialogRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const sections = Array.from(document.querySelectorAll<HTMLElement>("[data-story-section]"));
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-    if (reduceMotion) {
-      sections.forEach((section) => section.classList.add("is-active"));
-      return;
-    }
-
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        const section = entry.target as HTMLElement;
-        if (entry.isIntersecting) {
-          section.classList.add("is-active");
-          section.classList.remove("is-past");
-        } else {
-          section.classList.remove("is-active");
-          if (entry.boundingClientRect.top < 0) section.classList.add("is-past");
-          else section.classList.remove("is-past");
-        }
-      });
-    }, { rootMargin: "-18% 0px -22%", threshold: [0.12, 0.45, 0.7] });
-
-    sections.forEach((section) => observer.observe(section));
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    let frame = 0;
-    const updateNavState = () => {
-      frame = 0;
-      navRef.current?.classList.toggle("is-scrolled", window.scrollY > 48);
-    };
-    const onScroll = () => {
-      if (!frame) frame = window.requestAnimationFrame(updateNavState);
-    };
-
-    updateNavState();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      if (frame) window.cancelAnimationFrame(frame);
-    };
-  }, []);
 
   useEffect(() => {
     if (!searchOpen) return;
@@ -154,7 +108,7 @@ export function CinematicHome() {
         <div className="noise-layer" />
       </div>
 
-      <header ref={navRef} className="cinematic-nav">
+      <header className="cinematic-nav">
         <Link className="cinematic-brand" href="#top" aria-label="GWAPSpot home">
           <span className="cinematic-brand-mark"><Image src="/logos/gwap-agent-clear.svg" alt="" width={44} height={44} priority /></span>
           <span><strong>GWAP</strong><small>SPOT</small></span>
