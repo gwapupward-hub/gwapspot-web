@@ -44,7 +44,10 @@ function setCssVariable(element: HTMLElement, property: string, value: string) {
 }
 
 function setScrollState(section: HTMLElement, state: ScrollState) {
-  if (section.dataset.scrollState !== state) section.dataset.scrollState = state;
+  if (section.dataset.scrollState === state) return;
+  section.dataset.scrollState = state;
+  section.classList.toggle("is-active", state === "active");
+  section.classList.toggle("is-past", state === "past");
 }
 
 function getContinuousChapterProgress(focusLine: number, measurements: SectionMeasurement[]) {
@@ -90,6 +93,8 @@ export function ScrollDirector() {
     const nav = document.querySelector<HTMLElement>(".cinematic-nav");
     const brand = nav?.querySelector<HTMLAnchorElement>(".cinematic-brand") ?? null;
     const navLinks = nav?.querySelector<HTMLElement>(".cinematic-links") ?? null;
+
+    main.dataset.gwapMotionState = document.hidden ? "paused" : "running";
 
     sections.forEach((section, index) => {
       if (!section.id && chapters[index]) section.id = chapters[index].id;
@@ -194,6 +199,7 @@ export function ScrollDirector() {
 
       const scrollY = window.scrollY;
       const focusLine = scrollY + viewportHeight * 0.52;
+      nav?.classList.toggle("is-scrolled", scrollY > 48);
 
       if (!reduceMotion) {
         const chapterProgress = getContinuousChapterProgress(focusLine, measurements);
@@ -281,10 +287,26 @@ export function ScrollDirector() {
     };
 
     const scheduleUpdate = () => {
+      if (document.hidden) return;
       if (!frame) frame = window.requestAnimationFrame(update);
     };
 
     const handleResize = () => {
+      needsMeasurement = true;
+      needsNavGeometrySync = true;
+      scheduleUpdate();
+    };
+
+    const handleVisibilityChange = () => {
+      const isVisible = !document.hidden;
+      main.dataset.gwapMotionState = isVisible ? "running" : "paused";
+
+      if (!isVisible) {
+        if (frame) window.cancelAnimationFrame(frame);
+        frame = 0;
+        return;
+      }
+
       needsMeasurement = true;
       needsNavGeometrySync = true;
       scheduleUpdate();
@@ -295,19 +317,23 @@ export function ScrollDirector() {
     update();
     window.addEventListener("scroll", scheduleUpdate, { passive: true });
     window.addEventListener("resize", handleResize, { passive: true });
+    document.addEventListener("visibilitychange", handleVisibilityChange);
     efficientVisualPipeline.addEventListener("change", handleResize);
 
     return () => {
       window.removeEventListener("scroll", scheduleUpdate);
       window.removeEventListener("resize", handleResize);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       efficientVisualPipeline.removeEventListener("change", handleResize);
       if (frame) window.cancelAnimationFrame(frame);
       main.classList.remove("scroll-directed");
+      delete main.dataset.gwapMotionState;
       root.style.removeProperty("--page-scroll-progress");
       root.style.removeProperty("--gwap-chapter-progress");
       root.style.removeProperty("--gwap-chapter-position");
       delete root.dataset.gwapChapter;
       if (nav) {
+        nav.classList.remove("is-scrolled");
         nav.style.removeProperty("--gwap-nav-beacon-x");
         delete nav.dataset.gwapChapter;
       }
@@ -316,7 +342,8 @@ export function ScrollDirector() {
       navLinks?.style.removeProperty("--gwap-nav-lens-opacity");
       clearTopNavState();
       sections.forEach((section) => {
-        section.classList.remove("is-scroll-active");
+        section.classList.remove("is-scroll-active", "is-past");
+        section.classList.toggle("is-active", section.id === "top");
         delete section.dataset.scrollState;
         storyProperties.forEach((property) => section.style.removeProperty(property));
       });
