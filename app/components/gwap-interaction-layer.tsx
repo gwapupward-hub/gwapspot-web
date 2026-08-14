@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { subscribeGwapTreeEnhancer } from "../lib/gwap-dom-observer";
 
 const INTERACTIVE_SELECTOR = [
   ".glass-button",
@@ -197,17 +198,7 @@ function createPulse(element: HTMLElement, clientX?: number, clientY?: number) {
 export function GwapInteractionLayer() {
   useEffect(() => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    enhanceTree(document.body);
-
-    const observer = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        mutation.addedNodes.forEach((node) => {
-          if (node instanceof Element) enhanceTree(node);
-        });
-      }
-    });
-
-    observer.observe(document.body, { childList: true, subtree: true });
+    const unsubscribeEnhancer = subscribeGwapTreeEnhancer(enhanceTree);
 
     const pressTimers = new WeakMap<HTMLElement, number>();
     const launchTimers = new WeakMap<HTMLElement, number>();
@@ -319,7 +310,7 @@ export function GwapInteractionLayer() {
     document.addEventListener("keydown", onKeyDown, { capture: true });
 
     return () => {
-      observer.disconnect();
+      unsubscribeEnhancer();
       document.removeEventListener("pointerdown", onPointerDown, { capture: true });
       document.removeEventListener("pointermove", onPointerMove);
       document.removeEventListener("click", onClick, { capture: true });
