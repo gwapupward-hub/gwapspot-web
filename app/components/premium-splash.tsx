@@ -201,11 +201,6 @@ export default function PremiumSplash() {
       aria-busy={mode === "intro" && !ready}
       aria-label={mode === "intro" ? "Preparing the GWAP ecosystem" : "Loading the next page"}
     >
-      <div
-        className="premium-splash__backdrop"
-        style={{ backgroundImage: `url("${SPLASH_SRC}")` }}
-        aria-hidden="true"
-      />
       <div className="premium-splash__art" aria-hidden="true">
         <Image
           src={SPLASH_SRC}
@@ -218,7 +213,6 @@ export default function PremiumSplash() {
       </div>
 
       <div className="premium-splash__veil" aria-hidden="true" />
-      <div className="premium-splash__grain" aria-hidden="true" />
       <div className="premium-splash__frame" aria-hidden="true" />
 
       {mode === "intro" ? (
@@ -240,13 +234,13 @@ export default function PremiumSplash() {
         <div className="premium-splash__route-mark">
           <div className="premium-splash__route-logos" aria-hidden="true">
             <span className="premium-splash__logo-shell premium-splash__logo-shell--occo">
-              <Image src="/logos/occo.png" alt="" width={86} height={86} unoptimized />
+              <Image src="/logos/occo.webp" alt="" width={86} height={86} unoptimized />
             </span>
             <span className="premium-splash__logo-shell premium-splash__logo-shell--gwap">
               <Image src="/logos/gwap-agent.png" alt="" width={84} height={84} unoptimized />
             </span>
             <span className="premium-splash__logo-shell premium-splash__logo-shell--gns">
-              <Image src="/logos/gns.png" alt="" width={86} height={86} unoptimized />
+              <Image src="/logos/gns.webp" alt="" width={86} height={86} unoptimized />
             </span>
           </div>
           <strong>GWAP</strong>
