@@ -139,3 +139,19 @@
   .scroll-directed .community-story .community-panel,
   .scroll-directed .community-story .community-glow { opacity: 1 !important; filter: none !important; transform: none !important; }
 }
+
+/*
+ * Pause decorative timelines outside the active story chapter and whenever the
+ * document is hidden. ScrollDirector owns these states so animation work resumes
+ * without spawning another observer or RAF loop.
+ */
+.cinematic-home[data-gwap-motion-state="paused"],
+.cinematic-home[data-gwap-motion-state="paused"] *,
+.cinematic-home[data-gwap-motion-state="paused"] *::before,
+.cinematic-home[data-gwap-motion-state="paused"] *::after,
+.cinematic-home .story-section[data-scroll-state]:not(.is-scroll-active),
+.cinematic-home .story-section[data-scroll-state]:not(.is-scroll-active) *,
+.cinematic-home .story-section[data-scroll-state]:not(.is-scroll-active) *::before,
+.cinematic-home .story-section[data-scroll-state]:not(.is-scroll-active) *::after {
+  animation-play-state: paused !important;
+}
