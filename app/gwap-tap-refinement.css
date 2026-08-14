@@ -13,13 +13,36 @@
   box-shadow:
     0 0 0 .5px rgba(19,221,19,.07),
     0 0 7px rgba(19,221,19,.055);
-  opacity: .4;
+  opacity: 0;
   mix-blend-mode: screen;
   transform: translateZ(0) scale(.7);
-  animation: gwapTapPulse 420ms cubic-bezier(.18,.8,.24,1) forwards;
+  animation-duration: 420ms;
+  animation-timing-function: cubic-bezier(.18,.8,.24,1);
 }
 
-@keyframes gwapTapPulse {
+.gwap-tap-pulse[data-gwap-pulse-cycle="a"] {
+  animation-name: gwapTapPulseA;
+}
+
+.gwap-tap-pulse[data-gwap-pulse-cycle="b"] {
+  animation-name: gwapTapPulseB;
+}
+
+@keyframes gwapTapPulseA {
+  0% {
+    opacity: .42;
+    transform: translateZ(0) scale(.7);
+  }
+  32% {
+    opacity: .28;
+  }
+  100% {
+    opacity: 0;
+    transform: translateZ(0) scale(4.7);
+  }
+}
+
+@keyframes gwapTapPulseB {
   0% {
     opacity: .42;
     transform: translateZ(0) scale(.7);
