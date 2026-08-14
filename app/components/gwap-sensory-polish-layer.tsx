@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { subscribeGwapTreeEnhancer } from "../lib/gwap-dom-observer";
 
 const TAP_MAX_DISTANCE = 10;
 const TAP_MAX_DURATION_MS = 650;
@@ -71,18 +72,10 @@ export function GwapSensoryPolishLayer() {
   useEffect(() => {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const tapCandidates = new Map<number, TapCandidate>();
-    const feedbackTimers = new WeakMap<HTMLElement, number>();
+    const feedbackTimers = new Map<HTMLElement, number>();
     let lastHapticAt = 0;
 
-    enhanceTree(document.body);
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        mutation.addedNodes.forEach((node) => {
-          if (node instanceof Element) enhanceTree(node);
-        });
-      });
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
+    const unsubscribeEnhancer = subscribeGwapTreeEnhancer(enhanceTree);
 
     const confirmFeedback = (element: HTMLElement, allowHaptic: boolean) => {
       const tier = element.dataset.gwapFeedbackTier || getFeedbackTier(element);
@@ -92,8 +85,9 @@ export function GwapSensoryPolishLayer() {
       if (existingTimer) window.clearTimeout(existingTimer);
 
       if (!reducedMotion.matches) {
-        element.classList.remove("gwap-feedback-confirmed");
-        void element.offsetWidth;
+        // Alternating animation names restarts the feedback without forcing layout.
+        element.dataset.gwapFeedbackCycle =
+          element.dataset.gwapFeedbackCycle === "a" ? "b" : "a";
         element.classList.add("gwap-feedback-confirmed");
         const timer = window.setTimeout(() => {
           element.classList.remove("gwap-feedback-confirmed");
@@ -171,7 +165,10 @@ export function GwapSensoryPolishLayer() {
     document.addEventListener("click", onClick, { capture: true });
 
     return () => {
-      observer.disconnect();
+      unsubscribeEnhancer();
+      tapCandidates.clear();
+      feedbackTimers.forEach((timer) => window.clearTimeout(timer));
+      feedbackTimers.clear();
       document.removeEventListener("pointerdown", onPointerDown, { capture: true });
       document.removeEventListener("pointerup", onPointerUp, { capture: true });
       document.removeEventListener("pointercancel", onPointerCancel, { capture: true });
