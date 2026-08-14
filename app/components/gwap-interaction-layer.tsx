@@ -232,12 +232,20 @@ export function GwapInteractionLayer() {
       { bounds: InteractionBounds; epoch: number }
     >();
     let geometryEpoch = 0;
-    let pointerFrame = 0;
+    let pointerFrame: number | null = null;
     let pendingPointerUpdate: PendingPointerUpdate | null = null;
+
+    const cancelPendingPointerUpdate = () => {
+      if (pointerFrame !== null) {
+        window.cancelAnimationFrame(pointerFrame);
+        pointerFrame = null;
+      }
+      pendingPointerUpdate = null;
+    };
 
     const invalidateReactiveBounds = () => {
       geometryEpoch += 1;
-      pendingPointerUpdate = null;
+      cancelPendingPointerUpdate();
     };
 
     const getReactivePoint = (
@@ -259,7 +267,7 @@ export function GwapInteractionLayer() {
     const flushPointerUpdate = () => {
       const pending = pendingPointerUpdate;
       pendingPointerUpdate = null;
-      pointerFrame = 0;
+      pointerFrame = null;
       if (!pending) return;
 
       const reactive = pending.target.closest<HTMLElement>(
@@ -342,7 +350,9 @@ export function GwapInteractionLayer() {
         clientX: event.clientX,
         clientY: event.clientY,
       };
-      if (!pointerFrame) pointerFrame = window.requestAnimationFrame(flushPointerUpdate);
+      if (pointerFrame === null) {
+        pointerFrame = window.requestAnimationFrame(flushPointerUpdate);
+      }
     };
 
     const onClick = (event: MouseEvent, element: HTMLElement) => {
@@ -405,8 +415,7 @@ export function GwapInteractionLayer() {
       window.visualViewport?.removeEventListener("resize", invalidateReactiveBounds);
       window.visualViewport?.removeEventListener("scroll", invalidateReactiveBounds);
       document.removeEventListener("keydown", onKeyDown, { capture: true });
-      if (pointerFrame) window.cancelAnimationFrame(pointerFrame);
-      pendingPointerUpdate = null;
+      cancelPendingPointerUpdate();
     };
   }, []);
 
