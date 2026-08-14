@@ -54,7 +54,7 @@ type InteractionBounds = {
 };
 
 type PendingPointerUpdate = {
-  element: HTMLElement;
+  target: Element;
   clientX: number;
   clientY: number;
 };
@@ -260,14 +260,19 @@ export function GwapInteractionLayer() {
       const pending = pendingPointerUpdate;
       pendingPointerUpdate = null;
       pointerFrame = 0;
-      if (!pending || !pending.element.isConnected) return;
+      if (!pending) return;
+
+      const reactive = pending.target.closest<HTMLElement>(
+        "[data-gwap-reactive='true']",
+      );
+      if (!reactive || !reactive.isConnected) return;
 
       const point = getReactivePoint(
-        pending.element,
+        reactive,
         pending.clientX,
         pending.clientY,
       );
-      setPointerVariables(pending.element, point);
+      setPointerVariables(reactive, point);
     };
 
     const activateProduct = (element: HTMLElement) => {
@@ -323,19 +328,17 @@ export function GwapInteractionLayer() {
     };
 
     const onPointerMove = (event: PointerEvent) => {
+      const target = event.target;
       if (
         reduceMotion.matches ||
         event.pointerType === "touch" ||
-        !(event.target instanceof Element)
+        !(target instanceof Element)
       ) {
         return;
       }
 
-      const reactive = event.target.closest<HTMLElement>("[data-gwap-reactive='true']");
-      if (!reactive) return;
-
       pendingPointerUpdate = {
-        element: reactive,
+        target,
         clientX: event.clientX,
         clientY: event.clientY,
       };
