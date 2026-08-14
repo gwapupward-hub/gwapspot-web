@@ -68,6 +68,7 @@ function getHapticDuration(tier: string) {
 export function GwapSensoryPolishLayer() {
   useEffect(() => {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const finePointer = window.matchMedia("(pointer: fine)");
     const tapCandidates = new Map<number, TapCandidate>();
     const feedbackTimers = new Map<HTMLElement, number>();
     let lastHapticAt = 0;
@@ -147,7 +148,7 @@ export function GwapSensoryPolishLayer() {
 
       // Pointer taps are confirmed on pointerup so haptics can be gated against scroll gestures.
       // Click still supplies the same visual confirmation for mouse and keyboard activation.
-      if (event.detail === 0 || window.matchMedia("(pointer: fine)").matches) {
+      if (event.detail === 0 || finePointer.matches) {
         confirmFeedback(element, false);
       }
     };
