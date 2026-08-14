@@ -20,6 +20,8 @@
 .gwap-tap-pulse {
   position: absolute;
   z-index: 7;
+  left: var(--gwap-tap-x, 50%);
+  top: var(--gwap-tap-y, 50%);
   width: 14px;
   height: 14px;
   margin: -7px 0 0 -7px;
@@ -27,17 +29,10 @@
   border-radius: 999px;
   background: radial-gradient(circle, rgba(255,255,255,.24), rgba(19,221,19,.12) 36%, transparent 68%);
   box-shadow: 0 0 0 1px rgba(19,221,19,.18), 0 0 24px rgba(19,221,19,.22);
-  opacity: .78;
+  opacity: 0;
   pointer-events: none;
   mix-blend-mode: screen;
   transform: translateZ(0) scale(.2);
-  animation: gwapTapPulse var(--gwap-motion-deliberate) var(--gwap-ease-out) forwards;
-}
-
-@keyframes gwapTapPulse {
-  0% { opacity: .82; transform: translateZ(0) scale(.2); }
-  58% { opacity: .34; }
-  100% { opacity: 0; transform: translateZ(0) scale(18); }
 }
 
 .glass-button.gwap-pressing,
