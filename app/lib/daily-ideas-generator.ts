@@ -12,8 +12,22 @@ export type GeneratedDailyIdea = {
   difficulty: "Starter" | "Intermediate" | "Advanced";
 };
 
+const DEFAULT_DAILY_IDEAS_MODEL = "claude-sonnet-4-6";
+
 export class DailyIdeasConfigurationError extends Error {}
 export class DailyIdeasProviderError extends Error {}
+
+export function getDailyIdeasConfiguration() {
+  const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
+  const configuredModel = process.env.DAILY_IDEAS_MODEL?.trim();
+
+  return {
+    apiKey,
+    configured: Boolean(apiKey),
+    model: configuredModel || DEFAULT_DAILY_IDEAS_MODEL,
+    modelSource: configuredModel ? ("environment" as const) : ("default" as const),
+  };
+}
 
 export function parseDailyIdeaCategory(value: unknown): DailyIdeaCategory {
   return dailyIdeaCategories.includes(value as DailyIdeaCategory)
@@ -33,10 +47,9 @@ function extractJson(text: string) {
 }
 
 export async function generateDailyIdea(categoryInput: unknown): Promise<GeneratedDailyIdea> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  const model = process.env.DAILY_IDEAS_MODEL;
-  if (!apiKey || !model) {
-    throw new DailyIdeasConfigurationError("Daily Ideas AI is not configured yet.");
+  const { apiKey, model } = getDailyIdeasConfiguration();
+  if (!apiKey) {
+    throw new DailyIdeasConfigurationError("Daily Ideas AI is not configured: ANTHROPIC_API_KEY is missing.");
   }
 
   const category = parseDailyIdeaCategory(categoryInput);

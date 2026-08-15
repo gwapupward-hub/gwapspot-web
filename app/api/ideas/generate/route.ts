@@ -2,12 +2,23 @@ import { NextResponse } from "next/server";
 import { isWalletAuthConfigured } from "../../../lib/auth-config";
 import {
   DailyIdeasConfigurationError,
+  getDailyIdeasConfiguration,
   generateDailyIdea,
 } from "../../../lib/daily-ideas-generator";
 import { getAuthenticatedWalletIdentity } from "../../../lib/privy-server";
 import { checkRateLimit, hasValidOrigin } from "../../../lib/request-guard";
 
 export const runtime = "nodejs";
+
+export async function GET() {
+  const configuration = getDailyIdeasConfiguration();
+  return NextResponse.json({
+    service: "daily-ideas-generator",
+    configured: configuration.configured,
+    model: configuration.model,
+    modelSource: configuration.modelSource,
+  });
+}
 
 export async function POST(request: Request) {
   if (!isWalletAuthConfigured()) {
@@ -31,8 +42,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ idea: await generateDailyIdea(body.category) });
   } catch (error) {
     if (error instanceof DailyIdeasConfigurationError) {
+      console.error("daily_ideas_generate_configuration_error", { message: error.message });
       return NextResponse.json({ error: error.message }, { status: 503 });
     }
+
+    console.error("daily_ideas_generate_failed", {
+      name: error instanceof Error ? error.name : "Error",
+      message: error instanceof Error ? error.message : "Unknown error",
+    });
     return NextResponse.json({ error: "Daily Ideas could not generate an idea right now." }, { status: 502 });
   }
 }
