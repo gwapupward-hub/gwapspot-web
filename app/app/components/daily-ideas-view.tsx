@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { usePrivy } from "@privy-io/react-auth";
 import { useGwapOs } from "./os-provider";
@@ -23,21 +23,59 @@ function compactWallet(wallet: string) {
 export function DailyIdeasView() {
   const router = useRouter();
   const { getAccessToken } = usePrivy();
-  const {
-    account,
-    gnsIdentity,
-    state,
-    saveIdea,
-    removeIdea,
-    startIdeaProject,
-    syncStatus,
-  } = useGwapOs();
+  const { account, gnsIdentity, state, saveIdea, removeIdea, startIdeaProject, syncStatus } = useGwapOs();
   const [category, setCategory] = useState<IdeaCategory>("web3");
   const [generated, setGenerated] = useState<DailyIdea | null>(null);
   const [loading, setLoading] = useState(false);
+  const [handoffLoading, setHandoffLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const handoffAttemptedRef = useRef(false);
 
   const owner = gnsIdentity.fullName || compactWallet(account.verifiedWallet);
+  const busy = loading || handoffLoading;
+
+  useEffect(() => {
+    if (handoffAttemptedRef.current) return;
+    const handoffToken = new URLSearchParams(window.location.search).get("handoff");
+    if (!handoffToken) return;
+    handoffAttemptedRef.current = true;
+
+    let active = true;
+    setHandoffLoading(true);
+    setError(null);
+
+    void (async () => {
+      try {
+        const accessToken = await getAccessToken();
+        const response = await fetch("/api/ideas/handoff", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          },
+          credentials: "same-origin",
+          body: JSON.stringify({ token: handoffToken }),
+        });
+        const payload = (await response.json()) as { idea?: Omit<DailyIdea, "savedAt">; error?: string };
+        if (!response.ok || !payload.idea) {
+          if (response.status === 404) router.replace("/app/ideas");
+          throw new Error(payload.error || "Daily Ideas handoff failed");
+        }
+        if (!active) return;
+        setGenerated({ ...payload.idea, savedAt: "" });
+        setCategory(payload.idea.category);
+        router.replace("/app/ideas");
+      } catch (cause) {
+        if (active) setError(cause instanceof Error ? cause.message : "Daily Ideas handoff failed");
+      } finally {
+        if (active) setHandoffLoading(false);
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [getAccessToken, router]);
 
   async function generateIdea() {
     setLoading(true);
@@ -53,13 +91,8 @@ export function DailyIdeasView() {
         credentials: "same-origin",
         body: JSON.stringify({ category }),
       });
-      const payload = (await response.json()) as {
-        idea?: Omit<DailyIdea, "savedAt">;
-        error?: string;
-      };
-      if (!response.ok || !payload.idea) {
-        throw new Error(payload.error || "Idea generation failed");
-      }
+      const payload = (await response.json()) as { idea?: Omit<DailyIdea, "savedAt">; error?: string };
+      if (!response.ok || !payload.idea) throw new Error(payload.error || "Idea generation failed");
       setGenerated({ ...payload.idea, savedAt: "" });
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Idea generation failed");
@@ -80,9 +113,7 @@ export function DailyIdeasView() {
     router.push("/app/ideas/lab");
   }
 
-  const generatedIsSaved = Boolean(
-    generated && state.ideas.some((idea) => idea.id === generated.id),
-  );
+  const generatedIsSaved = Boolean(generated && state.ideas.some((idea) => idea.id === generated.id));
 
   return (
     <div className="os-page os-runtime-page">
@@ -101,27 +132,16 @@ export function DailyIdeasView() {
         <article className="os-runtime-panel">
           <div className="os-console-chrome">
             <span>ideas.generator</span>
-            <span>{loading ? "GENERATING" : "READY"}</span>
+            <span>{handoffLoading ? "IMPORTING" : loading ? "GENERATING" : "READY"}</span>
           </div>
           <div className="os-process-table">
-            <div className="os-process-row os-process-head">
-              <span>CATEGORY</span><span>MODE</span><span>ACTION</span>
-            </div>
+            <div className="os-process-row os-process-head"><span>CATEGORY</span><span>MODE</span><span>ACTION</span></div>
             <div className="os-process-row">
               <label htmlFor="idea-category">Opportunity lane</label>
-              <select
-                id="idea-category"
-                value={category}
-                onChange={(event) => setCategory(event.target.value as IdeaCategory)}
-                disabled={loading}
-              >
-                {categories.map((item) => (
-                  <option key={item.value} value={item.value}>{item.label}</option>
-                ))}
+              <select id="idea-category" value={category} onChange={(event) => setCategory(event.target.value as IdeaCategory)} disabled={busy}>
+                {categories.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
               </select>
-              <button type="button" onClick={generateIdea} disabled={loading}>
-                {loading ? "Generating…" : "Generate idea"}
-              </button>
+              <button type="button" onClick={generateIdea} disabled={busy}>{loading ? "Generating…" : handoffLoading ? "Importing…" : "Generate idea"}</button>
             </div>
           </div>
 
@@ -134,15 +154,11 @@ export function DailyIdeasView() {
               <p>{generated.summary}</p>
               <p><strong>Problem:</strong> {generated.problem}</p>
               <p><strong>Opportunity:</strong> {generated.opportunity}</p>
-              <button type="button" onClick={saveGenerated} disabled={generatedIsSaved}>
-                {generatedIsSaved ? "Saved to workspace" : "Save idea"}
-              </button>
-              {generatedIsSaved ? (
-                <button type="button" onClick={() => develop(generated)}>Develop Idea</button>
-              ) : null}
+              <button type="button" onClick={saveGenerated} disabled={generatedIsSaved}>{generatedIsSaved ? "Saved to workspace" : "Save idea"}</button>
+              {generatedIsSaved ? <button type="button" onClick={() => develop(generated)}>Develop Idea</button> : null}
             </div>
           ) : (
-            <p className="os-runtime-warning">Choose a category and generate your first native Daily Idea. No TON wallet or separate account is required.</p>
+            <p className="os-runtime-warning">{handoffLoading ? "Importing the idea you opened from Telegram…" : "Choose a category and generate your first native Daily Idea. No TON wallet or separate account is required."}</p>
           )}
         </article>
 
@@ -154,20 +170,13 @@ export function DailyIdeasView() {
             <div className="os-process-table" role="list">
               {state.ideas.map((idea) => (
                 <div key={idea.id} className="os-process-row" role="listitem">
-                  <span>
-                    <strong>{idea.title}</strong>
-                    <small>{idea.category.toUpperCase()} · {idea.difficulty}</small>
-                  </span>
-                  <button type="button" onClick={() => develop(idea)}>
-                    {state.ideaProjects.some((project) => project.ideaId === idea.id) ? "Open Lab" : "Develop"}
-                  </button>
+                  <span><strong>{idea.title}</strong><small>{idea.category.toUpperCase()} · {idea.difficulty}</small></span>
+                  <button type="button" onClick={() => develop(idea)}>{state.ideaProjects.some((project) => project.ideaId === idea.id) ? "Open Lab" : "Develop"}</button>
                   <button type="button" onClick={() => removeIdea(idea.id)}>Remove</button>
                 </div>
               ))}
             </div>
-          ) : (
-            <p>No saved ideas yet.</p>
-          )}
+          ) : <p>No saved ideas yet.</p>}
         </aside>
       </section>
     </div>
