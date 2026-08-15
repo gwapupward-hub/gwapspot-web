@@ -40,7 +40,6 @@ export function DailyIdeasView() {
     if (!handoffToken) return;
     handoffAttemptedRef.current = true;
 
-    let active = true;
     setHandoffLoading(true);
     setError(null);
 
@@ -61,20 +60,15 @@ export function DailyIdeasView() {
           if (response.status === 404) router.replace("/app/ideas");
           throw new Error(payload.error || "Daily Ideas handoff failed");
         }
-        if (!active) return;
         setGenerated({ ...payload.idea, savedAt: "" });
         setCategory(payload.idea.category);
         router.replace("/app/ideas");
       } catch (cause) {
-        if (active) setError(cause instanceof Error ? cause.message : "Daily Ideas handoff failed");
+        setError(cause instanceof Error ? cause.message : "Daily Ideas handoff failed");
       } finally {
-        if (active) setHandoffLoading(false);
+        setHandoffLoading(false);
       }
     })();
-
-    return () => {
-      active = false;
-    };
   }, [getAccessToken, router]);
 
   async function generateIdea() {
