@@ -15,40 +15,12 @@ export const runtime = "nodejs";
 const TELEGRAM_API = "https://api.telegram.org";
 const DEFAULT_APP_URL = "https://www.gwapspot.com/app/ideas";
 
-type TelegramUser = {
-  id: number;
-  first_name?: string;
-  username?: string;
-};
-
-type TelegramMessage = {
-  message_id: number;
-  chat: { id: number };
-  from?: TelegramUser;
-  text?: string;
-};
-
-type TelegramCallbackQuery = {
-  id: string;
-  from: TelegramUser;
-  data?: string;
-  message?: TelegramMessage;
-};
-
-type TelegramUpdate = {
-  update_id: number;
-  message?: TelegramMessage;
-  callback_query?: TelegramCallbackQuery;
-};
-
-type TelegramPreferences = {
-  category: DailyIdeaCategory;
-  updatedAt: string;
-};
-
-type InlineKeyboard = {
-  inline_keyboard: Array<Array<{ text: string; callback_data?: string; url?: string }>>;
-};
+type TelegramUser = { id: number; first_name?: string; username?: string };
+type TelegramMessage = { message_id: number; chat: { id: number }; from?: TelegramUser; text?: string };
+type TelegramCallbackQuery = { id: string; from: TelegramUser; data?: string; message?: TelegramMessage };
+type TelegramUpdate = { update_id: number; message?: TelegramMessage; callback_query?: TelegramCallbackQuery };
+type TelegramPreferences = { category: DailyIdeaCategory; updatedAt: string };
+type InlineKeyboard = { inline_keyboard: Array<Array<{ text: string; callback_data?: string; url?: string }>> };
 
 function getTelegramConfig() {
   const botToken = process.env.DAILY_IDEAS_TELEGRAM_BOT_TOKEN?.trim();
@@ -64,11 +36,7 @@ function secureEqual(left: string, right: string) {
 }
 
 function escapeHtml(value: string) {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
+  return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
 }
 
 function categoryLabel(category: DailyIdeaCategory) {
@@ -78,26 +46,15 @@ function categoryLabel(category: DailyIdeaCategory) {
 function categoryKeyboard(appUrl: string): InlineKeyboard {
   return {
     inline_keyboard: [
-      [
-        { text: "🌐 Web3", callback_data: "category:web3" },
-        { text: "🤖 AI", callback_data: "category:ai" },
-      ],
-      [
-        { text: "💼 SaaS", callback_data: "category:saas" },
-        { text: "🎯 General", callback_data: "category:general" },
-      ],
+      [{ text: "🌐 Web3", callback_data: "category:web3" }, { text: "🤖 AI", callback_data: "category:ai" }],
+      [{ text: "💼 SaaS", callback_data: "category:saas" }, { text: "🎯 General", callback_data: "category:general" }],
       [{ text: "Open Daily Ideas in GWAP OS", url: appUrl }],
     ],
   };
 }
 
 function ideaKeyboard(appUrl: string): InlineKeyboard {
-  return {
-    inline_keyboard: [
-      [{ text: "🔄 Another idea", callback_data: "idea:generate" }],
-      [{ text: "Develop in GWAP OS", url: appUrl }],
-    ],
-  };
+  return { inline_keyboard: [[{ text: "🔄 Another idea", callback_data: "idea:generate" }], [{ text: "Develop in GWAP OS", url: appUrl }]] };
 }
 
 async function telegramRequest<T>(token: string, method: string, payload: Record<string, unknown>) {
@@ -107,7 +64,6 @@ async function telegramRequest<T>(token: string, method: string, payload: Record
     body: JSON.stringify(payload),
     signal: AbortSignal.timeout(10_000),
   });
-
   if (!response.ok) throw new Error(`Telegram API returned ${response.status}`);
   const result = (await response.json()) as { ok?: boolean; result?: T };
   if (!result.ok) throw new Error("Telegram API rejected request");
@@ -125,20 +81,14 @@ function sendMessage(token: string, chatId: number, text: string, replyMarkup?: 
 }
 
 function answerCallback(token: string, callbackQueryId: string, text?: string) {
-  return telegramRequest(token, "answerCallbackQuery", {
-    callback_query_id: callbackQueryId,
-    ...(text ? { text } : {}),
-  });
+  return telegramRequest(token, "answerCallbackQuery", { callback_query_id: callbackQueryId, ...(text ? { text } : {}) });
 }
 
 async function getPreferences(userId: number): Promise<TelegramPreferences> {
   const redis = getWorkspaceRedis();
   const key = getPrivateStorageKey("telegram-ideas-preferences", String(userId));
   const stored = await redis.get<Partial<TelegramPreferences>>(key);
-  return {
-    category: parseDailyIdeaCategory(stored?.category),
-    updatedAt: typeof stored?.updatedAt === "string" ? stored.updatedAt : "",
-  };
+  return { category: parseDailyIdeaCategory(stored?.category), updatedAt: typeof stored?.updatedAt === "string" ? stored.updatedAt : "" };
 }
 
 async function saveCategory(userId: number, category: DailyIdeaCategory) {
@@ -150,7 +100,16 @@ async function saveCategory(userId: number, category: DailyIdeaCategory) {
 async function claimUpdate(updateId: number) {
   const redis = getWorkspaceRedis();
   const key = getPrivateStorageKey("telegram-ideas-update", String(updateId));
-  return redis.setIfAbsent(key, "handled", 60 * 60);
+  const claimed = await redis.setIfAbsent(key, "processing", 60 * 60);
+  return claimed ? key : null;
+}
+
+async function releaseUpdate(key: string) {
+  try {
+    await getWorkspaceRedis().deleteIfValue(key, "processing");
+  } catch {
+    console.error("daily_ideas_telegram_retry_release_failed");
+  }
 }
 
 function formatIdea(idea: GeneratedDailyIdea) {
@@ -199,47 +158,25 @@ async function handleMessage(token: string, appUrl: string, message: TelegramMes
 
   if (command === "/start") {
     const name = escapeHtml(message.from.first_name || "builder");
-    await sendMessage(
-      token,
-      message.chat.id,
-      `Welcome to <b>Daily Ideas by GWAP</b>, ${name}.\n\nChoose an opportunity lane, get an idea on demand, then open GWAP OS to save and develop it in Idea Lab.`,
-      categoryKeyboard(appUrl),
-    );
+    await sendMessage(token, message.chat.id, `Welcome to <b>Daily Ideas by GWAP</b>, ${name}.\n\nChoose an opportunity lane, get an idea on demand, then open GWAP OS to save and develop it in Idea Lab.`, categoryKeyboard(appUrl));
     return;
   }
 
   if (command === "/help") {
-    await sendMessage(
-      token,
-      message.chat.id,
-      [
-        "<b>Daily Ideas commands</b>",
-        "",
-        "/idea — generate an idea now",
-        "/category — choose Web3, AI, SaaS, or General",
-        "/help — show this guide",
-        "",
-        "Ideas are developed and saved inside GWAP OS. Telegram is a distribution client, not a separate account system.",
-      ].join("\n"),
-      { inline_keyboard: [[{ text: "Open GWAP OS", url: appUrl }]] },
-    );
+    await sendMessage(token, message.chat.id, [
+      "<b>Daily Ideas commands</b>", "", "/idea — generate an idea now", "/category — choose Web3, AI, SaaS, or General", "/help — show this guide", "",
+      "Ideas are developed and saved inside GWAP OS. Telegram is a distribution client, not a separate account system.",
+    ].join("\n"), { inline_keyboard: [[{ text: "Open GWAP OS", url: appUrl }]] });
     return;
   }
 
   if (command === "/category") {
     const preferences = await getPreferences(message.from.id);
-    await sendMessage(
-      token,
-      message.chat.id,
-      `Current category: <b>${categoryLabel(preferences.category)}</b>\n\nChoose your Daily Ideas lane:`,
-      categoryKeyboard(appUrl),
-    );
+    await sendMessage(token, message.chat.id, `Current category: <b>${categoryLabel(preferences.category)}</b>\n\nChoose your Daily Ideas lane:`, categoryKeyboard(appUrl));
     return;
   }
 
-  if (command === "/idea") {
-    await generateForTelegram(token, appUrl, message.chat.id, message.from.id);
-  }
+  if (command === "/idea") await generateForTelegram(token, appUrl, message.chat.id, message.from.id);
 }
 
 async function handleCallback(token: string, appUrl: string, callback: TelegramCallbackQuery) {
@@ -253,12 +190,9 @@ async function handleCallback(token: string, appUrl: string, callback: TelegramC
     const category = parseDailyIdeaCategory(callback.data.slice("category:".length));
     await saveCategory(callback.from.id, category);
     await answerCallback(token, callback.id, `${categoryLabel(category)} selected`);
-    await sendMessage(
-      token,
-      chatId,
-      `Category saved: <b>${categoryLabel(category)}</b>. Use /idea whenever you want a new opportunity.`,
-      { inline_keyboard: [[{ text: "💡 Get an idea", callback_data: "idea:generate" }], [{ text: "Open GWAP OS", url: appUrl }]] },
-    );
+    await sendMessage(token, chatId, `Category saved: <b>${categoryLabel(category)}</b>. Use /idea whenever you want a new opportunity.`, {
+      inline_keyboard: [[{ text: "💡 Get an idea", callback_data: "idea:generate" }], [{ text: "Open GWAP OS", url: appUrl }]],
+    });
     return;
   }
 
@@ -273,24 +207,15 @@ async function handleCallback(token: string, appUrl: string, callback: TelegramC
 
 export async function GET() {
   const { botToken, webhookSecret } = getTelegramConfig();
-  return NextResponse.json({
-    service: "daily-ideas-telegram",
-    configured: Boolean(botToken && webhookSecret),
-    mode: "webhook",
-    capabilities: ["start", "help", "idea", "category"],
-  });
+  return NextResponse.json({ service: "daily-ideas-telegram", configured: Boolean(botToken && webhookSecret), mode: "webhook", capabilities: ["start", "help", "idea", "category"] });
 }
 
 export async function POST(request: Request) {
   const { botToken, webhookSecret, appUrl } = getTelegramConfig();
-  if (!botToken || !webhookSecret) {
-    return NextResponse.json({ error: "Daily Ideas Telegram is not configured" }, { status: 503 });
-  }
+  if (!botToken || !webhookSecret) return NextResponse.json({ error: "Daily Ideas Telegram is not configured" }, { status: 503 });
 
   const providedSecret = request.headers.get("x-telegram-bot-api-secret-token") || "";
-  if (!providedSecret || !secureEqual(providedSecret, webhookSecret)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (!providedSecret || !secureEqual(providedSecret, webhookSecret)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   let update: TelegramUpdate;
   try {
@@ -298,22 +223,20 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: "Invalid update" }, { status: 400 });
   }
+  if (!Number.isSafeInteger(update.update_id)) return NextResponse.json({ error: "Invalid update" }, { status: 400 });
 
-  if (!Number.isSafeInteger(update.update_id)) {
-    return NextResponse.json({ error: "Invalid update" }, { status: 400 });
-  }
-
+  let claimKey: string | null = null;
   try {
-    if (!(await claimUpdate(update.update_id))) return NextResponse.json({ ok: true, duplicate: true });
+    claimKey = await claimUpdate(update.update_id);
+    if (!claimKey) return NextResponse.json({ ok: true, duplicate: true });
 
-    if (update.message) {
-      await handleMessage(botToken, appUrl, update.message);
-    } else if (update.callback_query) {
-      await handleCallback(botToken, appUrl, update.callback_query);
-    }
+    if (update.message) await handleMessage(botToken, appUrl, update.message);
+    else if (update.callback_query) await handleCallback(botToken, appUrl, update.callback_query);
+
+    return NextResponse.json({ ok: true });
   } catch {
+    if (claimKey) await releaseUpdate(claimKey);
     console.error("daily_ideas_telegram_update_failed");
+    return NextResponse.json({ error: "Update processing failed" }, { status: 500 });
   }
-
-  return NextResponse.json({ ok: true });
 }
