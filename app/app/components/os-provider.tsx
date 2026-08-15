@@ -16,6 +16,7 @@ import {
   createDefaultGwapOsState,
   GWAP_OS_STORAGE_KEY,
   normalizeGwapOsState,
+  type DailyIdea,
   type GnsIdentity,
   type GwapAccount,
   type GwapOsState,
@@ -62,6 +63,8 @@ type OsContextValue = {
   updateSettings: (settings: Partial<GwapSettings>) => void;
   toggleFavorite: (slug: string) => void;
   recordLaunch: (slug: string) => void;
+  saveIdea: (idea: DailyIdea) => void;
+  removeIdea: (id: string) => void;
   resetWorkspace: () => void;
   updateGnsIdentity: (identity: Partial<GnsIdentity>) => void;
 };
@@ -85,9 +88,7 @@ export function GwapOsProvider({
   const [state, setState] = useState(initialState);
   const [identityOverride, setIdentityOverride] = useState<Partial<GnsIdentity>>({});
   const [migrationAvailable, setMigrationAvailable] = useState(false);
-  const [syncStatus, setSyncStatus] = useState<SyncStatus>(
-    hasCloudState ? "saved" : "idle",
-  );
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>(hasCloudState ? "saved" : "idle");
   const stateRef = useRef(state);
   const migrationRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -107,7 +108,6 @@ export function GwapOsProvider({
       const token = await getAccessToken();
       const headers = new Headers(init?.headers);
       if (token) headers.set("Authorization", `Bearer ${token}`);
-
       return fetch(input, { ...init, headers, credentials: "same-origin" });
     },
     [getAccessToken],
@@ -116,7 +116,6 @@ export function GwapOsProvider({
   const saveNow = useCallback(
     (nextState: GwapOsState) => {
       setSyncStatus("saving");
-
       const operation = saveQueueRef.current.catch(() => undefined).then(async () => {
         const response = await authenticatedFetch("/api/os-state", {
           method: "PUT",
@@ -124,13 +123,11 @@ export function GwapOsProvider({
           body: JSON.stringify({ state: nextState }),
         });
         if (!response.ok) throw new Error("Workspace sync failed");
-
         if (areGwapOsStatesEqual(stateRef.current, nextState)) {
           clearPendingState();
           setSyncStatus("saved");
         }
       });
-
       saveQueueRef.current = operation;
       void operation.catch(() => {
         if (areGwapOsStatesEqual(stateRef.current, nextState)) setSyncStatus("error");
@@ -154,7 +151,6 @@ export function GwapOsProvider({
       try {
         const stored = readPendingState();
         if (!stored) return;
-
         const localState = normalizeGwapOsState(JSON.parse(stored) as unknown);
         if (!areGwapOsStatesEqual(localState, initialState)) {
           migrationRef.current = true;
@@ -167,16 +163,12 @@ export function GwapOsProvider({
         clearPendingState();
       }
     }, 0);
-
     return () => window.clearTimeout(migrationTimer);
   }, [initialState, updateState]);
 
-  useEffect(
-    () => () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    },
-    [],
-  );
+  useEffect(() => () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+  }, []);
 
   useEffect(() => {
     document.documentElement.dataset.gwapCompact = String(state.settings.compactMode);
@@ -209,56 +201,38 @@ export function GwapOsProvider({
     setSyncStatus(hasCloudState ? "saved" : "idle");
   }, [hasCloudState, initialState, updateState]);
 
-  const updateProfile = useCallback(
-    (profile: Omit<GwapProfile, "updatedAt">) => {
-      const current = stateRef.current;
-      commit({
-        ...current,
-        profile: {
-          ...profile,
-          primaryWallet: account.verifiedWallet,
-          updatedAt: new Date().toISOString(),
-        },
-      });
-    },
-    [account.verifiedWallet, commit],
-  );
+  const updateProfile = useCallback((profile: Omit<GwapProfile, "updatedAt">) => {
+    const current = stateRef.current;
+    commit({ ...current, profile: { ...profile, primaryWallet: account.verifiedWallet, updatedAt: new Date().toISOString() } });
+  }, [account.verifiedWallet, commit]);
 
-  const updateSettings = useCallback(
-    (settings: Partial<GwapSettings>) => {
-      const current = stateRef.current;
-      commit({
-        ...current,
-        settings: { ...current.settings, ...settings },
-      });
-    },
-    [commit],
-  );
+  const updateSettings = useCallback((settings: Partial<GwapSettings>) => {
+    const current = stateRef.current;
+    commit({ ...current, settings: { ...current.settings, ...settings } });
+  }, [commit]);
 
-  const toggleFavorite = useCallback(
-    (slug: string) => {
-      const current = stateRef.current;
-      const favorites = current.favorites.includes(slug)
-        ? current.favorites.filter((item) => item !== slug)
-        : [slug, ...current.favorites];
-      commit({ ...current, favorites });
-    },
-    [commit],
-  );
+  const toggleFavorite = useCallback((slug: string) => {
+    const current = stateRef.current;
+    const favorites = current.favorites.includes(slug)
+      ? current.favorites.filter((item) => item !== slug)
+      : [slug, ...current.favorites];
+    commit({ ...current, favorites });
+  }, [commit]);
 
-  const recordLaunch = useCallback(
-    (slug: string) => {
-      const current = stateRef.current;
-      commit({
-        ...current,
-        recent: [
-          { slug, openedAt: new Date().toISOString() },
-          ...current.recent.filter((item) => item.slug !== slug),
-        ].slice(0, 8),
-      });
-    },
-    [commit],
-  );
+  const recordLaunch = useCallback((slug: string) => {
+    const current = stateRef.current;
+    commit({ ...current, recent: [{ slug, openedAt: new Date().toISOString() }, ...current.recent.filter((item) => item.slug !== slug)].slice(0, 8) });
+  }, [commit]);
+
+  const saveIdea = useCallback((idea: DailyIdea) => {
+    const current = stateRef.current;
+    commit({ ...current, ideas: [idea, ...current.ideas.filter((item) => item.id !== idea.id)].slice(0, 12) });
+  }, [commit]);
+
+  const removeIdea = useCallback((id: string) => {
+    const current = stateRef.current;
+    commit({ ...current, ideas: current.ideas.filter((item) => item.id !== id) });
+  }, [commit]);
 
   const resetWorkspace = useCallback(() => {
     migrationRef.current = false;
@@ -268,9 +242,7 @@ export function GwapOsProvider({
     if (timerRef.current) clearTimeout(timerRef.current);
     setSyncStatus("saving");
     const operation = saveQueueRef.current.catch(() => undefined).then(async () => {
-      const response = await authenticatedFetch("/api/os-state", {
-        method: "DELETE",
-      });
+      const response = await authenticatedFetch("/api/os-state", { method: "DELETE" });
       if (!response.ok) throw new Error("Workspace reset failed");
       setSyncStatus("saved");
     });
@@ -280,41 +252,28 @@ export function GwapOsProvider({
 
   const retrySync = useCallback(() => saveNow(stateRef.current), [saveNow]);
 
-  const value = useMemo(
-    () => ({
-      account,
-      gnsIdentity: { ...gnsIdentity, ...identityOverride },
-      keepAccountState,
-      migrateLocalState,
-      migrationAvailable,
-      recordLaunch,
-      resetWorkspace,
-      retrySync,
-      state,
-      syncStatus,
-      toggleFavorite,
-      updateProfile,
-      updateGnsIdentity,
-      updateSettings,
-    }),
-    [
-      account,
-      gnsIdentity,
-      identityOverride,
-      keepAccountState,
-      migrateLocalState,
-      migrationAvailable,
-      recordLaunch,
-      resetWorkspace,
-      retrySync,
-      state,
-      syncStatus,
-      toggleFavorite,
-      updateProfile,
-      updateGnsIdentity,
-      updateSettings,
-    ],
-  );
+  const value = useMemo(() => ({
+    account,
+    gnsIdentity: { ...gnsIdentity, ...identityOverride },
+    keepAccountState,
+    migrateLocalState,
+    migrationAvailable,
+    recordLaunch,
+    removeIdea,
+    resetWorkspace,
+    retrySync,
+    saveIdea,
+    state,
+    syncStatus,
+    toggleFavorite,
+    updateProfile,
+    updateGnsIdentity,
+    updateSettings,
+  }), [
+    account, gnsIdentity, identityOverride, keepAccountState, migrateLocalState, migrationAvailable,
+    recordLaunch, removeIdea, resetWorkspace, retrySync, saveIdea, state, syncStatus, toggleFavorite,
+    updateProfile, updateGnsIdentity, updateSettings,
+  ]);
 
   return <OsContext.Provider value={value}>{children}</OsContext.Provider>;
 }
