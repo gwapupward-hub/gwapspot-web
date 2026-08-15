@@ -31,7 +31,10 @@ export async function POST(request: Request) {
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return NextResponse.json({ error: "Daily Ideas AI is not configured yet." }, { status: 503 });
+  const model = process.env.DAILY_IDEAS_MODEL;
+  if (!apiKey || !model) {
+    return NextResponse.json({ error: "Daily Ideas AI is not configured yet." }, { status: 503 });
+  }
 
   try {
     const body = (await request.json()) as { category?: unknown };
@@ -44,7 +47,7 @@ export async function POST(request: Request) {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: process.env.DAILY_IDEAS_MODEL || "claude-sonnet-4-5",
+        model,
         max_tokens: 700,
         temperature: 0.9,
         system: "You are Daily Ideas inside GWAP OS. Generate practical, specific opportunities that a solo founder or small team could realistically validate. Avoid hype, fake metrics, investment promises, and generic startup filler. Return JSON only.",
