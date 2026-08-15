@@ -1,21 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useGwapOs } from "./os-provider";
-import type { IdeaProject } from "../lib/os-state";
+import type { IdeaProject, MarketplaceRole } from "../lib/os-state";
 
 const fields: [
-  keyof Pick<
-    IdeaProject,
-    | "problem"
-    | "targetUser"
-    | "businessModel"
-    | "technicalPlan"
-    | "estimatedCost"
-    | "mvpRoadmap"
-    | "notes"
-  >,
+  keyof Pick<IdeaProject, "problem" | "targetUser" | "businessModel" | "technicalPlan" | "estimatedCost" | "mvpRoadmap" | "notes">,
   string,
   string,
 ][] = [
@@ -28,13 +20,23 @@ const fields: [
   ["notes", "Research / notes", "Evidence, assumptions, competitors, risks and open questions."],
 ];
 
+const collaborationRoles: Array<{ role: MarketplaceRole; label: string }> = [
+  { role: "developer", label: "Developer" },
+  { role: "designer", label: "Designer" },
+  { role: "marketer", label: "Marketer" },
+  { role: "researcher", label: "Researcher" },
+  { role: "operations", label: "Operations" },
+];
+
 function compactWallet(wallet: string) {
   return `${wallet.slice(0, 4)}…${wallet.slice(-4)}`;
 }
 
 export function IdeaLabView() {
+  const router = useRouter();
   const {
     account,
+    createMarketplaceIntent,
     gnsIdentity,
     state,
     updateIdeaProject,
@@ -68,6 +70,13 @@ export function IdeaLabView() {
     );
   }
 
+  const projectIntents = state.marketplaceIntents.filter((intent) => intent.projectId === selected.id);
+
+  function openCollaborationBrief(role: MarketplaceRole) {
+    const intentId = createMarketplaceIntent(selected.id, role);
+    if (intentId) router.push("/app/marketplace");
+  }
+
   return (
     <div className="os-page os-runtime-page">
       <header className="os-runtime-heading">
@@ -80,12 +89,7 @@ export function IdeaLabView() {
         <aside className="os-runtime-panel os-runtime-note">
           <span className="os-terminal-label">PROJECTS · {state.ideaProjects.length}/8</span>
           {state.ideaProjects.map((project) => (
-            <button
-              key={project.id}
-              type="button"
-              onClick={() => setSelectedId(project.id)}
-              aria-pressed={project.id === selected.id}
-            >
+            <button key={project.id} type="button" onClick={() => setSelectedId(project.id)} aria-pressed={project.id === selected.id}>
               <strong>{project.title}</strong><br />
               <small>{project.status}</small>
             </button>
@@ -111,58 +115,45 @@ export function IdeaLabView() {
             <span>{selected.status.toUpperCase()}</span>
           </div>
 
-          <label>
-            Project title
-            <input
-              value={selected.title}
-              maxLength={120}
-              onChange={(event) => updateIdeaProject(selected.id, { title: event.target.value })}
-            />
-          </label>
+          <label>Project title<input value={selected.title} maxLength={120} onChange={(event) => updateIdeaProject(selected.id, { title: event.target.value })} /></label>
           <label>
             Status
-            <select
-              value={selected.status}
-              onChange={(event) => updateIdeaProject(selected.id, { status: event.target.value as IdeaProject["status"] })}
-            >
-              <option>Exploring</option>
-              <option>Validating</option>
-              <option>Building</option>
+            <select value={selected.status} onChange={(event) => updateIdeaProject(selected.id, { status: event.target.value as IdeaProject["status"] })}>
+              <option>Exploring</option><option>Validating</option><option>Building</option>
             </select>
           </label>
 
           {fields.map(([key, label, placeholder]) => (
             <label key={key}>
               {label}
-              <textarea
-                value={selected[key]}
-                placeholder={placeholder}
-                rows={key === "technicalPlan" || key === "mvpRoadmap" ? 6 : 4}
-                onChange={(event) => updateIdeaProject(selected.id, { [key]: event.target.value })}
-              />
+              <textarea value={selected[key]} placeholder={placeholder} rows={key === "technicalPlan" || key === "mvpRoadmap" ? 6 : 4} onChange={(event) => updateIdeaProject(selected.id, { [key]: event.target.value })} />
             </label>
           ))}
 
           <section className="os-runtime-note">
-            <span className="os-terminal-label">ECOSYSTEM HANDOFF</span>
-            <h2>Move this project into execution.</h2>
-            <p>Use the Marketplace for services and collaborators, or open the developer surface when the project is ready for GWAP APIs.</p>
+            <span className="os-terminal-label">COLLABORATION · {projectIntents.length}</span>
+            <h2>Turn a project need into a Marketplace brief.</h2>
+            <p>Select the capability you need. GWAP OS creates a persistent draft using this project’s problem, target user, technical direction, and estimated cost. It is not published until a production Marketplace adapter exists.</p>
+            <div className="os-process-table" aria-label="Create collaboration brief">
+              {collaborationRoles.map(({ role, label }) => {
+                const existing = projectIntents.some((intent) => intent.role === role);
+                return (
+                  <div className="os-process-row" key={role}>
+                    <span>{label}</span>
+                    <strong>{existing ? "DRAFT EXISTS" : "NEEDED"}</strong>
+                    <button type="button" onClick={() => openCollaborationBrief(role)}>{existing ? "Open brief" : "Create brief"}</button>
+                  </div>
+                );
+              })}
+            </div>
             <div>
-              <Link href="/app/marketplace">Open Marketplace</Link>{" · "}
+              <Link href="/app/marketplace">Marketplace briefs</Link>{" · "}
               <Link href="/app/developer">Developer APIs</Link>{" · "}
               <Link href="/app/ideas">Back to Daily Ideas</Link>
             </div>
           </section>
 
-          <button
-            type="button"
-            onClick={() => {
-              removeIdeaProject(selected.id);
-              setSelectedId("");
-            }}
-          >
-            Archive project
-          </button>
+          <button type="button" onClick={() => { removeIdeaProject(selected.id); setSelectedId(""); }}>Archive project</button>
         </article>
       </section>
     </div>
