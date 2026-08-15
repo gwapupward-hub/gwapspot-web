@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { createDailyIdeaHandoff } from "../../../lib/daily-ideas-handoff";
 import {
   DailyIdeasConfigurationError,
+  getDailyIdeasConfiguration,
   generateDailyIdea,
   parseDailyIdeaCategory,
   type DailyIdeaCategory,
@@ -24,10 +25,21 @@ type TelegramPreferences = { category: DailyIdeaCategory; updatedAt: string };
 type InlineKeyboard = { inline_keyboard: Array<Array<{ text: string; callback_data?: string; url?: string }>> };
 
 function getTelegramConfig() {
-  const botToken = process.env.DAILY_IDEAS_TELEGRAM_BOT_TOKEN?.trim();
-  const webhookSecret = process.env.DAILY_IDEAS_TELEGRAM_WEBHOOK_SECRET?.trim();
+  const dedicatedBotToken = process.env.DAILY_IDEAS_TELEGRAM_BOT_TOKEN?.trim();
+  const legacyBotToken = process.env.TELEGRAM_BOT_TOKEN?.trim();
+  const dedicatedWebhookSecret = process.env.DAILY_IDEAS_TELEGRAM_WEBHOOK_SECRET?.trim();
+  const genericWebhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET?.trim();
+  const botToken = dedicatedBotToken || legacyBotToken;
+  const webhookSecret = dedicatedWebhookSecret || genericWebhookSecret;
   const appUrl = process.env.DAILY_IDEAS_TELEGRAM_APP_URL?.trim() || DEFAULT_APP_URL;
-  return { botToken, webhookSecret, appUrl };
+
+  return {
+    botToken,
+    webhookSecret,
+    appUrl,
+    botTokenSource: dedicatedBotToken ? ("daily-ideas" as const) : legacyBotToken ? ("legacy" as const) : null,
+    webhookSecretSource: dedicatedWebhookSecret ? ("daily-ideas" as const) : genericWebhookSecret ? ("generic" as const) : null,
+  };
 }
 
 function secureEqual(left: string, right: string) {
@@ -156,11 +168,17 @@ async function generateForTelegram(token: string, appUrl: string, chatId: number
     await sendMessage(token, chatId, formatIdea(idea), ideaKeyboard(destinationUrl));
   } catch (error) {
     if (error instanceof DailyIdeasConfigurationError) {
+      console.error("daily_ideas_telegram_ai_configuration_error", { message: error.message });
       await sendMessage(token, chatId, "Daily Ideas AI is not configured yet. You can still open the GWAP OS workspace below.", {
         inline_keyboard: [[{ text: "Open Daily Ideas in GWAP OS", url: appUrl }]],
       });
       return;
     }
+
+    console.error("daily_ideas_telegram_generate_failed", {
+      name: error instanceof Error ? error.name : "Error",
+      message: error instanceof Error ? error.message : "Unknown error",
+    });
     await sendMessage(token, chatId, "Daily Ideas could not generate an idea right now. Try again shortly.");
   }
 }
@@ -224,13 +242,36 @@ async function handleCallback(token: string, appUrl: string, callback: TelegramC
 }
 
 export async function GET() {
-  const { botToken, webhookSecret } = getTelegramConfig();
-  return NextResponse.json({ service: "daily-ideas-telegram", configured: Boolean(botToken && webhookSecret), mode: "webhook", capabilities: ["start", "help", "idea", "category", "handoff"] });
+  const telegram = getTelegramConfig();
+  const ai = getDailyIdeasConfiguration();
+  const components = {
+    botToken: Boolean(telegram.botToken),
+    webhookSecret: Boolean(telegram.webhookSecret),
+    ai: ai.configured,
+  };
+
+  return NextResponse.json({
+    service: "daily-ideas-telegram",
+    configured: components.botToken && components.webhookSecret && components.ai,
+    mode: "webhook",
+    components,
+    botTokenSource: telegram.botTokenSource,
+    webhookSecretSource: telegram.webhookSecretSource,
+    model: ai.model,
+    capabilities: ["start", "help", "idea", "category", "handoff"],
+  });
 }
 
 export async function POST(request: Request) {
   const { botToken, webhookSecret, appUrl } = getTelegramConfig();
-  if (!botToken || !webhookSecret) return NextResponse.json({ error: "Daily Ideas Telegram is not configured" }, { status: 503 });
+  if (!botToken || !webhookSecret) {
+    const missing = [
+      ...(!botToken ? ["telegram bot token"] : []),
+      ...(!webhookSecret ? ["telegram webhook secret"] : []),
+    ];
+    console.error("daily_ideas_telegram_configuration_error", { missing });
+    return NextResponse.json({ error: `Daily Ideas Telegram is not configured: missing ${missing.join(" and ")}.` }, { status: 503 });
+  }
 
   const providedSecret = request.headers.get("x-telegram-bot-api-secret-token") || "";
   if (!providedSecret || !secureEqual(providedSecret, webhookSecret)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -252,9 +293,12 @@ export async function POST(request: Request) {
     else if (update.callback_query) await handleCallback(botToken, appUrl, update.callback_query);
 
     return NextResponse.json({ ok: true });
-  } catch {
+  } catch (error) {
     if (claimKey) await releaseUpdate(claimKey);
-    console.error("daily_ideas_telegram_update_failed");
+    console.error("daily_ideas_telegram_update_failed", {
+      name: error instanceof Error ? error.name : "Error",
+      message: error instanceof Error ? error.message : "Unknown error",
+    });
     return NextResponse.json({ error: "Update processing failed" }, { status: 500 });
   }
 }
