@@ -11,6 +11,7 @@ import { SignOutButton } from "./sign-out-button";
 
 const dock = [
   { href: "/app", label: "Home", icon: "⌂" },
+  { href: "/app/ideas", label: "Ideas", icon: "✦" },
   { href: "/app/marketplace", label: "Market", icon: "▤" },
   { href: "/app/identity", label: "Identity", icon: "◎" },
   { href: "/app/vault", label: "Vault", icon: "◇" },
