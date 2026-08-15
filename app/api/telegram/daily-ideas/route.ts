@@ -1,5 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
+import { createDailyIdeaHandoff } from "../../../lib/daily-ideas-handoff";
 import {
   DailyIdeasConfigurationError,
   generateDailyIdea,
@@ -53,8 +54,18 @@ function categoryKeyboard(appUrl: string): InlineKeyboard {
   };
 }
 
-function ideaKeyboard(appUrl: string): InlineKeyboard {
-  return { inline_keyboard: [[{ text: "🔄 Another idea", callback_data: "idea:generate" }], [{ text: "Develop in GWAP OS", url: appUrl }]] };
+function ideaKeyboard(destinationUrl: string): InlineKeyboard {
+  return { inline_keyboard: [[{ text: "🔄 Another idea", callback_data: "idea:generate" }], [{ text: "Continue this idea in GWAP OS", url: destinationUrl }]] };
+}
+
+function handoffUrl(appUrl: string, token: string) {
+  try {
+    const url = new URL(appUrl);
+    url.searchParams.set("handoff", token);
+    return url.toString();
+  } catch {
+    return `${DEFAULT_APP_URL}?handoff=${encodeURIComponent(token)}`;
+  }
 }
 
 async function telegramRequest<T>(token: string, method: string, payload: Record<string, unknown>) {
@@ -135,7 +146,14 @@ async function generateForTelegram(token: string, appUrl: string, chatId: number
   const preferences = await getPreferences(userId);
   try {
     const idea = await generateDailyIdea(preferences.category);
-    await sendMessage(token, chatId, formatIdea(idea), ideaKeyboard(appUrl));
+    let destinationUrl = appUrl;
+    try {
+      const handoffToken = await createDailyIdeaHandoff(idea);
+      destinationUrl = handoffUrl(appUrl, handoffToken);
+    } catch {
+      console.error("daily_ideas_handoff_create_failed");
+    }
+    await sendMessage(token, chatId, formatIdea(idea), ideaKeyboard(destinationUrl));
   } catch (error) {
     if (error instanceof DailyIdeasConfigurationError) {
       await sendMessage(token, chatId, "Daily Ideas AI is not configured yet. You can still open the GWAP OS workspace below.", {
@@ -207,7 +225,7 @@ async function handleCallback(token: string, appUrl: string, callback: TelegramC
 
 export async function GET() {
   const { botToken, webhookSecret } = getTelegramConfig();
-  return NextResponse.json({ service: "daily-ideas-telegram", configured: Boolean(botToken && webhookSecret), mode: "webhook", capabilities: ["start", "help", "idea", "category"] });
+  return NextResponse.json({ service: "daily-ideas-telegram", configured: Boolean(botToken && webhookSecret), mode: "webhook", capabilities: ["start", "help", "idea", "category", "handoff"] });
 }
 
 export async function POST(request: Request) {
