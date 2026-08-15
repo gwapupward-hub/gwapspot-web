@@ -86,7 +86,7 @@ function sendMessage(token: string, chatId: number, text: string, replyMarkup?: 
     chat_id: chatId,
     text,
     parse_mode: "HTML",
-    disable_web_page_preview: true,
+    link_preview_options: { is_disabled: true },
     ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
   });
 }
