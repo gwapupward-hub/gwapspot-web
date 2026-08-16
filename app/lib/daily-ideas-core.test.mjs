@@ -48,6 +48,7 @@ test("normalizes the full structured idea contract", () => {
 test("rejects incomplete or out-of-range AI output", () => {
   assert.equal(idea({ solution: "" }), null);
   assert.equal(idea({ opportunityScore: 11 }), null);
+  assert.equal(idea({ tags: [] }), null);
   assert.equal(idea({ validationSteps: [] }), null);
 });
 
