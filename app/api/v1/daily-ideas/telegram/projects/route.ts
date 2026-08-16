@@ -7,11 +7,11 @@ import {
   normalizeTelegramAccountInput,
 } from "../../../../../lib/daily-ideas-telegram-account-core";
 import {
-  advanceDailyIdeaProject,
   archiveDailyIdeaProject,
   getDailyIdeaProject,
   listDailyIdeaProjects,
   startDailyIdeaProject,
+  transitionDailyIdeaProject,
 } from "../../../../../lib/daily-ideas-projects";
 import { checkRateLimit } from "../../../../../lib/request-guard";
 
@@ -104,8 +104,8 @@ export async function POST(request: Request) {
   const account = parseTelegramUserId(body.telegramUserId);
   if (!account) return json({ error: "Invalid Telegram account", requestId }, 400);
 
-  const action = body.action === "develop" || body.action === "advance" || body.action === "archive"
-    ? body.action
+  const action = ["develop", "validate", "build", "launch", "archive"].includes(String(body.action))
+    ? String(body.action) as "develop" | "validate" | "build" | "launch" | "archive"
     : null;
   if (!action) return json({ error: "Invalid project action", requestId }, 400);
 
@@ -130,20 +130,20 @@ export async function POST(request: Request) {
         created: result.created,
         status: result.project.status,
       });
-      return json({
-        contractVersion: DAILY_IDEAS_SERVICE_CONTRACT_VERSION,
-        created: result.created,
-        project: result.project,
-      }, result.created ? 201 : 200);
+      return json({ contractVersion: DAILY_IDEAS_SERVICE_CONTRACT_VERSION, created: result.created, project: result.project }, result.created ? 201 : 200);
     }
 
     const projectId = typeof body.projectId === "string" ? body.projectId.trim() : "";
     if (!/^project_[a-f0-9]{20}$/.test(projectId)) return json({ error: "Invalid project", requestId }, 400);
 
-    const result = action === "advance"
-      ? await advanceDailyIdeaProject(subject, projectId)
-      : await archiveDailyIdeaProject(subject, projectId);
-    if (!result.ok) return json({ error: "Project not found", requestId }, 404);
+    const result = action === "archive"
+      ? await archiveDailyIdeaProject(subject, projectId)
+      : await transitionDailyIdeaProject(subject, projectId, action === "validate" ? "validating" : action === "build" ? "building" : "launched");
+    if (!result.ok) {
+      return result.reason === "invalid_transition"
+        ? json({ error: "Project stage has changed. Refresh the project and try again.", requestId }, 409)
+        : json({ error: "Project not found", requestId }, 404);
+    }
 
     console.info("daily_ideas_telegram_project_updated", {
       requestId,
