@@ -21,9 +21,9 @@ function preferencesKey(subject: string) {
   return getPrivateStorageKey("daily-ideas-preferences", subject);
 }
 
-function parseCategories(value: unknown) {
+function parseCategories(value: unknown): DailyIdeaCategory[] | null {
   if (!Array.isArray(value)) return null;
-  const categories = [...new Set(
+  const categories: DailyIdeaCategory[] = [...new Set(
     value.filter((item): item is DailyIdeaCategory =>
       typeof item === "string" && dailyIdeaCategories.includes(item as DailyIdeaCategory),
     ),
