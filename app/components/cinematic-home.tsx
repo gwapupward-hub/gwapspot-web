@@ -149,7 +149,7 @@ export function CinematicHome() {
           <h1>Grind with<br /><em>a purpose.</em></h1>
           <p>Identity, reputation, commerce, creativity, intelligence, and community—connected inside one premium Web3 ecosystem.</p>
           <HomeUtility />
-          <div className="hero-ctas"><GlassButton href="#ecosystem" primary>Explore the ecosystem</GlassButton><GlassButton href="/about">Discover the vision</GlassButton></div>
+          <div className="hero-ctas"><GlassButton href="#ecosystem" primary>Explore the ecosystem</GlassButton><GlassButton href="/app">Enter GWAP OS</GlassButton></div>
           <div className="hero-trust"><span><Icon name="shield" /> Explainable trust</span><span><Icon name="network" /> Connected products</span><span><Icon name="spark" /> Built for what is next</span></div>
         </div>
 
@@ -180,6 +180,27 @@ export function CinematicHome() {
             <div><strong><CountUp value={1} suffix=" hub" /></strong><span>Gateway</span><small>GWAPSpot connects it all</small></div>
           </div>
         </div>
+
+        <div className="overview-foundation" aria-label="GWAP core infrastructure">
+          <Link href="/ecosystem/gns" className="overview-foundation-card">
+            <span>01 / IDENTITY</span>
+            <div><Image src="/logos/gns.png" alt="" width={42} height={42} /><strong>GNS</strong></div>
+            <p>.gwap names and portable wallet identity.</p>
+            <small>Identity foundation <Icon name="arrow" /></small>
+          </Link>
+          <Link href="/ecosystem/gwapscore" className="overview-foundation-card">
+            <span>02 / REPUTATION</span>
+            <div><Image src="/logos/gwapscore.svg" alt="" width={42} height={42} /><strong>GwapScore</strong></div>
+            <p>Explainable 300–900 reputation and wallet intelligence.</p>
+            <small>Trust foundation <Icon name="arrow" /></small>
+          </Link>
+          <Link href="/app" className="overview-os-entry">
+            <span>GWAP OS</span>
+            <strong>Your identity, reputation, apps, and activity in one operating layer.</strong>
+            <small>Enter the operating system <Icon name="arrow" /></small>
+          </Link>
+        </div>
+
         <div className="depth-window">
           <div className="depth-grid" />
           <div className="depth-orbit"><div className="depth-core"><Image src="/logos/gwap-agent-clear.svg" alt="" width={90} height={90} /></div>{["IDENTITY", "REPUTATION", "COMMERCE", "CREATIVITY", "INTELLIGENCE"].map((label, index) => <span style={{ "--node-index": index } as CSSProperties} key={label}>{label}</span>)}</div>
@@ -218,11 +239,12 @@ export function CinematicHome() {
               <div className="premium-product-grid ecosystem-group-products">
                 {group.products.map((product) => {
                   const productIndex = ecosystemProductIndexBySlug.get(product.slug) ?? 0;
+                  const isFoundationProduct = product.slug === "gns" || product.slug === "gwapscore";
                   return (
                     <Link className={`premium-product-card accent-${product.accent}`} href={getProductDestination(product)} target={isExternalProductDestination(product) ? "_blank" : undefined} rel={isExternalProductDestination(product) ? "noreferrer" : undefined} data-gwap-product={product.slug} key={product.slug}>
                       <div className="card-reflection" />
                       <div className="product-card-header"><span>{String(productIndex + 1).padStart(2, "0")}</span><small>{product.status}</small></div>
-                      <div className="product-glyph"><i /><b>{product.name.slice(0, 2).toUpperCase()}</b></div>
+                      <div className="product-glyph"><i />{isFoundationProduct ? <Image className="product-glyph-logo" src={product.logo} alt="" width={46} height={46} /> : <b>{product.name.slice(0, 2).toUpperCase()}</b>}</div>
                       <div className="product-copy"><span className="product-category">{product.eyebrow}</span><h4>{product.name}</h4><p>{product.summary}</p></div>
                       <div className="product-card-footer"><span>Explore product</span><Icon name="arrow" /></div>
                     </Link>
