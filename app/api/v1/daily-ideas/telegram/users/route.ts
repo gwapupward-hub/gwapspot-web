@@ -27,11 +27,7 @@ function json(payload: unknown, status = 200, extraHeaders?: HeadersInit) {
 }
 
 function getInternalApiKey() {
-  return (
-    process.env.DAILY_IDEAS_INTERNAL_API_KEY?.trim() ||
-    process.env.INTERNAL_API_SECRET?.trim() ||
-    ""
-  );
+  return process.env.DAILY_IDEAS_INTERNAL_API_KEY?.trim() || "";
 }
 
 function requestIdFrom(request: Request) {
