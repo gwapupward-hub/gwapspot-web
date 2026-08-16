@@ -1,0 +1,358 @@
+/* GWAP homepage premium refinement
+ * Conversion and hierarchy pass built on top of the proven mobile cinematic system.
+ * Mobile rules intentionally avoid blur, filters, perspective, masks, and continuous scroll animation.
+ */
+
+/* --- Conversion hierarchy ------------------------------------------------ */
+.hero-utility {
+  border-color: rgba(19, 221, 19, .22);
+  background:
+    linear-gradient(145deg, rgba(19, 221, 19, .055), transparent 34%),
+    linear-gradient(135deg, rgba(20, 29, 23, .8), rgba(7, 10, 8, .62));
+  box-shadow:
+    inset 0 1px rgba(255,255,255,.13),
+    0 26px 78px rgba(0,0,0,.34),
+    0 0 0 1px rgba(19,221,19,.025),
+    0 0 70px rgba(19,221,19,.055);
+}
+
+.hero-utility::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 11%;
+  right: 11%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(19,221,19,.76), rgba(255,255,255,.28), transparent);
+  opacity: .58;
+  pointer-events: none;
+}
+
+.hero-utility-heading small {
+  letter-spacing: .19em;
+}
+
+.hero-utility-tabs button[aria-pressed="true"] {
+  border: 1px solid rgba(19,221,19,.12);
+}
+
+.hero-ctas .glass-button:first-child {
+  min-width: 190px;
+}
+
+.hero-ctas .glass-button:nth-child(2) {
+  border-color: rgba(255,255,255,.1);
+  background: rgba(255,255,255,.025);
+  box-shadow: inset 0 1px rgba(255,255,255,.06), 0 12px 30px rgba(0,0,0,.16);
+}
+
+.nav-os-entry {
+  position: relative;
+}
+
+.nav-os-entry::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #003a08;
+  box-shadow: 0 0 0 3px rgba(0,58,8,.1);
+}
+
+.emblem-caption {
+  gap: 5px;
+}
+
+.emblem-caption::after {
+  content: "OPEN GWAP OS";
+  margin-top: 3px;
+  color: rgba(211, 255, 214, .58);
+  font-size: 7px;
+  font-weight: 850;
+  letter-spacing: .18em;
+}
+
+/* --- Hero → System chapter handoff --------------------------------------- */
+.overview-story {
+  isolation: isolate;
+}
+
+.overview-story::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: 104px;
+  left: 30px;
+  width: min(430px, 55vw);
+  height: 1px;
+  background: linear-gradient(90deg, rgba(19,221,19,.72), rgba(141,92,255,.3), transparent);
+  box-shadow: 0 0 18px rgba(19,221,19,.09);
+  opacity: .55;
+}
+
+.overview-story .section-kicker {
+  position: relative;
+}
+
+.overview-story .section-kicker::after {
+  content: "SYSTEM ONLINE";
+  margin-left: auto;
+  color: rgba(143, 175, 146, .72);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .16em;
+}
+
+.overview-copy h2 {
+  max-width: 840px;
+}
+
+.metrics-glass {
+  border-color: rgba(19,221,19,.13);
+}
+
+.metrics-glass > div:first-child,
+.metrics-glass > div:nth-child(3) {
+  background: linear-gradient(145deg, rgba(19,221,19,.035), transparent 64%);
+}
+
+/* --- Make GNS + GwapScore read as the foundation ------------------------- */
+.ecosystem-group-infrastructure {
+  border-color: rgba(19,221,19,.2);
+}
+
+.ecosystem-group-infrastructure .ecosystem-group-header {
+  border-bottom-color: rgba(19,221,19,.12);
+}
+
+.ecosystem-group-infrastructure .ecosystem-group-copy h3::after {
+  content: "FOUNDATION";
+  display: inline-flex;
+  margin-left: 12px;
+  padding: 5px 7px;
+  transform: translateY(-4px);
+  border: 1px solid rgba(19,221,19,.2);
+  border-radius: 999px;
+  background: rgba(19,221,19,.05);
+  color: #8fb792;
+  font-size: 6px;
+  font-weight: 850;
+  letter-spacing: .14em;
+  vertical-align: middle;
+}
+
+.ecosystem-group-infrastructure .ecosystem-group-products [data-gwap-product="gns"],
+.ecosystem-group-infrastructure .ecosystem-group-products [data-gwap-product="gwapscore"] {
+  grid-column: span 6;
+  min-height: 405px;
+  border-color: rgba(19,221,19,.24);
+  background:
+    radial-gradient(circle at 86% 12%, rgba(19,221,19,.08), transparent 30%),
+    linear-gradient(145deg, rgba(19,221,19,.06), rgba(255,255,255,.022));
+  box-shadow:
+    inset 0 1px rgba(255,255,255,.1),
+    0 28px 74px rgba(0,0,0,.24),
+    0 0 0 1px rgba(19,221,19,.02);
+}
+
+.ecosystem-group-infrastructure .ecosystem-group-products [data-gwap-product="gns"]::before,
+.ecosystem-group-infrastructure .ecosystem-group-products [data-gwap-product="gwapscore"]::before {
+  content: "CORE INFRASTRUCTURE";
+  position: absolute;
+  z-index: 3;
+  top: 67px;
+  right: 22px;
+  padding: 5px 7px;
+  border: 1px solid rgba(19,221,19,.16);
+  border-radius: 999px;
+  background: rgba(4,12,5,.72);
+  color: rgba(172,222,176,.72);
+  font-size: 6px;
+  font-weight: 850;
+  letter-spacing: .14em;
+  pointer-events: none;
+}
+
+.ecosystem-group-infrastructure .ecosystem-group-products [data-gwap-product="gns"] h4,
+.ecosystem-group-infrastructure .ecosystem-group-products [data-gwap-product="gwapscore"] h4 {
+  font-size: clamp(30px, 3vw, 42px);
+}
+
+.ecosystem-group-infrastructure .ecosystem-group-products [data-gwap-product="gns"] .product-glyph,
+.ecosystem-group-infrastructure .ecosystem-group-products [data-gwap-product="gwapscore"] .product-glyph {
+  width: 82px;
+  height: 82px;
+  border-color: rgba(19,221,19,.22);
+  box-shadow: inset 0 1px rgba(255,255,255,.11), 0 18px 40px rgba(0,0,0,.2), 0 0 34px rgba(19,221,19,.055);
+}
+
+.ecosystem-group-infrastructure .ecosystem-group-products [data-gwap-product="occo"],
+.ecosystem-group-infrastructure .ecosystem-group-products [data-gwap-product="private-proof-vault"] {
+  grid-column: span 6;
+  min-height: 315px;
+  opacity: .9;
+}
+
+.ecosystem-group-experience {
+  border-color: rgba(141,92,255,.14);
+}
+
+/* --- Trust and OS handoff ------------------------------------------------- */
+.trust-story .stack-one,
+.trust-story .stack-two {
+  border-color: rgba(19,221,19,.15);
+}
+
+.trust-story .principle-strip {
+  color: #879089;
+}
+
+/* --- Mobile refinement: transform + opacity only -------------------------- */
+@media (hover: none) and (pointer: coarse), (max-width: 820px) {
+  .hero-utility {
+    border-color: rgba(19,221,19,.22) !important;
+    background-image:
+      linear-gradient(145deg, rgba(19,221,19,.055), rgba(255,255,255,.018) 44%),
+      linear-gradient(180deg, rgba(7,14,9,.95), rgba(2,6,3,.92)) !important;
+    box-shadow:
+      inset 0 1px rgba(255,255,255,.09),
+      0 20px 52px rgba(0,0,0,.28),
+      0 0 0 1px rgba(19,221,19,.02) !important;
+  }
+
+  .hero-utility-reflection {
+    display: none;
+  }
+
+  .hero-ctas {
+    gap: 9px;
+  }
+
+  .hero-ctas .glass-button,
+  .glass-button {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  .emblem-caption::after {
+    content: "TAP CORE TO ENTER GWAP OS";
+    color: rgba(210,255,213,.68);
+  }
+
+  .overview-story::before {
+    top: 88px;
+    left: 10px;
+    width: min(72vw, 310px);
+    opacity: .62;
+  }
+
+  .overview-story .section-kicker::after {
+    font-size: 6px;
+    letter-spacing: .11em;
+  }
+
+  .overview-story.gwap-mobile-active .overview-copy,
+  .overview-story.gwap-mobile-active .metrics-glass {
+    animation: gwapHomepageChapterIn 520ms cubic-bezier(.2,.8,.2,1) both;
+  }
+
+  .overview-story.gwap-mobile-active .metrics-glass {
+    animation-delay: 70ms;
+  }
+
+  .ecosystem-story.gwap-mobile-active .premium-heading,
+  .trust-story.gwap-mobile-active .trust-copy,
+  .roadmap-story.gwap-mobile-active .roadmap-heading,
+  .community-story.gwap-mobile-active .community-panel {
+    animation: gwapHomepageChapterIn 500ms cubic-bezier(.2,.8,.2,1) both;
+  }
+
+  .ecosystem-group-infrastructure .ecosystem-group-copy h3::after {
+    margin-left: 7px;
+    padding: 4px 6px;
+    transform: translateY(-2px);
+    font-size: 5px;
+  }
+
+  .ecosystem-group-infrastructure .ecosystem-group-products [data-gwap-product="gns"],
+  .ecosystem-group-infrastructure .ecosystem-group-products [data-gwap-product="gwapscore"],
+  .ecosystem-group-infrastructure .ecosystem-group-products [data-gwap-product="occo"],
+  .ecosystem-group-infrastructure .ecosystem-group-products [data-gwap-product="private-proof-vault"] {
+    grid-column: 1 !important;
+  }
+
+  .ecosystem-group-infrastructure .ecosystem-group-products [data-gwap-product="gns"],
+  .ecosystem-group-infrastructure .ecosystem-group-products [data-gwap-product="gwapscore"] {
+    min-height: 350px;
+    border-color: rgba(19,221,19,.23) !important;
+    box-shadow: inset 0 1px rgba(255,255,255,.08), 0 18px 44px rgba(0,0,0,.22) !important;
+  }
+
+  .ecosystem-group-infrastructure .ecosystem-group-products [data-gwap-product="gns"]::before,
+  .ecosystem-group-infrastructure .ecosystem-group-products [data-gwap-product="gwapscore"]::before {
+    top: 61px;
+    right: 16px;
+    background: rgba(4,12,5,.9);
+  }
+
+  .ecosystem-group-infrastructure .ecosystem-group-products [data-gwap-product="occo"],
+  .ecosystem-group-infrastructure .ecosystem-group-products [data-gwap-product="private-proof-vault"] {
+    min-height: 300px;
+    opacity: .84;
+  }
+
+  .premium-product-card,
+  .ecosystem-group,
+  .metrics-glass {
+    filter: none !important;
+  }
+}
+
+@media (max-width: 680px) {
+  .hero-content > p {
+    max-width: 34rem;
+    margin-inline: auto;
+  }
+
+  .hero-utility {
+    margin-top: 22px;
+  }
+
+  .overview-story .section-kicker {
+    align-items: center;
+    gap: 10px;
+  }
+
+  .overview-story .section-kicker p {
+    max-width: 46%;
+    line-height: 1.45;
+  }
+
+  .ecosystem-group-infrastructure .ecosystem-group-products [data-gwap-product="gns"] h4,
+  .ecosystem-group-infrastructure .ecosystem-group-products [data-gwap-product="gwapscore"] h4 {
+    font-size: 31px;
+  }
+}
+
+@keyframes gwapHomepageChapterIn {
+  from {
+    opacity: .56;
+    transform: translate3d(0, 18px, 0) scale(.99);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overview-story.gwap-mobile-active .overview-copy,
+  .overview-story.gwap-mobile-active .metrics-glass,
+  .ecosystem-story.gwap-mobile-active .premium-heading,
+  .trust-story.gwap-mobile-active .trust-copy,
+  .roadmap-story.gwap-mobile-active .roadmap-heading,
+  .community-story.gwap-mobile-active .community-panel {
+    animation: none !important;
+  }
+}
