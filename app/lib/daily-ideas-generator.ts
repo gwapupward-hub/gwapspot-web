@@ -22,9 +22,34 @@ export {
 
 const MAX_GENERATION_ATTEMPTS = 2;
 
-export class DailyIdeasConfigurationError extends Error {}
-export class DailyIdeasProviderError extends Error {}
-class DailyIdeasOutputError extends DailyIdeasProviderError {}
+export class DailyIdeasConfigurationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "DailyIdeasConfigurationError";
+  }
+}
+
+export class DailyIdeasProviderError extends Error {
+  readonly providerStatus: number | null;
+  readonly providerCode: string | null;
+
+  constructor(
+    message: string,
+    options: { providerStatus?: number | null; providerCode?: string | null } = {},
+  ) {
+    super(message);
+    this.name = "DailyIdeasProviderError";
+    this.providerStatus = options.providerStatus ?? null;
+    this.providerCode = options.providerCode ?? null;
+  }
+}
+
+class DailyIdeasOutputError extends DailyIdeasProviderError {
+  constructor(message: string) {
+    super(message);
+    this.name = "DailyIdeasOutputError";
+  }
+}
 
 export type DailyIdeaGenerationResult = {
   idea: GeneratedDailyIdea;
@@ -159,6 +184,28 @@ function extractOpenAIResponseText(payload: {
   return "";
 }
 
+function normalizeProviderCode(value: unknown) {
+  if (typeof value !== "string") return null;
+  const code = value.trim().slice(0, 80);
+  return code && /^[A-Za-z0-9_.:-]+$/.test(code) ? code : null;
+}
+
+async function buildProviderHttpError(response: Response) {
+  let providerCode: string | null = null;
+  try {
+    const payload = (await response.clone().json()) as {
+      error?: { code?: unknown; type?: unknown };
+    };
+    providerCode = normalizeProviderCode(payload.error?.code) ?? normalizeProviderCode(payload.error?.type);
+  } catch {
+    // Never log or surface raw provider response bodies.
+  }
+  return new DailyIdeasProviderError(`AI provider returned ${response.status}`, {
+    providerStatus: response.status,
+    providerCode,
+  });
+}
+
 async function requestProvider(
   provider: DailyIdeasProvider,
   apiKey: string,
@@ -214,7 +261,7 @@ async function requestProvider(
     throw new DailyIdeasProviderError("AI provider request failed");
   }
 
-  if (!response.ok) throw new DailyIdeasProviderError(`AI provider returned ${response.status}`);
+  if (!response.ok) throw await buildProviderHttpError(response);
   const payload = (await response.json()) as {
     output_text?: unknown;
     output?: Array<{ content?: Array<{ type?: string; text?: unknown }> }>;
