@@ -96,9 +96,9 @@ export function WalletSignIn({ redirectPath }: { redirectPath: string }) {
       <div className="wallet-auth-logo-row" aria-hidden="true">
         <Image src="/logos/gwap-agent.png" alt="" width={38} height={38} />
         <span />
-        <Image src="/logos/occo.png" alt="" width={38} height={38} />
+        <Image src="/logos/occo.webp" alt="" width={38} height={38} />
         <span />
-        <Image src="/logos/gns.png" alt="" width={38} height={38} />
+        <Image src="/logos/gns.webp" alt="" width={38} height={38} />
       </div>
       <span className="wallet-auth-eyebrow">SOLANA WALLET AUTHENTICATION</span>
       <h2>Your wallet is your GWAP sign-in.</h2>
