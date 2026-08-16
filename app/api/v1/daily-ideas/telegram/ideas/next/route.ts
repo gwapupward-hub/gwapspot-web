@@ -62,6 +62,7 @@ export async function GET() {
     service: "daily-ideas-telegram-next-idea",
     contractVersion: DAILY_IDEAS_SERVICE_CONTRACT_VERSION,
     configured: configuration.configured,
+    provider: configuration.provider,
     model: configuration.model,
   });
 }
