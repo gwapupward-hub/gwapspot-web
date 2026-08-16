@@ -8,6 +8,7 @@ import {
   selectReusableDailyIdea,
   type DailyIdeaMode,
   type GeneratedDailyIdea,
+  type DailyIdeasProvider,
 } from "./daily-ideas-core";
 import { generateDailyIdeaWithMetadata, getDailyIdeasConfiguration } from "./daily-ideas-generator";
 
@@ -17,6 +18,7 @@ const DAILY_CACHE_SECONDS = 2 * 24 * 60 * 60;
 
 type InventoryEntry = {
   idea: GeneratedDailyIdea;
+  provider: DailyIdeasProvider;
   model: string;
   usage: { inputTokens: number; outputTokens: number };
   attempts: number;
@@ -33,6 +35,7 @@ type GenerationRecord = {
   id: string;
   category: string;
   model: string;
+  provider: DailyIdeasProvider | null;
   status: "pending" | "complete" | "error";
   createdAt: string;
   completedAt?: string;
@@ -109,6 +112,7 @@ export async function getNextDailyIdea(input: {
       id: generationId,
       category,
       model: configuration.model,
+      provider: configuration.provider,
       status: "pending",
       createdAt: now,
     };
@@ -132,6 +136,7 @@ export async function getNextDailyIdea(input: {
           idea,
           usage: generated.usage,
           attempts: generated.attempts,
+          provider: generated.provider,
         } satisfies GenerationRecord),
         redis.set(
           inventoryKey(`${category}:${focus || "default"}`),
