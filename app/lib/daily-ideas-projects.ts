@@ -127,25 +127,34 @@ export async function getDailyIdeaProject(subject: string, projectId: string) {
   return projects.find((project) => project.id === projectId) || null;
 }
 
-export async function advanceDailyIdeaProject(subject: string, projectId: string) {
+export async function transitionDailyIdeaProject(
+  subject: string,
+  projectId: string,
+  target: "validating" | "building" | "launched",
+) {
   const redis = getWorkspaceRedis();
   const projects = normalizeProjects(await redis.get<DailyIdeaProject[]>(projectsKey(subject)));
   const index = projects.findIndex((project) => project.id === projectId);
   if (index < 0) return { ok: false as const, reason: "not_found" as const };
 
   const current = projects[index];
-  const nextStatus: Partial<Record<DailyIdeaProjectStatus, DailyIdeaProjectStatus>> = {
-    developing: "validating",
-    validating: "building",
-    building: "launched",
-  };
-  const status = nextStatus[current.status];
-  if (!status) return { ok: true as const, advanced: false, project: current };
+  if (current.status === target) {
+    return { ok: true as const, changed: false, project: current };
+  }
 
-  const project = { ...current, status, updatedAt: new Date().toISOString() };
+  const requiredPrevious: Record<typeof target, DailyIdeaProjectStatus> = {
+    validating: "developing",
+    building: "validating",
+    launched: "building",
+  };
+  if (current.status !== requiredPrevious[target]) {
+    return { ok: false as const, reason: "invalid_transition" as const, project: current };
+  }
+
+  const project = { ...current, status: target, updatedAt: new Date().toISOString() };
   projects[index] = project;
   await redis.set(projectsKey(subject), projects);
-  return { ok: true as const, advanced: true, project };
+  return { ok: true as const, changed: true, project };
 }
 
 export async function archiveDailyIdeaProject(subject: string, projectId: string) {
