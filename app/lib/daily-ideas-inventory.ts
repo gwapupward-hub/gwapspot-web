@@ -10,7 +10,13 @@ import {
   type GeneratedDailyIdea,
   type DailyIdeasProvider,
 } from "./daily-ideas-core";
-import { generateDailyIdeaWithMetadata, getDailyIdeasConfiguration } from "./daily-ideas-generator";
+import { selectFallbackDailyIdea } from "./daily-ideas-fallback";
+import {
+  DailyIdeasConfigurationError,
+  DailyIdeasProviderError,
+  generateDailyIdeaWithMetadata,
+  getDailyIdeasConfiguration,
+} from "./daily-ideas-generator";
 
 const MAX_CATEGORY_INVENTORY = 80;
 const MAX_DELIVERY_HISTORY = 120;
@@ -48,7 +54,7 @@ type GenerationRecord = {
 export type DailyIdeaDelivery = {
   idea: GeneratedDailyIdea;
   delivery: {
-    source: "inventory" | "generated" | "daily-cache";
+    source: "inventory" | "generated" | "daily-cache" | "fallback";
     deliveredAt: string;
     mode: DailyIdeaMode;
   };
@@ -74,6 +80,16 @@ function dailyKey(subject: string) {
   return getPrivateStorageKey("daily-ideas-daily", `${subject}:${utcDay()}`);
 }
 
+function ideaKey(id: string) {
+  return getPrivateStorageKey("daily-ideas-by-id", id);
+}
+
+export async function getStoredDailyIdea(id: string) {
+  const normalized = id.trim();
+  if (!/^[A-Za-z0-9_-]{1,80}$/.test(normalized)) return null;
+  return getWorkspaceRedis().get<GeneratedDailyIdea>(ideaKey(normalized));
+}
+
 export async function getNextDailyIdea(input: {
   subject: string;
   category?: unknown;
@@ -97,7 +113,8 @@ export async function getNextDailyIdea(input: {
     redis.get<DeliveryHistoryEntry[]>(historyKey(input.subject)),
   ]);
   const entries = Array.isArray(inventory) ? inventory : [];
-  const delivered = new Set((Array.isArray(history) ? history : []).map((entry) => entry.ideaId));
+  const priorHistory = Array.isArray(history) ? history : [];
+  const delivered = new Set(priorHistory.map((entry) => entry.ideaId));
   let idea = selectReusableDailyIdea(
     entries.map((entry) => entry.idea).filter(Boolean),
     delivered,
@@ -151,12 +168,29 @@ export async function getNextDailyIdea(input: {
         completedAt: new Date().toISOString(),
         errorCode: error instanceof Error ? error.name.slice(0, 80) : "Error",
       } satisfies GenerationRecord);
-      throw error;
+
+      const providerUnavailable =
+        error instanceof DailyIdeasProviderError || error instanceof DailyIdeasConfigurationError;
+      const fallback = providerUnavailable
+        ? selectFallbackDailyIdea(category, delivered, focus)
+        : null;
+
+      if (!fallback) throw error;
+
+      idea = fallback;
+      source = "fallback";
+      console.warn("daily_ideas_provider_fallback_used", {
+        generationId,
+        category,
+        focus,
+        name: error instanceof Error ? error.name : "Error",
+        providerStatus: error instanceof DailyIdeasProviderError ? error.providerStatus : null,
+        providerCode: error instanceof DailyIdeasProviderError ? error.providerCode : null,
+      });
     }
   }
 
   const deliveredAt = new Date().toISOString();
-  const priorHistory = Array.isArray(history) ? history : [];
   const nextHistory: DeliveryHistoryEntry[] = [
     { ideaId: idea.id, deliveredAt, mode },
     ...priorHistory.filter((entry) => entry.ideaId !== idea?.id),
@@ -165,6 +199,7 @@ export async function getNextDailyIdea(input: {
 
   await Promise.all([
     redis.set(historyKey(input.subject), nextHistory),
+    redis.set(ideaKey(idea.id), idea),
     ...(mode === "daily" ? [redis.set(dailyKey(input.subject), result, { ex: DAILY_CACHE_SECONDS })] : []),
   ]);
 
