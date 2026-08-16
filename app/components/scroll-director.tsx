@@ -234,35 +234,27 @@ export function ScrollDirector() {
         const state: ScrollState = distance > 0 ? "incoming" : distance < 0 ? "past" : "active";
         setScrollState(section, state);
 
-        if (reduceMotion) return;
+        if (reduceMotion || useEfficientVisualPipeline) return;
 
         const focus = smoothstep(1 - clamp(absoluteDistance / 0.68, 0, 1));
         const incoming = distance > 0;
         const unfocused = 1 - focus;
-        const scale = useEfficientVisualPipeline
-          ? 0.94 + focus * 0.06
-          : incoming
-            ? 0.78 + focus * 0.22
-            : 1 + unfocused * 0.12;
-        const z = useEfficientVisualPipeline
-          ? 0
-          : incoming
-            ? -340 * unfocused
-            : 160 * unfocused;
+        const scale = incoming
+          ? 0.78 + focus * 0.22
+          : 1 + unfocused * 0.12;
+        const z = incoming
+          ? -340 * unfocused
+          : 160 * unfocused;
         const y = clamp(
-          distance * (useEfficientVisualPipeline ? 34 : 96),
-          useEfficientVisualPipeline ? -36 : -105,
-          useEfficientVisualPipeline ? 36 : 105,
+          distance * 96,
+          -105,
+          105,
         );
-        const blur = useEfficientVisualPipeline ? 0 : 24 * unfocused;
-        const opacity =
-          (useEfficientVisualPipeline ? 0.46 : 0.05) +
-          focus * (useEfficientVisualPipeline ? 0.54 : 0.95);
-        const rotate = useEfficientVisualPipeline
-          ? 0
-          : incoming
-            ? 4 * unfocused
-            : -2.2 * unfocused;
+        const blur = 24 * unfocused;
+        const opacity = 0.05 + focus * 0.95;
+        const rotate = incoming
+          ? 4 * unfocused
+          : -2.2 * unfocused;
 
         setCssVariable(section, "--story-focus", focus.toFixed(4));
         setCssVariable(section, "--story-opacity", opacity.toFixed(4));
