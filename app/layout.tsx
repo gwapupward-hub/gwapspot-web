@@ -48,6 +48,11 @@ export const viewport: Viewport = { themeColor: "#030504", colorScheme: "dark", 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="preload" href="/logos/gns.webp" as="image" type="image/webp" />
+        <link rel="preload" href="/logos/occo.webp" as="image" type="image/webp" />
+        <link rel="preload" href="/logos/gwap-agent.png" as="image" type="image/png" />
+      </head>
       <body>
         <Script id="gwap-intro-state" strategy="beforeInteractive">
           {'try{if(sessionStorage.getItem("gwap-premium-intro-seen-v2")==="true")document.documentElement.dataset.gwapIntroSeen="true"}catch(e){}'}
