@@ -109,12 +109,15 @@ export async function POST(request: Request) {
     return json({ contractVersion: DAILY_IDEAS_SERVICE_CONTRACT_VERSION, ...result });
   } catch (error) {
     const configurationError = error instanceof DailyIdeasConfigurationError;
+    const providerError = error instanceof DailyIdeasProviderError ? error : null;
     console.error("daily_ideas_telegram_idea_failed", {
       requestId,
       actor: getTelegramActor(account.telegramUserId),
       name: error instanceof Error ? error.name : "Error",
+      providerStatus: providerError?.providerStatus ?? null,
+      providerCode: providerError?.providerCode ?? null,
     });
-    const status = configurationError ? 503 : error instanceof DailyIdeasProviderError ? 502 : 503;
+    const status = configurationError ? 503 : providerError ? 502 : 503;
     return json({ error: "The idea engine did not finish that one. Try again.", requestId }, status);
   }
 }
