@@ -23,6 +23,7 @@ const MAX_GENERATION_ATTEMPTS = 2;
 
 export class DailyIdeasConfigurationError extends Error {}
 export class DailyIdeasProviderError extends Error {}
+class DailyIdeasOutputError extends DailyIdeasProviderError {}
 
 export type DailyIdeaGenerationResult = {
   idea: GeneratedDailyIdea;
@@ -46,11 +47,11 @@ export function getDailyIdeasConfiguration() {
 function extractJson(text: string) {
   const start = text.indexOf("{");
   const end = text.lastIndexOf("}");
-  if (start < 0 || end <= start) throw new DailyIdeasProviderError("No JSON object returned");
+  if (start < 0 || end <= start) throw new DailyIdeasOutputError("No JSON object returned");
   try {
     return JSON.parse(text.slice(start, end + 1)) as Record<string, unknown>;
   } catch {
-    throw new DailyIdeasProviderError("Invalid JSON returned");
+    throw new DailyIdeasOutputError("Invalid JSON returned");
   }
 }
 
@@ -141,7 +142,7 @@ async function requestProvider(
     usage?: { input_tokens?: number; output_tokens?: number };
   };
   const responseText = payload.content?.find((item) => item.type === "text")?.text;
-  if (!responseText) throw new DailyIdeasProviderError("AI response was empty");
+  if (!responseText) throw new DailyIdeasOutputError("AI response was empty");
 
   return {
     value: extractJson(responseText),
@@ -167,7 +168,16 @@ export async function generateDailyIdeaWithMetadata(
   let lastValidationError = "AI response was incomplete";
 
   for (let attempt = 1; attempt <= MAX_GENERATION_ATTEMPTS; attempt += 1) {
-    const provider = await requestProvider(apiKey, model, category, recentIdeas, attempt > 1, focus);
+    let provider: Awaited<ReturnType<typeof requestProvider>>;
+    try {
+      provider = await requestProvider(apiKey, model, category, recentIdeas, attempt > 1, focus);
+    } catch (error) {
+      if (error instanceof DailyIdeasOutputError) {
+        lastValidationError = error.message;
+        continue;
+      }
+      throw error;
+    }
     const idea = parseGeneratedDailyIdea(provider.value, {
       id: generationId,
       requestedCategory: category,
