@@ -42,6 +42,32 @@ export type DailyIdeaStatus =
   | "launched"
   | "archived";
 
+export type DailyIdeasProvider = "openai" | "anthropic";
+
+export function resolveDailyIdeasProvider(input: {
+  openAiApiKey?: string;
+  anthropicApiKey?: string;
+  configuredModel?: string;
+}) {
+  const openAiApiKey = input.openAiApiKey?.trim();
+  const anthropicApiKey = input.anthropicApiKey?.trim();
+  const configuredModel = input.configuredModel?.trim();
+  const provider: DailyIdeasProvider | null = openAiApiKey
+    ? "openai"
+    : anthropicApiKey
+      ? "anthropic"
+      : null;
+  const defaultModel = provider === "anthropic" ? "claude-sonnet-4-6" : "gpt-5.6-terra";
+
+  return {
+    provider,
+    apiKey: provider === "openai" ? openAiApiKey : provider === "anthropic" ? anthropicApiKey : undefined,
+    configured: Boolean(provider),
+    model: configuredModel || defaultModel,
+    modelSource: configuredModel ? ("environment" as const) : ("default" as const),
+  };
+}
+
 export type GeneratedDailyIdea = {
   id: string;
   title: string;
