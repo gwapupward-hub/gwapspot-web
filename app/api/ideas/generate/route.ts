@@ -3,8 +3,8 @@ import { isWalletAuthConfigured } from "../../../lib/auth-config";
 import {
   DailyIdeasConfigurationError,
   getDailyIdeasConfiguration,
-  generateDailyIdea,
 } from "../../../lib/daily-ideas-generator";
+import { getNextDailyIdea } from "../../../lib/daily-ideas-inventory";
 import { getAuthenticatedWalletIdentity } from "../../../lib/privy-server";
 import { checkRateLimit, hasValidOrigin } from "../../../lib/request-guard";
 
@@ -17,6 +17,7 @@ export async function GET() {
     configured: configuration.configured,
     model: configuration.model,
     modelSource: configuration.modelSource,
+    persistence: "inventory",
   });
 }
 
@@ -39,7 +40,12 @@ export async function POST(request: Request) {
 
   try {
     const body = (await request.json()) as { category?: unknown };
-    return NextResponse.json({ idea: await generateDailyIdea(body.category) });
+    const result = await getNextDailyIdea({
+      subject: `gwap:${identity.userId}`,
+      category: body.category,
+      mode: "idea",
+    });
+    return NextResponse.json({ idea: result.idea, delivery: result.delivery });
   } catch (error) {
     if (error instanceof DailyIdeasConfigurationError) {
       console.error("daily_ideas_generate_configuration_error", { message: error.message });
