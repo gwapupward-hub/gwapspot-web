@@ -165,6 +165,7 @@ export function parseGeneratedDailyIdea(
   const problem = text(input.problem, 600);
   const solution = text(input.solution, 600);
   const targetAudience = textList(input.targetAudience, 6, 120);
+  const tags = textList(input.tags, 8, 40);
   const whyNow = text(input.whyNow, 600);
   const monetization = textList(input.monetization, 6, 160);
   const mvpFeatures = textList(input.mvpFeatures, 8, 160);
@@ -184,6 +185,7 @@ export function parseGeneratedDailyIdea(
     !estimatedBuildScope ||
     !firstAction ||
     targetAudience.length === 0 ||
+    tags.length === 0 ||
     monetization.length === 0 ||
     mvpFeatures.length === 0 ||
     risks.length === 0 ||
@@ -212,7 +214,7 @@ export function parseGeneratedDailyIdea(
     targetAudience,
     whyNow,
     category,
-    tags: textList(input.tags, 8, 40),
+    tags,
     monetization,
     mvpFeatures,
     difficulty,
