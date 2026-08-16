@@ -184,7 +184,7 @@ export function CinematicHome() {
         <div className="overview-foundation" aria-label="GWAP core infrastructure">
           <Link href="/ecosystem/gns" className="overview-foundation-card">
             <span>01 / IDENTITY</span>
-            <div><Image src="/logos/gns.png" alt="" width={42} height={42} /><strong>GNS</strong></div>
+            <div><Image src="/logos/gns.webp" alt="" width={42} height={42} /><strong>GNS</strong></div>
             <p>.gwap names and portable wallet identity.</p>
             <small>Identity foundation <Icon name="arrow" /></small>
           </Link>
