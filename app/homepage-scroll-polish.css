@@ -1,0 +1,159 @@
+/* Homepage mobile scroll polish
+ * Keeps the premium treatment while protecting the compositor budget on touch devices.
+ */
+
+/* Lift the purpose gradient slightly without turning it neon-bright. */
+.hero-content h1 em {
+  background:
+    linear-gradient(rgba(1, 4, 2, .16), rgba(1, 4, 2, .16)),
+    linear-gradient(
+      105deg,
+      #18e91d 0%,
+      #3ed154 16%,
+      #6d9c77 32%,
+      #9a68ff 50%,
+      #c06f9c 68%,
+      #e77d58 84%,
+      #ff8d38 100%
+    );
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: .65px rgba(1, 4, 2, .66);
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.075),
+    0 2px 0 rgba(0,0,0,.62),
+    0 6px 12px rgba(0,0,0,.28),
+    0 10px 22px rgba(0,0,0,.16);
+}
+
+/* One-tap return control: cheap gradients, transform + opacity visibility. */
+.gwap-back-to-top {
+  position: fixed;
+  right: 18px;
+  bottom: calc(18px + env(safe-area-inset-bottom));
+  z-index: 96;
+  width: 54px;
+  height: 54px;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  place-items: center;
+  gap: 1px;
+  padding: 9px 8px 7px;
+  border: 1px solid rgba(19,221,19,.28);
+  border-radius: 17px;
+  background:
+    radial-gradient(circle at 32% 18%, rgba(19,221,19,.13), transparent 46%),
+    linear-gradient(145deg, rgba(13,24,16,.97), rgba(4,8,5,.96));
+  color: #9bffa3;
+  box-shadow:
+    inset 0 1px rgba(255,255,255,.08),
+    0 16px 36px rgba(0,0,0,.3),
+    0 0 24px rgba(19,221,19,.055);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translate3d(0, 10px, 0) scale(.96);
+  transition:
+    opacity 220ms ease,
+    transform 220ms cubic-bezier(.2,.8,.2,1),
+    visibility 220ms step-end;
+  contain: layout style paint;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.gwap-back-to-top.is-visible {
+  opacity: .94;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translate3d(0, 0, 0) scale(1);
+  transition:
+    opacity 220ms ease,
+    transform 220ms cubic-bezier(.2,.8,.2,1),
+    visibility 0ms step-start;
+}
+
+.gwap-back-to-top svg {
+  width: 20px;
+  height: 20px;
+}
+
+.gwap-back-to-top span {
+  font-size: 6px;
+  font-weight: 900;
+  letter-spacing: .16em;
+}
+
+.gwap-back-to-top:hover {
+  transform: translate3d(0, -2px, 0) scale(1.02);
+}
+
+.gwap-back-to-top:active {
+  transform: translate3d(0, 0, 0) scale(.96);
+}
+
+.gwap-back-to-top:focus-visible {
+  outline: 2px solid var(--gwap-green);
+  outline-offset: 3px;
+}
+
+@media (hover: none) and (pointer: coarse), (max-width: 820px) {
+  /* Reverse scroll should update chapter state, not replay every section reveal. */
+  .overview-story.gwap-mobile-active .overview-copy,
+  .overview-story.gwap-mobile-active .metrics-glass,
+  .ecosystem-story.gwap-mobile-active .premium-heading,
+  .trust-story.gwap-mobile-active .trust-copy,
+  .roadmap-story.gwap-mobile-active .roadmap-heading,
+  .community-story.gwap-mobile-active .community-panel {
+    animation: none !important;
+  }
+
+  .overview-story.gwap-mobile-entering .overview-copy,
+  .overview-story.gwap-mobile-entering .metrics-glass,
+  .ecosystem-story.gwap-mobile-entering .premium-heading,
+  .trust-story.gwap-mobile-entering .trust-copy,
+  .roadmap-story.gwap-mobile-entering .roadmap-heading,
+  .community-story.gwap-mobile-entering .community-panel {
+    animation: gwapHomepageChapterIn 500ms cubic-bezier(.2,.8,.2,1) both !important;
+  }
+
+  .overview-story.gwap-mobile-entering .metrics-glass {
+    animation-delay: 70ms !important;
+  }
+
+  .gwap-back-to-top {
+    right: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    width: 48px;
+    height: 48px;
+    padding: 7px 7px 6px;
+    border-radius: 15px;
+    box-shadow:
+      inset 0 1px rgba(255,255,255,.07),
+      0 12px 28px rgba(0,0,0,.28);
+  }
+
+  .gwap-back-to-top:hover {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  .gwap-back-to-top:active {
+    transform: translate3d(0, 0, 0) scale(.95);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gwap-back-to-top {
+    transition: none !important;
+  }
+
+  .overview-story.gwap-mobile-entering .overview-copy,
+  .overview-story.gwap-mobile-entering .metrics-glass,
+  .ecosystem-story.gwap-mobile-entering .premium-heading,
+  .trust-story.gwap-mobile-entering .trust-copy,
+  .roadmap-story.gwap-mobile-entering .roadmap-heading,
+  .community-story.gwap-mobile-entering .community-panel {
+    animation: none !important;
+  }
+}

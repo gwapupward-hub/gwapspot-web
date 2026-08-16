@@ -1,3 +1,4 @@
+import { BackToTopButton } from "./components/back-to-top-button";
 import { CinematicHome } from "./components/cinematic-home";
 import { MobileCinematicFlow } from "./components/mobile-cinematic-flow";
 import { ScrollDirector } from "./components/scroll-director";
@@ -8,6 +9,7 @@ export default function Home() {
       <ScrollDirector />
       <MobileCinematicFlow />
       <CinematicHome />
+      <BackToTopButton />
     </>
   );
 }

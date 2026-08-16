@@ -12,11 +12,13 @@ const mobileChapters = [
 ] as const;
 
 const MOBILE_CINEMATIC_QUERY = "(hover: none) and (pointer: coarse), (max-width: 820px)";
+const ENTRY_DURATION_MS = 620;
 
 export function MobileCinematicFlow() {
   const [enabled, setEnabled] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const activeIndexRef = useRef(0);
+  const seenChaptersRef = useRef(new Set<number>());
 
   useEffect(() => {
     const mobile = window.matchMedia(MOBILE_CINEMATIC_QUERY);
@@ -29,36 +31,77 @@ export function MobileCinematicFlow() {
     if (!main || sections.length === 0) return;
 
     let observer: IntersectionObserver | null = null;
+    let evaluationFrame = 0;
+    const entryTimers = new Map<HTMLElement, number>();
+
+    const clearEntryTimer = (section: HTMLElement) => {
+      const timer = entryTimers.get(section);
+      if (timer !== undefined) {
+        window.clearTimeout(timer);
+        entryTimers.delete(section);
+      }
+    };
 
     const clearClasses = () => {
       main.classList.remove("mobile-cinematic-flow");
       sections.forEach((section) => {
-        section.classList.remove("gwap-mobile-active", "gwap-mobile-past");
+        clearEntryTimer(section);
+        section.classList.remove("gwap-mobile-active", "gwap-mobile-past", "gwap-mobile-entering");
       });
+      seenChaptersRef.current.clear();
       delete document.documentElement.dataset.gwapMobileChapter;
     };
 
-    const activate = (index: number) => {
-      if (index < 0 || index >= sections.length) return;
+    const activate = (index: number, animateEntry = true) => {
+      if (index < 0 || index >= sections.length || index === activeIndexRef.current && sections[index]?.classList.contains("gwap-mobile-active")) return;
+
+      const firstVisit = !seenChaptersRef.current.has(index);
       activeIndexRef.current = index;
       setActiveIndex(index);
       document.documentElement.dataset.gwapMobileChapter = mobileChapters[index]?.id ?? "top";
 
       sections.forEach((section, sectionIndex) => {
-        section.classList.toggle("gwap-mobile-active", sectionIndex === index);
+        const isActive = sectionIndex === index;
+        section.classList.toggle("gwap-mobile-active", isActive);
         section.classList.toggle("gwap-mobile-past", sectionIndex < index);
+
+        if (!isActive) {
+          clearEntryTimer(section);
+          section.classList.remove("gwap-mobile-entering");
+        }
       });
+
+      const activeSection = sections[index];
+      if (activeSection && firstVisit && animateEntry) {
+        activeSection.classList.add("gwap-mobile-entering");
+        clearEntryTimer(activeSection);
+        const timer = window.setTimeout(() => {
+          activeSection.classList.remove("gwap-mobile-entering");
+          entryTimers.delete(activeSection);
+        }, ENTRY_DURATION_MS);
+        entryTimers.set(activeSection, timer);
+      }
+
+      seenChaptersRef.current.add(index);
+      window.dispatchEvent(
+        new CustomEvent("gwap:mobilechapterchange", {
+          detail: { id: mobileChapters[index]?.id ?? "top", index },
+        }),
+      );
     };
 
-    const findInitialChapter = () => {
-      const focusLine = Math.max(window.innerHeight, 1) * 0.48;
-      let nearestIndex = 0;
+    const findChapterAtFocusLine = () => {
+      const focusLine = Math.max(window.innerHeight, 1) * 0.46;
+      let nearestIndex = activeIndexRef.current;
       let nearestDistance = Number.POSITIVE_INFINITY;
 
       sections.forEach((section, index) => {
         const rect = section.getBoundingClientRect();
-        const center = rect.top + rect.height / 2;
-        const distance = Math.abs(center - focusLine);
+        let distance = 0;
+
+        if (rect.top > focusLine) distance = rect.top - focusLine;
+        else if (rect.bottom < focusLine) distance = focusLine - rect.bottom;
+
         if (distance < nearestDistance) {
           nearestDistance = distance;
           nearestIndex = index;
@@ -68,9 +111,24 @@ export function MobileCinematicFlow() {
       return nearestIndex;
     };
 
+    const evaluateChapter = () => {
+      evaluationFrame = 0;
+      const nextIndex = findChapterAtFocusLine();
+      if (nextIndex !== activeIndexRef.current) activate(nextIndex);
+    };
+
+    const scheduleEvaluation = () => {
+      if (document.hidden || evaluationFrame) return;
+      evaluationFrame = window.requestAnimationFrame(evaluateChapter);
+    };
+
     const teardownObserver = () => {
       observer?.disconnect();
       observer = null;
+      if (evaluationFrame) {
+        window.cancelAnimationFrame(evaluationFrame);
+        evaluationFrame = 0;
+      }
     };
 
     const configure = () => {
@@ -82,40 +140,38 @@ export function MobileCinematicFlow() {
       if (!shouldEnable) return;
 
       main.classList.add("mobile-cinematic-flow");
-      activate(findInitialChapter());
+      const initialIndex = findChapterAtFocusLine();
+      activeIndexRef.current = -1;
+      activate(initialIndex, false);
 
       observer = new IntersectionObserver(
-        (entries) => {
-          const visible = entries.filter((entry) => entry.isIntersecting);
-          if (visible.length === 0) return;
-
-          const focusLine = Math.max(window.innerHeight, 1) * 0.46;
-          const nearest = visible.reduce((best, entry) => {
-            const center = entry.boundingClientRect.top + entry.boundingClientRect.height / 2;
-            const distance = Math.abs(center - focusLine);
-            return distance < best.distance ? { entry, distance } : best;
-          }, { entry: visible[0], distance: Number.POSITIVE_INFINITY });
-
-          const index = sections.indexOf(nearest.entry.target as HTMLElement);
-          if (index !== -1 && index !== activeIndexRef.current) activate(index);
-        },
+        scheduleEvaluation,
         {
-          rootMargin: "-18% 0px -34% 0px",
-          threshold: [0.01, 0.18, 0.42],
+          rootMargin: "-38% 0px -38% 0px",
+          threshold: [0.01, 0.35],
         },
       );
 
       sections.forEach((section) => observer?.observe(section));
     };
 
+    const handleResize = () => scheduleEvaluation();
+    const handleVisibilityChange = () => {
+      if (!document.hidden) scheduleEvaluation();
+    };
+
     configure();
     mobile.addEventListener("change", configure);
     reduceMotion.addEventListener("change", configure);
+    window.addEventListener("resize", handleResize, { passive: true });
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       teardownObserver();
       mobile.removeEventListener("change", configure);
       reduceMotion.removeEventListener("change", configure);
+      window.removeEventListener("resize", handleResize);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       clearClasses();
     };
   }, []);
