@@ -5,6 +5,7 @@ import {
   isDuplicateDailyIdea,
   parseDailyIdeaCategory,
   parseGeneratedDailyIdea,
+  resolveDailyIdeasProvider,
   selectReusableDailyIdea,
 } from "./daily-ideas-core.ts";
 
@@ -57,6 +58,35 @@ test("supports the launch category aliases", () => {
   assert.equal(parseDailyIdeaCategory("ai-agents"), "ai");
   assert.equal(parseDailyIdeaCategory("creator"), "creator-economy");
   assert.equal(parseDailyIdeaCategory("anything"), "general");
+});
+
+test("prefers the spec-standard OpenAI provider and applies its balanced default model", () => {
+  const configuration = resolveDailyIdeasProvider({
+    openAiApiKey: "openai-key",
+    anthropicApiKey: "anthropic-key",
+  });
+  assert.equal(configuration.configured, true);
+  assert.equal(configuration.provider, "openai");
+  assert.equal(configuration.apiKey, "openai-key");
+  assert.equal(configuration.model, "gpt-5.6-terra");
+  assert.equal(configuration.modelSource, "default");
+});
+
+test("falls back to Anthropic and honors an explicit model override", () => {
+  const configuration = resolveDailyIdeasProvider({
+    anthropicApiKey: "anthropic-key",
+    configuredModel: "claude-custom",
+  });
+  assert.equal(configuration.provider, "anthropic");
+  assert.equal(configuration.model, "claude-custom");
+  assert.equal(configuration.modelSource, "environment");
+});
+
+test("reports an unconfigured provider without leaking or inventing credentials", () => {
+  const configuration = resolveDailyIdeasProvider({});
+  assert.equal(configuration.configured, false);
+  assert.equal(configuration.provider, null);
+  assert.equal(configuration.apiKey, undefined);
 });
 
 test("detects substantially similar ideas and selects unused inventory", () => {
