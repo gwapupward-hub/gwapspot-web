@@ -1,13 +1,11 @@
 import { BackToTopButton } from "./components/back-to-top-button";
 import { CinematicHome } from "./components/cinematic-home";
-import { MobileCinematicFlow } from "./components/mobile-cinematic-flow";
-import { ScrollDirector } from "./components/scroll-director";
+import { UnifiedCinematicFlow } from "./components/unified-cinematic-flow";
 
 export default function Home() {
   return (
     <>
-      <ScrollDirector />
-      <MobileCinematicFlow />
+      <UnifiedCinematicFlow />
       <CinematicHome />
       <BackToTopButton />
     </>
