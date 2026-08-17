@@ -54,6 +54,45 @@
   display: none !important;
 }
 
+/* The ecosystem graph keeps its information and interactivity, but not its expensive compositor effects. */
+.cinematic-home.unified-cinematic-flow .gwap-ecosystem-graph {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  contain: layout style paint;
+}
+
+.cinematic-home.unified-cinematic-flow .gwap-ecosystem-graph::before {
+  display: none !important;
+}
+
+.cinematic-home.unified-cinematic-flow .gwap-graph-core-ring,
+.cinematic-home.unified-cinematic-flow .gwap-graph-edge-signal {
+  animation: none !important;
+}
+
+.cinematic-home.unified-cinematic-flow .gwap-graph-edge-signal {
+  filter: none !important;
+}
+
+.cinematic-home.unified-cinematic-flow .gwap-graph-node {
+  transform: translate(-50%, -50%);
+  will-change: auto !important;
+  transition:
+    opacity 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.cinematic-home.unified-cinematic-flow .gwap-graph-node:hover,
+.cinematic-home.unified-cinematic-flow .gwap-graph-node:focus-visible,
+.cinematic-home.unified-cinematic-flow .gwap-graph-node.is-primary {
+  transform: translate(-50%, -50%);
+}
+
+.cinematic-home.unified-cinematic-flow .gwap-graph-node.is-neighbor {
+  transform: translate(-50%, -50%);
+}
+
 /* The ecosystem was the heaviest chapter. Paint groups only as they approach view. */
 .cinematic-home.unified-cinematic-flow .ecosystem-group {
   content-visibility: auto;
@@ -98,7 +137,9 @@ html[data-gwap-chapter="ecosystem"] .cinematic-home.unified-cinematic-flow #ecos
   .cinematic-home.unified-cinematic-flow .overview-foundation > a,
   .cinematic-home.unified-cinematic-flow .hero-utility,
   .cinematic-home.unified-cinematic-flow .metrics-glass,
-  .cinematic-home.unified-cinematic-flow .community-panel {
+  .cinematic-home.unified-cinematic-flow .community-panel,
+  .cinematic-home.unified-cinematic-flow .gwap-ecosystem-graph,
+  .cinematic-home.unified-cinematic-flow .gwap-graph-node {
     box-shadow: inset 0 1px rgba(255,255,255,.06), 0 12px 30px rgba(0,0,0,.2) !important;
   }
 
