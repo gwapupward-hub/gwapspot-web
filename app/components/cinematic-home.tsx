@@ -1,10 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState, type ChangeEvent, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { formatBuildLogDate, latestBuildLogEntry } from "../lib/changelog";
-import { ecosystemProductGroups, ecosystemProductIndexBySlug, ecosystemProducts, getProductDestination, isExternalProductDestination, socialLinks } from "../lib/ecosystem";
+import { ecosystemProductGroups, ecosystemProductIndexBySlug, ecosystemProducts, getProductDestination, socialLinks } from "../lib/ecosystem";
 import { CountUp } from "./count-up";
 import { GwapEcosystemGraph } from "./gwap-ecosystem-graph";
 import { HomeUtility } from "./home-utility";
@@ -26,6 +25,34 @@ function Icon({ name }: { name: IconName }) {
     <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
       {paths[name]}
     </svg>
+  );
+}
+
+function StaticLogo({
+  src,
+  alt = "",
+  width,
+  height,
+  className,
+  priority = false,
+}: {
+  src: string;
+  alt?: string;
+  width: number;
+  height: number;
+  className?: string;
+  priority?: boolean;
+}) {
+  return (
+    <img
+      src={src}
+      alt={alt}
+      width={width}
+      height={height}
+      className={className}
+      loading={priority ? "eager" : "lazy"}
+      decoding="async"
+    />
   );
 }
 
@@ -110,7 +137,7 @@ export function CinematicHome() {
 
       <header className="cinematic-nav">
         <Link className="cinematic-brand" href="#top" aria-label="GWAPSpot home">
-          <span className="cinematic-brand-mark"><Image src="/logos/gwap-agent-clear.svg" alt="" width={44} height={44} priority /></span>
+          <span className="cinematic-brand-mark"><StaticLogo src="/logos/gwap-agent-clear.svg" width={44} height={44} priority /></span>
           <span><strong>GWAP</strong><small>SPOT</small></span>
         </Link>
 
@@ -135,7 +162,7 @@ export function CinematicHome() {
           <div className="search-panel">
             <div className="search-field"><Icon name="search" /><input ref={searchInputRef} aria-label="Search GWAP products" value={query} onChange={(event: ChangeEvent<HTMLInputElement>) => setQuery(event.target.value)} placeholder="Search GNS, GwapScore, DIMI…" /><button type="button" onClick={() => setSearchOpen(false)} aria-label="Close search"><Icon name="close" /></button></div>
             <div className="search-results">
-              {searchResults.map((product) => <Link href={`/ecosystem/${product.slug}`} key={product.slug} onClick={() => setSearchOpen(false)}><span><small>{product.eyebrow}</small><strong>{product.name}</strong></span><Icon name="arrow" /></Link>)}
+              {searchResults.map((product) => <a href={`/ecosystem/${product.slug}`} key={product.slug} onClick={() => setSearchOpen(false)} data-native-product-link><span><small>{product.eyebrow}</small><strong>{product.name}</strong></span><Icon name="arrow" /></a>)}
               {searchResults.length === 0 ? <p>No products match that search.</p> : null}
             </div>
           </div>
@@ -158,7 +185,7 @@ export function CinematicHome() {
           <div className="emblem-halo halo-two" />
           <div className="emblem-ring ring-a"><span>GNS</span><span>DIMI</span></div>
           <div className="emblem-ring ring-b"><span>SCORE</span><span>AI</span></div>
-          <Link className="emblem-core emblem-core-link" href="/app" aria-label="Open GWAP OS"><Image src="/logos/gwap-agent-clear.svg" alt="GWAP" width={280} height={280} priority /></Link>
+          <Link className="emblem-core emblem-core-link" href="/app" aria-label="Open GWAP OS"><StaticLogo src="/logos/gwap-agent-clear.svg" alt="GWAP" width={280} height={280} priority /></Link>
           <div className="emblem-caption"><span>GWAP CORE</span><small>ECOSYSTEM ONLINE</small></div>
         </div>
 
@@ -182,28 +209,28 @@ export function CinematicHome() {
         </div>
 
         <div className="overview-foundation" aria-label="GWAP core infrastructure">
-          <Link href="/ecosystem/gns" className="overview-foundation-card">
+          <a href="/ecosystem/gns" className="overview-foundation-card" data-native-product-link>
             <span>01 / IDENTITY</span>
-            <div><Image src="/logos/gns.webp" alt="" width={42} height={42} /><strong>GNS</strong></div>
+            <div><StaticLogo src="/logos/gns.webp" width={42} height={42} priority /><strong>GNS</strong></div>
             <p>.gwap names and portable wallet identity.</p>
             <small>Identity foundation <Icon name="arrow" /></small>
-          </Link>
-          <Link href="/ecosystem/gwapscore" className="overview-foundation-card">
+          </a>
+          <a href="/ecosystem/gwapscore" className="overview-foundation-card" data-native-product-link>
             <span>02 / REPUTATION</span>
-            <div><Image src="/logos/gwapscore.svg" alt="" width={42} height={42} /><strong>GwapScore</strong></div>
+            <div><StaticLogo src="/logos/gwapscore.svg" width={42} height={42} priority /><strong>GwapScore</strong></div>
             <p>Explainable 300–900 reputation and wallet intelligence.</p>
             <small>Trust foundation <Icon name="arrow" /></small>
-          </Link>
-          <Link href="/app" className="overview-os-entry">
+          </a>
+          <a href="/app" className="overview-os-entry" data-native-nav>
             <span>GWAP OS</span>
             <strong>Your identity, reputation, apps, and activity in one operating layer.</strong>
             <small>Enter the operating system <Icon name="arrow" /></small>
-          </Link>
+          </a>
         </div>
 
         <div className="depth-window">
           <div className="depth-grid" />
-          <div className="depth-orbit"><div className="depth-core"><Image src="/logos/gwap-agent-clear.svg" alt="" width={90} height={90} /></div>{["IDENTITY", "REPUTATION", "COMMERCE", "CREATIVITY", "INTELLIGENCE"].map((label, index) => <span style={{ "--node-index": index } as CSSProperties} key={label}>{label}</span>)}</div>
+          <div className="depth-orbit"><div className="depth-core"><StaticLogo src="/logos/gwap-agent-clear.svg" width={90} height={90} /></div>{["IDENTITY", "REPUTATION", "COMMERCE", "CREATIVITY", "INTELLIGENCE"].map((label, index) => <span style={{ "--node-index": index } as CSSProperties} key={label}>{label}</span>)}</div>
           <div className="depth-label"><small>CONNECTED INFRASTRUCTURE</small><strong>Purpose compounds<br />when systems connect.</strong></div>
         </div>
       </section>
@@ -241,13 +268,12 @@ export function CinematicHome() {
                   const productIndex = ecosystemProductIndexBySlug.get(product.slug) ?? 0;
                   const isFoundationProduct = product.slug === "gns" || product.slug === "gwapscore";
                   return (
-                    <Link className={`premium-product-card accent-${product.accent}`} href={getProductDestination(product)} target={isExternalProductDestination(product) ? "_blank" : undefined} rel={isExternalProductDestination(product) ? "noreferrer" : undefined} data-gwap-product={product.slug} key={product.slug}>
-                      <div className="card-reflection" />
+                    <a className={`premium-product-card accent-${product.accent}`} href={getProductDestination(product)} data-gwap-product={product.slug} data-native-product-link key={product.slug}>
                       <div className="product-card-header"><span>{String(productIndex + 1).padStart(2, "0")}</span><small>{product.status}</small></div>
-                      <div className="product-glyph"><i />{isFoundationProduct ? <Image className="product-glyph-logo" src={product.logo} alt="" width={46} height={46} /> : <b>{product.name.slice(0, 2).toUpperCase()}</b>}</div>
+                      <div className="product-glyph"><i />{isFoundationProduct ? <StaticLogo className="product-glyph-logo" src={product.logo} width={46} height={46} /> : <b>{product.name.slice(0, 2).toUpperCase()}</b>}</div>
                       <div className="product-copy"><span className="product-category">{product.eyebrow}</span><h4>{product.name}</h4><p>{product.summary}</p></div>
                       <div className="product-card-footer"><span>Explore product</span><Icon name="arrow" /></div>
-                    </Link>
+                    </a>
                   );
                 })}
               </div>
@@ -300,7 +326,7 @@ export function CinematicHome() {
       </section>
 
       <footer className="cinematic-footer">
-        <div className="footer-lockup"><Image src="/logos/gwap-agent-clear.svg" alt="" width={42} height={42} /><span><strong>GWAP</strong><small>GRIND WITH A PURPOSE</small></span></div>
+        <div className="footer-lockup"><StaticLogo src="/logos/gwap-agent-clear.svg" width={42} height={42} /><span><strong>GWAP</strong><small>GRIND WITH A PURPOSE</small></span></div>
         <div className="footer-nav"><Link href="/ecosystem">Ecosystem</Link><Link href="/about">About</Link><Link href="/roadmap">Roadmap</Link><Link href="/changelog">Build Log</Link><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link></div>
         <small>© {new Date().getFullYear()} GWAP. The future rewards purpose.</small>
       </footer>
