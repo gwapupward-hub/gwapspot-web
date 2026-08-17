@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 
-const mobileChapters = [
+const chapters = [
   { id: "top", label: "Intro" },
   { id: "overview", label: "System" },
   { id: "ecosystem", label: "Ecosystem" },
@@ -11,20 +11,18 @@ const mobileChapters = [
   { id: "community", label: "Community" },
 ] as const;
 
-const MOBILE_CINEMATIC_QUERY = "(hover: none) and (pointer: coarse), (max-width: 820px)";
-const ENTRY_DURATION_MS = 620;
+const ENTRY_DURATION_MS = 520;
 
-export function MobileCinematicFlow() {
-  const [enabled, setEnabled] = useState(false);
+export function UnifiedCinematicFlow() {
+  const [visualsEnabled, setVisualsEnabled] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const activeIndexRef = useRef(0);
   const seenChaptersRef = useRef(new Set<number>());
 
   useEffect(() => {
-    const mobile = window.matchMedia(MOBILE_CINEMATIC_QUERY);
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const main = document.querySelector<HTMLElement>(".cinematic-home");
-    const sections = mobileChapters
+    const sections = chapters
       .map((chapter) => document.getElementById(chapter.id))
       .filter((section): section is HTMLElement => Boolean(section));
 
@@ -43,40 +41,49 @@ export function MobileCinematicFlow() {
     };
 
     const clearClasses = () => {
-      main.classList.remove("mobile-cinematic-flow");
       sections.forEach((section) => {
         clearEntryTimer(section);
-        section.classList.remove("gwap-mobile-active", "gwap-mobile-past", "gwap-mobile-entering");
+        section.classList.remove(
+          "gwap-unified-active",
+          "gwap-unified-past",
+          "gwap-unified-entering",
+        );
       });
       seenChaptersRef.current.clear();
-      delete document.documentElement.dataset.gwapMobileChapter;
+      delete document.documentElement.dataset.gwapChapter;
     };
 
     const activate = (index: number, animateEntry = true) => {
-      if (index < 0 || index >= sections.length || index === activeIndexRef.current && sections[index]?.classList.contains("gwap-mobile-active")) return;
+      if (index < 0 || index >= sections.length) return;
+      if (
+        index === activeIndexRef.current &&
+        sections[index]?.classList.contains("gwap-unified-active")
+      ) {
+        return;
+      }
 
       const firstVisit = !seenChaptersRef.current.has(index);
       activeIndexRef.current = index;
       setActiveIndex(index);
-      document.documentElement.dataset.gwapMobileChapter = mobileChapters[index]?.id ?? "top";
+      document.documentElement.dataset.gwapChapter = chapters[index]?.id ?? "top";
 
       sections.forEach((section, sectionIndex) => {
         const isActive = sectionIndex === index;
-        section.classList.toggle("gwap-mobile-active", isActive);
-        section.classList.toggle("gwap-mobile-past", sectionIndex < index);
+        section.classList.toggle("gwap-unified-active", isActive);
+        section.classList.toggle("gwap-unified-past", sectionIndex < index);
 
         if (!isActive) {
           clearEntryTimer(section);
-          section.classList.remove("gwap-mobile-entering");
+          section.classList.remove("gwap-unified-entering");
         }
       });
 
       const activeSection = sections[index];
-      if (activeSection && firstVisit && animateEntry) {
-        activeSection.classList.add("gwap-mobile-entering");
+      if (activeSection && firstVisit && animateEntry && !reduceMotion.matches) {
+        activeSection.classList.add("gwap-unified-entering");
         clearEntryTimer(activeSection);
         const timer = window.setTimeout(() => {
-          activeSection.classList.remove("gwap-mobile-entering");
+          activeSection.classList.remove("gwap-unified-entering");
           entryTimers.delete(activeSection);
         }, ENTRY_DURATION_MS);
         entryTimers.set(activeSection, timer);
@@ -84,8 +91,8 @@ export function MobileCinematicFlow() {
 
       seenChaptersRef.current.add(index);
       window.dispatchEvent(
-        new CustomEvent("gwap:mobilechapterchange", {
-          detail: { id: mobileChapters[index]?.id ?? "top", index },
+        new CustomEvent("gwap:chapterchange", {
+          detail: { id: chapters[index]?.id ?? "top", index },
         }),
       );
     };
@@ -111,6 +118,11 @@ export function MobileCinematicFlow() {
       return nearestIndex;
     };
 
+    const hashChapterIndex = () => {
+      const id = window.location.hash.replace(/^#/, "");
+      return chapters.findIndex((chapter) => chapter.id === id);
+    };
+
     const evaluateChapter = () => {
       evaluationFrame = 0;
       const nextIndex = findChapterAtFocusLine();
@@ -134,23 +146,18 @@ export function MobileCinematicFlow() {
     const configure = () => {
       teardownObserver();
       clearClasses();
+      main.classList.add("unified-cinematic-flow");
+      setVisualsEnabled(!reduceMotion.matches);
 
-      const shouldEnable = mobile.matches && !reduceMotion.matches;
-      setEnabled(shouldEnable);
-      if (!shouldEnable) return;
-
-      main.classList.add("mobile-cinematic-flow");
-      const initialIndex = findChapterAtFocusLine();
+      const hashedIndex = hashChapterIndex();
+      const initialIndex = hashedIndex >= 0 ? hashedIndex : findChapterAtFocusLine();
       activeIndexRef.current = -1;
       activate(initialIndex, false);
 
-      observer = new IntersectionObserver(
-        scheduleEvaluation,
-        {
-          rootMargin: "-38% 0px -38% 0px",
-          threshold: [0.01, 0.35],
-        },
-      );
+      observer = new IntersectionObserver(scheduleEvaluation, {
+        rootMargin: "-38% 0px -38% 0px",
+        threshold: [0.01, 0.35],
+      });
 
       sections.forEach((section) => observer?.observe(section));
     };
@@ -159,43 +166,56 @@ export function MobileCinematicFlow() {
     const handleVisibilityChange = () => {
       if (!document.hidden) scheduleEvaluation();
     };
+    const handleHashChange = () => {
+      const index = hashChapterIndex();
+      if (index >= 0) activate(index, false);
+      scheduleEvaluation();
+    };
 
     configure();
-    mobile.addEventListener("change", configure);
     reduceMotion.addEventListener("change", configure);
     window.addEventListener("resize", handleResize, { passive: true });
+    window.addEventListener("hashchange", handleHashChange, { passive: true });
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       teardownObserver();
-      mobile.removeEventListener("change", configure);
       reduceMotion.removeEventListener("change", configure);
       window.removeEventListener("resize", handleResize);
+      window.removeEventListener("hashchange", handleHashChange);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       clearClasses();
+      main.classList.remove("unified-cinematic-flow");
     };
   }, []);
 
-  if (!enabled) return null;
+  if (!visualsEnabled) return null;
 
-  const chapter = mobileChapters[activeIndex] ?? mobileChapters[0];
-  const progress = mobileChapters.length > 1 ? activeIndex / (mobileChapters.length - 1) : 0;
-  const railStyle = { "--gwap-mobile-progress": progress } as CSSProperties;
-  const dotStyle = { transform: `translate3d(0, ${Math.round(progress * 76)}px, 0)` } as CSSProperties;
+  const chapter = chapters[activeIndex] ?? chapters[0];
+  const progress = chapters.length > 1 ? activeIndex / (chapters.length - 1) : 0;
+  const railStyle = { "--gwap-unified-progress": progress } as CSSProperties;
+  const dotStyle = {
+    transform: `translate3d(0, ${Math.round(progress * 76)}px, 0)`,
+  } as CSSProperties;
 
   return (
-    <aside className={`gwap-mobile-cinematic is-${chapter.id}`} aria-hidden="true" style={railStyle}>
-      <div className="gwap-mobile-cinematic__orb" />
-      <div className="gwap-mobile-cinematic__pulse" key={`pulse-${chapter.id}`} />
-      <div className="gwap-mobile-cinematic__rail">
-        <span className="gwap-mobile-cinematic__index" key={`index-${chapter.id}`}>
+    <aside
+      className={`gwap-unified-cinematic is-${chapter.id}`}
+      aria-hidden="true"
+      style={railStyle}
+    >
+      <div className="gwap-unified-cinematic__accent" />
+      <div className="gwap-unified-cinematic__rail">
+        <span className="gwap-unified-cinematic__index" key={`index-${chapter.id}`}>
           {String(activeIndex + 1).padStart(2, "0")}
         </span>
-        <span className="gwap-mobile-cinematic__track">
+        <span className="gwap-unified-cinematic__track">
           <i />
           <b style={dotStyle} />
         </span>
-        <strong className="gwap-mobile-cinematic__label" key={`label-${chapter.id}`}>{chapter.label}</strong>
+        <strong className="gwap-unified-cinematic__label" key={`label-${chapter.id}`}>
+          {chapter.label}
+        </strong>
       </div>
     </aside>
   );
