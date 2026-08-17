@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 700">
+<g fill="none" stroke="currentColor" stroke-width="38" stroke-linejoin="round" stroke-linecap="square">
+  <path d="M150 180 H360 L400 135 H600 L640 180 H850 L925 255 V500 L850 575 H150 L75 500 V255 Z"/>
+  <path d="M390 135 L430 55 L500 120 L570 55 L610 135"/>
+</g>
+<g fill="currentColor">
+  <rect x="105" y="295" width="42" height="20" rx="5"/><rect x="105" y="340" width="42" height="20" rx="5"/><rect x="105" y="385" width="42" height="20" rx="5"/>
+  <rect x="853" y="295" width="42" height="20" rx="5"/><rect x="853" y="340" width="42" height="20" rx="5"/><rect x="853" y="385" width="42" height="20" rx="5"/>
+  <path d="M240 245 H430 L395 285 H270 Z"/>
+  <path d="M225 260 L265 300 V430 L225 470 Z"/>
+  <path d="M240 485 H430 L395 445 H270 Z"/>
+  <path d="M335 350 H440 L410 390 H335 Z"/>
+  <path d="M400 365 L440 350 V465 L400 445 Z"/>
+  <path d="M535 245 H735 L700 285 H565 Z"/>
+  <path d="M520 260 L560 300 V350 L520 390 Z"/>
+  <path d="M535 350 H720 L690 390 H565 Z"/>
+  <path d="M695 365 L735 350 V430 L695 470 Z"/>
+  <path d="M535 485 H720 L690 445 H565 Z"/>
+  <rect x="450" y="520" width="24" height="18" rx="4"/>
+  <rect x="488" y="508" width="24" height="30" rx="4"/>
+  <rect x="526" y="494" width="24" height="44" rx="4"/>
+</g>
+</svg>
