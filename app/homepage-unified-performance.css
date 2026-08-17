@@ -1,0 +1,131 @@
+/* GWAP homepage universal performance budget.
+ * The homepage now uses one mobile-first rendering strategy on every viewport.
+ */
+
+.cinematic-home.unified-cinematic-flow {
+  perspective: none !important;
+}
+
+/* Retire desktop-only scroll compositor behavior even if stale attributes/classes remain. */
+.cinematic-home.unified-cinematic-flow.scroll-directed,
+.cinematic-home.unified-cinematic-flow.scroll-directed .story-section[data-scroll-state] {
+  perspective: none !important;
+}
+
+.cinematic-home.unified-cinematic-flow .story-section[data-scroll-state] {
+  opacity: 1 !important;
+  filter: none !important;
+  transform: none !important;
+  backface-visibility: visible !important;
+  will-change: auto !important;
+}
+
+/* Keep premium lighting static instead of running large background timelines. */
+.cinematic-home.unified-cinematic-flow .living-background .aurora,
+.cinematic-home.unified-cinematic-flow .living-background .light-streak,
+.cinematic-home.unified-cinematic-flow .living-background .noise-layer,
+.cinematic-home.unified-cinematic-flow .hero-light,
+.cinematic-home.unified-cinematic-flow .emblem-halo,
+.cinematic-home.unified-cinematic-flow .emblem-ring,
+.cinematic-home.unified-cinematic-flow .depth-orbit,
+.cinematic-home.unified-cinematic-flow .community-glow {
+  animation: none !important;
+  will-change: auto !important;
+}
+
+/* Avoid promoting every visual child to its own compositor surface. */
+.cinematic-home.unified-cinematic-flow .premium-product-card,
+.cinematic-home.unified-cinematic-flow .ecosystem-group,
+.cinematic-home.unified-cinematic-flow .metrics-glass,
+.cinematic-home.unified-cinematic-flow .overview-foundation > a,
+.cinematic-home.unified-cinematic-flow .depth-window,
+.cinematic-home.unified-cinematic-flow .community-panel,
+.cinematic-home.unified-cinematic-flow .hero-utility,
+.cinematic-home.unified-cinematic-flow .layer-stack,
+.cinematic-home.unified-cinematic-flow .phase-card {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  filter: none !important;
+  will-change: auto !important;
+}
+
+.cinematic-home.unified-cinematic-flow .card-reflection,
+.cinematic-home.unified-cinematic-flow .hero-utility-reflection {
+  display: none !important;
+}
+
+/* The ecosystem was the heaviest chapter. Paint groups only as they approach view. */
+.cinematic-home.unified-cinematic-flow .ecosystem-group {
+  content-visibility: auto;
+  contain: layout style paint;
+  contain-intrinsic-size: auto 760px;
+}
+
+.cinematic-home.unified-cinematic-flow .premium-product-grid {
+  contain: layout style;
+}
+
+.cinematic-home.unified-cinematic-flow .premium-product-card {
+  transform: none;
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease,
+    opacity 180ms ease;
+}
+
+.cinematic-home.unified-cinematic-flow .premium-product-card:hover {
+  transform: none;
+}
+
+/* Offscreen chapters keep their decorative timelines paused without JS scroll loops. */
+.cinematic-home.unified-cinematic-flow .story-section:not(.gwap-unified-active) .depth-orbit,
+.cinematic-home.unified-cinematic-flow .story-section:not(.gwap-unified-active) .emblem-ring,
+.cinematic-home.unified-cinematic-flow .story-section:not(.gwap-unified-active) .community-glow,
+.cinematic-home.unified-cinematic-flow .story-section:not(.gwap-unified-active) .premium-product-card::before,
+.cinematic-home.unified-cinematic-flow .story-section:not(.gwap-unified-active) .premium-product-card::after {
+  animation-play-state: paused !important;
+}
+
+/* Hash navigation must land cleanly before any first-visit transition is considered. */
+html[data-gwap-chapter="ecosystem"] .cinematic-home.unified-cinematic-flow #ecosystem {
+  scroll-margin-top: 74px;
+}
+
+/* Touch devices use static surfaces and cheap press feedback. */
+@media (hover: none) and (pointer: coarse), (max-width: 820px) {
+  .cinematic-home.unified-cinematic-flow .premium-product-card,
+  .cinematic-home.unified-cinematic-flow .ecosystem-group,
+  .cinematic-home.unified-cinematic-flow .overview-foundation > a,
+  .cinematic-home.unified-cinematic-flow .hero-utility,
+  .cinematic-home.unified-cinematic-flow .metrics-glass,
+  .cinematic-home.unified-cinematic-flow .community-panel {
+    box-shadow: inset 0 1px rgba(255,255,255,.06), 0 12px 30px rgba(0,0,0,.2) !important;
+  }
+
+  .cinematic-home.unified-cinematic-flow .premium-product-card:active,
+  .cinematic-home.unified-cinematic-flow .overview-foundation > a:active {
+    transform: scale(.992) !important;
+  }
+
+  .cinematic-home.unified-cinematic-flow .depth-orbit,
+  .cinematic-home.unified-cinematic-flow .emblem-ring,
+  .cinematic-home.unified-cinematic-flow .emblem-halo {
+    transform: none !important;
+  }
+}
+
+/* Desktop is a responsive enhancement of the same stack, not another motion engine. */
+@media (min-width: 821px) {
+  .cinematic-home.unified-cinematic-flow .premium-product-card:hover,
+  .cinematic-home.unified-cinematic-flow .overview-foundation > a:hover {
+    border-color: rgba(19,221,19,.28);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cinematic-home.unified-cinematic-flow *,
+  .cinematic-home.unified-cinematic-flow *::before,
+  .cinematic-home.unified-cinematic-flow *::after {
+    scroll-behavior: auto !important;
+  }
+}
