@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -65,21 +64,26 @@ export default async function ProductPage({ params }: ProductPageProps) {
         className={`product-hero accent-${product.accent}`}
         data-gwap-product-hero={product.slug}
       >
+        <nav className="product-route-nav" aria-label="Product page navigation">
+          <a href="/" data-native-nav>← Home</a>
+          <a href="/ecosystem" data-native-nav>Back to Ecosystem</a>
+        </nav>
+
         <div className="product-hero-meta">
-          <Link href="/ecosystem">GWAP ECOSYSTEM</Link>
+          <a href="/ecosystem" data-native-nav>GWAP ECOSYSTEM</a>
           <span>/</span>
           <span>{product.name}</span>
         </div>
         <div className="product-hero-grid">
           <div>
             <div className={`product-hero-logo product-hero-logo--${product.slug}`}>
-              <Image
+              <img
                 src={product.logo}
                 alt={`${product.name} logo`}
                 width={180}
                 height={180}
-                priority
-                unoptimized
+                loading="eager"
+                decoding="async"
               />
             </div>
             <span className="product-eyebrow">{product.eyebrow}</span>
@@ -100,9 +104,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
                   View development roadmap <ArrowIcon />
                 </Link>
               )}
-              <Link className="secondary-button" href="/ecosystem">
-                All products
-              </Link>
+              <a className="secondary-button" href="/ecosystem" data-native-nav>
+                ← Back to Ecosystem
+              </a>
             </div>
           </div>
           <aside className="product-brief">
@@ -172,14 +176,13 @@ export default async function ProductPage({ params }: ProductPageProps) {
             <h2>Next: {nextProduct.name}</h2>
             <p>{nextProduct.summary}</p>
           </div>
-          <Link
+          <a
             className="primary-button"
             href={`/ecosystem/${nextProduct.slug}`}
-            data-gwap-product={nextProduct.slug}
-            data-gwap-product-source="sequence"
+            data-native-product-link
           >
             View {nextProduct.name} <ArrowIcon />
-          </Link>
+          </a>
         </div>
       </section>
     </PageShell>
