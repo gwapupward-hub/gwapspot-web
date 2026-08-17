@@ -1,0 +1,203 @@
+/* Unified GWAP homepage motion system.
+ * One lightweight chapter engine for touch, desktop, Safari, and Chromium.
+ * Motion is bounded to transform + opacity; no fullscreen animated compositor layer.
+ */
+
+.story-chapters {
+  display: none !important;
+}
+
+.cinematic-home.unified-cinematic-flow .story-section {
+  opacity: 1 !important;
+  filter: none !important;
+  transform: none !important;
+  will-change: auto !important;
+}
+
+.cinematic-home.unified-cinematic-flow .story-section .section-kicker,
+.cinematic-home.unified-cinematic-flow .story-section .eyebrow-premium {
+  transition:
+    opacity 360ms cubic-bezier(.2,.8,.2,1),
+    transform 420ms cubic-bezier(.2,.8,.2,1);
+}
+
+.cinematic-home.unified-cinematic-flow .story-section:not(.gwap-unified-active) .section-kicker,
+.cinematic-home.unified-cinematic-flow .story-section:not(.gwap-unified-active) .eyebrow-premium {
+  opacity: .64;
+  transform: translate3d(0, 8px, 0);
+}
+
+.cinematic-home.unified-cinematic-flow .story-section.gwap-unified-active .section-kicker,
+.cinematic-home.unified-cinematic-flow .story-section.gwap-unified-active .eyebrow-premium {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+.gwap-unified-cinematic {
+  position: fixed;
+  z-index: 92;
+  top: 50%;
+  right: 12px;
+  width: 46px;
+  height: 164px;
+  pointer-events: none;
+  transform: translate3d(0, -50%, 0);
+  contain: layout style paint;
+}
+
+.gwap-unified-cinematic__accent {
+  position: absolute;
+  top: -12px;
+  right: -18px;
+  width: 88px;
+  height: 88px;
+  border-radius: 999px;
+  opacity: .13;
+  background: radial-gradient(circle, rgba(19,221,19,.5), rgba(19,221,19,.12) 42%, transparent 72%);
+  transform: translate3d(0, 0, 0) scale(.94);
+  transition:
+    transform 460ms cubic-bezier(.2,.8,.2,1),
+    opacity 320ms ease;
+}
+
+.gwap-unified-cinematic.is-ecosystem .gwap-unified-cinematic__accent,
+.gwap-unified-cinematic.is-community .gwap-unified-cinematic__accent {
+  background: radial-gradient(circle, rgba(140,92,255,.45), rgba(19,221,19,.09) 46%, transparent 72%);
+}
+
+.gwap-unified-cinematic.is-trust .gwap-unified-cinematic__accent {
+  background: radial-gradient(circle, rgba(255,138,43,.42), rgba(19,221,19,.08) 46%, transparent 72%);
+}
+
+.gwap-unified-cinematic.is-overview .gwap-unified-cinematic__accent,
+.gwap-unified-cinematic.is-roadmap .gwap-unified-cinematic__accent {
+  transform: translate3d(-8px, 8px, 0) scale(1);
+  opacity: .16;
+}
+
+.gwap-unified-cinematic__rail {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 8px;
+  color: rgba(238,255,239,.82);
+  text-transform: uppercase;
+  letter-spacing: .12em;
+}
+
+.gwap-unified-cinematic__index {
+  font-size: 9px;
+  font-weight: 750;
+  animation: gwapUnifiedReadout 320ms cubic-bezier(.2,.8,.2,1) both;
+}
+
+.gwap-unified-cinematic__track {
+  position: relative;
+  width: 1px;
+  height: 82px;
+  background: rgba(255,255,255,.13);
+}
+
+.gwap-unified-cinematic__track i {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #13dd13, rgba(140,92,255,.72), rgba(255,138,43,.7));
+  transform: scaleY(var(--gwap-unified-progress, 0));
+  transform-origin: top center;
+  transition: transform 360ms cubic-bezier(.2,.8,.2,1);
+}
+
+.gwap-unified-cinematic__track b {
+  position: absolute;
+  top: 0;
+  left: -3px;
+  width: 7px;
+  height: 7px;
+  border: 1px solid rgba(214,255,216,.88);
+  border-radius: 999px;
+  background: #071008;
+  box-shadow: 0 0 0 2px rgba(19,221,19,.08);
+  transition: transform 360ms cubic-bezier(.2,.8,.2,1);
+}
+
+.gwap-unified-cinematic__label {
+  writing-mode: vertical-rl;
+  font-size: 8px;
+  font-weight: 750;
+  opacity: .72;
+  animation: gwapUnifiedReadout 320ms cubic-bezier(.2,.8,.2,1) both;
+}
+
+@keyframes gwapUnifiedReadout {
+  from { opacity: 0; transform: translate3d(0, 5px, 0); }
+  to { opacity: .82; transform: translate3d(0, 0, 0); }
+}
+
+/* First-visit chapter entrances. Reverse scrolling only updates state. */
+.cinematic-home.unified-cinematic-flow .gwap-unified-entering .overview-copy,
+.cinematic-home.unified-cinematic-flow .gwap-unified-entering .metrics-glass,
+.cinematic-home.unified-cinematic-flow .gwap-unified-entering .premium-heading,
+.cinematic-home.unified-cinematic-flow .gwap-unified-entering .trust-copy,
+.cinematic-home.unified-cinematic-flow .gwap-unified-entering .roadmap-heading,
+.cinematic-home.unified-cinematic-flow .gwap-unified-entering .community-panel {
+  animation: gwapUnifiedChapterIn 440ms cubic-bezier(.2,.8,.2,1) both !important;
+}
+
+@keyframes gwapUnifiedChapterIn {
+  from { opacity: .62; transform: translate3d(0, 14px, 0) scale(.995); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@media (min-width: 821px) {
+  .gwap-unified-cinematic {
+    right: 20px;
+    width: 54px;
+    height: 184px;
+  }
+
+  .gwap-unified-cinematic__track {
+    height: 92px;
+  }
+
+  .gwap-unified-cinematic__accent {
+    width: 104px;
+    height: 104px;
+    right: -24px;
+  }
+}
+
+@media (max-width: 680px) {
+  .gwap-unified-cinematic {
+    right: 7px;
+    width: 36px;
+    height: 150px;
+  }
+
+  .gwap-unified-cinematic__accent {
+    width: 72px;
+    height: 72px;
+    right: -20px;
+    opacity: .11;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gwap-unified-cinematic {
+    display: none !important;
+  }
+
+  .cinematic-home.unified-cinematic-flow .story-section .section-kicker,
+  .cinematic-home.unified-cinematic-flow .story-section .eyebrow-premium,
+  .cinematic-home.unified-cinematic-flow .gwap-unified-entering .overview-copy,
+  .cinematic-home.unified-cinematic-flow .gwap-unified-entering .metrics-glass,
+  .cinematic-home.unified-cinematic-flow .gwap-unified-entering .premium-heading,
+  .cinematic-home.unified-cinematic-flow .gwap-unified-entering .trust-copy,
+  .cinematic-home.unified-cinematic-flow .gwap-unified-entering .roadmap-heading,
+  .cinematic-home.unified-cinematic-flow .gwap-unified-entering .community-panel {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}
