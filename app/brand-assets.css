@@ -88,13 +88,13 @@
   opacity: 0;
 }
 
-.premium-product-card[data-gwap-product="gns"] .product-glyph { background-image: url("/logos/gns.png"); }
+.premium-product-card[data-gwap-product="gns"] .product-glyph { background-image: url("/logos/gns.webp"); }
 .premium-product-card[data-gwap-product="gwapscore"] .product-glyph { background-image: url("/logos/gwapscore.svg"); }
 .premium-product-card[data-gwap-product="dimi"] .product-glyph { background-image: url("/logos/dimi.webp"); }
 .premium-product-card[data-gwap-product="isnad-sunnah"] .product-glyph { background-image: url("/logos/isnad-sunnah.svg"); }
 .premium-product-card[data-gwap-product="money-neva-sleeps"] .product-glyph { background-image: url("/logos/money-neva-sleeps.webp"); }
 .premium-product-card[data-gwap-product="marketplace"] .product-glyph { background-image: url("/logos/marketplace.webp"); }
-.premium-product-card[data-gwap-product="occo"] .product-glyph { background-image: url("/logos/occo.png"); }
+.premium-product-card[data-gwap-product="occo"] .product-glyph { background-image: url("/logos/occo.webp"); }
 .premium-product-card[data-gwap-product="private-proof-vault"] .product-glyph { background-image: url("/logos/private-proof-vault.webp"); }
 
 @media (max-width: 700px) {
