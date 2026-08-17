@@ -1,0 +1,81 @@
+/* Post-unification mobile polish.
+ * Keep the stable universal renderer while correcting geometry and touch-only
+ * visual collisions exposed by physical-device testing.
+ */
+
+@media (hover: none) and (pointer: coarse), (max-width: 820px) {
+  /* The unified performance profile freezes animation, but positioned orbit
+   * elements still need their centering transform. Removing it pushed the
+   * system diagram into the lower-right corner of its card. */
+  .cinematic-home.unified-cinematic-flow .depth-orbit {
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+  }
+
+  .cinematic-home.unified-cinematic-flow .depth-core {
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+  }
+
+  /* Tighten the handoff between System and Ecosystem now that the old
+   * full-viewport desktop chapter spacing is gone. */
+  .cinematic-home.unified-cinematic-flow .overview-story {
+    padding-bottom: 48px;
+  }
+
+  .cinematic-home.unified-cinematic-flow .ecosystem-story {
+    padding-top: 76px;
+  }
+
+  /* Touch devices do not need the desktop pointer-follow glow. It also shares
+   * ::before with the CORE INFRASTRUCTURE badge, which could stretch into a
+   * giant dark oval after a tap on iOS Safari. */
+  .cinematic-home.unified-cinematic-flow
+    .premium-product-card[data-gwap-reactive="true"]::before {
+    display: none !important;
+  }
+
+  /* Restore the intended compact CORE INFRASTRUCTURE pill on the two
+   * foundation cards with explicit geometry so no inherited inset values can
+   * turn it into a full-card overlay. */
+  .cinematic-home.unified-cinematic-flow
+    .ecosystem-group-infrastructure
+    .ecosystem-group-products
+    [data-gwap-product="gns"]::before,
+  .cinematic-home.unified-cinematic-flow
+    .ecosystem-group-infrastructure
+    .ecosystem-group-products
+    [data-gwap-product="gwapscore"]::before {
+    display: inline-flex !important;
+    inset: 61px 16px auto auto !important;
+    width: auto !important;
+    height: auto !important;
+    margin: 0 !important;
+    opacity: 1 !important;
+    transform: none !important;
+    mix-blend-mode: normal !important;
+    border-radius: 999px !important;
+    z-index: 3 !important;
+  }
+
+  /* The GNS artwork contains more transparent breathing room than the score
+   * mark, so normalize its visual weight without changing the asset. */
+  .overview-foundation-card[href="/ecosystem/gns"] img {
+    width: 50px !important;
+    height: 50px !important;
+    margin: -4px !important;
+  }
+
+  .ecosystem-group-infrastructure [data-gwap-product="gns"] .product-glyph-logo {
+    width: 58px !important;
+    height: 58px !important;
+  }
+
+  /* Keep the browser's bottom chrome from visually crowding the GWAP OS
+   * handoff when it enters the lower edge of the viewport. */
+  .overview-os-entry {
+    scroll-margin-block: 96px;
+  }
+}
