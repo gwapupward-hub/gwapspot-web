@@ -266,11 +266,11 @@ export const ecosystemProductGroups = ecosystemGroups.map((group) => ({
 }));
 
 export function getProductDestination(product: EcosystemProduct) {
-  return product.externalUrl ?? `/ecosystem/${product.slug}`;
+  return `/ecosystem/${product.slug}`;
 }
 
-export function isExternalProductDestination(product: EcosystemProduct) {
-  return Boolean(product.externalUrl);
+export function isExternalProductDestination(_product: EcosystemProduct) {
+  return false;
 }
 
 export const ecosystemProductIndexBySlug = new Map(
