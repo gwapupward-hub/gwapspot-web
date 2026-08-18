@@ -37,120 +37,123 @@ export type DailyIdeaProject = {
   updatedAt: string;
 };
 
+export type DailyIdeaProjectEditablePatch = Partial<Pick<
+  DailyIdeaProject,
+  | "title"
+  | "problemDefinition"
+  | "targetCustomer"
+  | "marketHypothesis"
+  | "businessModel"
+  | "validationPlan"
+  | "mvpFeatures"
+  | "technicalArchitecture"
+  | "estimatedCost"
+  | "buildRoadmap"
+  | "goToMarket"
+  | "risks"
+  | "firstAction"
+>>;
+
 function projectsKey(subject: string) {
   return getPrivateStorageKey("daily-ideas-projects", subject);
 }
-
 function projectIdFor(ideaId: string) {
   const digest = createHash("sha256").update(ideaId).digest("hex").slice(0, 20);
   return `project_${digest}`;
 }
-
 function normalizeProjects(value: unknown): DailyIdeaProject[] {
   if (!Array.isArray(value)) return [];
   return value.filter((project): project is DailyIdeaProject => Boolean(
-    project &&
-      typeof project === "object" &&
-      typeof (project as DailyIdeaProject).id === "string" &&
-      typeof (project as DailyIdeaProject).ideaId === "string" &&
-      typeof (project as DailyIdeaProject).title === "string" &&
-      typeof (project as DailyIdeaProject).status === "string",
+    project && typeof project === "object" && typeof (project as DailyIdeaProject).id === "string" && typeof (project as DailyIdeaProject).ideaId === "string" && typeof (project as DailyIdeaProject).title === "string" && typeof (project as DailyIdeaProject).status === "string",
   ));
 }
-
 function seedProject(idea: NonNullable<Awaited<ReturnType<typeof getStoredDailyIdea>>>) {
   const targetCustomer = idea.targetAudience.join(", ");
   const topFeatures = idea.mvpFeatures.slice(0, 4);
   const now = new Date().toISOString();
-
   return {
-    id: projectIdFor(idea.id),
-    ideaId: idea.id,
-    title: idea.title,
-    summary: idea.summary,
-    category: idea.category,
-    status: "developing" as const,
+    id: projectIdFor(idea.id), ideaId: idea.id, title: idea.title, summary: idea.summary, category: idea.category, status: "developing" as const,
     problemDefinition: idea.problem,
     targetCustomer,
     marketHypothesis: `Validate whether ${targetCustomer} consistently experience this problem strongly enough to adopt the proposed solution.`,
-    businessModel: idea.monetization.join(" · "),
-    validationPlan: idea.validationSteps,
-    mvpFeatures: idea.mvpFeatures,
+    businessModel: idea.monetization.join(" · "), validationPlan: idea.validationSteps, mvpFeatures: idea.mvpFeatures,
     technicalArchitecture: `Define the smallest implementation that can deliver this solution: ${idea.solution}`,
     estimatedCost: idea.estimatedStartupCost,
-    buildRoadmap: [
-      idea.firstAction,
-      `Prototype the core MVP: ${topFeatures.join(", ")}.`,
-      "Put the prototype in front of target users and record the strongest objections and repeated needs.",
-      "Use validation evidence to decide whether to iterate, build, or archive the project.",
-    ],
+    buildRoadmap: [idea.firstAction, `Prototype the core MVP: ${topFeatures.join(", ")}.`, "Put the prototype in front of target users and record the strongest objections and repeated needs.", "Use validation evidence to decide whether to iterate, build, or archive the project."],
     goToMarket: `Start with direct validation and outreach to ${targetCustomer}; convert the strongest early users into design partners before scaling acquisition.`,
-    risks: idea.risks,
-    firstAction: idea.firstAction,
-    createdAt: now,
-    updatedAt: now,
+    risks: idea.risks, firstAction: idea.firstAction, createdAt: now, updatedAt: now,
   } satisfies DailyIdeaProject;
 }
 
 export async function startDailyIdeaProject(subject: string, ideaId: string) {
   const idea = await getStoredDailyIdea(ideaId);
   if (!idea) return { ok: false as const, reason: "not_found" as const };
-
   const redis = getWorkspaceRedis();
   const existing = normalizeProjects(await redis.get<DailyIdeaProject[]>(projectsKey(subject)));
   const prior = existing.find((project) => project.ideaId === idea.id);
   if (prior) return { ok: true as const, created: false, project: prior };
-
   const project = seedProject(idea);
   await redis.set(projectsKey(subject), [project, ...existing].slice(0, MAX_PROJECTS));
   return { ok: true as const, created: true, project };
 }
 
-export async function listDailyIdeaProjects(
-  subject: string,
-  input: { offset?: number; limit?: number } = {},
-) {
+export async function listDailyIdeaProjects(subject: string, input: { offset?: number; limit?: number } = {}) {
   const offset = Math.max(0, Math.floor(input.offset || 0));
-  const limit = Math.min(10, Math.max(1, Math.floor(input.limit || 5)));
-  const projects = normalizeProjects(
-    await getWorkspaceRedis().get<DailyIdeaProject[]>(projectsKey(subject)),
-  );
+  const limit = Math.min(50, Math.max(1, Math.floor(input.limit || 5)));
+  const projects = normalizeProjects(await getWorkspaceRedis().get<DailyIdeaProject[]>(projectsKey(subject)));
   const items = projects.slice(offset, offset + limit);
   const nextOffset = offset + items.length < projects.length ? offset + items.length : null;
   return { items, total: projects.length, offset, limit, nextOffset };
 }
 
 export async function getDailyIdeaProject(subject: string, projectId: string) {
-  const projects = normalizeProjects(
-    await getWorkspaceRedis().get<DailyIdeaProject[]>(projectsKey(subject)),
-  );
+  const projects = normalizeProjects(await getWorkspaceRedis().get<DailyIdeaProject[]>(projectsKey(subject)));
   return projects.find((project) => project.id === projectId) || null;
 }
 
-export async function transitionDailyIdeaProject(
-  subject: string,
-  projectId: string,
-  target: "validating" | "building" | "launched",
-) {
+function boundedText(value: unknown, max: number) {
+  return typeof value === "string" ? value.trim().slice(0, max) : null;
+}
+function boundedList(value: unknown, maxItems: number, maxLength: number) {
+  if (!Array.isArray(value)) return null;
+  return value.filter((item): item is string => typeof item === "string").map((item) => item.trim().slice(0, maxLength)).filter(Boolean).slice(0, maxItems);
+}
+
+export async function updateDailyIdeaProject(subject: string, projectId: string, patch: DailyIdeaProjectEditablePatch) {
   const redis = getWorkspaceRedis();
   const projects = normalizeProjects(await redis.get<DailyIdeaProject[]>(projectsKey(subject)));
   const index = projects.findIndex((project) => project.id === projectId);
   if (index < 0) return { ok: false as const, reason: "not_found" as const };
-
   const current = projects[index];
-  if (current.status === target) {
-    return { ok: true as const, changed: false, project: current };
+  const next: DailyIdeaProject = { ...current };
+  if (patch.title !== undefined) { const value = boundedText(patch.title, 120); if (!value) return { ok: false as const, reason: "invalid_patch" as const }; next.title = value; }
+  const textFields: Array<[keyof Pick<DailyIdeaProject, "problemDefinition" | "targetCustomer" | "marketHypothesis" | "businessModel" | "technicalArchitecture" | "estimatedCost" | "goToMarket" | "firstAction">, number]> = [
+    ["problemDefinition", 1600], ["targetCustomer", 900], ["marketHypothesis", 1600], ["businessModel", 1600], ["technicalArchitecture", 2400], ["estimatedCost", 800], ["goToMarket", 2000], ["firstAction", 800],
+  ];
+  for (const [key, max] of textFields) {
+    if (patch[key] !== undefined) { const value = boundedText(patch[key], max); if (value === null) return { ok: false as const, reason: "invalid_patch" as const }; next[key] = value; }
   }
-
-  const requiredPrevious: Record<typeof target, DailyIdeaProjectStatus> = {
-    validating: "developing",
-    building: "validating",
-    launched: "building",
-  };
-  if (current.status !== requiredPrevious[target]) {
-    return { ok: false as const, reason: "invalid_transition" as const, project: current };
+  const listFields: Array<[keyof Pick<DailyIdeaProject, "validationPlan" | "mvpFeatures" | "buildRoadmap" | "risks">, number, number]> = [
+    ["validationPlan", 12, 600], ["mvpFeatures", 16, 300], ["buildRoadmap", 16, 800], ["risks", 12, 600],
+  ];
+  for (const [key, maxItems, maxLength] of listFields) {
+    if (patch[key] !== undefined) { const value = boundedList(patch[key], maxItems, maxLength); if (!value) return { ok: false as const, reason: "invalid_patch" as const }; next[key] = value; }
   }
+  next.updatedAt = new Date().toISOString();
+  projects[index] = next;
+  await redis.set(projectsKey(subject), projects);
+  return { ok: true as const, project: next };
+}
 
+export async function transitionDailyIdeaProject(subject: string, projectId: string, target: "validating" | "building" | "launched") {
+  const redis = getWorkspaceRedis();
+  const projects = normalizeProjects(await redis.get<DailyIdeaProject[]>(projectsKey(subject)));
+  const index = projects.findIndex((project) => project.id === projectId);
+  if (index < 0) return { ok: false as const, reason: "not_found" as const };
+  const current = projects[index];
+  if (current.status === target) return { ok: true as const, changed: false, project: current };
+  const requiredPrevious: Record<typeof target, DailyIdeaProjectStatus> = { validating: "developing", building: "validating", launched: "building" };
+  if (current.status !== requiredPrevious[target]) return { ok: false as const, reason: "invalid_transition" as const, project: current };
   const project = { ...current, status: target, updatedAt: new Date().toISOString() };
   projects[index] = project;
   await redis.set(projectsKey(subject), projects);
@@ -162,11 +165,8 @@ export async function archiveDailyIdeaProject(subject: string, projectId: string
   const projects = normalizeProjects(await redis.get<DailyIdeaProject[]>(projectsKey(subject)));
   const index = projects.findIndex((project) => project.id === projectId);
   if (index < 0) return { ok: false as const, reason: "not_found" as const };
-
   const current = projects[index];
-  if (current.status === "archived") {
-    return { ok: true as const, archived: false, project: current };
-  }
+  if (current.status === "archived") return { ok: true as const, archived: false, project: current };
   const project = { ...current, status: "archived" as const, updatedAt: new Date().toISOString() };
   projects[index] = project;
   await redis.set(projectsKey(subject), projects);

@@ -6,6 +6,7 @@ import {
   isValidInternalApiKey,
   normalizeTelegramAccountInput,
 } from "../../../../../lib/daily-ideas-telegram-account-core";
+import { getDailyIdeasSubjectForTelegram } from "../../../../../lib/daily-ideas-identity-link";
 import {
   getDailyIdeasPreferences,
   updateDailyIdeasPreferences,
@@ -53,7 +54,8 @@ export async function GET(request: Request) {
   if (!account) return json({ error: "Invalid Telegram account", requestId }, 400);
 
   try {
-    const preferences = await getDailyIdeasPreferences(`telegram:${account.telegramUserId}`);
+    const subject = await getDailyIdeasSubjectForTelegram(account.telegramUserId);
+    const preferences = await getDailyIdeasPreferences(subject);
     return json({ contractVersion: DAILY_IDEAS_SERVICE_CONTRACT_VERSION, preferences });
   } catch (error) {
     console.error("daily_ideas_telegram_preferences_read_failed", {
@@ -80,7 +82,8 @@ export async function POST(request: Request) {
     if (!rate.allowed) {
       return json({ error: "Rate limit exceeded", requestId }, 429, { "Retry-After": String(rate.retryAfter) });
     }
-    const preferences = await updateDailyIdeasPreferences(`telegram:${account.telegramUserId}`, {
+    const subject = await getDailyIdeasSubjectForTelegram(account.telegramUserId);
+    const preferences = await updateDailyIdeasPreferences(subject, {
       categories: body.categories,
       difficulty: body.difficulty,
       budget: body.budget,
