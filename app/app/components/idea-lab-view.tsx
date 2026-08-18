@@ -1,159 +1,181 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { usePrivy } from "@privy-io/react-auth";
 import { useGwapOs } from "./os-provider";
-import type { IdeaProject, MarketplaceRole } from "../lib/os-state";
 
-const fields: [
-  keyof Pick<IdeaProject, "problem" | "targetUser" | "businessModel" | "technicalPlan" | "estimatedCost" | "mvpRoadmap" | "notes">,
-  string,
-  string,
-][] = [
-  ["problem", "Problem", "What exact pain or inefficiency are you solving?"],
-  ["targetUser", "Target user", "Who feels this problem most strongly?"],
-  ["businessModel", "Business model", "How could this create sustainable value or revenue?"],
-  ["technicalPlan", "Technical plan", "Core stack, integrations, data and architecture."],
-  ["estimatedCost", "Estimated cost", "MVP budget, infrastructure and major cost drivers."],
-  ["mvpRoadmap", "MVP roadmap", "Validation steps and the smallest credible launch sequence."],
-  ["notes", "Research / notes", "Evidence, assumptions, competitors, risks and open questions."],
+type ProjectStatus = "developing" | "validating" | "building" | "launched" | "archived";
+type SharedProject = {
+  id: string;
+  ideaId: string;
+  title: string;
+  summary: string;
+  category: string;
+  status: ProjectStatus;
+  problemDefinition: string;
+  targetCustomer: string;
+  marketHypothesis: string;
+  businessModel: string;
+  validationPlan: string[];
+  mvpFeatures: string[];
+  technicalArchitecture: string;
+  estimatedCost: string;
+  buildRoadmap: string[];
+  goToMarket: string;
+  risks: string[];
+  firstAction: string;
+  createdAt: string;
+  updatedAt: string;
+};
+type WorkspacePayload = { projects: { items: SharedProject[]; total: number }; error?: string };
+
+type TextField = "title" | "problemDefinition" | "targetCustomer" | "marketHypothesis" | "businessModel" | "technicalArchitecture" | "estimatedCost" | "goToMarket" | "firstAction";
+type ListField = "validationPlan" | "mvpFeatures" | "buildRoadmap" | "risks";
+
+const textFields: Array<[TextField, string, string, number]> = [
+  ["problemDefinition", "Problem", "What exact pain or inefficiency are you solving?", 4],
+  ["targetCustomer", "Target customer", "Who feels this problem most strongly?", 4],
+  ["marketHypothesis", "Market hypothesis", "What must be true for demand to exist?", 4],
+  ["businessModel", "Business model", "How does this create sustainable value or revenue?", 4],
+  ["technicalArchitecture", "Technical architecture", "Core stack, integrations, data and architecture.", 6],
+  ["estimatedCost", "Estimated cost", "MVP budget, infrastructure and major cost drivers.", 4],
+  ["goToMarket", "Go-to-market", "How will the first users discover and adopt it?", 5],
+  ["firstAction", "Next action", "The smallest concrete thing to do next.", 3],
+];
+const listFields: Array<[ListField, string]> = [
+  ["validationPlan", "Validation plan"],
+  ["mvpFeatures", "MVP features"],
+  ["buildRoadmap", "Build roadmap"],
+  ["risks", "Risks"],
 ];
 
-const collaborationRoles: Array<{ role: MarketplaceRole; label: string }> = [
-  { role: "developer", label: "Developer" },
-  { role: "designer", label: "Designer" },
-  { role: "marketer", label: "Marketer" },
-  { role: "researcher", label: "Researcher" },
-  { role: "operations", label: "Operations" },
-];
-
-function compactWallet(wallet: string) {
-  return `${wallet.slice(0, 4)}…${wallet.slice(-4)}`;
-}
+function compactWallet(wallet: string) { return `${wallet.slice(0, 4)}…${wallet.slice(-4)}`; }
+function statusLabel(status: ProjectStatus) { return status.charAt(0).toUpperCase() + status.slice(1); }
 
 export function IdeaLabView() {
-  const router = useRouter();
-  const {
-    account,
-    createMarketplaceIntent,
-    gnsIdentity,
-    state,
-    updateIdeaProject,
-    removeIdeaProject,
-    syncStatus,
-  } = useGwapOs();
-  const [selectedId, setSelectedId] = useState(state.ideaProjects[0]?.id ?? "");
-  const selected = useMemo(
-    () => state.ideaProjects.find((project) => project.id === selectedId) ?? state.ideaProjects[0] ?? null,
-    [selectedId, state.ideaProjects],
-  );
+  const { getAccessToken } = usePrivy();
+  const { account, gnsIdentity } = useGwapOs();
+  const [projects, setProjects] = useState<SharedProject[]>([]);
+  const [selectedId, setSelectedId] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
+  const authenticatedFetch = useCallback(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const token = await getAccessToken();
+    const headers = new Headers(init?.headers);
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+    return fetch(input, { ...init, headers, credentials: "same-origin" });
+  }, [getAccessToken]);
+
+  const refresh = useCallback(async () => {
+    const response = await authenticatedFetch("/api/daily-ideas/workspace");
+    const payload = (await response.json()) as WorkspacePayload;
+    if (!response.ok) throw new Error(payload.error || "Idea Lab could not load");
+    setProjects(payload.projects.items);
+    setSelectedId((current) => current && payload.projects.items.some((project) => project.id === current) ? current : payload.projects.items[0]?.id || "");
+  }, [authenticatedFetch]);
+
+  useEffect(() => {
+    void (async () => {
+      try { await refresh(); } catch (cause) { setError(cause instanceof Error ? cause.message : "Idea Lab could not load"); } finally { setLoading(false); }
+    })();
+  }, [refresh]);
+
+  const selected = useMemo(() => projects.find((project) => project.id === selectedId) ?? projects[0] ?? null, [projects, selectedId]);
   const owner = gnsIdentity.fullName || compactWallet(account.verifiedWallet);
   const score = gnsIdentity.score ?? "Unscored";
-  const tier = gnsIdentity.scoreTier ?? gnsIdentity.tier ?? "—";
+  const tier = gnsIdentity.scoreTier ?? gnsIdentity.tier ?? "Unavailable";
+
+  async function action(body: Record<string, unknown>) {
+    const response = await authenticatedFetch("/api/daily-ideas/workspace", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const payload = (await response.json()) as { error?: string };
+    if (!response.ok) throw new Error(payload.error || "Idea Lab update failed");
+    await refresh();
+  }
+
+  async function updateProject(patch: Record<string, unknown>) {
+    if (!selected) return;
+    setError(null);
+    try { await action({ action: "update-project", projectId: selected.id, patch }); } catch (cause) { setError(cause instanceof Error ? cause.message : "Project update failed"); }
+  }
+
+  function updateLocal(patch: Partial<SharedProject>) {
+    if (!selected) return;
+    setProjects((current) => current.map((project) => project.id === selected.id ? { ...project, ...patch } : project));
+  }
+
+  async function lifecycle(actionName: "validate" | "build" | "launch" | "archive") {
+    if (!selected) return;
+    setLoading(true);
+    setError(null);
+    try { await action({ action: actionName, projectId: selected.id }); } catch (cause) { setError(cause instanceof Error ? cause.message : "Project stage update failed"); } finally { setLoading(false); }
+  }
+
+  if (loading && !selected) {
+    return <div className="os-page os-runtime-page"><section className="os-runtime-panel"><h2>Loading shared Idea Lab…</h2></section></div>;
+  }
 
   if (!selected) {
     return (
       <div className="os-page os-runtime-page">
-        <header className="os-runtime-heading">
-          <span className="os-terminal-label">~/ideas/lab</span>
-          <h1>Idea Lab.</h1>
-          <p>Develop a saved Daily Idea into a concrete validation and MVP plan.</p>
-        </header>
-        <section className="os-runtime-panel">
-          <h2>No active projects.</h2>
-          <p>Open Daily Ideas, save an opportunity, then choose Develop Idea to start its workspace.</p>
-          <Link href="/app/ideas">Open Daily Ideas</Link>
-        </section>
+        <header className="os-runtime-heading"><span className="os-terminal-label">~/ideas/lab · SHARED CORE</span><h1>Idea Lab.</h1><p>Develop a saved Daily Idea into a concrete validation and MVP plan.</p></header>
+        {error ? <p className="os-runtime-warning" role="alert">{error}</p> : null}
+        <section className="os-runtime-panel"><h2>No active shared projects.</h2><p>Open Daily Ideas, save an opportunity, then choose Develop Idea. Telegram-created projects appear here after account linking.</p><Link href="/app/ideas">Open Daily Ideas</Link></section>
       </div>
     );
   }
 
-  const projectIntents = state.marketplaceIntents.filter((intent) => intent.projectId === selected.id);
-
-  function openCollaborationBrief(role: MarketplaceRole) {
-    const intentId = createMarketplaceIntent(selected.id, role);
-    if (intentId) router.push("/app/marketplace");
-  }
+  const nextAction = selected.status === "developing" ? "validate" : selected.status === "validating" ? "build" : selected.status === "building" ? "launch" : null;
 
   return (
     <div className="os-page os-runtime-page">
       <header className="os-runtime-heading">
-        <span className="os-terminal-label">~/ideas/lab · {syncStatus}</span>
+        <span className="os-terminal-label">~/ideas/lab · SHARED CORE</span>
         <h1>Idea Lab.</h1>
-        <p>Move an opportunity from interesting to executable. Your live GWAP identity travels with the project context.</p>
+        <p>Move an opportunity from interesting to executable. The project state here is the same project state used by Telegram.</p>
       </header>
+      {error ? <p className="os-runtime-warning" role="alert">{error}</p> : null}
 
       <section className="os-runtime-grid">
         <aside className="os-runtime-panel os-runtime-note">
-          <span className="os-terminal-label">PROJECTS · {state.ideaProjects.length}/8</span>
-          {state.ideaProjects.map((project) => (
+          <span className="os-terminal-label">PROJECTS · {projects.length}</span>
+          {projects.map((project) => (
             <button key={project.id} type="button" onClick={() => setSelectedId(project.id)} aria-pressed={project.id === selected.id}>
-              <strong>{project.title}</strong><br />
-              <small>{project.status}</small>
+              <strong>{project.title}</strong><br /><small>{statusLabel(project.status)}</small>
             </button>
           ))}
-
-          <div className="os-console-chrome">
-            <span>gwappass.identity</span>
-            <span>{gnsIdentity.status.toUpperCase()}</span>
-          </div>
+          <div className="os-console-chrome"><span>gwappass.identity</span><span>{gnsIdentity.status.toUpperCase()}</span></div>
           <p><strong>{owner}</strong></p>
           <p>GwapScore: <strong>{score}</strong> · Tier: <strong>{tier}</strong></p>
-          <p>This attribution is resolved live from the authenticated GWAP identity layer rather than copied into project state.</p>
-          <div>
-            <Link href="/app/identity">Open Identity</Link>{" · "}
-            <Link href="/app/score">View Score</Link>
-            {gnsIdentity.profileUrl ? <> · <a href={gnsIdentity.profileUrl}>Public Profile</a></> : null}
-          </div>
+          <p>Identity and reputation are resolved live from the authenticated GWAP identity layer; they are not copied into the project record.</p>
+          <div><Link href="/app/identity">Open Identity</Link>{" · "}<Link href="/app/score">View Score</Link>{gnsIdentity.profileUrl ? <> · <a href={gnsIdentity.profileUrl}>Public Profile</a></> : null}</div>
         </aside>
 
         <article className="os-runtime-panel">
-          <div className="os-console-chrome">
-            <span>idea-lab.workspace</span>
-            <span>{selected.status.toUpperCase()}</span>
-          </div>
+          <div className="os-console-chrome"><span>idea-lab.shared-workspace</span><span>{selected.status.toUpperCase()}</span></div>
+          <label>Project title<input value={selected.title} maxLength={120} onChange={(event) => updateLocal({ title: event.target.value })} onBlur={() => void updateProject({ title: selected.title })} /></label>
 
-          <label>Project title<input value={selected.title} maxLength={120} onChange={(event) => updateIdeaProject(selected.id, { title: event.target.value })} /></label>
-          <label>
-            Status
-            <select value={selected.status} onChange={(event) => updateIdeaProject(selected.id, { status: event.target.value as IdeaProject["status"] })}>
-              <option>Exploring</option><option>Validating</option><option>Building</option>
-            </select>
-          </label>
+          {textFields.map(([key, label, placeholder, rows]) => (
+            <label key={key}>{label}<textarea value={selected[key]} placeholder={placeholder} rows={rows} onChange={(event) => updateLocal({ [key]: event.target.value } as Partial<SharedProject>)} onBlur={() => void updateProject({ [key]: selected[key] })} /></label>
+          ))}
 
-          {fields.map(([key, label, placeholder]) => (
-            <label key={key}>
-              {label}
-              <textarea value={selected[key]} placeholder={placeholder} rows={key === "technicalPlan" || key === "mvpRoadmap" ? 6 : 4} onChange={(event) => updateIdeaProject(selected.id, { [key]: event.target.value })} />
-            </label>
+          {listFields.map(([key, label]) => (
+            <label key={key}>{label}<textarea value={selected[key].join("\n")} rows={5} placeholder="One item per line" onChange={(event) => updateLocal({ [key]: event.target.value.split("\n") } as Partial<SharedProject>)} onBlur={() => void updateProject({ [key]: selected[key] })} /></label>
           ))}
 
           <section className="os-runtime-note">
-            <span className="os-terminal-label">COLLABORATION · {projectIntents.length}</span>
-            <h2>Turn a project need into a Marketplace brief.</h2>
-            <p>Select the capability you need. GWAP OS creates a persistent draft using this project’s problem, target user, technical direction, and estimated cost. It is not published until a production Marketplace adapter exists.</p>
-            <div className="os-process-table" aria-label="Create collaboration brief">
-              {collaborationRoles.map(({ role, label }) => {
-                const existing = projectIntents.some((intent) => intent.role === role);
-                return (
-                  <div className="os-process-row" key={role}>
-                    <span>{label}</span>
-                    <strong>{existing ? "DRAFT EXISTS" : "NEEDED"}</strong>
-                    <button type="button" onClick={() => openCollaborationBrief(role)}>{existing ? "Open brief" : "Create brief"}</button>
-                  </div>
-                );
-              })}
-            </div>
-            <div>
-              <Link href="/app/marketplace">Marketplace briefs</Link>{" · "}
-              <Link href="/app/developer">Developer APIs</Link>{" · "}
-              <Link href="/app/ideas">Back to Daily Ideas</Link>
-            </div>
+            <span className="os-terminal-label">LIFECYCLE</span>
+            <p>Current stage: <strong>{statusLabel(selected.status)}</strong>. Stage changes are sequential and immediately visible in Telegram.</p>
+            {nextAction ? <button type="button" disabled={loading} onClick={() => void lifecycle(nextAction)}>{nextAction === "validate" ? "Move to Validation" : nextAction === "build" ? "Move to Building" : "Mark Launched"}</button> : null}
+            {selected.status !== "archived" ? <button type="button" disabled={loading} onClick={() => void lifecycle("archive")}>Archive project</button> : null}
           </section>
 
-          <button type="button" onClick={() => { removeIdeaProject(selected.id); setSelectedId(""); }}>Archive project</button>
+          <section className="os-runtime-note">
+            <span className="os-terminal-label">GWAP ECOSYSTEM HANDOFF</span>
+            <p>The Daily Ideas project is now canonical across Telegram and GWAP OS. Marketplace collaboration briefs remain private GWAP OS records and are not used as a second project database.</p>
+            <div><Link href="/app/marketplace">Marketplace briefs</Link>{" · "}<Link href="/app/developer">Developer APIs</Link>{" · "}<Link href="/app/ideas">Back to Daily Ideas</Link></div>
+          </section>
         </article>
       </section>
     </div>
