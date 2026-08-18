@@ -1,13 +1,31 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { usePrivy } from "@privy-io/react-auth";
 import { useGwapOs } from "./os-provider";
-import type { DailyIdea } from "../lib/os-state";
 
-type IdeaCategory = DailyIdea["category"];
+type IdeaCategory = "web3" | "saas" | "ai" | "general";
+type SharedIdea = {
+  id: string;
+  title: string;
+  summary: string;
+  problem: string;
+  opportunity: string;
+  category: string;
+  difficulty: "Starter" | "Intermediate" | "Advanced";
+  status: string;
+};
+type SavedEntry = { idea: SharedIdea; savedAt: string };
+type SharedProject = { id: string; ideaId: string; title: string; status: string; updatedAt: string };
+type SharedWorkspace = {
+  linked: boolean;
+  identity: { telegramUserId: string; gnsIdentity: string | null; linkedAt: string } | null;
+  saved: { items: SavedEntry[]; total: number };
+  projects: { items: SharedProject[]; total: number };
+  idea?: SharedIdea;
+};
 
 const categories: Array<{ value: IdeaCategory; label: string }> = [
   { value: "web3", label: "Web3" },
@@ -23,71 +41,119 @@ function compactWallet(wallet: string) {
 export function DailyIdeasView() {
   const router = useRouter();
   const { getAccessToken } = usePrivy();
-  const { account, gnsIdentity, state, saveIdea, removeIdea, startIdeaProject, syncStatus } = useGwapOs();
+  const { account, gnsIdentity } = useGwapOs();
   const [category, setCategory] = useState<IdeaCategory>("web3");
-  const [generated, setGenerated] = useState<DailyIdea | null>(null);
+  const [generated, setGenerated] = useState<SharedIdea | null>(null);
+  const [workspace, setWorkspace] = useState<SharedWorkspace | null>(null);
   const [loading, setLoading] = useState(false);
-  const [handoffLoading, setHandoffLoading] = useState(false);
+  const [bootstrapping, setBootstrapping] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const handoffAttemptedRef = useRef(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const startupHandledRef = useRef(false);
 
   const owner = gnsIdentity.fullName || compactWallet(account.verifiedWallet);
-  const busy = loading || handoffLoading;
+  const scoreLabel = gnsIdentity.score === null ? "Unscored" : String(gnsIdentity.score);
+  const busy = loading || bootstrapping;
+
+  const authenticatedFetch = useCallback(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const token = await getAccessToken();
+    const headers = new Headers(init?.headers);
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+    return fetch(input, { ...init, headers, credentials: "same-origin" });
+  }, [getAccessToken]);
+
+  const refreshWorkspace = useCallback(async (ideaId?: string) => {
+    const url = ideaId ? `/api/daily-ideas/workspace?ideaId=${encodeURIComponent(ideaId)}` : "/api/daily-ideas/workspace";
+    const response = await authenticatedFetch(url);
+    const payload = (await response.json()) as SharedWorkspace & { error?: string };
+    if (!response.ok) throw new Error(payload.error || "Daily Ideas workspace could not load");
+    setWorkspace(payload);
+    if (payload.idea) {
+      setGenerated(payload.idea);
+      if (["web3", "ai", "saas", "general"].includes(payload.idea.category)) setCategory(payload.idea.category as IdeaCategory);
+    }
+    return payload;
+  }, [authenticatedFetch]);
 
   useEffect(() => {
-    if (handoffAttemptedRef.current) return;
-    const handoffToken = new URLSearchParams(window.location.search).get("handoff");
-    if (!handoffToken) return;
-    handoffAttemptedRef.current = true;
-
-    setHandoffLoading(true);
-    setError(null);
-
+    if (startupHandledRef.current) return;
+    startupHandledRef.current = true;
     void (async () => {
+      const params = new URLSearchParams(window.location.search);
+      const linkToken = params.get("link");
+      const handoffToken = params.get("handoff");
+      const ideaId = params.get("idea");
+      setBootstrapping(true);
+      setError(null);
       try {
-        const accessToken = await getAccessToken();
-        const response = await fetch("/api/ideas/handoff", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-          },
-          credentials: "same-origin",
-          body: JSON.stringify({ token: handoffToken }),
-        });
-        const payload = (await response.json()) as { idea?: Omit<DailyIdea, "savedAt">; error?: string };
-        if (!response.ok || !payload.idea) {
-          if (response.status === 404) router.replace("/app/ideas");
-          throw new Error(payload.error || "Daily Ideas handoff failed");
+        if (linkToken) {
+          const response = await authenticatedFetch("/api/daily-ideas/link", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: linkToken }),
+          });
+          const payload = (await response.json()) as { linked?: boolean; gnsIdentity?: string | null; error?: string };
+          if (!response.ok || !payload.linked) throw new Error(payload.error || "Telegram account linking failed");
+          setNotice(payload.gnsIdentity ? `Telegram connected to ${payload.gnsIdentity}.gwap.` : "Telegram connected to your GWAP OS account.");
+          router.replace("/app/ideas");
+          await refreshWorkspace();
+          return;
         }
-        setGenerated({ ...payload.idea, savedAt: "" });
-        setCategory(payload.idea.category);
-        router.replace("/app/ideas");
+
+        if (handoffToken) {
+          const response = await authenticatedFetch("/api/ideas/handoff", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: handoffToken }),
+          });
+          const payload = (await response.json()) as { idea?: SharedIdea; error?: string };
+          if (!response.ok || !payload.idea) throw new Error(payload.error || "Daily Ideas handoff failed");
+          setGenerated(payload.idea);
+          if (["web3", "ai", "saas", "general"].includes(payload.idea.category)) setCategory(payload.idea.category as IdeaCategory);
+          router.replace("/app/ideas");
+          await refreshWorkspace();
+          return;
+        }
+
+        if (ideaId) {
+          await refreshWorkspace(ideaId);
+          router.replace("/app/ideas");
+          return;
+        }
+
+        await refreshWorkspace();
       } catch (cause) {
-        setError(cause instanceof Error ? cause.message : "Daily Ideas handoff failed");
+        setError(cause instanceof Error ? cause.message : "Daily Ideas workspace failed to initialize");
+        if (linkToken || handoffToken || ideaId) router.replace("/app/ideas");
       } finally {
-        setHandoffLoading(false);
+        setBootstrapping(false);
       }
     })();
-  }, [getAccessToken, router]);
+  }, [authenticatedFetch, refreshWorkspace, router]);
+
+  async function workspaceAction(body: Record<string, unknown>) {
+    const response = await authenticatedFetch("/api/daily-ideas/workspace", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const payload = (await response.json()) as { error?: string };
+    if (!response.ok) throw new Error(payload.error || "Daily Ideas workspace update failed");
+    return payload;
+  }
 
   async function generateIdea() {
     setLoading(true);
     setError(null);
     try {
-      const token = await getAccessToken();
-      const response = await fetch("/api/ideas/generate", {
+      const response = await authenticatedFetch("/api/ideas/generate", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ category }),
       });
-      const payload = (await response.json()) as { idea?: Omit<DailyIdea, "savedAt">; error?: string };
+      const payload = (await response.json()) as { idea?: SharedIdea; error?: string };
       if (!response.ok || !payload.idea) throw new Error(payload.error || "Idea generation failed");
-      setGenerated({ ...payload.idea, savedAt: "" });
+      setGenerated(payload.idea);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Idea generation failed");
     } finally {
@@ -95,38 +161,74 @@ export function DailyIdeasView() {
     }
   }
 
-  function saveGenerated() {
+  async function saveGenerated() {
     if (!generated) return;
-    const saved = { ...generated, savedAt: new Date().toISOString() };
-    saveIdea(saved);
-    setGenerated(saved);
+    setLoading(true);
+    setError(null);
+    try {
+      await workspaceAction({ action: "save", ideaId: generated.id });
+      await refreshWorkspace();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Saving failed");
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function develop(idea: DailyIdea) {
-    startIdeaProject(idea);
-    router.push("/app/ideas/lab");
+  async function develop(idea: SharedIdea) {
+    setLoading(true);
+    setError(null);
+    try {
+      await workspaceAction({ action: "develop", ideaId: idea.id });
+      await refreshWorkspace();
+      router.push("/app/ideas/lab");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Project creation failed");
+      setLoading(false);
+    }
   }
 
-  const generatedIsSaved = Boolean(generated && state.ideas.some((idea) => idea.id === generated.id));
+  async function removeSaved(ideaId: string) {
+    setLoading(true);
+    setError(null);
+    try {
+      await workspaceAction({ action: "unsave", ideaId });
+      await refreshWorkspace();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Removing saved idea failed");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const savedItems = workspace?.saved.items ?? [];
+  const projects = workspace?.projects.items ?? [];
+  const generatedIsSaved = Boolean(generated && savedItems.some((entry) => entry.idea.id === generated.id));
 
   return (
     <div className="os-page os-runtime-page">
       <header className="os-runtime-heading">
-        <span className="os-terminal-label">~/ideas/discover</span>
+        <span className="os-terminal-label">~/ideas/discover · SHARED CORE</span>
         <h1>Daily Ideas.</h1>
         <p>Discover practical opportunities, save the strongest ones, then develop them into executable projects in Idea Lab.</p>
         <p>
-          Workspace owner: <strong>{owner}</strong>
-          {gnsIdentity.score !== null ? <> · GwapScore <strong>{gnsIdentity.score}</strong></> : null}
+          Workspace owner: <strong>{owner}</strong> · GwapScore <strong>{scoreLabel}</strong>
           {" · "}<Link href="/app/identity">Identity</Link>
         </p>
+        <p>
+          Telegram: <strong>{workspace?.linked ? "Connected ✅" : "Not linked"}</strong>
+          {workspace?.identity?.gnsIdentity ? <> · <strong>{workspace.identity.gnsIdentity}.gwap</strong></> : null}
+        </p>
       </header>
+
+      {notice ? <p className="os-runtime-note" role="status">{notice}</p> : null}
+      {error ? <p className="os-runtime-warning" role="alert">{error}</p> : null}
 
       <section className="os-runtime-grid">
         <article className="os-runtime-panel">
           <div className="os-console-chrome">
             <span>ideas.generator</span>
-            <span>{handoffLoading ? "IMPORTING" : loading ? "GENERATING" : "READY"}</span>
+            <span>{bootstrapping ? "SYNCING" : loading ? "WORKING" : "READY"}</span>
           </div>
           <div className="os-process-table">
             <div className="os-process-row os-process-head"><span>CATEGORY</span><span>MODE</span><span>ACTION</span></div>
@@ -135,11 +237,9 @@ export function DailyIdeasView() {
               <select id="idea-category" value={category} onChange={(event) => setCategory(event.target.value as IdeaCategory)} disabled={busy}>
                 {categories.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
               </select>
-              <button type="button" onClick={generateIdea} disabled={busy}>{loading ? "Generating…" : handoffLoading ? "Importing…" : "Generate idea"}</button>
+              <button type="button" onClick={generateIdea} disabled={busy}>{loading ? "Working…" : bootstrapping ? "Syncing…" : "Generate idea"}</button>
             </div>
           </div>
-
-          {error ? <p className="os-runtime-warning" role="alert">{error}</p> : null}
 
           {generated ? (
             <div className="os-runtime-note" aria-live="polite">
@@ -148,29 +248,29 @@ export function DailyIdeasView() {
               <p>{generated.summary}</p>
               <p><strong>Problem:</strong> {generated.problem}</p>
               <p><strong>Opportunity:</strong> {generated.opportunity}</p>
-              <button type="button" onClick={saveGenerated} disabled={generatedIsSaved}>{generatedIsSaved ? "Saved to workspace" : "Save idea"}</button>
-              {generatedIsSaved ? <button type="button" onClick={() => develop(generated)}>Develop Idea</button> : null}
+              <button type="button" onClick={saveGenerated} disabled={busy || generatedIsSaved}>{generatedIsSaved ? "Saved to shared workspace" : "Save idea"}</button>
+              {generatedIsSaved ? <button type="button" onClick={() => void develop(generated)} disabled={busy}>{projects.some((project) => project.ideaId === generated.id) ? "Open Idea Lab" : "Develop Idea"}</button> : null}
             </div>
           ) : (
-            <p className="os-runtime-warning">{handoffLoading ? "Importing the idea you opened from Telegram…" : "Choose a category and generate your first native Daily Idea. No TON wallet or separate account is required."}</p>
+            <p className="os-runtime-warning">{bootstrapping ? "Synchronizing your shared Daily Ideas workspace…" : "Choose a category and generate an idea. Telegram and GWAP OS use the same saved history after account linking."}</p>
           )}
         </article>
 
         <aside className="os-runtime-panel os-runtime-note">
-          <span className="os-terminal-label">MY IDEAS · {state.ideas.length}/12</span>
-          <h2>Saved workspace.</h2>
-          <p>Sync status: <strong>{syncStatus}</strong>. Active Idea Lab projects: <strong>{state.ideaProjects.length}</strong>.</p>
-          {state.ideas.length ? (
+          <span className="os-terminal-label">MY IDEAS · {workspace?.saved.total ?? 0}</span>
+          <h2>Shared workspace.</h2>
+          <p>Active Daily Ideas projects: <strong>{workspace?.projects.total ?? 0}</strong>. Changes here are immediately visible to the linked Telegram client.</p>
+          {savedItems.length ? (
             <div className="os-process-table" role="list">
-              {state.ideas.map((idea) => (
-                <div key={idea.id} className="os-process-row" role="listitem">
-                  <span><strong>{idea.title}</strong><small>{idea.category.toUpperCase()} · {idea.difficulty}</small></span>
-                  <button type="button" onClick={() => develop(idea)}>{state.ideaProjects.some((project) => project.ideaId === idea.id) ? "Open Lab" : "Develop"}</button>
-                  <button type="button" onClick={() => removeIdea(idea.id)}>Remove</button>
+              {savedItems.map((entry) => (
+                <div key={entry.idea.id} className="os-process-row" role="listitem">
+                  <span><strong>{entry.idea.title}</strong><small>{entry.idea.category.toUpperCase()} · {entry.idea.difficulty}</small></span>
+                  <button type="button" onClick={() => void develop(entry.idea)} disabled={busy}>{projects.some((project) => project.ideaId === entry.idea.id) ? "Open Lab" : "Develop"}</button>
+                  <button type="button" onClick={() => void removeSaved(entry.idea.id)} disabled={busy}>Remove</button>
                 </div>
               ))}
             </div>
-          ) : <p>No saved ideas yet.</p>}
+          ) : <p>No saved ideas in the shared workspace yet.</p>}
         </aside>
       </section>
     </div>
