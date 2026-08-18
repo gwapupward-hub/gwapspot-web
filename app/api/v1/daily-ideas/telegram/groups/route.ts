@@ -95,7 +95,7 @@ export async function POST(request: Request) {
         installedByTelegramUserId: adminId,
       });
       if (!group) return json({ error: "Invalid group installation", requestId }, 400);
-      console.info("daily_ideas_group_installed", { requestId, chatId, actor: getTelegramActor(Number(adminId)) });
+      console.info("daily_ideas_group_installed", { requestId, chatId, actor: getTelegramActor(adminId) });
       return json({ contractVersion: DAILY_IDEAS_SERVICE_CONTRACT_VERSION, group }, 201);
     }
 
@@ -113,7 +113,7 @@ export async function POST(request: Request) {
         frequency: body.frequency,
       });
       if (!group) return json({ error: "Group is not installed or settings are invalid", requestId }, 400);
-      console.info("daily_ideas_group_settings_updated", { requestId, chatId, actor: getTelegramActor(Number(adminId)), enabled: group.enabled, category: group.category, timezone: group.timezone, localHour: group.localHour, frequency: group.frequency });
+      console.info("daily_ideas_group_settings_updated", { requestId, chatId, actor: getTelegramActor(adminId), enabled: group.enabled, category: group.category, timezone: group.timezone, localHour: group.localHour, frequency: group.frequency });
       return json({ contractVersion: DAILY_IDEAS_SERVICE_CONTRACT_VERSION, group });
     }
 
@@ -137,7 +137,7 @@ export async function POST(request: Request) {
       if (!rate.allowed) return json({ error: "Vote rate limit exceeded", requestId }, 429, { "Retry-After": String(rate.retryAfter) });
       const result = await recordDailyIdeasGroupVote({ chatId, ideaId, telegramUserId: voterId, vote });
       if (!result) return json({ error: "Group voting is unavailable", requestId }, 404);
-      console.info("daily_ideas_group_vote_recorded", { requestId, chatId, actor: getTelegramActor(Number(voterId)), ideaId, vote, total: result.counts.total });
+      console.info("daily_ideas_group_vote_recorded", { requestId, chatId, actor: getTelegramActor(voterId), ideaId, vote, total: result.counts.total });
       return json({ contractVersion: DAILY_IDEAS_SERVICE_CONTRACT_VERSION, ...result });
     }
 
