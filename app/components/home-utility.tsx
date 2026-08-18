@@ -20,6 +20,7 @@ type PublicLookupMode = "wallet" | "name";
 const GNS_NAME_PATTERN =
   /^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$/;
 const SOLANA_ADDRESS_PATTERN = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+const IDENTITY_RECOVERY_DELAYS_MS = [1_200, 5_000] as const;
 
 function getValidationMessage(mode: PublicLookupMode, value: string) {
   const input = value.trim();
@@ -192,9 +193,13 @@ function WalletResultCard({
           <strong>
             {identity.status === "none"
               ? "No .gwap identity is linked yet."
-              : "Identity registry temporarily unavailable."}
+              : "GwapScore ready. Reconnecting to GNS…"}
           </strong>
-          <p>{shortAddress(result.wallet)} was checked directly with GwapScore.</p>
+          <p>
+            {identity.status === "unavailable"
+              ? `${shortAddress(result.wallet)} was scored while GWAP retries the identity lookup.`
+              : `${shortAddress(result.wallet)} was checked directly with GwapScore.`}
+          </p>
           <GwapScoreDisplay result={score} variant="card" />
         </div>
         <div className="hero-utility-result-actions">
@@ -242,16 +247,73 @@ export function HomeUtility() {
   const [result, setResult] = useState<LookupResult | null>(null);
   const [shareStatus, setShareStatus] = useState<ShareStatus>("idle");
   const controllerRef = useRef<AbortController | null>(null);
+  const recoveryControllerRef = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const shareResetRef = useRef<number | null>(null);
 
   useEffect(
     () => () => {
       controllerRef.current?.abort();
+      recoveryControllerRef.current?.abort();
       if (shareResetRef.current) window.clearTimeout(shareResetRef.current);
     },
     [],
   );
+
+  const recoverUnavailableIdentity = useCallback(async (wallet: string) => {
+    recoveryControllerRef.current?.abort();
+    const controller = new AbortController();
+    recoveryControllerRef.current = controller;
+
+    try {
+      for (const delayMs of IDENTITY_RECOVERY_DELAYS_MS) {
+        await new Promise<void>((resolve) => {
+          const timer = window.setTimeout(resolve, delayMs);
+          controller.signal.addEventListener(
+            "abort",
+            () => {
+              window.clearTimeout(timer);
+              resolve();
+            },
+            { once: true },
+          );
+        });
+
+        if (controller.signal.aborted) return;
+
+        try {
+          const response = await fetch(
+            `/api/public/lookup?type=wallet&q=${encodeURIComponent(wallet)}`,
+            { signal: controller.signal, headers: { Accept: "application/json" } },
+          );
+          const payload = (await response.json().catch(() => ({}))) as
+            | LookupResult
+            | { error?: string };
+
+          if (
+            !response.ok ||
+            !("kind" in payload) ||
+            payload.kind !== "wallet"
+          ) {
+            continue;
+          }
+
+          if (controller.signal.aborted) return;
+
+          if (payload.identity.status !== "unavailable") {
+            setResult(payload);
+            return;
+          }
+        } catch {
+          if (controller.signal.aborted) return;
+        }
+      }
+    } finally {
+      if (recoveryControllerRef.current === controller) {
+        recoveryControllerRef.current = null;
+      }
+    }
+  }, []);
 
   const runLookup = useCallback(async (
     nextMode: PublicLookupMode,
@@ -259,6 +321,8 @@ export function HomeUtility() {
     syncUrl = true,
   ) => {
     controllerRef.current?.abort();
+    recoveryControllerRef.current?.abort();
+    recoveryControllerRef.current = null;
 
     const validationMessage = getValidationMessage(nextMode, nextQuery);
     if (validationMessage) {
@@ -294,6 +358,9 @@ export function HomeUtility() {
 
       setResult(payload);
       setStatus("success");
+      if (payload.kind === "wallet" && payload.identity.status === "unavailable") {
+        void recoverUnavailableIdentity(payload.wallet);
+      }
       if (syncUrl) {
         const shareQuery = payload.kind === "name" ? payload.fullName : payload.wallet;
         const shareUrl = new URL(
@@ -318,7 +385,7 @@ export function HomeUtility() {
         controllerRef.current = null;
       }
     }
-  }, []);
+  }, [recoverUnavailableIdentity]);
 
   useEffect(() => {
     const deepLink = readPublicLookupDeepLink(window.location.href);
@@ -334,6 +401,8 @@ export function HomeUtility() {
 
   function selectMode(nextMode: PublicLookupMode) {
     controllerRef.current?.abort();
+    recoveryControllerRef.current?.abort();
+    recoveryControllerRef.current = null;
     setMode(nextMode);
     setQuery("");
     setStatus("idle");
