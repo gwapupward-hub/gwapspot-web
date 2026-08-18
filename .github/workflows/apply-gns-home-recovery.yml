@@ -1,0 +1,111 @@
+name: Apply GNS homepage recovery patch
+
+on:
+  push:
+    branches: [agent/gns-home-recovery]
+
+permissions:
+  contents: write
+
+jobs:
+  patch-home-utility:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/gns-home-recovery
+          fetch-depth: 0
+      - name: Apply non-blocking GNS recovery
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('app/components/home-utility.tsx')
+          text = path.read_text()
+
+          def replace_once(old: str, new: str, label: str):
+              global text
+              if old not in text:
+                  raise SystemExit(f'missing patch anchor: {label}')
+              text = text.replace(old, new, 1)
+
+          replace_once(
+              'const SOLANA_ADDRESS_PATTERN = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;\n',
+              'const SOLANA_ADDRESS_PATTERN = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;\nconst IDENTITY_RECOVERY_DELAYS_MS = [1_200, 5_000] as const;\n',
+              'retry constants',
+          )
+
+          replace_once(
+              '              : "Identity registry temporarily unavailable."}\n',
+              '              : "GwapScore ready. Reconnecting to GNS…"}\n',
+              'transient identity message',
+          )
+
+          replace_once(
+              '          <p>{shortAddress(result.wallet)} was checked directly with GwapScore.</p>\n',
+              '          <p>\n            {identity.status === "unavailable"\n              ? `${shortAddress(result.wallet)} was scored while GWAP retries the identity lookup.`\n              : `${shortAddress(result.wallet)} was checked directly with GwapScore.`}\n          </p>\n',
+              'transient identity detail',
+          )
+
+          replace_once(
+              '  const controllerRef = useRef<AbortController | null>(null);\n  const inputRef = useRef<HTMLInputElement>(null);\n',
+              '  const controllerRef = useRef<AbortController | null>(null);\n  const recoveryControllerRef = useRef<AbortController | null>(null);\n  const inputRef = useRef<HTMLInputElement>(null);\n',
+              'recovery controller ref',
+          )
+
+          replace_once(
+              '      controllerRef.current?.abort();\n      if (shareResetRef.current) window.clearTimeout(shareResetRef.current);\n',
+              '      controllerRef.current?.abort();\n      recoveryControllerRef.current?.abort();\n      if (shareResetRef.current) window.clearTimeout(shareResetRef.current);\n',
+              'cleanup recovery controller',
+          )
+
+          recovery = '''\n  const recoverUnavailableIdentity = useCallback(async (wallet: string) => {\n    recoveryControllerRef.current?.abort();\n    const controller = new AbortController();\n    recoveryControllerRef.current = controller;\n\n    try {\n      for (const delayMs of IDENTITY_RECOVERY_DELAYS_MS) {\n        await new Promise<void>((resolve) => {\n          const timer = window.setTimeout(resolve, delayMs);\n          controller.signal.addEventListener(\n            "abort",\n            () => {\n              window.clearTimeout(timer);\n              resolve();\n            },\n            { once: true },\n          );\n        });\n\n        if (controller.signal.aborted) return;\n\n        try {\n          const response = await fetch(\n            `/api/public/lookup?type=wallet&q=${encodeURIComponent(wallet)}`,\n            { signal: controller.signal, headers: { Accept: "application/json" } },\n          );\n          const payload = (await response.json().catch(() => ({}))) as\n            | LookupResult\n            | { error?: string };\n\n          if (\n            !response.ok ||\n            !("kind" in payload) ||\n            payload.kind !== "wallet"\n          ) {\n            continue;\n          }\n\n          if (controller.signal.aborted) return;\n\n          if (payload.identity.status !== "unavailable") {\n            setResult(payload);\n            return;\n          }\n        } catch {\n          if (controller.signal.aborted) return;\n        }\n      }\n    } finally {\n      if (recoveryControllerRef.current === controller) {\n        recoveryControllerRef.current = null;\n      }\n    }\n  }, []);\n'''
+
+          replace_once(
+              '\n  const runLookup = useCallback(async (\n',
+              recovery + '\n  const runLookup = useCallback(async (\n',
+              'recovery callback insertion',
+          )
+
+          replace_once(
+              '  ) => {\n    controllerRef.current?.abort();\n\n    const validationMessage = getValidationMessage(nextMode, nextQuery);\n',
+              '  ) => {\n    controllerRef.current?.abort();\n    recoveryControllerRef.current?.abort();\n    recoveryControllerRef.current = null;\n\n    const validationMessage = getValidationMessage(nextMode, nextQuery);\n',
+              'cancel prior recovery on lookup',
+          )
+
+          replace_once(
+              '      setResult(payload);\n      setStatus("success");\n      if (syncUrl) {\n',
+              '      setResult(payload);\n      setStatus("success");\n      if (payload.kind === "wallet" && payload.identity.status === "unavailable") {\n        void recoverUnavailableIdentity(payload.wallet);\n      }\n      if (syncUrl) {\n',
+              'start background recovery',
+          )
+
+          replace_once(
+              '  }, []);\n\n  useEffect(() => {\n    const deepLink = readPublicLookupDeepLink(window.location.href);\n',
+              '  }, [recoverUnavailableIdentity]);\n\n  useEffect(() => {\n    const deepLink = readPublicLookupDeepLink(window.location.href);\n',
+              'runLookup dependency',
+          )
+
+          replace_once(
+              '  function selectMode(nextMode: PublicLookupMode) {\n    controllerRef.current?.abort();\n',
+              '  function selectMode(nextMode: PublicLookupMode) {\n    controllerRef.current?.abort();\n    recoveryControllerRef.current?.abort();\n    recoveryControllerRef.current = null;\n',
+              'cancel recovery on mode switch',
+          )
+
+          path.write_text(text)
+          PY
+      - name: Verify targeted diff
+        run: |
+          git diff --check
+          git diff -- app/components/home-utility.tsx
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/components/home-utility.tsx
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "fix(home): recover transient GNS identity lookups"
+          git push origin HEAD:agent/gns-home-recovery
