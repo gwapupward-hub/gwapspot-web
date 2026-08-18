@@ -116,10 +116,10 @@ export function CinematicHome() {
 
         <nav className={`cinematic-links${menuOpen ? " is-open" : ""}`} aria-label="Primary navigation">
           <Link className="cinematic-os-menu-link" href="/app" onClick={() => setMenuOpen(false)}>Open GWAP OS <Icon name="arrow" /></Link>
+          <Link href="#overview" onClick={() => setMenuOpen(false)}>Start Here</Link>
           <Link href="#ecosystem" onClick={() => setMenuOpen(false)}>Ecosystem</Link>
           <Link href="#trust" onClick={() => setMenuOpen(false)}>Infrastructure</Link>
           <Link href="#roadmap" onClick={() => setMenuOpen(false)}>Roadmap</Link>
-          <Link href="/changelog" onClick={() => setMenuOpen(false)}>Build Log</Link>
           <Link href="/community" onClick={() => setMenuOpen(false)}>Community</Link>
         </nav>
 
@@ -145,12 +145,12 @@ export function CinematicHome() {
       <section className="story-section hero-story is-active" id="top" data-story-section>
         <div className="hero-light" aria-hidden="true" />
         <div className="hero-content">
-          <span className="hero-pill"><i /> The flagship gateway to GWAP</span>
+          <span className="hero-pill"><i /> Identity + reputation, connected</span>
           <h1>Grind with<br /><em>a purpose.</em></h1>
-          <p>Identity, reputation, commerce, creativity, intelligence, and community—connected inside one premium Web3 ecosystem.</p>
+          <p>Turn your Solana wallet into a portable identity, understand your reputation, and carry that trust into the growing GWAP network.</p>
           <HomeUtility />
-          <div className="hero-ctas"><GlassButton href="#ecosystem" primary>Explore the ecosystem</GlassButton><GlassButton href="/app">Enter GWAP OS</GlassButton></div>
-          <div className="hero-trust"><span><Icon name="shield" /> Explainable trust</span><span><Icon name="network" /> Connected products</span><span><Icon name="spark" /> Built for what is next</span></div>
+          <div className="hero-ctas"><GlassButton href="/app/identity" primary>Claim your .gwap identity</GlassButton><GlassButton href="/app">Enter GWAP OS</GlassButton></div>
+          <div className="hero-trust"><span><Icon name="shield" /> Check before signup</span><span><Icon name="network" /> GNS + GwapScore</span><span><Icon name="spark" /> One connected network</span></div>
         </div>
 
         <div className="emblem-stage" aria-label="Animated GWAP ecosystem emblem">
@@ -162,57 +162,57 @@ export function CinematicHome() {
           <div className="emblem-caption"><span>GWAP CORE</span><small>ECOSYSTEM ONLINE</small></div>
         </div>
 
-        <a className="scroll-cue" href="#overview"><span>Scroll to enter</span><i /></a>
+        <a className="scroll-cue" href="#overview"><span>Choose your path</span><i /></a>
       </section>
 
       <section className="story-section overview-story" id="overview" data-story-section>
-        <div className="section-kicker"><span>01</span><p>One network. Multiple engines.</p></div>
+        <div className="section-kicker"><span>01</span><p>Start with the outcome you want.</p></div>
         <div className="overview-layout">
           <div className="overview-copy">
-            <span className="eyebrow-premium"><Icon name="spark" /> The GWAP operating system</span>
-            <h2>Built as an ecosystem,<br />not another landing page.</h2>
-            <p>Every GWAP product has a focused role. Together, they create a connected layer for identity, trust, creators, transactions, and knowledge.</p>
+            <span className="eyebrow-premium"><Icon name="spark" /> Your way into GWAP</span>
+            <h2>What brought you<br />to GWAP?</h2>
+            <p>You do not need to understand every product first. Start with identity, reputation, or your operating layer—the rest of the ecosystem can unfold from there.</p>
           </div>
           <div className="metrics-glass">
-            <div><strong><CountUp value={8} /></strong><span>Products</span><small>Across one shared vision</small></div>
+            <div><strong><CountUp value={8} /></strong><span>Products</span><small>One connected ecosystem</small></div>
             <div><strong><CountUp value={4} /></strong><span>Live</span><small>Working in public today</small></div>
             <div><strong><CountUp value={300} suffix="–900" /></strong><span>Score range</span><small>Explainable wallet reputation</small></div>
             <div><strong><CountUp value={1} suffix=" hub" /></strong><span>Gateway</span><small>GWAPSpot connects it all</small></div>
           </div>
         </div>
 
-        <div className="overview-foundation" aria-label="GWAP core infrastructure">
-          <Link href="/ecosystem/gns" className="overview-foundation-card">
-            <span>01 / IDENTITY</span>
+        <div className="overview-foundation" aria-label="Choose your GWAP starting point">
+          <Link href="/app/identity" className="overview-foundation-card">
+            <span>01 / BUILD MY IDENTITY</span>
             <div><Image src="/logos/gns.webp" alt="" width={42} height={42} /><strong>GNS</strong></div>
-            <p>.gwap names and portable wallet identity.</p>
-            <small>Identity foundation <Icon name="arrow" /></small>
+            <p>Claim a .gwap name and turn your wallet into a readable, portable identity.</p>
+            <small>Claim my identity <Icon name="arrow" /></small>
           </Link>
-          <Link href="/ecosystem/gwapscore" className="overview-foundation-card">
-            <span>02 / REPUTATION</span>
+          <Link href="#top" className="overview-foundation-card">
+            <span>02 / CHECK REPUTATION</span>
             <div><Image src="/logos/gwapscore.svg" alt="" width={42} height={42} /><strong>GwapScore</strong></div>
-            <p>Explainable 300–900 reputation and wallet intelligence.</p>
-            <small>Trust foundation <Icon name="arrow" /></small>
+            <p>Run a no-signup wallet check and see an explainable 300–900 reputation signal.</p>
+            <small>Check my wallet <Icon name="arrow" /></small>
           </Link>
           <Link href="/app" className="overview-os-entry">
-            <span>GWAP OS</span>
-            <strong>Your identity, reputation, apps, and activity in one operating layer.</strong>
-            <small>Enter the operating system <Icon name="arrow" /></small>
+            <span>03 / ENTER GWAP OS</span>
+            <strong>Manage your identity, reputation, apps, and activity in one operating layer.</strong>
+            <small>Open my GWAP OS <Icon name="arrow" /></small>
           </Link>
         </div>
 
         <div className="depth-window">
           <div className="depth-grid" />
           <div className="depth-orbit"><div className="depth-core"><Image src="/logos/gwap-agent-clear.svg" alt="" width={90} height={90} /></div>{["IDENTITY", "REPUTATION", "COMMERCE", "CREATIVITY", "INTELLIGENCE"].map((label, index) => <span style={{ "--node-index": index } as CSSProperties} key={label}>{label}</span>)}</div>
-          <div className="depth-label"><small>CONNECTED INFRASTRUCTURE</small><strong>Purpose compounds<br />when systems connect.</strong></div>
+          <div className="depth-label"><small>CONNECTED INFRASTRUCTURE</small><strong>Build trust once.<br />Carry it forward.</strong></div>
         </div>
       </section>
 
       <section className="story-section ecosystem-story" id="ecosystem" data-story-section>
         <div className="section-kicker"><span>02</span><p>Explore the product network.</p></div>
         <div className="premium-heading">
-          <div><span className="eyebrow-premium"><Icon name="network" /> GWAP ecosystem</span><h2>Independent products.<br /><em>Shared momentum.</em></h2></div>
-          <p>GWAP is an ecosystem studio building infrastructure and experiences around identity, reputation, commerce, creativity, and community.</p>
+          <div><span className="eyebrow-premium"><Icon name="network" /> GWAP ecosystem</span><h2>Your starting point<br /><em>opens the network.</em></h2></div>
+          <p>GNS establishes identity. GwapScore adds reputation. GWAP OS connects those signals to the broader ecosystem of commerce, creativity, intelligence, and community.</p>
         </div>
         <GwapEcosystemGraph />
         <div className="ecosystem-groups">
