@@ -1,0 +1,233 @@
+/* Mobile navigation reliability v2.
+ * Imported last so touch navigation wins over older effect layers without
+ * altering the unified mobile-first scroll renderer.
+ */
+
+[data-native-nav],
+[data-native-product-link] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.brand img,
+.footer-brand img,
+.wallet-auth-logo-row img,
+.product-logo-wrap img,
+.product-hero-logo img,
+.product-glyph-logo,
+.overview-foundation-card img,
+.depth-core img,
+.cinematic-brand-mark img,
+.emblem-core img,
+.footer-lockup img {
+  display: block;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.mobile-quick-nav {
+  display: none;
+}
+
+.product-route-nav {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-bottom: 22px;
+}
+
+.product-route-nav a {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+  border: 1px solid rgba(255,255,255,.13);
+  border-radius: 999px;
+  background: rgba(255,255,255,.035);
+  color: rgba(244,246,244,.88);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .04em;
+}
+
+/* Explicit native links own their hit target on every input mode. */
+[data-native-product-link] > *,
+.overview-foundation-card > * {
+  pointer-events: none;
+}
+
+[data-native-product-link]::before,
+[data-native-product-link]::after,
+.overview-foundation-card::before,
+.overview-foundation-card::after {
+  pointer-events: none !important;
+}
+
+@media (hover: none) and (pointer: coarse), (max-width: 820px) {
+  a,
+  button,
+  [role="button"] {
+    touch-action: manipulation;
+  }
+
+  /* One obvious navigation system across every inner page. */
+  .inner-main .site-header {
+    top: 7px;
+    width: calc(100% - 16px);
+    min-height: 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    border-radius: 18px;
+    background: rgba(5,8,6,.97);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: 0 12px 34px rgba(0,0,0,.32);
+  }
+
+  .inner-main .brand {
+    min-width: 48px;
+    min-height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 13px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .inner-main .brand-mark {
+    width: 44px;
+    height: 44px;
+  }
+
+  .inner-main .brand-copy,
+  .inner-main .header-cta,
+  .inner-main .desktop-nav {
+    display: none !important;
+  }
+
+  .mobile-quick-nav {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
+  }
+
+  .mobile-quick-nav a {
+    min-width: 0;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 8px;
+    border: 1px solid rgba(255,255,255,.09);
+    border-radius: 11px;
+    background: rgba(255,255,255,.028);
+    color: rgba(244,246,244,.78);
+    font-size: 10px;
+    font-weight: 850;
+    letter-spacing: .035em;
+    white-space: nowrap;
+  }
+
+  .mobile-quick-nav a:last-child {
+    border-color: rgba(19,221,19,.26);
+    background: rgba(19,221,19,.07);
+    color: #7df77d;
+  }
+
+  .product-route-nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+    margin-bottom: 18px;
+  }
+
+  .product-route-nav a {
+    width: 100%;
+    min-height: 44px;
+    padding: 0 10px;
+    font-size: 10px;
+  }
+
+  /* On touch, the anchor owns the full card. Decorative children cannot turn a
+   * first tap into hover acquisition or a non-navigation gesture. */
+  .premium-product-card > *,
+  .product-card > * {
+    pointer-events: none;
+  }
+
+  .premium-product-card,
+  .product-card,
+  .overview-foundation-card,
+  .premium-product-card:hover,
+  .product-card:hover,
+  .overview-foundation-card:hover,
+  .premium-product-card:focus,
+  .product-card:focus,
+  .overview-foundation-card:focus,
+  .premium-product-card:active,
+  .product-card:active,
+  .overview-foundation-card:active,
+  .premium-product-card.gwap-pressing,
+  .product-card.gwap-pressing,
+  .premium-product-card.gwap-product-activating {
+    transform: none !important;
+    animation: none !important;
+    transition: opacity 80ms linear, border-color 100ms linear !important;
+  }
+
+  .premium-product-card:active,
+  .product-card:active,
+  .overview-foundation-card:active {
+    opacity: .93;
+    border-color: rgba(19,221,19,.3) !important;
+  }
+
+  .premium-product-card .gwap-tap-pulse,
+  .product-card .gwap-tap-pulse,
+  .premium-product-card .card-reflection,
+  .card-reflection {
+    display: none !important;
+  }
+
+  .premium-product-card::before,
+  .premium-product-card::after,
+  .product-card::before,
+  .product-card::after {
+    animation: none !important;
+    pointer-events: none !important;
+  }
+
+  .ecosystem-group[data-gwap-active-product],
+  .ecosystem-group-infrastructure[data-gwap-active-product],
+  .ecosystem-group-experience[data-gwap-active-product] {
+    transform: none !important;
+    animation: none !important;
+  }
+
+  .ecosystem-group[data-gwap-active-product] .ecosystem-group-header::after,
+  .ecosystem-group[data-gwap-active-product] .ecosystem-group-signals li {
+    animation: none !important;
+    transform: none !important;
+  }
+
+  /* Stable image geometry avoids layout shift while assets decode. */
+  .product-glyph,
+  .product-logo-wrap,
+  .product-hero-logo,
+  .wallet-auth-logo-row {
+    contain: layout paint;
+  }
+
+  .wallet-auth-logo-row img,
+  .overview-foundation-card img,
+  .product-glyph-logo {
+    flex: 0 0 auto;
+  }
+}
