@@ -3,6 +3,7 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import {
   addMilliseconds,
+  buildVerificationShareUrl,
   buildXVerificationPostIntentUrl,
   buildXVerificationPostText,
   challengeHashesMatch,
@@ -11,6 +12,7 @@ import {
   hashVerificationChallenge,
   isChallengeExpired,
   isValidXUsername,
+  isVerificationCardTheme,
   normalizeXUsername,
   VERIFICATION_CHALLENGE_TTL_MS,
 } from "./core";
@@ -32,6 +34,7 @@ import type {
   PlatformPost,
   SocialAccount,
   SocialSummary,
+  VerificationCardTheme,
   VerificationChallenge,
   VerificationEventType,
   VerificationState,
@@ -196,7 +199,18 @@ export async function claimXAccount(userId: string, usernameInput: string) {
   return account;
 }
 
-export async function issueChallenge(userId: string, accountId: string) {
+export async function issueChallenge(
+  userId: string,
+  accountId: string,
+  cardTheme: VerificationCardTheme,
+) {
+  if (!isVerificationCardTheme(cardTheme)) {
+    throw new GwapScoreSocialError(
+      "Choose a verification card before generating the X post",
+      400,
+    );
+  }
+
   const account = await getOwnedSocialAccount(userId, accountId);
   if (!account) throw new GwapScoreSocialError("Social account not found", 404);
   if (account.verificationState === "VERIFIED") {
@@ -213,13 +227,21 @@ export async function issueChallenge(userId: string, accountId: string) {
   }
 
   const now = new Date();
+  const challengeId = randomUUID();
   const rawChallenge = generateVerificationChallenge();
   const challengeHash = hashVerificationChallenge(rawChallenge, challengeSecret());
+  const verificationShareUrl = buildVerificationShareUrl(challengeId);
+  const verificationPostText = buildXVerificationPostText(
+    account.currentUsername,
+    rawChallenge,
+    verificationShareUrl,
+  );
   const challenge: VerificationChallenge = {
-    id: randomUUID(),
+    id: challengeId,
     socialAccountId: account.id,
     platform: "x",
     challengeHash,
+    cardTheme,
     state: "active",
     createdAt: now.toISOString(),
     expiresAt: addMilliseconds(now, VERIFICATION_CHALLENGE_TTL_MS),
@@ -236,20 +258,23 @@ export async function issueChallenge(userId: string, accountId: string) {
     },
     "CHALLENGE_ISSUED",
   );
-  await recordEvent(updated, "CHALLENGE_CREATED", { challengeId: challenge.id });
-  emitTelemetry("challenge_created", { platform: "x" });
+  await recordEvent(updated, "CHALLENGE_CREATED", {
+    challengeId: challenge.id,
+    cardTheme,
+  });
+  emitTelemetry("challenge_created", { platform: "x", cardTheme });
   updated = await setAccountState(updated, "AWAITING_POST");
 
   return {
     challengeId: challenge.id,
     challenge: rawChallenge,
-    verificationPostText: buildXVerificationPostText(
-      updated.currentUsername,
-      rawChallenge,
-    ),
+    cardTheme,
+    verificationShareUrl,
+    verificationPostText,
     postIntentUrl: buildXVerificationPostIntentUrl(
       updated.currentUsername,
       rawChallenge,
+      verificationShareUrl,
     ),
     expiresAt: challenge.expiresAt,
     account: updated,
@@ -402,6 +427,7 @@ async function processChallenge(
   await recordEvent(updated, "ACCOUNT_VERIFIED", {
     verificationMethod: "PROOF_OF_CONTROL_PUBLIC_POST",
     proofPostId: updated.verificationProofPostId,
+    verificationCardTheme: challenge.cardTheme ?? "green",
   });
   emitTelemetry("verification_completed", { platform: account.platform });
 
