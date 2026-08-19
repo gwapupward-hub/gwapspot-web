@@ -4,6 +4,7 @@ import {
   guardGwapScoreMutation,
   gwapScoreErrorResponse,
 } from "../../../../../lib/gwapscore-social/http";
+import { isVerificationCardTheme } from "../../../../../lib/gwapscore-social/core";
 import { issueChallenge } from "../../../../../lib/gwapscore-social/service";
 
 export const runtime = "nodejs";
@@ -16,11 +17,24 @@ export async function POST(request: Request) {
   if (rejected) return rejected;
 
   try {
-    const body = (await request.json()) as { socialAccountId?: unknown };
+    const body = (await request.json()) as {
+      socialAccountId?: unknown;
+      cardTheme?: unknown;
+    };
     if (typeof body.socialAccountId !== "string" || !body.socialAccountId) {
       return NextResponse.json({ error: "socialAccountId is required" }, { status: 400 });
     }
-    const result = await issueChallenge(identity.userId, body.socialAccountId);
+    if (!isVerificationCardTheme(body.cardTheme)) {
+      return NextResponse.json(
+        { error: "Choose a verification card before generating the X post" },
+        { status: 400 },
+      );
+    }
+    const result = await issueChallenge(
+      identity.userId,
+      body.socialAccountId,
+      body.cardTheme,
+    );
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
     return gwapScoreErrorResponse(error);
