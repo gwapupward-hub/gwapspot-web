@@ -36,6 +36,20 @@ test("mobile navigation reliability v2 keeps product navigation isolated", () =>
 
   assert.match(reliabilityCss, /touch-action: manipulation/);
   assert.match(reliabilityCss, /\.premium-product-card > \*/);
+  assert.match(reliabilityCss, /-webkit-touch-callout: none/);
+  assert.match(
+    reliabilityCss,
+    /\.cinematic-home\.unified-cinematic-flow \.ecosystem-group-products \.premium-product-card:hover/,
+  );
+  assert.match(
+    reliabilityCss,
+    /\.cinematic-home\.unified-cinematic-flow\.scroll-directed \.ecosystem-story \.premium-product-card/,
+  );
+  assert.match(
+    reliabilityCss,
+    /\.cinematic-home\.unified-cinematic-flow \.premium-product-card:hover::after/,
+  );
+  assert.match(reliabilityCss, /transition: none !important/);
   assert.match(reliabilityCss, /transform: none !important/);
   assert.ok(
     styles.trim().endsWith('@import "./navigation-reliability-v2.css";'),
