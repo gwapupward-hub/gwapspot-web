@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 
 const PRODUCT_LINK_SELECTOR =
-  "a.premium-product-card[data-gwap-product], a[data-native-product-link]";
+  "a.premium-product-card[data-gwap-product], a.product-card[data-native-product-link]";
 const TAP_MAX_DISTANCE = 10;
 const TAP_MAX_DURATION_MS = 700;
 
