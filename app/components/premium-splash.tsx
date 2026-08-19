@@ -22,6 +22,7 @@ export default function PremiumSplash() {
   const pathname = usePathname();
   const previousPathname = useRef(pathname);
   const routePending = useRef(false);
+  const skipNextRouteTransition = useRef(false);
   const introExitStarted = useRef(false);
   const timers = useRef<number[]>([]);
   const previousBodyOverflow = useRef<string | null>(null);
@@ -119,7 +120,7 @@ export default function PremiumSplash() {
       if (!(target instanceof Element)) return;
 
       const anchor = target.closest("a");
-      if (!anchor || anchor.dataset.noTransition === "true") return;
+      if (!anchor) return;
       if (anchor.target && anchor.target !== "_self") return;
       if (anchor.hasAttribute("download")) return;
 
@@ -136,6 +137,19 @@ export default function PremiumSplash() {
         destination.search === current.search;
 
       if (destination.origin !== current.origin || isSameDocument) return;
+
+      const bypassRouteTransition =
+        anchor.dataset.noTransition === "true" || anchor.hasAttribute("data-native-nav");
+
+      if (bypassRouteTransition) {
+        skipNextRouteTransition.current = true;
+        clearTimers();
+        routePending.current = false;
+        setReady(false);
+        setLeaving(false);
+        setMode(null);
+        return;
+      }
 
       clearTimers();
       routePending.current = true;
@@ -170,6 +184,15 @@ export default function PremiumSplash() {
     previousPathname.current = pathname;
 
     clearTimers();
+
+    if (skipNextRouteTransition.current) {
+      skipNextRouteTransition.current = false;
+      routePending.current = false;
+      setReady(false);
+      setLeaving(false);
+      setMode(null);
+      return;
+    }
 
     if (!routePending.current) {
       setReady(false);
