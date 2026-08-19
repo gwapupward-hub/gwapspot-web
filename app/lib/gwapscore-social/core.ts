@@ -2,6 +2,7 @@ import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypt
 
 export const VERIFICATION_CHALLENGE_TTL_MS = 30 * 60 * 1_000;
 const CHALLENGE_PREFIX = "GS-X";
+const CHALLENGE_PATTERN = /\bGS-X-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}\b/gi;
 
 export function normalizeXUsername(value: string) {
   return value.trim().replace(/^@+/, "").toLowerCase();
@@ -18,6 +19,27 @@ export function generateVerificationChallenge() {
 
 export function normalizeChallengeText(value: string) {
   return value.trim().toUpperCase();
+}
+
+export function extractVerificationChallenges(value: string) {
+  return (value.match(CHALLENGE_PATTERN) ?? []).map(normalizeChallengeText);
+}
+
+export function buildXVerificationPostText(username: string, challenge: string) {
+  const handle = normalizeXUsername(username);
+  return [
+    `Verifying control of @${handle} for GwapScore.`,
+    "",
+    `Challenge: ${normalizeChallengeText(challenge)}`,
+    "",
+    "This post only proves account control.",
+  ].join("\n");
+}
+
+export function buildXVerificationPostIntentUrl(username: string, challenge: string) {
+  const url = new URL("https://x.com/intent/tweet");
+  url.searchParams.set("text", buildXVerificationPostText(username, challenge));
+  return url.toString();
 }
 
 export function hashVerificationChallenge(value: string, secret?: string) {
