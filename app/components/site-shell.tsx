@@ -1,8 +1,7 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { EcosystemProduct } from "../lib/ecosystem";
-import { getProductDestination, isExternalProductDestination, socialLinks } from "../lib/ecosystem";
+import { getProductDestination, socialLinks } from "../lib/ecosystem";
 
 export function ArrowIcon() {
   return (
@@ -37,15 +36,21 @@ export function SparkIcon() {
 export function SiteHeader() {
   return (
     <header className="site-header">
-      <Link className="brand" href="/" aria-label="GWAP home">
+      <a className="brand" href="/" aria-label="GWAP home" data-native-nav>
         <span className="brand-mark">
-          <Image src="/logos/gwap-agent.png" alt="" width={40} height={40} priority />
+          <img
+            src="/logos/gwap-agent-clear.svg"
+            alt=""
+            width={40}
+            height={40}
+            decoding="async"
+          />
         </span>
         <span className="brand-copy">
           <strong>GWAP</strong>
           <small>Grind With A Purpose</small>
         </span>
-      </Link>
+      </a>
 
       <nav className="desktop-nav" aria-label="Primary navigation">
         <Link href="/launch">Launch</Link>
@@ -58,6 +63,12 @@ export function SiteHeader() {
         <Link href="/contact">Contact</Link>
       </nav>
 
+      <nav className="mobile-quick-nav" aria-label="Mobile navigation">
+        <a href="/" data-native-nav>Home</a>
+        <a href="/ecosystem" data-native-nav>Ecosystem</a>
+        <a href="/app" data-native-nav>GWAP OS</a>
+      </nav>
+
       <Link className="header-cta" href="/app">
         GWAP OS <ArrowIcon />
       </Link>
@@ -68,13 +79,20 @@ export function SiteHeader() {
 export function SiteFooter() {
   return (
     <footer className="site-footer expanded-footer">
-      <div className="footer-brand">
-        <Image src="/logos/gwap-agent.png" alt="" width={34} height={34} />
+      <a className="footer-brand" href="/" aria-label="GWAP home" data-native-nav>
+        <img
+          src="/logos/gwap-agent-clear.svg"
+          alt=""
+          width={34}
+          height={34}
+          loading="lazy"
+          decoding="async"
+        />
         <div>
           <strong>GWAP</strong>
           <span>Grind With A Purpose</span>
         </div>
-      </div>
+      </a>
 
       <p>Building connected digital infrastructure with purpose.</p>
 
@@ -140,11 +158,10 @@ export function ProductCard({
   const ProductHeading = headingLevel;
 
   return (
-    <Link
+    <a
       className={`product-card product-card--${product.slug} accent-${product.accent}`}
       href={getProductDestination(product)}
-      target={isExternalProductDestination(product) ? "_blank" : undefined}
-      rel={isExternalProductDestination(product) ? "noreferrer" : undefined}
+      data-native-product-link
     >
       <div className="product-card-top">
         <span className="product-number">{String(index + 1).padStart(2, "0")}</span>
@@ -155,13 +172,13 @@ export function ProductCard({
         </span>
       </div>
       <div className="product-logo-wrap">
-        <Image
+        <img
           src={product.logo}
           alt={`${product.name} logo`}
           width={128}
           height={128}
-          sizes="128px"
-          unoptimized
+          loading="lazy"
+          decoding="async"
         />
       </div>
       <div>
@@ -172,7 +189,7 @@ export function ProductCard({
       <span className="product-link">
         View product <ArrowIcon />
       </span>
-    </Link>
+    </a>
   );
 }
 
