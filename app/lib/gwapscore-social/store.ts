@@ -8,6 +8,7 @@ import type {
 } from "./types";
 
 const ACTIVE_CHALLENGE_INDEX_TTL_SECONDS = 60 * 60;
+const PUBLIC_PROOF_RETENTION_SECONDS = 365 * 24 * 60 * 60;
 
 function accountKey(accountId: string) {
   return getPrivateStorageKey("gwapscore-social-account", accountId);
@@ -86,7 +87,12 @@ export async function getAccountIdForPlatformIdentity(platform: string, platform
 
 export async function saveChallenge(challenge: VerificationChallenge, ttlSeconds: number) {
   const redis = getWorkspaceRedis();
-  await redis.set(challengeKey(challenge.id), challenge, { ex: ttlSeconds + 60 * 60 });
+  // Keep the public proof record long enough for shared link cards to remain
+  // resolvable. The raw challenge is never stored; only its HMAC hash, visual
+  // theme, lifecycle state, and timestamps are retained.
+  await redis.set(challengeKey(challenge.id), challenge, {
+    ex: PUBLIC_PROOF_RETENTION_SECONDS,
+  });
   await redis.set(challengeHashKey(challenge.platform, challenge.challengeHash), challenge.id, {
     ex: ttlSeconds,
   });
@@ -97,7 +103,10 @@ export async function getChallenge(challengeId: string) {
   return getWorkspaceRedis().get<VerificationChallenge>(challengeKey(challengeId));
 }
 
-export async function updateChallenge(challenge: VerificationChallenge, ttlSeconds = 60 * 60) {
+export async function updateChallenge(
+  challenge: VerificationChallenge,
+  ttlSeconds = PUBLIC_PROOF_RETENTION_SECONDS,
+) {
   await getWorkspaceRedis().set(challengeKey(challenge.id), challenge, { ex: ttlSeconds });
 }
 
