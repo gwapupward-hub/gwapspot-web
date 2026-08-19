@@ -8,6 +8,8 @@ import styles from "../score/score.module.css";
 type ChallengePayload = {
   challengeId: string;
   challenge: string;
+  verificationPostText: string;
+  postIntentUrl: string;
   expiresAt: string;
   account: SocialAccount;
 };
@@ -118,12 +120,20 @@ export function GwapScoreSocialView() {
           }
           return;
         }
-        setChallenge((current) => (current ? { ...current, account: payload.account } : current));
+        setChallenge((current) =>
+          current ? { ...current, account: payload.account } : current,
+        );
+        setSummary((current) => ({ ...current, accounts: [payload.account] }));
+
         if (payload.followRequired) {
-          setStatus("DM matched. Follow the official GwapScore X account, then verification will complete on the next check.");
+          setStatus(
+            "Public proof matched. Follow the official GwapScore X account, then verification will complete on the next check.",
+          );
         } else if (payload.verified || payload.account.verificationState === "VERIFIED") {
           setStatus("Proof of Control verified. No reputation score has been issued yet.");
           await loadSummary();
+        } else if (payload.matched) {
+          setStatus("Public verification post matched to the claimed X account.");
         }
       } catch {
         // Polling is best-effort; the next cycle or manual reload can recover.
@@ -155,7 +165,8 @@ export function GwapScoreSocialView() {
       }
       const claimedAccount = payload.account;
       setSummary((current) => ({ ...current, accounts: [claimedAccount] }));
-      setStatus("X account claimed. Generate a one-time Proof of Control challenge next.");
+      setChallenge(null);
+      setStatus("X account claimed. Generate a one-time public Proof of Control post next.");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Unable to claim X account.");
     } finally {
@@ -166,7 +177,7 @@ export function GwapScoreSocialView() {
   async function createChallenge() {
     if (!activeAccount || busy) return;
     setBusy(true);
-    setStatus("Generating secure one-time challenge…");
+    setStatus("Generating secure one-time public verification challenge…");
     try {
       const response = await authenticatedFetch("/api/v1/gwapscore/social/challenges", {
         method: "POST",
@@ -174,12 +185,20 @@ export function GwapScoreSocialView() {
         body: JSON.stringify({ socialAccountId: activeAccount.id }),
       });
       const payload = await readJson<ChallengePayload & ApiError>(response);
-      if (!response.ok || !payload.challengeId || !payload.challenge) {
+      if (
+        !response.ok ||
+        !payload.challengeId ||
+        !payload.challenge ||
+        !payload.verificationPostText ||
+        !payload.postIntentUrl
+      ) {
         throw new Error(payload.error || "Unable to create verification challenge.");
       }
       setChallenge(payload);
       setSummary((current) => ({ ...current, accounts: [payload.account] }));
-      setStatus("Send this exact challenge by DM from the claimed X account. Verification checks automatically.");
+      setStatus(
+        "Post the generated proof on X. GwapScore will verify it automatically from public timeline data.",
+      );
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Unable to create verification challenge.");
     } finally {
@@ -221,7 +240,9 @@ export function GwapScoreSocialView() {
                   Claim X account
                 </button>
               </div>
-              <p className={styles.helper}>Follower count does not verify ownership. GwapScore binds the claim to X&apos;s immutable user ID.</p>
+              <p className={styles.helper}>
+                Follower count does not verify ownership. GwapScore resolves the username, then binds the claim to X&apos;s immutable user ID.
+              </p>
             </form>
           ) : (
             <div className={styles.accountCard}>
@@ -231,30 +252,64 @@ export function GwapScoreSocialView() {
                 <p>{activeAccount.displayName || "X account"}</p>
               </div>
               <dl>
-                <div><dt>Platform ID</dt><dd title={activeAccount.platformUserId}>{shortPlatformId(activeAccount.platformUserId)}</dd></div>
-                <div><dt>Control status</dt><dd>{accountStatusLabel(activeAccount)}</dd></div>
-                <div><dt>Follow check</dt><dd>{activeAccount.followStatus.replaceAll("_", " ")}</dd></div>
+                <div>
+                  <dt>Platform ID</dt>
+                  <dd title={activeAccount.platformUserId}>
+                    {shortPlatformId(activeAccount.platformUserId)}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Control status</dt>
+                  <dd>{accountStatusLabel(activeAccount)}</dd>
+                </div>
+                <div>
+                  <dt>Follow check</dt>
+                  <dd>{activeAccount.followStatus.replaceAll("_", " ")}</dd>
+                </div>
               </dl>
 
               {!verified && !challenge ? (
-                <button className={styles.primaryButton} type="button" onClick={createChallenge} disabled={busy}>
+                <button
+                  className={styles.primaryButton}
+                  type="button"
+                  onClick={createChallenge}
+                  disabled={busy}
+                >
                   Generate Proof of Control
                 </button>
               ) : null}
 
               {challenge && !verified ? (
                 <div className={styles.challengeBox}>
-                  <span>ONE-TIME CHALLENGE</span>
+                  <span>PUBLIC PROOF OF CONTROL</span>
                   <strong>{challenge.challenge}</strong>
-                  <p>DM this exact code to the official GwapScore X account from @{activeAccount.currentUsername}. It expires at {new Date(challenge.expiresAt).toLocaleTimeString()}.</p>
-                  <div className={styles.liveRow}><i /> Automatic DM check active</div>
+                  <p>
+                    Post the generated verification text from @{activeAccount.currentUsername}. It expires at {new Date(challenge.expiresAt).toLocaleTimeString()}.
+                  </p>
+                  <pre className={styles.postPreview}>{challenge.verificationPostText}</pre>
+                  <a
+                    className={styles.postButton}
+                    href={challenge.postIntentUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Post verification on X
+                  </a>
+                  <p className={styles.privacyNote}>
+                    GwapScore does not request, read, store, or analyze your X DMs. Proof of Control uses only this public post and public account data.
+                  </p>
+                  <div className={styles.liveRow}>
+                    <i /> Automatic public-post verification active
+                  </div>
                 </div>
               ) : null}
 
               {verified ? (
                 <div className={styles.verifiedBox}>
                   <strong>ACCOUNT VERIFIED</strong>
-                  <p>GwapScore has evidence that this GWAP user controlled @{activeAccount.currentUsername} at this point in time.</p>
+                  <p>
+                    GwapScore has evidence that this GWAP user publicly proved control of @{activeAccount.currentUsername} at this point in time.
+                  </p>
                 </div>
               ) : null}
             </div>
@@ -268,9 +323,18 @@ export function GwapScoreSocialView() {
             Sprint 1 does not manufacture a 300-point placeholder. Verification proves control only; it does not mean trustworthy, popular, legitimate, or high reputation.
           </p>
           <div className={styles.metricGrid}>
-            <div><span>Official score</span><strong>—</strong></div>
-            <div><span>Confidence</span><strong>—</strong></div>
-            <div><span>Verified accounts</span><strong>{summary.verifiedCount}</strong></div>
+            <div>
+              <span>Official score</span>
+              <strong>—</strong>
+            </div>
+            <div>
+              <span>Confidence</span>
+              <strong>—</strong>
+            </div>
+            <div>
+              <span>Verified accounts</span>
+              <strong>{summary.verifiedCount}</strong>
+            </div>
           </div>
           <div className={styles.statusLine}>{status}</div>
         </aside>
