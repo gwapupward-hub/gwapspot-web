@@ -1,0 +1,207 @@
+.primaryPanel {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.kicker {
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  color: rgba(255, 255, 255, 0.56);
+}
+
+.form,
+.accountCard {
+  display: grid;
+  gap: 1rem;
+}
+
+.form label {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.inputRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.75rem;
+}
+
+.inputRow input {
+  min-width: 0;
+  min-height: 48px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  padding: 0 0.95rem;
+  outline: none;
+}
+
+.inputRow input:focus {
+  border-color: rgba(19, 221, 19, 0.72);
+  box-shadow: 0 0 0 3px rgba(19, 221, 19, 0.1);
+}
+
+.inputRow button,
+.primaryButton {
+  min-height: 48px;
+  border: 1px solid rgba(19, 221, 19, 0.45);
+  border-radius: 14px;
+  background: rgba(19, 221, 19, 0.13);
+  color: #caffca;
+  padding: 0 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.inputRow button:disabled,
+.primaryButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.helper,
+.challengeBox p,
+.verifiedBox p,
+.sidePanel p,
+.accountCard p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.64);
+  line-height: 1.55;
+}
+
+.accountCard h2 {
+  margin: 0.5rem 0 0.2rem;
+  font-size: clamp(1.5rem, 4vw, 2.25rem);
+}
+
+.platformBadge {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #fff;
+  color: #000;
+  font-weight: 900;
+}
+
+.accountCard dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.accountCard dl div,
+.metricGrid div {
+  padding: 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.accountCard dt,
+.metricGrid span {
+  color: rgba(255, 255, 255, 0.48);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.accountCard dd {
+  margin: 0.35rem 0 0;
+  color: #fff;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.challengeBox,
+.verifiedBox {
+  padding: 1rem;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.challengeBox > span,
+.verifiedBox > strong {
+  display: block;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+}
+
+.challengeBox > strong {
+  display: block;
+  margin: 0.55rem 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: clamp(1.15rem, 4vw, 1.8rem);
+  color: #13dd13;
+  word-break: break-word;
+}
+
+.verifiedBox {
+  border-color: rgba(19, 221, 19, 0.34);
+  background: rgba(19, 221, 19, 0.08);
+}
+
+.verifiedBox > strong {
+  color: #77ff77;
+  margin-bottom: 0.45rem;
+}
+
+.liveRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.8rem;
+  color: #b9ffb9;
+  font-size: 0.82rem;
+}
+
+.liveRow i {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #13dd13;
+  box-shadow: 0 0 12px rgba(19, 221, 19, 0.8);
+}
+
+.sidePanel {
+  display: grid;
+  align-content: start;
+  gap: 1rem;
+}
+
+.metricGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.metricGrid strong {
+  display: block;
+  margin-top: 0.4rem;
+  font-size: 1.25rem;
+}
+
+.statusLine {
+  padding-top: 0.9rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.66);
+  font-size: 0.86rem;
+}
+
+@media (max-width: 760px) {
+  .inputRow,
+  .accountCard dl,
+  .metricGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .inputRow button,
+  .primaryButton {
+    width: 100%;
+  }
+}

@@ -1,5 +1,5 @@
-import { ScoreView } from "../components/score-view";
+import { GwapScoreSocialView } from "../components/gwapscore-social-view";
 
 export default function ScorePage() {
-  return <ScoreView />;
+  return <GwapScoreSocialView />;
 }
