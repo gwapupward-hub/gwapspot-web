@@ -58,8 +58,8 @@ export async function POST(request: Request) {
   const mode = body.mode === "module" || body.mode === "review" ? body.mode : null;
   if (!mode) return NextResponse.json({ error: "Invalid assist mode" }, { status: 400 });
 
-  const module = isDailyIdeasLabModule(body.module) ? body.module : null;
-  if (mode === "module" && !module) {
+  const requestedModule = isDailyIdeasLabModule(body.module) ? body.module : null;
+  if (mode === "module" && !requestedModule) {
     return NextResponse.json({ error: "Invalid project module" }, { status: 400 });
   }
 
@@ -68,8 +68,8 @@ export async function POST(request: Request) {
     const project = await getDailyIdeaProject(subject, projectId);
     if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 
-    const result = mode === "module" && module
-      ? await assistDailyIdeasModule(project, module)
+    const result = mode === "module" && requestedModule
+      ? await assistDailyIdeasModule(project, requestedModule)
       : await reviewDailyIdeasProject(project);
 
     return NextResponse.json(result, {
