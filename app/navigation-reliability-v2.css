@@ -52,7 +52,7 @@
   letter-spacing: .04em;
 }
 
-/* Explicit native links own their hit target on every input mode. */
+/* Explicit navigation links own their entire hit target. */
 [data-native-product-link] > *,
 .overview-foundation-card > * {
   pointer-events: none;
@@ -155,38 +155,77 @@
     font-size: 10px;
   }
 
-  /* On touch, the anchor owns the full card. Decorative children cannot turn a
-   * first tap into hover acquisition or a non-navigation gesture. */
+  /* Physical-iPhone finding: old touch styles still carried higher-specificity
+   * !important scale/hover rules. Safari could acquire that visual hover state
+   * on the first tap instead of committing navigation. Product cards therefore
+   * use a deliberately static interaction surface on touch. */
+  .premium-product-card,
+  .product-card {
+    -webkit-tap-highlight-color: rgba(19,221,19,.12);
+    -webkit-touch-callout: none;
+    user-select: none;
+  }
+
   .premium-product-card > *,
   .product-card > * {
-    pointer-events: none;
+    pointer-events: none !important;
   }
 
-  .premium-product-card,
-  .product-card,
-  .overview-foundation-card,
-  .premium-product-card:hover,
-  .product-card:hover,
-  .overview-foundation-card:hover,
-  .premium-product-card:focus,
-  .product-card:focus,
-  .overview-foundation-card:focus,
-  .premium-product-card:active,
-  .product-card:active,
-  .overview-foundation-card:active,
-  .premium-product-card.gwap-pressing,
-  .product-card.gwap-pressing,
-  .premium-product-card.gwap-product-activating {
+  /* Match or exceed the specificity of every older mobile performance rule so
+   * no scale, translate, hover shadow, or activation class can win the cascade. */
+  .cinematic-home.unified-cinematic-flow .ecosystem-group-products .premium-product-card,
+  .cinematic-home.unified-cinematic-flow .ecosystem-group-products .premium-product-card:hover,
+  .cinematic-home.unified-cinematic-flow .ecosystem-group-products .premium-product-card:focus,
+  .cinematic-home.unified-cinematic-flow .ecosystem-group-products .premium-product-card:focus-visible,
+  .cinematic-home.unified-cinematic-flow .ecosystem-group-products .premium-product-card:active,
+  .cinematic-home.unified-cinematic-flow .ecosystem-group-products .premium-product-card.gwap-pressing,
+  .cinematic-home.unified-cinematic-flow .ecosystem-group-products .premium-product-card.gwap-product-activating {
     transform: none !important;
     animation: none !important;
-    transition: opacity 80ms linear, border-color 100ms linear !important;
+    transition: none !important;
+    opacity: 1 !important;
+    border-color: rgba(255,255,255,.12) !important;
+    box-shadow: inset 0 1px rgba(255,255,255,.06), 0 12px 30px rgba(0,0,0,.2) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
   }
 
-  .premium-product-card:active,
-  .product-card:active,
+  .inner-main .ecosystem-grid .product-card,
+  .inner-main .ecosystem-grid .product-card:hover,
+  .inner-main .ecosystem-grid .product-card:focus,
+  .inner-main .ecosystem-grid .product-card:focus-visible,
+  .inner-main .ecosystem-grid .product-card:active,
+  .inner-main .ecosystem-grid .product-card.gwap-pressing,
+  .inner-main .ecosystem-grid .product-card.gwap-product-activating {
+    transform: none !important;
+    animation: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+    border-color: rgba(255,255,255,.12) !important;
+    box-shadow: inset 0 1px rgba(255,255,255,.06), 0 12px 30px rgba(0,0,0,.2) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  .overview-foundation-card,
+  .overview-foundation-card:hover,
+  .overview-foundation-card:focus,
+  .overview-foundation-card:focus-visible,
   .overview-foundation-card:active {
-    opacity: .93;
-    border-color: rgba(19,221,19,.3) !important;
+    transform: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
+
+  /* Retire stale scroll-directed card choreography as well. The unified renderer
+   * no longer needs product-card transforms, and they can alter Safari hit-test
+   * geometry during a tap immediately after scrolling. */
+  .cinematic-home.unified-cinematic-flow.scroll-directed .ecosystem-story .premium-product-card,
+  .cinematic-home.unified-cinematic-flow.scroll-directed .ecosystem-story .premium-product-card:nth-child(2n),
+  .cinematic-home.unified-cinematic-flow.scroll-directed .ecosystem-story.is-scroll-active .premium-product-card {
+    transform: none !important;
+    animation: none !important;
+    transition: none !important;
   }
 
   .premium-product-card .gwap-tap-pulse,
@@ -196,10 +235,21 @@
     display: none !important;
   }
 
+  /* The lower decorative glow is hover-driven in the legacy skin. Removing it
+   * entirely on touch prevents Safari's first-tap hover acquisition. */
+  .cinematic-home.unified-cinematic-flow .premium-product-card::after,
+  .cinematic-home.unified-cinematic-flow .premium-product-card:hover::after,
+  .inner-main .product-card::after,
+  .inner-main .product-card:hover::after {
+    display: none !important;
+    opacity: 0 !important;
+    filter: none !important;
+    animation: none !important;
+    pointer-events: none !important;
+  }
+
   .premium-product-card::before,
-  .premium-product-card::after,
-  .product-card::before,
-  .product-card::after {
+  .product-card::before {
     animation: none !important;
     pointer-events: none !important;
   }
