@@ -48,7 +48,14 @@ export class GwapScoreSocialError extends Error {
 }
 
 function challengeSecret() {
-  return process.env.GWAPSCORE_CHALLENGE_SECRET;
+  const secret = process.env.GWAPSCORE_CHALLENGE_SECRET;
+  if (!secret || secret.length < 32) {
+    throw new GwapScoreSocialError(
+      "GwapScore challenge security is not configured",
+      503,
+    );
+  }
+  return secret;
 }
 
 function emitTelemetry(event: string, data: Record<string, string | number | boolean | null>) {
@@ -187,12 +194,13 @@ export async function issueChallenge(userId: string, accountId: string) {
     consumedAt: null,
   };
   await saveChallenge(challenge, CHALLENGE_TTL_SECONDS);
-  const updated = await setAccountState(
+  let updated = await setAccountState(
     { ...account, activeChallengeId: challenge.id, followStatus: "pending" },
-    "AWAITING_DM",
+    "CHALLENGE_ISSUED",
   );
   await recordEvent(updated, "CHALLENGE_CREATED", { challengeId: challenge.id });
   emitTelemetry("challenge_created", { platform: "x" });
+  updated = await setAccountState(updated, "AWAITING_DM");
 
   return {
     challengeId: challenge.id,
@@ -238,33 +246,40 @@ async function processChallenge(
     return { challenge: { ...challenge, state: "expired" as const }, account: updated, matched: false };
   }
 
-  let messages = prefetchedMessages;
-  try {
-    messages ??= await adapter.collectVerificationMessages();
-  } catch (error) {
-    if (error instanceof XPlatformError) {
-      throw new GwapScoreSocialError(error.message, error.status);
+  const alreadyMatched =
+    account.verificationState === "ACCOUNT_MATCHED" &&
+    account.followStatus === "not_following";
+
+  let updated = account;
+  if (!alreadyMatched) {
+    let messages = prefetchedMessages;
+    try {
+      messages ??= await adapter.collectVerificationMessages();
+    } catch (error) {
+      if (error instanceof XPlatformError) {
+        throw new GwapScoreSocialError(error.message, error.status);
+      }
+      throw error;
     }
-    throw error;
+
+    const createdAt = new Date(challenge.createdAt).getTime();
+    const match = messages.find((message) => {
+      if (message.senderId !== account.platformUserId) return false;
+      if (new Date(message.createdAt).getTime() < createdAt) return false;
+      const messageHash = hashVerificationChallenge(message.text, challengeSecret());
+      return challengeHashesMatch(messageHash, challenge.challengeHash);
+    });
+
+    if (!match) return { challenge, account, matched: false };
+
+    updated = await setAccountState(account, "DM_RECEIVED");
+    await recordEvent(updated, "DM_RECEIVED", { messageId: match.id });
+    emitTelemetry("verification_dm_received", { platform: account.platform });
+
+    updated = await setAccountState(updated, "ACCOUNT_MATCHED");
+    await recordEvent(updated, "ACCOUNT_MATCHED", { platformUserId: account.platformUserId });
+    emitTelemetry("verification_account_matched", { platform: account.platform });
   }
-
-  const createdAt = new Date(challenge.createdAt).getTime();
-  const match = messages.find((message) => {
-    if (message.senderId !== account.platformUserId) return false;
-    if (new Date(message.createdAt).getTime() < createdAt) return false;
-    const messageHash = hashVerificationChallenge(message.text, challengeSecret());
-    return challengeHashesMatch(messageHash, challenge.challengeHash);
-  });
-
-  if (!match) return { challenge, account, matched: false };
-
-  let updated = await setAccountState(account, "DM_RECEIVED");
-  await recordEvent(updated, "DM_RECEIVED", { messageId: match.id });
-  emitTelemetry("verification_dm_received", { platform: account.platform });
-
-  updated = await setAccountState(updated, "ACCOUNT_MATCHED");
-  await recordEvent(updated, "ACCOUNT_MATCHED", { platformUserId: account.platformUserId });
-  emitTelemetry("verification_account_matched", { platform: account.platform });
 
   let follow: boolean | "unsupported";
   try {

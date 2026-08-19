@@ -86,7 +86,9 @@ export class XAdapter implements SocialPlatformAdapter {
 
   async verifyFollow(userId: string): Promise<boolean | "unsupported"> {
     const officialUserId = process.env.X_GWAPSCORE_OFFICIAL_USER_ID;
-    if (!officialUserId) return "unsupported";
+    if (!officialUserId) {
+      throw new XPlatformError("X follow verification is not configured", 503);
+    }
 
     let paginationToken: string | undefined;
     for (let page = 0; page < MAX_FOLLOW_PAGES; page += 1) {
