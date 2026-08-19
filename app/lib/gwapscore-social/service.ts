@@ -266,15 +266,17 @@ async function processChallenge(
   await recordEvent(updated, "ACCOUNT_MATCHED", { platformUserId: account.platformUserId });
   emitTelemetry("verification_account_matched", { platform: account.platform });
 
-  let follow: boolean | "unsupported" = "unsupported";
+  let follow: boolean | "unsupported";
   try {
     follow = await adapter.verifyFollow(account.platformUserId);
   } catch (error) {
-    if (error instanceof XPlatformError && [401, 403, 429].includes(error.status)) {
-      follow = "unsupported";
-    } else {
-      throw error;
+    if (error instanceof XPlatformError) {
+      throw new GwapScoreSocialError(
+        "X follow verification is temporarily unavailable",
+        error.status >= 500 ? error.status : 503,
+      );
     }
+    throw error;
   }
 
   if (follow === false) {

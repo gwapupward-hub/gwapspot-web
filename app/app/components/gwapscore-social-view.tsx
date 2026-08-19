@@ -96,14 +96,17 @@ export function GwapScoreSocialView() {
     [summary.accounts],
   );
 
+  const challengeId = challenge?.challengeId ?? null;
+  const challengeVerificationState = challenge?.account.verificationState ?? null;
+
   useEffect(() => {
-    if (!challenge || challenge.account.verificationState === "VERIFIED") return;
+    if (!challengeId || challengeVerificationState === "VERIFIED") return;
     let cancelled = false;
 
     const poll = async () => {
       try {
         const response = await authenticatedFetch(
-          `/api/v1/gwapscore/social/challenges/${encodeURIComponent(challenge.challengeId)}`,
+          `/api/v1/gwapscore/social/challenges/${encodeURIComponent(challengeId)}`,
           { method: "POST" },
         );
         const payload = await readJson<ChallengeStatusPayload & ApiError>(response);
@@ -133,7 +136,7 @@ export function GwapScoreSocialView() {
       cancelled = true;
       window.clearInterval(timer);
     };
-  }, [authenticatedFetch, challenge?.challengeId, challenge?.account.verificationState, loadSummary, readJson]);
+  }, [authenticatedFetch, challengeId, challengeVerificationState, loadSummary, readJson]);
 
   async function claimAccount(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -150,7 +153,8 @@ export function GwapScoreSocialView() {
       if (!response.ok || !payload.account) {
         throw new Error(payload.error || "Unable to claim X account.");
       }
-      setSummary((current) => ({ ...current, accounts: [payload.account!] }));
+      const claimedAccount = payload.account;
+      setSummary((current) => ({ ...current, accounts: [claimedAccount] }));
       setStatus("X account claimed. Generate a one-time Proof of Control challenge next.");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Unable to claim X account.");

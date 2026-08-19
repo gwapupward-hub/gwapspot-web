@@ -1,7 +1,14 @@
 import "server-only";
 
 import type { SocialPlatformAdapter } from "./platform";
-import type { PlatformUser, VerificationMessage } from "./types";
+import type {
+  AccountSnapshot,
+  AudienceResponse,
+  PlatformPost,
+  PlatformUser,
+  PostSnapshot,
+  VerificationMessage,
+} from "./types";
 
 const X_API_BASE = "https://api.x.com/2";
 const MAX_FOLLOW_PAGES = 10;
@@ -124,19 +131,19 @@ export class XAdapter implements SocialPlatformAdapter {
     return messages;
   }
 
-  async getAccountSnapshot() {
+  async getAccountSnapshot(_userId: string): Promise<AccountSnapshot> {
     throw new XPlatformError("X observation begins in GwapScore Sprint 2", 501);
   }
 
-  async getRecentPosts() {
+  async getRecentPosts(_userId: string): Promise<PlatformPost[]> {
     throw new XPlatformError("X observation begins in GwapScore Sprint 2", 501);
   }
 
-  async getPostSnapshot() {
+  async getPostSnapshot(_postId: string): Promise<PostSnapshot> {
     throw new XPlatformError("X observation begins in GwapScore Sprint 2", 501);
   }
 
-  async getPublicResponses() {
+  async getPublicResponses(_postId: string): Promise<AudienceResponse[]> {
     throw new XPlatformError("X observation begins in GwapScore Sprint 2", 501);
   }
 }
