@@ -4,7 +4,7 @@ import test from "node:test";
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
 
-test("mobile navigation reliability v2 keeps product navigation native", () => {
+test("mobile navigation reliability v2 keeps product navigation isolated", () => {
   const interaction = read("../components/gwap-interaction-layer.tsx");
   const shell = read("../components/site-shell.tsx");
   const productPage = read("../ecosystem/[slug]/page.tsx");
@@ -19,10 +19,11 @@ test("mobile navigation reliability v2 keeps product navigation native", () => {
   assert.doesNotMatch(interaction, /data-gwap-active-product/);
 
   assert.match(shell, /className="mobile-quick-nav"/);
-  assert.match(shell, /href="\/" data-native-nav>Home<\/a>/);
-  assert.match(shell, /href="\/ecosystem" data-native-nav>Ecosystem<\/a>/);
-  assert.match(shell, /href="\/app" data-native-nav>GWAP OS<\/a>/);
+  assert.match(shell, /<Link href="\/" data-native-nav>Home<\/Link>/);
+  assert.match(shell, /<Link href="\/ecosystem" data-native-nav>Ecosystem<\/Link>/);
+  assert.match(shell, /<Link href="\/app" data-native-nav>GWAP OS<\/Link>/);
   assert.match(shell, /data-native-product-link/);
+  assert.match(shell, /prefetch=\{false\}/);
 
   assert.match(productPage, /className="product-route-nav"/);
   assert.match(productPage, /← Home/);
@@ -30,7 +31,7 @@ test("mobile navigation reliability v2 keeps product navigation native", () => {
   assert.match(productPage, /data-native-product-link/);
 
   assert.match(wallet, /src="\/logos\/occo-official\.svg"/);
-  assert.match(wallet, /href="\/" data-native-nav>GWAPSpot home<\/a>/);
+  assert.match(wallet, /<Link href="\/" data-native-nav>GWAPSpot home<\/Link>/);
   assert.doesNotMatch(wallet, /from "next\/image"/);
 
   assert.match(reliabilityCss, /touch-action: manipulation/);

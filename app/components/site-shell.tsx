@@ -36,7 +36,7 @@ export function SparkIcon() {
 export function SiteHeader() {
   return (
     <header className="site-header">
-      <a className="brand" href="/" aria-label="GWAP home" data-native-nav>
+      <Link className="brand" href="/" aria-label="GWAP home" data-native-nav>
         <span className="brand-mark">
           <img
             src="/logos/gwap-agent-clear.svg"
@@ -50,7 +50,7 @@ export function SiteHeader() {
           <strong>GWAP</strong>
           <small>Grind With A Purpose</small>
         </span>
-      </a>
+      </Link>
 
       <nav className="desktop-nav" aria-label="Primary navigation">
         <Link href="/launch">Launch</Link>
@@ -64,9 +64,9 @@ export function SiteHeader() {
       </nav>
 
       <nav className="mobile-quick-nav" aria-label="Mobile navigation">
-        <a href="/" data-native-nav>Home</a>
-        <a href="/ecosystem" data-native-nav>Ecosystem</a>
-        <a href="/app" data-native-nav>GWAP OS</a>
+        <Link href="/" data-native-nav>Home</Link>
+        <Link href="/ecosystem" data-native-nav>Ecosystem</Link>
+        <Link href="/app" data-native-nav>GWAP OS</Link>
       </nav>
 
       <Link className="header-cta" href="/app">
@@ -79,7 +79,7 @@ export function SiteHeader() {
 export function SiteFooter() {
   return (
     <footer className="site-footer expanded-footer">
-      <a className="footer-brand" href="/" aria-label="GWAP home" data-native-nav>
+      <Link className="footer-brand" href="/" aria-label="GWAP home" data-native-nav>
         <img
           src="/logos/gwap-agent-clear.svg"
           alt=""
@@ -92,7 +92,7 @@ export function SiteFooter() {
           <strong>GWAP</strong>
           <span>Grind With A Purpose</span>
         </div>
-      </a>
+      </Link>
 
       <p>Building connected digital infrastructure with purpose.</p>
 
@@ -158,10 +158,11 @@ export function ProductCard({
   const ProductHeading = headingLevel;
 
   return (
-    <a
+    <Link
       className={`product-card product-card--${product.slug} accent-${product.accent}`}
       href={getProductDestination(product)}
       data-native-product-link
+      prefetch={false}
     >
       <div className="product-card-top">
         <span className="product-number">{String(index + 1).padStart(2, "0")}</span>
@@ -189,7 +190,7 @@ export function ProductCard({
       <span className="product-link">
         View product <ArrowIcon />
       </span>
-    </a>
+    </Link>
   );
 }
 

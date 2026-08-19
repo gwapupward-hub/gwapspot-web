@@ -65,12 +65,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
         data-gwap-product-hero={product.slug}
       >
         <nav className="product-route-nav" aria-label="Product page navigation">
-          <a href="/" data-native-nav>← Home</a>
-          <a href="/ecosystem" data-native-nav>Back to Ecosystem</a>
+          <Link href="/" data-native-nav>← Home</Link>
+          <Link href="/ecosystem" data-native-nav>Back to Ecosystem</Link>
         </nav>
 
         <div className="product-hero-meta">
-          <a href="/ecosystem" data-native-nav>GWAP ECOSYSTEM</a>
+          <Link href="/ecosystem" data-native-nav>GWAP ECOSYSTEM</Link>
           <span>/</span>
           <span>{product.name}</span>
         </div>
@@ -104,9 +104,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
                   View development roadmap <ArrowIcon />
                 </Link>
               )}
-              <a className="secondary-button" href="/ecosystem" data-native-nav>
+              <Link className="secondary-button" href="/ecosystem" data-native-nav>
                 ← Back to Ecosystem
-              </a>
+              </Link>
             </div>
           </div>
           <aside className="product-brief">
@@ -176,13 +176,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
             <h2>Next: {nextProduct.name}</h2>
             <p>{nextProduct.summary}</p>
           </div>
-          <a
+          <Link
             className="primary-button"
             href={`/ecosystem/${nextProduct.slug}`}
             data-native-product-link
+            prefetch={false}
           >
             View {nextProduct.name} <ArrowIcon />
-          </a>
+          </Link>
         </div>
       </section>
     </PageShell>

@@ -90,7 +90,7 @@ export function WalletSignIn({ redirectPath }: { redirectPath: string }) {
     <section className="wallet-auth-card">
       <nav className="wallet-auth-navigation" aria-label="Sign-in navigation">
         <button type="button" onClick={goBack}>← Back</button>
-        <a href="/" data-native-nav>GWAPSpot home</a>
+        <Link href="/" data-native-nav>GWAPSpot home</Link>
       </nav>
       <div className="wallet-auth-logo-row" aria-hidden="true">
         <img src="/logos/gwap-agent-clear.svg" alt="" width={38} height={38} decoding="async" />
