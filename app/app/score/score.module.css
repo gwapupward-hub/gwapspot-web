@@ -43,7 +43,8 @@
 }
 
 .inputRow button,
-.primaryButton {
+.primaryButton,
+.postButton {
   min-height: 48px;
   border: 1px solid rgba(19, 221, 19, 0.45);
   border-radius: 14px;
@@ -52,6 +53,15 @@
   padding: 0 1rem;
   font-weight: 700;
   cursor: pointer;
+}
+
+.postButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  margin-top: 0.9rem;
+  text-decoration: none;
 }
 
 .inputRow button:disabled,
@@ -141,6 +151,26 @@
   word-break: break-word;
 }
 
+.postPreview {
+  margin: 0.9rem 0 0;
+  padding: 0.9rem;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.035);
+  color: rgba(255, 255, 255, 0.88);
+  font: inherit;
+  line-height: 1.5;
+}
+
+.challengeBox .privacyNote {
+  margin-top: 0.9rem;
+  color: rgba(255, 255, 255, 0.52);
+  font-size: 0.82rem;
+}
+
 .verifiedBox {
   border-color: rgba(19, 221, 19, 0.34);
   background: rgba(19, 221, 19, 0.08);
@@ -201,7 +231,8 @@
   }
 
   .inputRow button,
-  .primaryButton {
+  .primaryButton,
+  .postButton {
     width: 100%;
   }
 }
