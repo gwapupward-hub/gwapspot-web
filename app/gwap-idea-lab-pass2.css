@@ -1,0 +1,358 @@
+/* Idea Lab Pass 2 — intelligence surfaces. Scoped to the Idea Lab only. */
+.idea-lab-v2 {
+  --lab-ai: #aa79ff;
+  --lab-ai-soft: rgba(170, 121, 255, .1);
+  --lab-ai-line: rgba(170, 121, 255, .22);
+}
+
+.idea-lab-ai-assist-button {
+  width: fit-content;
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 0 14px;
+  border: 1px solid var(--lab-ai-line);
+  border-radius: 11px;
+  background: linear-gradient(135deg, rgba(170, 121, 255, .1), rgba(19, 221, 19, .035));
+  color: #d9c8fb;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: border-color .18s ease, background-color .18s ease;
+}
+
+.idea-lab-ai-assist-button:hover:not(:disabled) {
+  border-color: rgba(170, 121, 255, .4);
+  background: linear-gradient(135deg, rgba(170, 121, 255, .15), rgba(19, 221, 19, .05));
+}
+
+.idea-lab-ai-assist-button:disabled {
+  cursor: wait;
+  opacity: .62;
+}
+
+.idea-lab-ai-assist-button > span {
+  color: var(--lab-ai);
+  font-size: 13px;
+}
+
+.idea-lab-ai-error {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 98, 98, .18);
+  border-radius: 10px;
+  background: rgba(255, 98, 98, .05);
+  color: #dda2a2;
+  font-size: 9px;
+  line-height: 1.55;
+}
+
+.idea-lab-ai-draft {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+  padding: 18px;
+  border: 1px solid var(--lab-ai-line);
+  border-radius: 15px;
+  background: linear-gradient(145deg, rgba(170, 121, 255, .065), rgba(5, 10, 7, .88));
+}
+
+.idea-lab-ai-draft-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.idea-lab-ai-draft-heading > div {
+  display: grid;
+  gap: 4px;
+}
+
+.idea-lab-ai-draft-heading span,
+.idea-lab-ai-gaps > span,
+.idea-lab-ai-priority > span {
+  color: var(--lab-ai);
+  font-family: "JetBrains Mono", "SFMono-Regular", monospace;
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: .1em;
+}
+
+.idea-lab-ai-draft-heading strong {
+  color: #dfe7e0;
+  font-size: 12px;
+}
+
+.idea-lab-ai-draft-heading > button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #657068;
+  font-size: 8px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.idea-lab-ai-draft-copy {
+  margin: 0;
+  padding: 14px 0;
+  border-top: 1px solid rgba(255, 255, 255, .055);
+  border-bottom: 1px solid rgba(255, 255, 255, .055);
+  color: #dbe4dc;
+  font-size: 12px;
+  line-height: 1.72;
+  white-space: pre-wrap;
+}
+
+.idea-lab-ai-why {
+  margin: 0;
+  color: #7f8b82;
+  font-size: 9px;
+  line-height: 1.65;
+}
+
+.idea-lab-ai-why strong { color: #b7c2ba; }
+
+.idea-lab-ai-draft ul,
+.idea-lab-ai-review-result ul,
+.idea-lab-ai-evidence ul {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.idea-lab-ai-draft li,
+.idea-lab-ai-review-result li,
+.idea-lab-ai-evidence li {
+  position: relative;
+  padding-left: 13px;
+  color: #748078;
+  font-size: 8px;
+  line-height: 1.55;
+}
+
+.idea-lab-ai-draft li::before,
+.idea-lab-ai-review-result li::before,
+.idea-lab-ai-evidence li::before {
+  content: "·";
+  position: absolute;
+  left: 2px;
+  color: var(--lab-ai);
+}
+
+.idea-lab-ai-draft-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.idea-lab-ai-use {
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid rgba(19, 221, 19, .28);
+  border-radius: 10px;
+  background: rgba(19, 221, 19, .1);
+  color: #bff7c1;
+  font: inherit;
+  font-size: 9px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.idea-lab-ai-use:disabled { opacity: .55; cursor: wait; }
+
+.idea-lab-ai-draft-footer > span {
+  max-width: 430px;
+  color: #68746b;
+  font-size: 8px;
+  line-height: 1.5;
+  text-align: right;
+}
+
+.idea-lab-ai-review {
+  display: grid;
+  gap: 12px;
+  padding: 16px 0;
+  border-top: 1px solid var(--lab-line);
+}
+
+.idea-lab-ai-review-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.idea-lab-ai-review-heading > button {
+  min-height: 29px;
+  padding: 0 9px;
+  border: 1px solid var(--lab-ai-line);
+  border-radius: 9px;
+  background: var(--lab-ai-soft);
+  color: #cdb7f7;
+  font: inherit;
+  font-size: 7px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.idea-lab-ai-review-heading > button:disabled { opacity: .55; cursor: wait; }
+.idea-lab-ai-review > p { margin: 0; color: #5f6a62; font-size: 8px; line-height: 1.55; }
+
+.idea-lab-ai-review-result {
+  display: grid;
+  gap: 13px;
+}
+
+.idea-lab-ai-score {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.idea-lab-ai-score strong {
+  color: #e4d9fb;
+  font-size: 34px;
+  line-height: 1;
+  letter-spacing: -.055em;
+}
+
+.idea-lab-ai-score span {
+  color: #70667f;
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.idea-lab-ai-review-result > p {
+  margin: -3px 0 0;
+  color: #87938a;
+  font-size: 9px;
+  line-height: 1.6;
+}
+
+.idea-lab-ai-gaps,
+.idea-lab-ai-priority {
+  display: grid;
+  gap: 8px;
+  padding-top: 11px;
+  border-top: 1px solid rgba(255, 255, 255, .055);
+}
+
+.idea-lab-ai-priority strong {
+  color: #c7d1c9;
+  font-size: 9px;
+  line-height: 1.55;
+}
+
+.idea-lab-ai-evidence {
+  border-top: 1px solid rgba(255, 255, 255, .055);
+  padding-top: 10px;
+}
+
+.idea-lab-ai-evidence summary {
+  color: #78837b;
+  font-size: 8px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.idea-lab-ai-evidence ul { margin-top: 9px; }
+
+.idea-lab-handoff-brief {
+  padding: 9px 0;
+  border-top: 1px solid rgba(255, 255, 255, .05);
+}
+
+.idea-lab-handoff-brief summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #929e95;
+  font-size: 8px;
+  font-weight: 800;
+  cursor: pointer;
+  list-style: none;
+}
+
+.idea-lab-handoff-brief summary::-webkit-details-marker { display: none; }
+.idea-lab-handoff-brief summary > span { color: var(--lab-ai); }
+
+.idea-lab-handoff-brief p {
+  margin: 9px 0 0;
+  color: #69746c;
+  font-size: 8px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.idea-lab-handoff-brief > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.idea-lab-handoff-brief button,
+.idea-lab-handoff-brief a {
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 9px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .025);
+  color: #849087;
+  font: inherit;
+  font-size: 7px;
+  font-weight: 800;
+}
+
+.idea-lab-handoff-brief button { cursor: pointer; }
+.idea-lab-handoff-brief a:hover,
+.idea-lab-handoff-brief button:hover { border-color: var(--lab-ai-line); color: #d5c6f2; }
+
+@media (max-width: 1180px) {
+  .idea-lab-ai-draft-footer { align-items: flex-start; flex-direction: column; }
+  .idea-lab-ai-draft-footer > span { max-width: none; text-align: left; }
+}
+
+@media (max-width: 760px) {
+  .idea-lab-ai-assist-button {
+    min-height: 44px;
+    padding: 0 14px;
+    font-size: 11px;
+  }
+
+  .idea-lab-ai-draft {
+    margin-top: 14px;
+    padding: 15px;
+    border-radius: 13px;
+  }
+
+  .idea-lab-ai-draft-copy {
+    font-size: 14px;
+    line-height: 1.68;
+  }
+
+  .idea-lab-ai-use {
+    width: 100%;
+    min-height: 44px;
+    justify-content: center;
+  }
+
+  .idea-lab-ai-review-heading { align-items: flex-start; flex-direction: column; }
+  .idea-lab-ai-review-heading > button { min-height: 40px; padding: 0 12px; font-size: 9px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .idea-lab-ai-assist-button { transition: none; }
+}
