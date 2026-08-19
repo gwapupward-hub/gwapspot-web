@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  buildXVerificationPostIntentUrl,
+  buildXVerificationPostText,
   challengeHashesMatch,
+  extractVerificationChallenges,
   generateVerificationChallenge,
   hashVerificationChallenge,
   isChallengeExpired,
@@ -30,6 +33,26 @@ test("hash comparison is normalized and secret-aware", () => {
   const right = hashVerificationChallenge("  GS-X-ABCD-1234-FFFF  ", secret);
   assert.equal(challengeHashesMatch(left, right), true);
   assert.equal(normalizeChallengeText("  gs-x-code  "), "GS-X-CODE");
+});
+
+test("extracts proof tokens from public X post text", () => {
+  assert.deepEqual(
+    extractVerificationChallenges(
+      "Verifying @gwapcreator. Challenge: gs-x-abcd-1234-ffff. Public proof.",
+    ),
+    ["GS-X-ABCD-1234-FFFF"],
+  );
+});
+
+test("builds an X Web Intent without requiring user posting permission", () => {
+  const challenge = "GS-X-ABCD-1234-FFFF";
+  const text = buildXVerificationPostText("@GwapCreator", challenge);
+  assert.match(text, /@gwapcreator/);
+  assert.match(text, /GS-X-ABCD-1234-FFFF/);
+  const intent = new URL(buildXVerificationPostIntentUrl("@GwapCreator", challenge));
+  assert.equal(intent.origin, "https://x.com");
+  assert.equal(intent.pathname, "/intent/tweet");
+  assert.equal(intent.searchParams.get("text"), text);
 });
 
 test("challenge expiry is deterministic", () => {
