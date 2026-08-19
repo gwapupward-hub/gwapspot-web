@@ -43,8 +43,7 @@
 }
 
 .inputRow button,
-.primaryButton,
-.postButton {
+.primaryButton {
   min-height: 48px;
   border: 1px solid rgba(19, 221, 19, 0.45);
   border-radius: 14px;
@@ -55,17 +54,10 @@
   cursor: pointer;
 }
 
-.postButton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: fit-content;
-  margin-top: 0.9rem;
-  text-decoration: none;
-}
-
 .inputRow button:disabled,
-.primaryButton:disabled {
+.primaryButton:disabled,
+.secondaryButton:disabled,
+.cardOption:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -104,7 +96,8 @@
 }
 
 .accountCard dl div,
-.metricGrid div {
+.metricGrid div,
+.previewStatus {
   padding: 0.9rem;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
@@ -112,7 +105,8 @@
 }
 
 .accountCard dt,
-.metricGrid span {
+.metricGrid span,
+.previewStatus > span {
   color: rgba(255, 255, 255, 0.48);
   font-size: 0.72rem;
   text-transform: uppercase;
@@ -126,12 +120,110 @@
   text-transform: capitalize;
 }
 
+.cardPicker {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.cardPickerHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 0.65fr) minmax(0, 1.35fr);
+  gap: 1rem;
+  align-items: end;
+}
+
+.cardPickerHeader > div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.cardPickerHeader span {
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.cardPickerHeader strong {
+  font-size: 1.25rem;
+}
+
+.cardPickerHeader p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.58);
+  line-height: 1.5;
+  font-size: 0.86rem;
+}
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.cardOption {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.025);
+  color: rgba(255, 255, 255, 0.72);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 140ms ease, background 140ms ease, transform 140ms ease;
+}
+
+.cardOption:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.cardOption[data-selected="true"] {
+  border-color: rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 2px rgba(19, 221, 19, 0.13);
+}
+
+.cardOption[data-selected="true"] span {
+  color: #fff;
+}
+
+.cardArtwork,
+.lockedCardArtwork {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 2 / 1;
+  object-fit: cover;
+  border-radius: 10px;
+  background: #050505;
+}
+
+.cardOption span {
+  padding: 0 0.15rem 0.15rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.aestheticNote {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.48) !important;
+}
+
 .challengeBox,
 .verifiedBox {
   padding: 1rem;
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(0, 0, 0, 0.22);
+}
+
+.challengeBox {
+  display: grid;
+  gap: 0.8rem;
 }
 
 .challengeBox > span,
@@ -144,31 +236,59 @@
 
 .challengeBox > strong {
   display: block;
-  margin: 0.55rem 0;
+  margin: 0.1rem 0;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: clamp(1.15rem, 4vw, 1.8rem);
   color: #13dd13;
   word-break: break-word;
 }
 
+.lockedCardArtwork {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
 .postPreview {
-  margin: 0.9rem 0 0;
-  padding: 0.9rem;
-  overflow-x: auto;
+  margin: 0;
   white-space: pre-wrap;
-  word-break: break-word;
+  overflow-wrap: anywhere;
+  padding: 0.85rem;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.035);
-  color: rgba(255, 255, 255, 0.88);
-  font: inherit;
-  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.8);
+  font: 0.78rem/1.55 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
-.challengeBox .privacyNote {
-  margin-top: 0.9rem;
-  color: rgba(255, 255, 255, 0.52);
+.actionRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.primaryLink,
+.secondaryButton {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.85rem;
+  border-radius: 12px;
+  font-weight: 700;
   font-size: 0.82rem;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.primaryLink {
+  border: 1px solid rgba(19, 221, 19, 0.48);
+  background: rgba(19, 221, 19, 0.14);
+  color: #caffca;
+}
+
+.secondaryButton {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.78);
 }
 
 .verifiedBox {
@@ -185,7 +305,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-top: 0.8rem;
+  margin-top: 0.15rem;
   color: #b9ffb9;
   font-size: 0.82rem;
 }
@@ -210,10 +330,17 @@
   gap: 0.65rem;
 }
 
-.metricGrid strong {
+.metricGrid strong,
+.previewStatus strong {
   display: block;
   margin-top: 0.4rem;
   font-size: 1.25rem;
+}
+
+.previewStatus small {
+  display: block;
+  margin-top: 0.25rem;
+  color: rgba(255, 255, 255, 0.42);
 }
 
 .statusLine {
@@ -226,13 +353,34 @@
 @media (max-width: 760px) {
   .inputRow,
   .accountCard dl,
-  .metricGrid {
+  .metricGrid,
+  .cardPickerHeader {
     grid-template-columns: 1fr;
   }
 
   .inputRow button,
-  .primaryButton,
-  .postButton {
+  .primaryButton {
     width: 100%;
+  }
+
+  .cardGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.6rem;
+  }
+
+  .actionRow {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .primaryLink,
+  .secondaryButton {
+    width: 100%;
+  }
+}
+
+@media (max-width: 430px) {
+  .cardGrid {
+    grid-template-columns: 1fr;
   }
 }
