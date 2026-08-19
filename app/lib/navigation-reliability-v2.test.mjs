@@ -7,6 +7,7 @@ const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
 test("mobile navigation reliability v2 keeps product navigation isolated", () => {
   const interaction = read("../components/gwap-interaction-layer.tsx");
   const touchNavigation = read("../components/gwap-touch-product-navigation-layer.tsx");
+  const splash = read("../components/premium-splash.tsx");
   const layout = read("../layout.tsx");
   const shell = read("../components/site-shell.tsx");
   const productPage = read("../ecosystem/[slug]/page.tsx");
@@ -40,6 +41,12 @@ test("mobile navigation reliability v2 keeps product navigation isolated", () =>
   assert.match(productPage, /← Home/);
   assert.match(productPage, /Back to Ecosystem/);
   assert.match(productPage, /data-native-product-link/);
+
+  assert.match(splash, /const skipNextRouteTransition = useRef\(false\)/);
+  assert.match(splash, /anchor\.hasAttribute\("data-native-nav"\)/);
+  assert.match(splash, /if \(skipNextRouteTransition\.current\)/);
+  assert.match(splash, /skipNextRouteTransition\.current = false/);
+  assert.match(splash, /setMode\(null\)/);
 
   assert.match(wallet, /src="\/logos\/occo-official\.svg"/);
   assert.match(wallet, /<Link href="\/" data-native-nav>GWAPSpot home<\/Link>/);
