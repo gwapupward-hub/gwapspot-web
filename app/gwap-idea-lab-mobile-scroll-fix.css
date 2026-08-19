@@ -1,0 +1,8 @@
+/* Mobile Idea Lab: keep actionable next-step controls sticky, but let passive completion status scroll normally. */
+@media (max-width: 980px) {
+  .idea-lab-mobile-next:has(> span) {
+    position: static;
+    bottom: auto;
+    z-index: auto;
+  }
+}
