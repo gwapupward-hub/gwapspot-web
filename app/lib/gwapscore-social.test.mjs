@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  buildVerificationShareUrl,
   buildXVerificationPostIntentUrl,
   buildXVerificationPostText,
   challengeHashesMatch,
@@ -9,6 +10,7 @@ import {
   hashVerificationChallenge,
   isChallengeExpired,
   isValidXUsername,
+  isVerificationCardTheme,
   normalizeChallengeText,
   normalizeXUsername,
 } from "./gwapscore-social/core.ts";
@@ -18,6 +20,14 @@ test("normalizes and validates X usernames", () => {
   assert.equal(isValidXUsername("@gwap_creator"), true);
   assert.equal(isValidXUsername("not-valid-handle"), false);
   assert.equal(isValidXUsername("abcdefghijklmnop"), false);
+});
+
+test("accepts only the four aesthetic proof card themes", () => {
+  for (const theme of ["orange", "red", "green", "purple"]) {
+    assert.equal(isVerificationCardTheme(theme), true);
+  }
+  assert.equal(isVerificationCardTheme("gold"), false);
+  assert.equal(isVerificationCardTheme(null), false);
 });
 
 test("generates cryptographically random challenge-shaped tokens", () => {
@@ -35,27 +45,59 @@ test("hash comparison is normalized and secret-aware", () => {
   assert.equal(normalizeChallengeText("  gs-x-code  "), "GS-X-CODE");
 });
 
-test("extracts proof tokens from public X post text", () => {
+test("extracts proof tokens from public post text without requiring an exact post body", () => {
   assert.deepEqual(
     extractVerificationChallenges(
-      "Verifying @gwapcreator. Challenge: gs-x-abcd-1234-ffff. Public proof.",
+      "Verifying control. Challenge: gs-x-abcd-1234-ffff. https://www.gwapspot.com/verify/x/test",
     ),
     ["GS-X-ABCD-1234-FFFF"],
   );
 });
 
-test("builds an X Web Intent without requiring user posting permission", () => {
-  const challenge = "GS-X-ABCD-1234-FFFF";
-  const text = buildXVerificationPostText("@GwapCreator", challenge);
-  assert.match(text, /@gwapcreator/);
-  assert.match(text, /GS-X-ABCD-1234-FFFF/);
-  const intent = new URL(buildXVerificationPostIntentUrl("@GwapCreator", challenge));
+test("creates a canonical public proof URL for a challenge", () => {
+  assert.equal(
+    buildVerificationShareUrl("challenge-123"),
+    "https://www.gwapspot.com/verify/x/challenge-123",
+  );
+});
+
+test("builds an X Web Intent that includes the public proof link without posting permission", () => {
+  const shareUrl = buildVerificationShareUrl("challenge-123");
+  const text = buildXVerificationPostText(
+    "@GwapCreator",
+    "GS-X-ABCD-1234-FFFF",
+    shareUrl,
+  );
+  assert.match(text, /Verifying control of @gwapcreator for GwapScore\./);
+  assert.match(text, /Challenge: GS-X-ABCD-1234-FFFF/);
+  assert.match(text, /https:\/\/www\.gwapspot\.com\/verify\/x\/challenge-123/);
+
+  const intent = new URL(
+    buildXVerificationPostIntentUrl(
+      "GwapCreator",
+      "GS-X-ABCD-1234-FFFF",
+      shareUrl,
+    ),
+  );
   assert.equal(intent.origin, "https://x.com");
   assert.equal(intent.pathname, "/intent/tweet");
-  assert.equal(intent.searchParams.get("text"), text);
+  assert.match(intent.searchParams.get("text") ?? "", /Challenge: GS-X-ABCD-1234-FFFF/);
+  assert.match(intent.searchParams.get("text") ?? "", /gwapspot\.com\/verify\/x\/challenge-123/);
 });
 
 test("challenge expiry is deterministic", () => {
-  assert.equal(isChallengeExpired("2026-08-19T12:00:00.000Z", Date.parse("2026-08-19T12:00:01.000Z")), true);
-  assert.equal(isChallengeExpired("2026-08-19T12:00:00.000Z", Date.parse("2026-08-19T11:59:59.000Z")), false);
+  assert.equal(
+    isChallengeExpired(
+      "2026-08-19T12:00:00.000Z",
+      Date.parse("2026-08-19T12:00:01.000Z"),
+    ),
+    true,
+  );
+  assert.equal(
+    isChallengeExpired(
+      "2026-08-19T12:00:00.000Z",
+      Date.parse("2026-08-19T11:59:59.000Z"),
+    ),
+    false,
+  );
 });
