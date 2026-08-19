@@ -6,6 +6,8 @@ const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
 
 test("mobile navigation reliability v2 keeps product navigation isolated", () => {
   const interaction = read("../components/gwap-interaction-layer.tsx");
+  const touchNavigation = read("../components/gwap-touch-product-navigation-layer.tsx");
+  const layout = read("../layout.tsx");
   const shell = read("../components/site-shell.tsx");
   const productPage = read("../ecosystem/[slug]/page.tsx");
   const wallet = read("../components/wallet-sign-in.tsx");
@@ -17,6 +19,15 @@ test("mobile navigation reliability v2 keeps product navigation isolated", () =>
   assert.doesNotMatch(interaction, /subscribeGwapClick/);
   assert.doesNotMatch(interaction, /gwap-product-activating/);
   assert.doesNotMatch(interaction, /data-gwap-active-product/);
+
+  assert.match(layout, /<GwapTouchProductNavigationLayer \/>/);
+  assert.match(touchNavigation, /a\.premium-product-card\[data-gwap-product\]/);
+  assert.match(touchNavigation, /event\.pointerType === "mouse"/);
+  assert.match(touchNavigation, /pointerover/);
+  assert.match(touchNavigation, /focusin/);
+  assert.match(touchNavigation, /event\.stopPropagation\(\)/);
+  assert.match(touchNavigation, /window\.location\.assign\(current\.link\.href\)/);
+  assert.match(touchNavigation, /TAP_MAX_DISTANCE = 10/);
 
   assert.match(shell, /className="mobile-quick-nav"/);
   assert.match(shell, /<Link href="\/" data-native-nav>Home<\/Link>/);
