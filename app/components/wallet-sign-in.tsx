@@ -3,7 +3,6 @@
 import { useLoginWithSiws, usePrivy } from "@privy-io/react-auth";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -91,14 +90,14 @@ export function WalletSignIn({ redirectPath }: { redirectPath: string }) {
     <section className="wallet-auth-card">
       <nav className="wallet-auth-navigation" aria-label="Sign-in navigation">
         <button type="button" onClick={goBack}>← Back</button>
-        <Link href="/">GWAPSpot home</Link>
+        <Link href="/" data-native-nav>GWAPSpot home</Link>
       </nav>
       <div className="wallet-auth-logo-row" aria-hidden="true">
-        <Image src="/logos/gwap-agent.png" alt="" width={38} height={38} unoptimized />
+        <img src="/logos/gwap-agent-clear.svg" alt="" width={38} height={38} decoding="async" />
         <span />
-        <Image src="/logos/occo-official.svg" alt="" width={38} height={38} unoptimized />
+        <img src="/logos/occo-official.svg" alt="" width={38} height={38} decoding="async" />
         <span />
-        <Image src="/logos/gns.webp" alt="" width={38} height={38} unoptimized />
+        <img src="/logos/gns.webp" alt="" width={38} height={38} decoding="async" />
       </div>
       <span className="wallet-auth-eyebrow">SOLANA WALLET AUTHENTICATION</span>
       <h2>Your wallet is your GWAP sign-in.</h2>
