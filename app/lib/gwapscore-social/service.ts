@@ -3,7 +3,10 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import {
   addMilliseconds,
+  buildXVerificationPostIntentUrl,
+  buildXVerificationPostText,
   challengeHashesMatch,
+  extractVerificationChallenges,
   generateVerificationChallenge,
   hashVerificationChallenge,
   isChallengeExpired,
@@ -26,6 +29,7 @@ import {
   updateChallenge,
 } from "./store";
 import type {
+  PlatformPost,
   SocialAccount,
   SocialSummary,
   VerificationChallenge,
@@ -115,6 +119,13 @@ export async function claimXAccount(userId: string, usernameInput: string) {
     throw error;
   }
 
+  if (resolved.protected) {
+    throw new GwapScoreSocialError(
+      "X account must be public while Proof of Control is being verified",
+      400,
+    );
+  }
+
   const existingAccountId = await getAccountIdForPlatformIdentity("x", resolved.id);
   if (existingAccountId) {
     const existing = await getSocialAccount(existingAccountId);
@@ -125,12 +136,32 @@ export async function claimXAccount(userId: string, usernameInput: string) {
       );
     }
     if (existing) {
-      const refreshed = {
+      const legacyPrivateFlow =
+        existing.verificationMethod !== "PROOF_OF_CONTROL_PUBLIC_POST" ||
+        (["AWAITING_DM", "DM_RECEIVED"] as string[]).includes(existing.verificationState);
+
+      if (legacyPrivateFlow && existing.activeChallengeId) {
+        const previous = await getChallenge(existing.activeChallengeId);
+        if (previous?.state === "active") {
+          const revoked = { ...previous, state: "revoked" as const };
+          await updateChallenge(revoked);
+          await deleteChallengeHashIndex(revoked);
+        }
+      }
+
+      const refreshed: SocialAccount = {
         ...existing,
         currentUsername: resolved.username,
         displayName: resolved.name,
+        verificationMethod: "PROOF_OF_CONTROL_PUBLIC_POST",
+        verificationState: legacyPrivateFlow ? "ACCOUNT_CLAIMED" : existing.verificationState,
+        verificationProofPostId: legacyPrivateFlow
+          ? null
+          : existing.verificationProofPostId ?? null,
+        activeChallengeId: legacyPrivateFlow ? null : existing.activeChallengeId,
+        followStatus: legacyPrivateFlow ? "pending" : existing.followStatus,
         updatedAt: new Date().toISOString(),
-      } satisfies SocialAccount;
+      };
       await saveSocialAccount(refreshed);
       return refreshed;
     }
@@ -144,9 +175,10 @@ export async function claimXAccount(userId: string, usernameInput: string) {
     platformUserId: resolved.id,
     currentUsername: resolved.username,
     displayName: resolved.name,
-    verificationMethod: "PROOF_OF_CONTROL_DM",
+    verificationMethod: "PROOF_OF_CONTROL_PUBLIC_POST",
     verificationState: "ACCOUNT_CLAIMED",
     followStatus: "pending",
+    verificationProofPostId: null,
     verifiedAt: null,
     verificationExpiresAt: null,
     monitoringStatus: "NOT_STARTED",
@@ -194,17 +226,31 @@ export async function issueChallenge(userId: string, accountId: string) {
     consumedAt: null,
   };
   await saveChallenge(challenge, CHALLENGE_TTL_SECONDS);
+
   let updated = await setAccountState(
-    { ...account, activeChallengeId: challenge.id, followStatus: "pending" },
+    {
+      ...account,
+      activeChallengeId: challenge.id,
+      followStatus: "pending",
+      verificationProofPostId: null,
+    },
     "CHALLENGE_ISSUED",
   );
   await recordEvent(updated, "CHALLENGE_CREATED", { challengeId: challenge.id });
   emitTelemetry("challenge_created", { platform: "x" });
-  updated = await setAccountState(updated, "AWAITING_DM");
+  updated = await setAccountState(updated, "AWAITING_POST");
 
   return {
     challengeId: challenge.id,
     challenge: rawChallenge,
+    verificationPostText: buildXVerificationPostText(
+      updated.currentUsername,
+      rawChallenge,
+    ),
+    postIntentUrl: buildXVerificationPostIntentUrl(
+      updated.currentUsername,
+      rawChallenge,
+    ),
     expiresAt: challenge.expiresAt,
     account: updated,
   };
@@ -235,49 +281,69 @@ export async function getChallengeStatus(userId: string, challengeId: string) {
   return { challenge, account };
 }
 
+function postContainsChallenge(post: PlatformPost, challenge: VerificationChallenge) {
+  return extractVerificationChallenges(post.text).some((candidate) => {
+    const candidateHash = hashVerificationChallenge(candidate, challengeSecret());
+    return challengeHashesMatch(candidateHash, challenge.challengeHash);
+  });
+}
+
 async function processChallenge(
   challenge: VerificationChallenge,
   account: SocialAccount,
-  prefetchedMessages?: Awaited<ReturnType<XAdapter["collectVerificationMessages"]>>,
+  prefetchedPosts?: PlatformPost[],
 ) {
   if (challenge.state !== "active") return { challenge, account, matched: false };
   if (isChallengeExpired(challenge.expiresAt)) {
     const updated = await expireChallenge(account, challenge);
-    return { challenge: { ...challenge, state: "expired" as const }, account: updated, matched: false };
+    return {
+      challenge: { ...challenge, state: "expired" as const },
+      account: updated,
+      matched: false,
+    };
   }
 
   const alreadyMatched =
     account.verificationState === "ACCOUNT_MATCHED" &&
-    account.followStatus === "not_following";
+    account.followStatus === "not_following" &&
+    Boolean(account.verificationProofPostId);
 
   let updated = account;
   if (!alreadyMatched) {
-    let messages = prefetchedMessages;
+    let posts = prefetchedPosts;
     try {
-      messages ??= await adapter.collectVerificationMessages();
+      posts ??= await adapter.getRecentPosts(account.platformUserId);
     } catch (error) {
       if (error instanceof XPlatformError) {
-        throw new GwapScoreSocialError(error.message, error.status);
+        throw new GwapScoreSocialError(
+          "X public-post verification is temporarily unavailable",
+          error.status >= 500 ? error.status : 503,
+        );
       }
       throw error;
     }
 
     const createdAt = new Date(challenge.createdAt).getTime();
-    const match = messages.find((message) => {
-      if (message.senderId !== account.platformUserId) return false;
-      if (new Date(message.createdAt).getTime() < createdAt) return false;
-      const messageHash = hashVerificationChallenge(message.text, challengeSecret());
-      return challengeHashesMatch(messageHash, challenge.challengeHash);
+    const match = posts.find((post) => {
+      if (post.authorId !== account.platformUserId) return false;
+      if (new Date(post.createdAt).getTime() < createdAt) return false;
+      return postContainsChallenge(post, challenge);
     });
 
     if (!match) return { challenge, account, matched: false };
 
-    updated = await setAccountState(account, "DM_RECEIVED");
-    await recordEvent(updated, "DM_RECEIVED", { messageId: match.id });
-    emitTelemetry("verification_dm_received", { platform: account.platform });
+    updated = await setAccountState(
+      { ...account, verificationProofPostId: match.id },
+      "POST_DETECTED",
+    );
+    await recordEvent(updated, "POST_DETECTED", { postId: match.id });
+    emitTelemetry("verification_post_detected", { platform: account.platform });
 
     updated = await setAccountState(updated, "ACCOUNT_MATCHED");
-    await recordEvent(updated, "ACCOUNT_MATCHED", { platformUserId: account.platformUserId });
+    await recordEvent(updated, "ACCOUNT_MATCHED", {
+      platformUserId: account.platformUserId,
+      postId: match.id,
+    });
     emitTelemetry("verification_account_matched", { platform: account.platform });
   }
 
@@ -326,13 +392,25 @@ async function processChallenge(
     },
     "VERIFIED",
   );
-  const consumed = { ...challenge, state: "consumed" as const, consumedAt: verifiedAt };
+  const consumed = {
+    ...challenge,
+    state: "consumed" as const,
+    consumedAt: verifiedAt,
+  };
   await updateChallenge(consumed);
   await deleteChallengeHashIndex(consumed);
-  await recordEvent(updated, "ACCOUNT_VERIFIED", { verificationMethod: "PROOF_OF_CONTROL_DM" });
+  await recordEvent(updated, "ACCOUNT_VERIFIED", {
+    verificationMethod: "PROOF_OF_CONTROL_PUBLIC_POST",
+    proofPostId: updated.verificationProofPostId,
+  });
   emitTelemetry("verification_completed", { platform: account.platform });
 
-  return { challenge: consumed, account: updated, matched: true, verified: true };
+  return {
+    challenge: consumed,
+    account: updated,
+    matched: true,
+    verified: true,
+  };
 }
 
 export async function checkChallenge(userId: string, challengeId: string) {
@@ -348,18 +426,7 @@ export async function processActiveXChallenges() {
   const keep: string[] = [];
   let verified = 0;
   let expired = 0;
-  let messages: Awaited<ReturnType<XAdapter["collectVerificationMessages"]>> | undefined;
-
-  if (ids.length > 0) {
-    try {
-      messages = await adapter.collectVerificationMessages();
-    } catch (error) {
-      if (error instanceof XPlatformError) {
-        throw new GwapScoreSocialError(error.message, error.status);
-      }
-      throw error;
-    }
-  }
+  const postsByUserId = new Map<string, PlatformPost[]>();
 
   for (const id of ids) {
     const challenge = await getChallenge(id);
@@ -368,7 +435,20 @@ export async function processActiveXChallenges() {
     if (!account || account.platform !== "x") continue;
     if (challenge.state !== "active") continue;
 
-    const result = await processChallenge(challenge, account, messages);
+    let posts = postsByUserId.get(account.platformUserId);
+    if (!posts && account.verificationState !== "ACCOUNT_MATCHED") {
+      try {
+        posts = await adapter.getRecentPosts(account.platformUserId);
+        postsByUserId.set(account.platformUserId, posts);
+      } catch (error) {
+        if (error instanceof XPlatformError) {
+          throw new GwapScoreSocialError(error.message, error.status);
+        }
+        throw error;
+      }
+    }
+
+    const result = await processChallenge(challenge, account, posts);
     if (result.challenge.state === "active") keep.push(id);
     if (result.challenge.state === "expired") expired += 1;
     if (result.account.verificationState === "VERIFIED") verified += 1;
