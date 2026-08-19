@@ -190,7 +190,7 @@ export const ecosystemProducts: EcosystemProduct[] = [
     category: "infrastructure",
     status: "Planned",
     accent: "purple",
-    logo: "/logos/occo.webp",
+    logo: "/logos/occo-official.svg",
     summary: "An on-chain credit bureau designed to make wallet-level risk and credibility understandable.",
     description:
       "OCCO will provide institutional-grade wallet lookup, score interpretation, and credit intelligence for users, partners, and regulated decision-makers.",
