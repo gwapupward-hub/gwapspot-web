@@ -1,6 +1,14 @@
 export const SOCIAL_PLATFORMS = ["x"] as const;
 export type SocialPlatform = (typeof SOCIAL_PLATFORMS)[number];
 
+export const VERIFICATION_CARD_THEMES = [
+  "orange",
+  "red",
+  "green",
+  "purple",
+] as const;
+export type VerificationCardTheme = (typeof VERIFICATION_CARD_THEMES)[number];
+
 export const VERIFICATION_STATES = [
   "NOT_CONNECTED",
   "ACCOUNT_CLAIMED",
@@ -56,6 +64,7 @@ export type VerificationChallenge = {
   socialAccountId: string;
   platform: SocialPlatform;
   challengeHash: string;
+  cardTheme: VerificationCardTheme;
   state: "active" | "consumed" | "expired" | "revoked";
   createdAt: string;
   expiresAt: string;
