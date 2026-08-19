@@ -7,14 +7,18 @@ import type {
   PlatformPost,
   PlatformUser,
   PostSnapshot,
-  VerificationMessage,
 } from "./types";
 
 const X_API_BASE = "https://api.x.com/2";
 const MAX_FOLLOW_PAGES = 10;
 
 type XUserResponse = {
-  data?: { id?: string; username?: string; name?: string };
+  data?: {
+    id?: string;
+    username?: string;
+    name?: string;
+    protected?: boolean;
+  };
   errors?: Array<{ detail?: string; title?: string }>;
 };
 
@@ -23,15 +27,14 @@ type XFollowResponse = {
   meta?: { next_token?: string };
 };
 
-type XDmResponse = {
+type XPostsResponse = {
   data?: Array<{
     id?: string;
-    sender_id?: string;
+    author_id?: string;
     text?: string;
     created_at?: string;
-    event_type?: string;
   }>;
-  meta?: { next_token?: string };
+  errors?: Array<{ detail?: string; title?: string }>;
 };
 
 export class XPlatformError extends Error {
@@ -46,19 +49,13 @@ export class XPlatformError extends Error {
 
 function bearerToken() {
   const token = process.env.X_API_BEARER_TOKEN;
-  if (!token) throw new XPlatformError("X user lookup is not configured", 503);
+  if (!token) throw new XPlatformError("X public-data access is not configured", 503);
   return token;
 }
 
-function userAccessToken() {
-  const token = process.env.X_USER_ACCESS_TOKEN;
-  if (!token) throw new XPlatformError("X DM verification is not configured", 503);
-  return token;
-}
-
-async function xFetch<T>(url: URL, token: string): Promise<T> {
+async function xFetch<T>(url: URL): Promise<T> {
   const response = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: { Authorization: `Bearer ${bearerToken()}` },
     cache: "no-store",
   });
   const payload = (await response.json().catch(() => ({}))) as T;
@@ -71,8 +68,8 @@ async function xFetch<T>(url: URL, token: string): Promise<T> {
 export class XAdapter implements SocialPlatformAdapter {
   async resolveUser(username: string): Promise<PlatformUser> {
     const url = new URL(`${X_API_BASE}/users/by/username/${encodeURIComponent(username)}`);
-    url.searchParams.set("user.fields", "name,username");
-    const payload = await xFetch<XUserResponse>(url, bearerToken());
+    url.searchParams.set("user.fields", "name,username,protected");
+    const payload = await xFetch<XUserResponse>(url);
     if (!payload.data?.id || !payload.data.username) {
       const detail = payload.errors?.[0]?.detail || payload.errors?.[0]?.title;
       throw new XPlatformError(detail || "X account not found", 404);
@@ -81,6 +78,7 @@ export class XAdapter implements SocialPlatformAdapter {
       id: payload.data.id,
       username: payload.data.username,
       name: payload.data.name ?? null,
+      protected: payload.data.protected === true,
     };
   }
 
@@ -95,7 +93,7 @@ export class XAdapter implements SocialPlatformAdapter {
       const url = new URL(`${X_API_BASE}/users/${encodeURIComponent(userId)}/following`);
       url.searchParams.set("max_results", "1000");
       if (paginationToken) url.searchParams.set("pagination_token", paginationToken);
-      const payload = await xFetch<XFollowResponse>(url, bearerToken());
+      const payload = await xFetch<XFollowResponse>(url);
       if (payload.data?.some((user) => user.id === officialUserId)) return true;
       paginationToken = payload.meta?.next_token;
       if (!paginationToken) return false;
@@ -104,41 +102,27 @@ export class XAdapter implements SocialPlatformAdapter {
     return false;
   }
 
-  async collectVerificationMessages(): Promise<VerificationMessage[]> {
-    const messages: VerificationMessage[] = [];
-    let paginationToken: string | undefined;
-
-    for (let page = 0; page < 3; page += 1) {
-      const url = new URL(`${X_API_BASE}/dm_events`);
-      url.searchParams.set("dm_event.fields", "created_at,sender_id,text,event_type");
-      url.searchParams.set("event_types", "MessageCreate");
-      url.searchParams.set("max_results", "100");
-      if (paginationToken) url.searchParams.set("pagination_token", paginationToken);
-      const payload = await xFetch<XDmResponse>(url, userAccessToken());
-
-      for (const event of payload.data ?? []) {
-        if (!event.id || !event.sender_id || !event.text || !event.created_at) continue;
-        messages.push({
-          id: event.id,
-          senderId: event.sender_id,
-          text: event.text,
-          createdAt: event.created_at,
-        });
-      }
-
-      paginationToken = payload.meta?.next_token;
-      if (!paginationToken) break;
-    }
-
-    return messages;
-  }
-
   async getAccountSnapshot(_userId: string): Promise<AccountSnapshot> {
     throw new XPlatformError("X observation begins in GwapScore Sprint 2", 501);
   }
 
-  async getRecentPosts(_userId: string): Promise<PlatformPost[]> {
-    throw new XPlatformError("X observation begins in GwapScore Sprint 2", 501);
+  async getRecentPosts(userId: string): Promise<PlatformPost[]> {
+    const url = new URL(`${X_API_BASE}/users/${encodeURIComponent(userId)}/tweets`);
+    url.searchParams.set("max_results", "20");
+    url.searchParams.set("tweet.fields", "created_at,author_id");
+    const payload = await xFetch<XPostsResponse>(url);
+
+    return (payload.data ?? []).flatMap((post) => {
+      if (!post.id || !post.text || !post.created_at) return [];
+      return [
+        {
+          id: post.id,
+          authorId: post.author_id ?? userId,
+          text: post.text,
+          createdAt: post.created_at,
+        },
+      ];
+    });
   }
 
   async getPostSnapshot(_postId: string): Promise<PostSnapshot> {
