@@ -7,6 +7,7 @@ import { GwapContinuityLayer } from "./components/gwap-continuity-layer";
 import { GwapInteractionLayer } from "./components/gwap-interaction-layer";
 import { GwapSensoryPolishLayer } from "./components/gwap-sensory-polish-layer";
 import { GwapSystemMemoryLayer } from "./components/gwap-system-memory-layer";
+import { GwapTouchProductNavigationLayer } from "./components/gwap-touch-product-navigation-layer";
 import PremiumSplash from "./components/premium-splash";
 import { Telemetry } from "./telemetry";
 import "@solana/wallet-adapter-react-ui/styles.css";
@@ -54,6 +55,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           {'try{if(sessionStorage.getItem("gwap-premium-intro-seen-v2")==="true")document.documentElement.dataset.gwapIntroSeen="true"}catch(e){}'}
         </Script>
         <PremiumSplash />
+        <GwapTouchProductNavigationLayer />
         <GwapInteractionLayer />
         <GwapSensoryPolishLayer />
         <GwapSystemMemoryLayer />
