@@ -95,7 +95,7 @@ export function WalletSignIn({ redirectPath }: { redirectPath: string }) {
       <div className="wallet-auth-logo-row" aria-hidden="true">
         <img src="/logos/gwap-agent-clear.svg" alt="" width={38} height={38} decoding="async" />
         <span />
-        <img src="/logos/occo.webp" alt="" width={38} height={38} decoding="async" />
+        <img src="/logos/occo-official.svg" alt="" width={38} height={38} decoding="async" />
         <span />
         <img src="/logos/gns.webp" alt="" width={38} height={38} decoding="async" />
       </div>
