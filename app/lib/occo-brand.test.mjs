@@ -7,6 +7,7 @@ const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
 test("OCCO surfaces use the locked official transparent master", () => {
   const ecosystem = read("./ecosystem.ts");
   const brandCss = read("../brand-assets.css");
+  const walletSignIn = read("../components/wallet-sign-in.tsx");
   const official = read("../../public/logos/occo-official.svg");
   const canonical = read("../../public/brand/occo/OCCO_Official_Master.svg");
   const clearAlias = read("../../public/logos/occo-clear.svg");
@@ -16,6 +17,9 @@ test("OCCO surfaces use the locked official transparent master", () => {
     brandCss,
     /data-gwap-product="occo"[^\n]+background-image: url\("\/logos\/occo-official\.svg"\)/,
   );
+  assert.doesNotMatch(brandCss, /data-gwap-product="occo"[^\n]+occo\.webp/);
+  assert.match(walletSignIn, /src="\/logos\/occo-official\.svg"/);
+  assert.doesNotMatch(walletSignIn, /src="\/logos\/occo\.webp"/);
 
   for (const svg of [official, canonical, clearAlias]) {
     assert.match(svg, /viewBox="0 0 755 239"/);
