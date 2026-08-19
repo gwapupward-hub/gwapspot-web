@@ -5,8 +5,8 @@ export const VERIFICATION_STATES = [
   "NOT_CONNECTED",
   "ACCOUNT_CLAIMED",
   "CHALLENGE_ISSUED",
-  "AWAITING_DM",
-  "DM_RECEIVED",
+  "AWAITING_POST",
+  "POST_DETECTED",
   "ACCOUNT_MATCHED",
   "FOLLOW_CONFIRMED",
   "VERIFIED",
@@ -35,9 +35,10 @@ export type SocialAccount = {
   platformUserId: string;
   currentUsername: string;
   displayName: string | null;
-  verificationMethod: "PROOF_OF_CONTROL_DM";
+  verificationMethod: "PROOF_OF_CONTROL_PUBLIC_POST";
   verificationState: VerificationState;
   followStatus: FollowVerificationStatus;
+  verificationProofPostId: string | null;
   verifiedAt: string | null;
   verificationExpiresAt: string | null;
   monitoringStatus: "NOT_STARTED" | "READY" | "PAUSED";
@@ -65,7 +66,7 @@ export type VerificationEventType =
   | "ACCOUNT_CLAIMED"
   | "CHALLENGE_CREATED"
   | "CHALLENGE_EXPIRED"
-  | "DM_RECEIVED"
+  | "POST_DETECTED"
   | "ACCOUNT_MATCHED"
   | "FOLLOW_CONFIRMED"
   | "FOLLOW_NOT_CONFIRMED"
@@ -86,17 +87,18 @@ export type PlatformUser = {
   id: string;
   username: string;
   name: string | null;
+  protected: boolean;
 };
 
-export type VerificationMessage = {
+export type AccountSnapshot = Record<string, never>;
+
+export type PlatformPost = {
   id: string;
-  senderId: string;
+  authorId: string;
   text: string;
   createdAt: string;
 };
 
-export type AccountSnapshot = Record<string, never>;
-export type PlatformPost = Record<string, never>;
 export type PostSnapshot = Record<string, never>;
 export type AudienceResponse = Record<string, never>;
 
