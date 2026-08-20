@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { WalletIdentity } from "../../lib/privy-server";
+import { getOrCreateGwapAccount } from "../../lib/gwap-account";
 import { getPrivateStorageKey, getWorkspaceRedis } from "../../lib/redis";
 import {
   defaultGwapOsState,
@@ -11,14 +12,26 @@ import {
   type GwapOsState,
 } from "./os-state";
 
-function workspaceKey(userId: string) {
-  return getPrivateStorageKey("workspace", userId);
+function workspaceKey(subject: string) {
+  return getPrivateStorageKey("workspace", subject);
 }
 
 export async function loadAccountWorkspace(identity: WalletIdentity) {
-  const storedState = await getWorkspaceRedis().get<unknown>(
-    workspaceKey(identity.userId),
-  );
+  const redis = getWorkspaceRedis();
+  const gwapAccount = await getOrCreateGwapAccount(identity);
+  const canonicalKey = workspaceKey(gwapAccount.id);
+  const legacyKey = workspaceKey(identity.userId);
+
+  let storedState = await redis.get<unknown>(canonicalKey);
+  if (!storedState && canonicalKey !== legacyKey) {
+    const legacyState = await redis.get<unknown>(legacyKey);
+    if (legacyState && typeof legacyState === "object") {
+      await redis.set(canonicalKey, legacyState);
+      await redis.del(legacyKey).catch(() => 0);
+      storedState = legacyState;
+    }
+  }
+
   const hasCloudState = Boolean(storedState && typeof storedState === "object");
   const account: GwapAccount = {
     displayName: identity.displayName,
@@ -46,7 +59,7 @@ export async function loadAccountWorkspace(identity: WalletIdentity) {
     };
   }
 
-  return { account, hasCloudState, state };
+  return { account, gwapAccount, hasCloudState, state };
 }
 
 export function seedNewWorkspaceFromGns(
@@ -68,10 +81,10 @@ export function seedNewWorkspaceFromGns(
   };
 }
 
-export async function saveAccountWorkspace(userId: string, state: GwapOsState) {
-  await getWorkspaceRedis().set(workspaceKey(userId), state);
+export async function saveAccountWorkspace(gwapUserId: string, state: GwapOsState) {
+  await getWorkspaceRedis().set(workspaceKey(gwapUserId), state);
 }
 
-export async function clearAccountWorkspace(userId: string) {
-  await getWorkspaceRedis().del(workspaceKey(userId));
+export async function clearAccountWorkspace(gwapUserId: string) {
+  await getWorkspaceRedis().del(workspaceKey(gwapUserId));
 }
