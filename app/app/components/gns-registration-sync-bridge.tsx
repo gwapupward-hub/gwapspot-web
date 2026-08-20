@@ -135,7 +135,7 @@ export function GnsRegistrationSyncBridge() {
     }
 
     let cancelled = false;
-    let timer: ReturnType<typeof window.setTimeout> | null = null;
+    let timer: number | null = null;
 
     const tick = async () => {
       if (cancelled || busyRef.current) return;
@@ -164,7 +164,7 @@ export function GnsRegistrationSyncBridge() {
     timer = window.setTimeout(tick, 0);
     return () => {
       cancelled = true;
-      if (timer) window.clearTimeout(timer);
+      if (timer !== null) window.clearTimeout(timer);
     };
   }, [
     account.verifiedWallet,
