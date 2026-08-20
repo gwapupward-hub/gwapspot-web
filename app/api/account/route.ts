@@ -7,10 +7,7 @@ import { deleteAccountInRecoverableOrder } from "../../lib/account-deletion-core
 import { isWalletAuthConfigured } from "../../lib/auth-config";
 import { deleteDailyIdeasDataForGwapAccount } from "../../lib/daily-ideas-account-cleanup";
 import { resolveDailyIdeasGwapAccount } from "../../lib/daily-ideas-gwap-account";
-import {
-  deleteGwapAccount,
-  getOrCreateGwapAccount,
-} from "../../lib/gwap-account";
+import { deleteGwapAccount } from "../../lib/gwap-account";
 import {
   clearWalletIdentityCache,
   getAuthenticatedWalletIdentity,
@@ -110,7 +107,9 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "Confirmation is required" }, { status: 400 });
     }
 
-    const gwapAccount = await getOrCreateGwapAccount(identity);
+    // Reconcile any legacy Privy-keyed Daily Ideas state into the canonical
+    // GWAP account before deletion so no historical account data is orphaned.
+    const gwapAccount = await resolveDailyIdeasGwapAccount(identity);
     await deleteAccountInRecoverableOrder({
       purgeApplicationData: async () => {
         // Billing cleanup runs first because an active Stripe subscription must
