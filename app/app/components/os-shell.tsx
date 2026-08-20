@@ -15,7 +15,7 @@ const dock = [
   { href: "/app/marketplace", label: "Work", icon: "▤" },
   { href: "/app/identity", label: "Identity", icon: "◎" },
   { href: "/app/vault", label: "Proof", icon: "◇" },
-  { href: "/app/score", label: "Trust", icon: "↗" },
+  { href: "/app/trust", label: "Trust", icon: "↗" },
   { href: "/app/developer", label: "Build", icon: "{}" },
 ] as const;
 
