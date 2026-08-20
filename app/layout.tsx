@@ -2,14 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import { ConversionTelemetry } from "./components/conversion-telemetry";
-import { GwapContinuityLayer } from "./components/gwap-continuity-layer";
-import { GwapInteractionLayer } from "./components/gwap-interaction-layer";
-import { GwapSensoryPolishLayer } from "./components/gwap-sensory-polish-layer";
-import { GwapSystemMemoryLayer } from "./components/gwap-system-memory-layer";
-import { GwapTouchProductNavigationLayer } from "./components/gwap-touch-product-navigation-layer";
-import PremiumSplash from "./components/premium-splash";
-import { Telemetry } from "./telemetry";
+import { PublicExperienceLayers } from "./components/public-experience-layers";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import "./styles.css";
 
@@ -54,15 +47,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <Script id="gwap-intro-state" strategy="beforeInteractive">
           {'try{if(sessionStorage.getItem("gwap-premium-intro-seen-v2")==="true")document.documentElement.dataset.gwapIntroSeen="true"}catch(e){}'}
         </Script>
-        <PremiumSplash />
-        <GwapTouchProductNavigationLayer />
-        <GwapInteractionLayer />
-        <GwapSensoryPolishLayer />
-        <GwapSystemMemoryLayer />
-        <GwapContinuityLayer />
+        <PublicExperienceLayers />
         {children}
-        <Telemetry />
-        <ConversionTelemetry />
         <Analytics />
         <SpeedInsights />
       </body>

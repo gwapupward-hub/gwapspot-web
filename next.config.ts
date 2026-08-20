@@ -1,14 +1,24 @@
 import type { NextConfig } from "next";
 
-const securityHeaders = [
+const commonSecurityHeaders = [
   { key: "X-DNS-Prefetch-Control", value: "on" },
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
-  { key: "X-Frame-Options", value: "DENY" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()" },
   { key: "Cross-Origin-Opener-Policy", value: "same-origin-allow-popups" },
   { key: "X-Permitted-Cross-Domain-Policies", value: "none" },
+];
+
+const websiteFrameProtection = [
+  { key: "X-Frame-Options", value: "DENY" },
+];
+
+const telegramFrameProtection = [
+  {
+    key: "Content-Security-Policy",
+    value: "frame-ancestors 'self' https://web.telegram.org https://*.telegram.org",
+  },
 ];
 
 const nextConfig: NextConfig = {
@@ -32,7 +42,11 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
-      { source: "/(.*)", headers: securityHeaders },
+      { source: "/(.*)", headers: commonSecurityHeaders },
+      { source: "/", headers: websiteFrameProtection },
+      { source: "/:path((?!telegram(?:/|$)).*)", headers: websiteFrameProtection },
+      { source: "/telegram", headers: telegramFrameProtection },
+      { source: "/telegram/:path*", headers: telegramFrameProtection },
       {
         source: "/logos/:path*",
         headers: [
