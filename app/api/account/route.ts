@@ -6,6 +6,7 @@ import { resolveGnsIdentity } from "../../app/lib/gns";
 import { deleteAccountInRecoverableOrder } from "../../lib/account-deletion-core";
 import { isWalletAuthConfigured } from "../../lib/auth-config";
 import { deleteDailyIdeasDataForGwapAccount } from "../../lib/daily-ideas-account-cleanup";
+import { resolveDailyIdeasGwapAccount } from "../../lib/daily-ideas-gwap-account";
 import {
   deleteGwapAccount,
   getOrCreateGwapAccount,
@@ -37,7 +38,7 @@ export async function GET(request: Request) {
 
   try {
     const gns = await resolveGnsIdentity(identity.verifiedWallet).catch(() => null);
-    const account = await getOrCreateGwapAccount(identity, {
+    const account = await resolveDailyIdeasGwapAccount(identity, {
       primaryGnsIdentity: gns?.status === "found" ? gns.name : null,
     });
 
