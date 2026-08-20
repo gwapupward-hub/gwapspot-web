@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 const commands = [
+  { label: "Show my trust graph", path: "/app/trust", hint: "trust graph · verification · coverage · credibility · signals" },
   { label: "Build my reputation", path: "/app/score", hint: "GwapScore · trust · reputation · credibility" },
   { label: "Verify my identity", path: "/app/identity", hint: "GNS · .gwap · identity · name" },
   { label: "Strengthen my profile", path: "/app/profile", hint: "profile · bio · public identity" },
@@ -95,7 +96,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
             </button>
           ))}
           {!filtered.length ? (
-            <p>No action matches that request yet. Try identity, reputation, wallet, proof, opportunity, marketplace, or API.</p>
+            <p>No action matches that request yet. Try identity, trust graph, reputation, wallet, proof, opportunity, marketplace, or API.</p>
           ) : null}
         </div>
       </section>
