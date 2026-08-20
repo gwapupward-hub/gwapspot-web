@@ -2,6 +2,7 @@ import "server-only";
 
 import {
   GnsApiError,
+  getGnsMigrationStatus,
   registerGnsIdentity,
   resolveGnsName,
 } from "../app/lib/gns";
@@ -142,6 +143,38 @@ async function saveRecord(record: GnsRegistrationSyncRecord) {
   return record;
 }
 
+async function recoverMainnetMigration(
+  record: GnsRegistrationSyncRecord,
+): Promise<GnsRegistrationSyncRecord | null> {
+  const migration = await getGnsMigrationStatus(record.name, record.owner);
+  if (!migration) return null;
+
+  if (
+    migration.status === "mainnet-active" &&
+    migration.network === "mainnet-beta" &&
+    migration.owner === record.owner
+  ) {
+    return saveRecord({
+      ...record,
+      status: "active",
+      updatedAt: new Date().toISOString(),
+      recovered: true,
+      error: null,
+    });
+  }
+
+  if (migration.owner && migration.owner !== record.owner) {
+    return saveRecord({
+      ...record,
+      status: "failed",
+      updatedAt: new Date().toISOString(),
+      error: "This .gwap name is reserved for another wallet.",
+    });
+  }
+
+  return null;
+}
+
 export async function reconcileGnsRegistrationSync(accountId: string) {
   const record = await getGnsRegistrationSync(accountId);
   if (!record || record.status === "active" || record.status === "failed") {
@@ -172,6 +205,22 @@ export async function reconcileGnsRegistrationSync(accountId: string) {
       error: null,
     });
   } catch (error) {
+    if (attempting.network === "mainnet-beta") {
+      const migrationRecovery = await recoverMainnetMigration(attempting);
+      if (migrationRecovery) return migrationRecovery;
+
+      const message =
+        error instanceof GnsApiError
+          ? error.message
+          : "GNS has not reconciled the confirmed mainnet migration yet.";
+      return saveRecord({
+        ...attempting,
+        status: "indexing",
+        updatedAt: new Date().toISOString(),
+        error: message.slice(0, 240),
+      });
+    }
+
     const resolved = await resolveGnsName(attempting.name);
     if (resolved?.found && resolved.owner === attempting.owner) {
       return saveRecord({
