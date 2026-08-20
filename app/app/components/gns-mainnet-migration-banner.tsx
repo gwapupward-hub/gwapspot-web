@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   GNS_PENDING_REGISTRATION_STORAGE_KEY,
-  buildGnsRegistrationTransaction,
+  buildGnsReservedMigrationTransaction,
   encodeGnsSignature,
   getGnsExplorerUrl,
   getGnsPrivyChain,
@@ -304,7 +304,6 @@ export function GnsMainnetMigrationBanner() {
         });
       }
     } catch {
-      // Keep polling only when a local/server mainnet receipt has been detected.
       if (!registration) recoveryEnabledRef.current = false;
     }
   }, [
@@ -356,7 +355,7 @@ export function GnsMainnetMigrationBanner() {
     try {
       setAction({
         status: "preparing",
-        message: "Loading the audited GNS mainnet configuration…",
+        message: "Loading the protected GNS mainnet migration configuration…",
         signature: null,
         config: null,
       });
@@ -374,11 +373,19 @@ export function GnsMainnetMigrationBanner() {
           "Mainnet migration is staged, but production signing remains disabled until the network cutover.",
         );
       }
+      if (
+        rawConfig.protocolVersion !== "rollout-v1" ||
+        rawConfig.migrationEnabled !== true
+      ) {
+        throw new Error(
+          "Protected legacy-name migration is not enabled on the GNS program yet.",
+        );
+      }
       configPayload = rawConfig;
 
       const owner = new PublicKey(account.verifiedWallet);
       const connection = new Connection(getGnsRpcUrl(configPayload.network), "confirmed");
-      const transaction = buildGnsRegistrationTransaction({
+      const transaction = buildGnsReservedMigrationTransaction({
         config: configPayload,
         name,
         owner,
@@ -389,7 +396,7 @@ export function GnsMainnetMigrationBanner() {
 
       setAction({
         status: "signing",
-        message: `Approve the ${configPayload.feeSol} SOL mainnet migration in your verified wallet.`,
+        message: `Approve the ${configPayload.feeSol} SOL protected mainnet migration in your verified wallet.`,
         signature: null,
         config: configPayload,
       });
@@ -424,7 +431,7 @@ export function GnsMainnetMigrationBanner() {
       await trackReceipt(name, signature).catch(() => null);
       setAction({
         status: "confirming",
-        message: "Mainnet transaction submitted. Waiting for Solana confirmation…",
+        message: "Mainnet migration submitted. Waiting for Solana confirmation…",
         signature,
         config: configPayload,
       });
@@ -438,7 +445,7 @@ export function GnsMainnetMigrationBanner() {
         recoveryEnabledRef.current = false;
         clearPendingReceipt(account.verifiedWallet);
         await clearServerReceipt();
-        throw new Error("The GNS program rejected this mainnet migration transaction.");
+        throw new Error("The GNS program rejected this protected migration transaction.");
       }
 
       setAction({
@@ -545,7 +552,7 @@ export function GnsMainnetMigrationBanner() {
       <h2>{eligible ? `${migration.fullName || `${gnsIdentity.name}.gwap`} is migration-ready.` : "This .gwap name is reserved."}</h2>
       <p>
         {eligible
-          ? "Your verified wallet matches the canonical devnet owner. The same .gwap identity can move to mainnet without surrendering its namespace, profile, Genesis position, or primary-name state."
+          ? "Your verified wallet matches the canonical devnet owner. The same .gwap identity can move to mainnet through its protected reservation without surrendering its namespace, profile, Genesis position, or primary-name state."
           : "The canonical .gwap namespace is reserved for its existing owner during mainnet migration. GWAP OS will not allow a different wallet to claim it."}
       </p>
 
@@ -567,7 +574,7 @@ export function GnsMainnetMigrationBanner() {
                     ? "Mainnet active"
                     : "Migrate .gwap to mainnet"}
           </button>
-          <span className="os-terminal-label">SAME OWNER · SAME NAME · MAINNET PDA</span>
+          <span className="os-terminal-label">RESERVED OWNER · SAME NAME · MAINNET PDA</span>
         </div>
       ) : null}
 
