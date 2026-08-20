@@ -10,7 +10,7 @@ import {
   getDailyIdeasSubjectForTelegram,
 } from "../../../lib/daily-ideas-identity-link";
 import { consumeDailyIdeaHandoff } from "../../../lib/daily-ideas-handoff";
-import { getNextDailyIdea } from "../../../lib/daily-ideas-inventory";
+import { getNextDailyIdea, getStoredDailyIdea } from "../../../lib/daily-ideas-inventory";
 import {
   getDailyIdeasPreferences,
   updateDailyIdeasPreferences,
@@ -154,7 +154,8 @@ export async function POST(request: Request) {
     }
 
     if (action === "consume-handoff") {
-      const idea = await consumeDailyIdeaHandoff(body.token);
+      const idea = await consumeDailyIdeaHandoff(body.token) ||
+        (typeof body.token === "string" ? await getStoredDailyIdea(body.token) : null);
       return idea
         ? json({ idea })
         : json({ error: "This Daily Ideas handoff is invalid or has expired." }, 404);
