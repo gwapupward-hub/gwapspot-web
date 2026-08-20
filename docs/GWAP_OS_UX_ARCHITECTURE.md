@@ -83,6 +83,29 @@ Initial components can include:
 
 The system should always explain how to improve Identity Strength.
 
+## Trust Graph
+
+The Trust Graph is the explainability layer for credibility inside GWAP OS. It must show what GWAP can verify today, what the user can strengthen, and which signals are not active yet.
+
+Trust Graph states:
+
+- `verified`: a live signal whose provenance GWAP can currently establish;
+- `incomplete`: a live signal the user can strengthen now;
+- `unavailable`: a live service whose state cannot currently be established; operational outages must not reduce the user's coverage;
+- `planned`: a roadmap capability that contributes zero live trust weight until its production backend exists.
+
+Initial live signals:
+
+- authenticated Solana wallet;
+- `.gwap` identity;
+- public profile context;
+- GwapScore availability;
+- canonical Telegram account link.
+
+Planned signals must remain visibly non-verifying until production-ready. In particular, social Proof-of-Control and Private Proof Vault claims cannot count toward coverage before those systems ship.
+
+Trust Coverage is distinct from Identity Strength and GwapScore. It measures verified coverage of currently measurable trust signals; it is not a credit score and must never be presented as one.
+
 ## Universal GWAP action bar
 
 GWAP OS should expose one persistent command/search layer for actions and entities.
@@ -91,6 +114,7 @@ Example intents:
 
 - Check a wallet
 - Find a .gwap name
+- Show my trust graph
 - Show my reputation
 - Improve my identity
 - Open my portfolio
@@ -161,10 +185,18 @@ Phase A — UX architecture
 - account-synced persona selection
 - persona-aware action ordering and recommendations
 
-Phase B — trust graph expansion
-- social verification
+Phase B — Trust Graph
+- explainable verification coverage
+- live vs incomplete vs unavailable vs planned signal states
+- canonical account-link visibility
+- direct trust-strengthening actions
+- operational outages excluded from user trust penalties
+- social verification and Proof Vault remain planned until their production backends exist
+
+Later Phase B expansion
+- Proof-of-Control social verification
 - Proof Vault activation
-- richer trust signals
+- richer provenance and relationship signals
 - entity relationship graph
 
 Phase C — economic activation
@@ -173,7 +205,7 @@ Phase C — economic activation
 - reputation rewards and transaction history
 - automated GWAP Agent orchestration
 
-## Non-goals for Phase A
+## Non-goals for early UX phases
 
 - no public-site redesign
 - no mainnet GNS deployment
@@ -190,4 +222,5 @@ A cold user should be able to open GWAP OS and understand within seconds:
 2. how strong/complete their verified identity is;
 3. what their wallet/account currently contains;
 4. how their reputation is represented;
-5. the single highest-value thing they can do next.
+5. which trust signals are actually verified;
+6. the single highest-value thing they can do next.
