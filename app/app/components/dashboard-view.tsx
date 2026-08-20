@@ -6,6 +6,7 @@ import { GwapScoreDisplay } from "../../components/gwap-score-display";
 import type { GwapScoreResult } from "../../lib/gwap-score";
 import type { EcosystemProduct } from "../../lib/ecosystem";
 import { useGwapOs } from "./os-provider";
+import { WalletPortfolioCard } from "./wallet-portfolio-card";
 
 const coreApps = [
   { href: "/app/marketplace", label: "Marketplace", command: "~/marketplace/browse", icon: "▤", note: "Deals, escrow, disputes" },
@@ -48,6 +49,7 @@ export function DashboardView({ products }: { products: EcosystemProduct[] }) {
       ? `[score] ${gnsIdentity.scoreMessage}`
       : `[score] protocol score: ${gnsIdentity.score}${gnsIdentity.scoreTier ? ` (${gnsIdentity.scoreTier})` : ""}`,
     `[sync] workspace: ${syncStatus}`,
+    `[wallet] portfolio source: Solana mainnet-beta`,
     `[apps] ${liveProducts} ecosystem products currently live`,
     ...(recentNames.length ? [`[recent] ${recentNames.join(" · ")}`] : []),
   ];
@@ -93,6 +95,17 @@ export function DashboardView({ products }: { products: EcosystemProduct[] }) {
           <div className="os-log-lines">
             {logs.map((line, index) => <p key={`${line}-${index}`}><span>{String(index + 1).padStart(2, "0")}</span>{line}</p>)}
           </div>
+        </aside>
+      </section>
+
+      <section className="os-v2-layout">
+        <WalletPortfolioCard />
+        <aside className="os-runtime-panel os-runtime-note">
+          <span className="os-terminal-label">WALLET DATA · READ ONLY</span>
+          <h2>Mainnet portfolio is live.</h2>
+          <p>GWAP OS reads the verified wallet directly from Solana mainnet. Balance and token discovery do not require a transaction signature.</p>
+          <p>Classic SPL Token and Token-2022 accounts are scanned independently. USD values are added only when the pricing service returns a reliable quote.</p>
+          <small>Your GNS registry can remain on devnet during the controlled migration; wallet portfolio data is already mainnet-native.</small>
         </aside>
       </section>
 
