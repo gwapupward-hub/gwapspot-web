@@ -21,6 +21,11 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const closePalette = () => {
+    setQuery("");
+    onOpenChange(false);
+  };
+
   const filtered = useMemo(() => {
     const value = query.trim().toLowerCase();
     if (!value) return commands;
@@ -35,9 +40,13 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
     const onKeyDown = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
+        if (!open) setQuery("");
         onOpenChange(!open);
       }
-      if (event.key === "Escape") onOpenChange(false);
+      if (event.key === "Escape" && open) {
+        setQuery("");
+        onOpenChange(false);
+      }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -45,7 +54,6 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
 
   useEffect(() => {
     if (!open) return;
-    setQuery("");
     const timer = window.setTimeout(() => inputRef.current?.focus(), 30);
     return () => window.clearTimeout(timer);
   }, [open]);
@@ -53,7 +61,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
   if (!open) return null;
 
   return (
-    <div className="os-command-backdrop" role="presentation" onMouseDown={() => onOpenChange(false)}>
+    <div className="os-command-backdrop" role="presentation" onMouseDown={closePalette}>
       <section
         className="os-command-palette"
         role="dialog"
@@ -78,7 +86,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
               type="button"
               key={`${command.path}-${command.label}`}
               onClick={() => {
-                onOpenChange(false);
+                closePalette();
                 router.push(command.path);
               }}
             >
