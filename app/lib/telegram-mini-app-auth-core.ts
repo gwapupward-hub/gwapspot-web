@@ -1,5 +1,4 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { normalizeTelegramAccountInput } from "./daily-ideas-telegram-account-core";
 
 const DEFAULT_MAX_AGE_SECONDS = 15 * 60;
 const MAX_INIT_DATA_BYTES = 16_384;
@@ -28,6 +27,19 @@ export type VerifiedTelegramMiniAppIdentity = {
 
 function boundedText(value: unknown, maxLength: number) {
   return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
+}
+
+function normalizeTelegramUserId(value: unknown) {
+  if (typeof value === "number") return Number.isSafeInteger(value) && value > 0 ? String(value) : "";
+  if (typeof value !== "string") return "";
+  const normalized = value.trim();
+  return /^[1-9]\d{0,19}$/.test(normalized) ? normalized : "";
+}
+
+function normalizeLanguageCode(value: unknown) {
+  const normalized = boundedText(value, 16);
+  if (!normalized) return null;
+  return /^[A-Za-z0-9_-]+$/.test(normalized) ? normalized : "";
 }
 
 function secureHexEqual(left: string, right: string) {
@@ -74,21 +86,17 @@ export function verifyTelegramMiniAppInitData(
   }
   if (!user || typeof user !== "object") return null;
 
-  const normalized = normalizeTelegramAccountInput({
-    telegramUserId: user.id,
-    username: boundedText(user.username, 32) || undefined,
-    firstName: boundedText(user.first_name, 64) || undefined,
-    lastName: boundedText(user.last_name, 64) || undefined,
-    languageCode: boundedText(user.language_code, 16) || undefined,
-  });
-  if (!normalized) return null;
+  const userId = normalizeTelegramUserId(user.id);
+  if (!userId) return null;
+  const languageCode = normalizeLanguageCode(user.language_code);
+  if (languageCode === "") return null;
 
   return {
-    telegramUserId: normalized.telegramUserId,
-    firstName: normalized.firstName || "Builder",
-    lastName: normalized.lastName,
-    username: normalized.username,
-    languageCode: normalized.languageCode,
+    telegramUserId: userId,
+    firstName: boundedText(user.first_name, 64) || "Builder",
+    lastName: boundedText(user.last_name, 64) || null,
+    username: boundedText(user.username, 32).replace(/^@+/, "") || null,
+    languageCode,
     isPremium: user.is_premium === true,
     photoUrl: boundedText(user.photo_url, 1_024) || null,
     authDate,
