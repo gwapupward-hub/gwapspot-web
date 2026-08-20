@@ -8,6 +8,7 @@ import { isWalletAuthConfigured } from "../../lib/auth-config";
 import { deleteDailyIdeasDataForGwapAccount } from "../../lib/daily-ideas-account-cleanup";
 import { resolveDailyIdeasGwapAccount } from "../../lib/daily-ideas-gwap-account";
 import { deleteGwapAccount } from "../../lib/gwap-account";
+import { clearGnsRegistrationSync } from "../../lib/gns-registration-sync";
 import {
   clearWalletIdentityCache,
   getAuthenticatedWalletIdentity,
@@ -119,6 +120,7 @@ export async function DELETE(request: Request) {
           deleteDeveloperApiAccount(identity.userId),
           clearAccountWorkspace(gwapAccount.id),
           deleteDailyIdeasDataForGwapAccount(gwapAccount.id),
+          clearGnsRegistrationSync(gwapAccount.id),
           clearWalletIdentityCache(identity.userId),
         ]);
         await deleteGwapAccount(gwapAccount.id);

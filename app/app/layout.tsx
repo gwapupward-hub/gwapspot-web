@@ -5,6 +5,7 @@ import { AuthSetupRequired } from "../components/auth-setup-required";
 import { WalletAuthProvider } from "../components/wallet-auth-provider";
 import { isWalletAuthConfigured } from "../lib/auth-config";
 import { getAuthenticatedWalletIdentity } from "../lib/privy-server";
+import { GnsRegistrationSyncBridge } from "./components/gns-registration-sync-bridge";
 import { GwapOsProvider } from "./components/os-provider";
 import { OsShell } from "./components/os-shell";
 import { resolveGnsIdentity } from "./lib/gns";
@@ -43,6 +44,7 @@ export default async function GwapOsLayout({ children }: { children: ReactNode }
         hasCloudState={workspace.hasCloudState}
         initialState={state}
       >
+        <GnsRegistrationSyncBridge />
         <OsShell>{children}</OsShell>
       </GwapOsProvider>
     </WalletAuthProvider>
