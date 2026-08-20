@@ -10,6 +10,7 @@ function signedInitData(overrides = {}) {
   const values = {
     auth_date: String(nowSeconds),
     query_id: "AAHdF6IQAAAAAN0XohDhrOrc",
+    signature: "v2PjVdZc0uD4X7Q1pQnZ8bV9mK3yL6rT2sA5wC7eF9I",
     start_param: "daily",
     user: JSON.stringify({
       id: 123456789,
@@ -32,7 +33,7 @@ function signedInitData(overrides = {}) {
   return params.toString();
 }
 
-test("accepts a valid, fresh Telegram Mini App payload", () => {
+test("accepts a valid Bot API 9.x Mini App payload including signature", () => {
   const identity = verifyTelegramMiniAppInitData(signedInitData(), { botToken, nowSeconds });
   assert.deepEqual(identity, {
     telegramUserId: "123456789",
@@ -45,6 +46,13 @@ test("accepts a valid, fresh Telegram Mini App payload", () => {
     authDate: nowSeconds,
     startParam: "daily",
   });
+});
+
+test("rejects a payload when the Bot API 9.x signature field is altered", () => {
+  const original = signedInitData();
+  const params = new URLSearchParams(original);
+  params.set("signature", "tampered-signature");
+  assert.equal(verifyTelegramMiniAppInitData(params.toString(), { botToken, nowSeconds }), null);
 });
 
 test("rejects a payload whose authenticated user data was altered", () => {
