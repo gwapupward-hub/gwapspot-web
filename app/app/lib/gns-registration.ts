@@ -15,10 +15,14 @@ export const CANONICAL_GNS_TREASURY =
 export const GNS_REGISTER_DISCRIMINATOR = Uint8Array.from([
   211, 124, 67, 15, 211, 194, 178, 240,
 ]);
+export const GNS_MIGRATE_RESERVED_DISCRIMINATOR = Uint8Array.from([
+  137, 7, 123, 70, 216, 242, 154, 204,
+]);
 export const GNS_NAME_PATTERN =
   /^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$/;
 
 export type GnsNetwork = "devnet" | "testnet" | "mainnet-beta";
+export type GnsProtocolVersion = "legacy-v1" | "rollout-v1";
 
 export type GnsRegistrationConfig = {
   feeLamports: number;
@@ -27,6 +31,9 @@ export type GnsRegistrationConfig = {
   onChainMode: true;
   programId: string;
   treasury: string;
+  protocolVersion?: GnsProtocolVersion;
+  publicRegistrationEnabled?: boolean;
+  migrationEnabled?: boolean;
 };
 
 export type PendingGnsRegistration = {
@@ -58,6 +65,12 @@ export function isValidSolanaSignature(value: string) {
   }
 }
 
+export function getGnsProtocolVersion(
+  config: Pick<GnsRegistrationConfig, "protocolVersion">,
+): GnsProtocolVersion {
+  return config.protocolVersion === "rollout-v1" ? "rollout-v1" : "legacy-v1";
+}
+
 export function isGnsRegistrationConfig(
   value: unknown,
 ): value is GnsRegistrationConfig {
@@ -74,11 +87,22 @@ export function isGnsRegistrationConfig(
     candidate.feeLamports <= 1_000_000_000 &&
     typeof candidate.feeSol === "number" &&
     candidate.feeSol === candidate.feeLamports / 1_000_000_000;
+  const validProtocol =
+    candidate.protocolVersion === undefined ||
+    candidate.protocolVersion === "legacy-v1" ||
+    candidate.protocolVersion === "rollout-v1";
+  const validRolloutFlags =
+    (candidate.publicRegistrationEnabled === undefined ||
+      typeof candidate.publicRegistrationEnabled === "boolean") &&
+    (candidate.migrationEnabled === undefined ||
+      typeof candidate.migrationEnabled === "boolean");
 
   try {
     return (
       validNetwork &&
       validFee &&
+      validProtocol &&
+      validRolloutFlags &&
       candidate.onChainMode === true &&
       typeof candidate.programId === "string" &&
       new PublicKey(candidate.programId).toBase58() === candidate.programId &&
@@ -132,12 +156,37 @@ export function deriveGnsRegistrationAccounts(
     [Buffer.from("config")],
     programId,
   );
+  const [rolloutPda] = PublicKey.findProgramAddressSync(
+    [Buffer.from("rollout")],
+    programId,
+  );
+  const [legacyReservationPda] = PublicKey.findProgramAddressSync(
+    [Buffer.from("legacy"), Buffer.from(normalizedName)],
+    programId,
+  );
   const [namePda] = PublicKey.findProgramAddressSync(
     [Buffer.from("name"), Buffer.from(normalizedName)],
     programId,
   );
 
-  return { configPda, namePda, programId };
+  return {
+    configPda,
+    rolloutPda,
+    legacyReservationPda,
+    namePda,
+    programId,
+  };
+}
+
+function encodeNameInstruction(discriminator: Uint8Array, name: string) {
+  const normalizedName = normalizeGnsName(name);
+  if (!isValidGnsName(normalizedName)) {
+    throw new Error("Use 1–32 lowercase letters, numbers, or internal hyphens.");
+  }
+  const nameBytes = Buffer.from(normalizedName, "utf8");
+  const stringLength = Buffer.alloc(4);
+  stringLength.writeUInt32LE(nameBytes.length, 0);
+  return Buffer.concat([Buffer.from(discriminator), stringLength, nameBytes]);
 }
 
 export function buildGnsRegistrationTransaction({
@@ -150,24 +199,35 @@ export function buildGnsRegistrationTransaction({
   owner: PublicKey;
 }) {
   const normalizedName = normalizeGnsName(name);
-  const { configPda, namePda, programId } = deriveGnsRegistrationAccounts(
-    normalizedName,
-    config,
-  );
+  const {
+    configPda,
+    rolloutPda,
+    legacyReservationPda,
+    namePda,
+    programId,
+  } = deriveGnsRegistrationAccounts(normalizedName, config);
   const treasury = new PublicKey(config.treasury);
-  const nameBytes = Buffer.from(normalizedName, "utf8");
-  const stringLength = Buffer.alloc(4);
-  stringLength.writeUInt32LE(nameBytes.length, 0);
-  const data = Buffer.concat([
-    Buffer.from(GNS_REGISTER_DISCRIMINATOR),
-    stringLength,
-    nameBytes,
-  ]);
+  const rolloutProtocol = getGnsProtocolVersion(config) === "rollout-v1";
 
-  const transaction = new Transaction().add(
-    new TransactionInstruction({
-      programId,
-      keys: [
+  if (rolloutProtocol && config.publicRegistrationEnabled !== true) {
+    throw new Error("GNS public registration is not enabled on this deployment.");
+  }
+
+  const keys = rolloutProtocol
+    ? [
+        { pubkey: owner, isSigner: true, isWritable: true },
+        { pubkey: configPda, isSigner: false, isWritable: true },
+        { pubkey: rolloutPda, isSigner: false, isWritable: false },
+        { pubkey: treasury, isSigner: false, isWritable: true },
+        { pubkey: legacyReservationPda, isSigner: false, isWritable: false },
+        { pubkey: namePda, isSigner: false, isWritable: true },
+        {
+          pubkey: SystemProgram.programId,
+          isSigner: false,
+          isWritable: false,
+        },
+      ]
+    : [
         { pubkey: owner, isSigner: true, isWritable: true },
         { pubkey: configPda, isSigner: false, isWritable: true },
         { pubkey: treasury, isSigner: false, isWritable: true },
@@ -177,8 +237,65 @@ export function buildGnsRegistrationTransaction({
           isSigner: false,
           isWritable: false,
         },
+      ];
+
+  const transaction = new Transaction().add(
+    new TransactionInstruction({
+      programId,
+      keys,
+      data: encodeNameInstruction(GNS_REGISTER_DISCRIMINATOR, normalizedName),
+    }),
+  );
+  transaction.feePayer = owner;
+  return transaction;
+}
+
+export function buildGnsReservedMigrationTransaction({
+  config,
+  name,
+  owner,
+}: {
+  config: GnsRegistrationConfig;
+  name: string;
+  owner: PublicKey;
+}) {
+  if (getGnsProtocolVersion(config) !== "rollout-v1") {
+    throw new Error("This GNS deployment does not support protected migrations.");
+  }
+  if (config.migrationEnabled !== true) {
+    throw new Error("GNS legacy-name migration is not enabled yet.");
+  }
+
+  const normalizedName = normalizeGnsName(name);
+  const {
+    configPda,
+    rolloutPda,
+    legacyReservationPda,
+    namePda,
+    programId,
+  } = deriveGnsRegistrationAccounts(normalizedName, config);
+  const treasury = new PublicKey(config.treasury);
+
+  const transaction = new Transaction().add(
+    new TransactionInstruction({
+      programId,
+      keys: [
+        { pubkey: owner, isSigner: true, isWritable: true },
+        { pubkey: configPda, isSigner: false, isWritable: true },
+        { pubkey: rolloutPda, isSigner: false, isWritable: false },
+        { pubkey: treasury, isSigner: false, isWritable: true },
+        { pubkey: legacyReservationPda, isSigner: false, isWritable: true },
+        { pubkey: namePda, isSigner: false, isWritable: true },
+        {
+          pubkey: SystemProgram.programId,
+          isSigner: false,
+          isWritable: false,
+        },
       ],
-      data,
+      data: encodeNameInstruction(
+        GNS_MIGRATE_RESERVED_DISCRIMINATOR,
+        normalizedName,
+      ),
     }),
   );
   transaction.feePayer = owner;
