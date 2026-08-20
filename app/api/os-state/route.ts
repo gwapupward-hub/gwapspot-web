@@ -9,6 +9,7 @@ import {
   saveAccountWorkspace,
 } from "../../app/lib/os-server";
 import { isWalletAuthConfigured } from "../../lib/auth-config";
+import { getOrCreateGwapAccount } from "../../lib/gwap-account";
 import { getAuthenticatedWalletIdentity } from "../../lib/privy-server";
 import {
   auditAuthEvent,
@@ -39,7 +40,8 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: "Invalid origin" }, { status: 403 });
   }
 
-  const rate = await checkRateLimit(`workspace:${identity.userId}`, 30, 60_000);
+  const gwapAccount = await getOrCreateGwapAccount(identity);
+  const rate = await checkRateLimit(`workspace:${gwapAccount.id}`, 30, 60_000);
   if (!rate.allowed) {
     auditAuthEvent("workspace.update", identity.userId, "rejected");
     return NextResponse.json(
@@ -68,7 +70,7 @@ export async function PUT(request: Request) {
       );
     }
 
-    await saveAccountWorkspace(identity.userId, state);
+    await saveAccountWorkspace(gwapAccount.id, state);
     auditAuthEvent("workspace.update", identity.userId, "success");
     return NextResponse.json({ state });
   } catch {
@@ -84,8 +86,9 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "Invalid origin" }, { status: 403 });
   }
 
+  const gwapAccount = await getOrCreateGwapAccount(identity);
   const rate = await checkRateLimit(
-    `workspace-reset:${identity.userId}`,
+    `workspace-reset:${gwapAccount.id}`,
     5,
     60_000,
   );
@@ -97,7 +100,7 @@ export async function DELETE(request: Request) {
   }
 
   try {
-    await clearAccountWorkspace(identity.userId);
+    await clearAccountWorkspace(gwapAccount.id);
     auditAuthEvent("workspace.reset", identity.userId, "success");
     return new NextResponse(null, { status: 204 });
   } catch {

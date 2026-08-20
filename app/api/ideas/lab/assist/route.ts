@@ -9,6 +9,7 @@ import {
   DailyIdeasConfigurationError,
   DailyIdeasProviderError,
 } from "../../../../lib/daily-ideas-generator";
+import { resolveDailyIdeasGwapAccount } from "../../../../lib/daily-ideas-gwap-account";
 import { gwapDailyIdeasSubject } from "../../../../lib/daily-ideas-identity-link";
 import { getDailyIdeaProject } from "../../../../lib/daily-ideas-projects";
 import { getAuthenticatedWalletIdentity } from "../../../../lib/privy-server";
@@ -39,7 +40,14 @@ export async function POST(request: Request) {
   if (!identity) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!hasValidOrigin(request)) return NextResponse.json({ error: "Invalid origin" }, { status: 403 });
 
-  const rate = await checkRateLimit(`idea-lab-assist:${identity.userId}`, 8, 60_000);
+  let account;
+  try {
+    account = await resolveDailyIdeasGwapAccount(identity);
+  } catch {
+    return NextResponse.json({ error: "GWAP account identity could not be resolved" }, { status: 409 });
+  }
+
+  const rate = await checkRateLimit(`idea-lab-assist:${account.id}`, 8, 60_000);
   if (!rate.allowed) {
     return NextResponse.json(
       { error: "Idea Lab intelligence limit reached. Try again shortly." },
@@ -64,7 +72,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const subject = gwapDailyIdeasSubject(identity.userId);
+    const subject = gwapDailyIdeasSubject(account.id);
     const project = await getDailyIdeaProject(subject, projectId);
     if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 

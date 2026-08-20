@@ -4,6 +4,7 @@ import {
   getDailyIdeasIdentityLinkForGwap,
   gwapDailyIdeasSubject,
 } from "../../../lib/daily-ideas-identity-link";
+import { resolveDailyIdeasGwapAccount } from "../../../lib/daily-ideas-gwap-account";
 import { getDailyIdeasEngagement } from "../../../lib/daily-ideas-engagement";
 import { getStoredDailyIdea } from "../../../lib/daily-ideas-inventory";
 import { getDailyIdeasPreferences, updateDailyIdeasPreferences } from "../../../lib/daily-ideas-preferences";
@@ -38,15 +39,17 @@ async function readBody(request: Request) {
 export async function GET(request: Request) {
   const identity = await authenticated(request);
   if (!identity) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const rate = await checkRateLimit(`daily-ideas-workspace-read:${identity.userId}`, 90, 60_000);
-  if (!rate.allowed) return NextResponse.json({ error: "Too many requests" }, { status: 429, headers: { "Retry-After": String(rate.retryAfter) } });
-  const ideaId = new URL(request.url).searchParams.get("ideaId")?.trim() || "";
-  if (ideaId && !/^[A-Za-z0-9_-]{1,80}$/.test(ideaId)) return NextResponse.json({ error: "Invalid idea" }, { status: 400 });
 
   try {
-    const subject = gwapDailyIdeasSubject(identity.userId);
+    const account = await resolveDailyIdeasGwapAccount(identity);
+    const rate = await checkRateLimit(`daily-ideas-workspace-read:${account.id}`, 90, 60_000);
+    if (!rate.allowed) return NextResponse.json({ error: "Too many requests" }, { status: 429, headers: { "Retry-After": String(rate.retryAfter) } });
+    const ideaId = new URL(request.url).searchParams.get("ideaId")?.trim() || "";
+    if (ideaId && !/^[A-Za-z0-9_-]{1,80}$/.test(ideaId)) return NextResponse.json({ error: "Invalid idea" }, { status: 400 });
+
+    const subject = gwapDailyIdeasSubject(account.id);
     const [link, saved, projects, preferences, engagement, idea] = await Promise.all([
-      getDailyIdeasIdentityLinkForGwap(identity.userId),
+      getDailyIdeasIdentityLinkForGwap(account.id),
       listSavedDailyIdeas(subject, { offset: 0, limit: 50 }),
       listDailyIdeaProjects(subject, { offset: 0, limit: 50 }),
       getDailyIdeasPreferences(subject),
@@ -56,6 +59,7 @@ export async function GET(request: Request) {
     if (ideaId && !idea) return NextResponse.json({ error: "Idea not found" }, { status: 404 });
     return NextResponse.json({
       linked: Boolean(link),
+      gwapUserId: account.id,
       identity: link ? { telegramUserId: link.telegramUserId, gnsIdentity: link.gnsIdentity, linkedAt: link.linkedAt } : null,
       saved,
       projects,
@@ -72,11 +76,18 @@ export async function POST(request: Request) {
   const identity = await authenticated(request);
   if (!identity) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!hasValidOrigin(request)) return NextResponse.json({ error: "Invalid origin" }, { status: 403 });
-  const rate = await checkRateLimit(`daily-ideas-workspace-write:${identity.userId}`, 90, 60_000);
+
+  let account;
+  try {
+    account = await resolveDailyIdeasGwapAccount(identity);
+  } catch {
+    return NextResponse.json({ error: "GWAP account identity could not be resolved" }, { status: 409 });
+  }
+  const rate = await checkRateLimit(`daily-ideas-workspace-write:${account.id}`, 90, 60_000);
   if (!rate.allowed) return NextResponse.json({ error: "Too many updates" }, { status: 429, headers: { "Retry-After": String(rate.retryAfter) } });
   const body = await readBody(request);
   if (!body || typeof body.action !== "string") return NextResponse.json({ error: "Invalid request" }, { status: 400 });
-  const subject = gwapDailyIdeasSubject(identity.userId);
+  const subject = gwapDailyIdeasSubject(account.id);
 
   try {
     if (body.action === "save" || body.action === "unsave") {
