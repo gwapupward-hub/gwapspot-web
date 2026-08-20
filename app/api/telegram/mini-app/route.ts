@@ -27,7 +27,12 @@ import {
   unsaveDailyIdea,
 } from "../../../lib/daily-ideas-saves";
 import { checkRateLimit } from "../../../lib/request-guard";
-import { verifyTelegramMiniAppRequest } from "../../../lib/telegram-mini-app-auth";
+import {
+  createTelegramMiniAppSession,
+  TELEGRAM_MINI_APP_SESSION_COOKIE,
+  TELEGRAM_MINI_APP_SESSION_MAX_AGE_SECONDS,
+  verifyTelegramMiniAppRequest,
+} from "../../../lib/telegram-mini-app-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -86,7 +91,7 @@ export async function GET(request: Request) {
       listDailyIdeaProjects(subject, { limit: 10 }),
     ]);
 
-    return json({
+    const response = json({
       user: {
         id: identity.telegramUserId,
         firstName: identity.firstName,
@@ -100,6 +105,19 @@ export async function GET(request: Request) {
       saved,
       projects,
     });
+
+    const session = createTelegramMiniAppSession(identity);
+    if (session) {
+      response.cookies.set(TELEGRAM_MINI_APP_SESSION_COOKIE, session, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "lax",
+        path: "/",
+        maxAge: TELEGRAM_MINI_APP_SESSION_MAX_AGE_SECONDS,
+      });
+    }
+
+    return response;
   } catch (error) {
     console.error("telegram_mini_app_bootstrap_failed", {
       actor: getTelegramActor(identity.telegramUserId),
