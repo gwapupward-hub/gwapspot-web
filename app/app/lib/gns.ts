@@ -20,6 +20,18 @@ const GNS_REGISTER_TIMEOUT_MS = 18_000;
 
 type UnknownRecord = Record<string, unknown>;
 
+export type GnsMigrationState = {
+  status:
+    | "available"
+    | "development-active"
+    | "migration-eligible"
+    | "reserved"
+    | "mainnet-active";
+  network: GnsNetwork | null;
+  owner: string | null;
+  migrationEligible: boolean;
+};
+
 function asRecord(value: unknown): UnknownRecord | null {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as UnknownRecord)
@@ -43,6 +55,16 @@ function asNetwork(value: unknown): GnsNetwork | null {
     return value;
   }
   return value === "mainnet" ? "mainnet-beta" : null;
+}
+
+function asMigrationStatus(value: unknown): GnsMigrationState["status"] | null {
+  return value === "available" ||
+    value === "development-active" ||
+    value === "migration-eligible" ||
+    value === "reserved" ||
+    value === "mainnet-active"
+    ? value
+    : null;
 }
 
 function isPublicKey(value: string) {
@@ -327,6 +349,43 @@ export async function resolveGnsName(name: string) {
     return {
       found: payload?.found === true,
       owner: asString(payload?.owner),
+    };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+export async function getGnsMigrationStatus(
+  name: string,
+  owner: string,
+): Promise<GnsMigrationState | null> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), GNS_CONFIG_TIMEOUT_MS);
+
+  try {
+    const url = new URL(
+      `${getApiBase()}/migration/${encodeURIComponent(name)}`,
+    );
+    url.searchParams.set("owner", owner);
+    const response = await fetch(url, {
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
+    });
+    if (!response.ok) return null;
+
+    const payload = asRecord(await response.json());
+    const status = asMigrationStatus(payload?.status);
+    if (!status) return null;
+    const resolvedOwner = asString(payload?.owner);
+    return {
+      status,
+      network: asNetwork(payload?.network),
+      owner: resolvedOwner,
+      migrationEligible:
+        payload?.migration_eligible === true && resolvedOwner === owner,
     };
   } catch {
     return null;
