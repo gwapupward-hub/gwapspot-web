@@ -123,7 +123,9 @@ export function deriveTrustGraph({ gnsIdentity, state, telegramLinked, walletVer
     },
   ];
 
-  const measurable = signals.filter((signal) => signal.weight > 0);
+  // Operational outages should never make the user look less trustworthy.
+  // Only live, measurable signals with a known state contribute to coverage.
+  const measurable = signals.filter((signal) => signal.weight > 0 && signal.state !== "unavailable");
   const availableWeight = measurable.reduce((sum, signal) => sum + signal.weight, 0);
   const verifiedWeight = measurable
     .filter((signal) => signal.state === "verified")
