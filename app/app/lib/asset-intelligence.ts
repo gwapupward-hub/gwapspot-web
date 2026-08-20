@@ -3,11 +3,19 @@ import "server-only";
 import { PublicKey } from "@solana/web3.js";
 
 const DEFAULT_SOLANA_RPC_URL = "https://api.mainnet-beta.solana.com";
-const SPL_TOKEN_PROGRAM_ID = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
+const SPL_TOKEN_PROGRAM_IDS = [
+  "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+  "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+] as const;
 const DEFAULT_TIMEOUT_MS = 6_000;
 const MAX_TIMEOUT_MS = 15_000;
 
 type UnknownRecord = Record<string, unknown>;
+type ParsedTokenAccounts = {
+  tokens: AssetHolding[];
+  tokenAccountCount: number;
+  uniqueMintCount: number;
+};
 
 export type AssetHolding = {
   mint: string;
@@ -28,6 +36,10 @@ export type AssetIntelligenceResult = {
   tokens: AssetHolding[];
   tokenAccountCount: number | null;
   uniqueMintCount: number | null;
+  tokenPrograms: {
+    classic: "available" | "unavailable";
+    token2022: "available" | "unavailable";
+  };
   message: string | null;
 };
 
@@ -105,7 +117,7 @@ function parseSolBalance(payload: UnknownRecord) {
   };
 }
 
-function parseTokenAccounts(payload: UnknownRecord) {
+function parseTokenAccounts(payload: UnknownRecord): ParsedTokenAccounts {
   const result = asRecord(payload.result);
   const accounts = Array.isArray(result?.value) ? result.value : null;
   if (!accounts) throw new Error("Token account response was invalid.");
@@ -169,10 +181,68 @@ function parseTokenAccounts(payload: UnknownRecord) {
   };
 }
 
+function mergeTokenResults(results: ParsedTokenAccounts[]) {
+  if (!results.length) {
+    return {
+      tokens: [] as AssetHolding[],
+      tokenAccountCount: null,
+      uniqueMintCount: null,
+    };
+  }
+
+  const holdings = new Map<
+    string,
+    { amount: bigint; decimals: number; accountCount: number }
+  >();
+  let tokenAccountCount = 0;
+
+  for (const result of results) {
+    tokenAccountCount += result.tokenAccountCount;
+    for (const token of result.tokens) {
+      const current = holdings.get(token.mint);
+      const amount = BigInt(token.amount);
+      if (current && current.decimals === token.decimals) {
+        current.amount += amount;
+        current.accountCount += token.accountCount;
+      } else if (!current) {
+        holdings.set(token.mint, {
+          amount,
+          decimals: token.decimals,
+          accountCount: token.accountCount,
+        });
+      }
+    }
+  }
+
+  const tokens = Array.from(holdings.entries())
+    .map(([mint, holding]): AssetHolding => {
+      const amount = holding.amount.toString();
+      return {
+        mint,
+        amount,
+        decimals: holding.decimals,
+        uiAmountString: formatRawTokenAmount(amount, holding.decimals),
+        accountCount: holding.accountCount,
+      };
+    })
+    .sort((a, b) => a.mint.localeCompare(b.mint));
+
+  return {
+    tokens,
+    tokenAccountCount,
+    uniqueMintCount: tokens.length,
+  };
+}
+
 export async function fetchAssetIntelligence(
   wallet: string,
   options: { timeoutMs?: number } = {},
 ): Promise<AssetIntelligenceResult> {
+  const unavailableTokenPrograms = {
+    classic: "unavailable" as const,
+    token2022: "unavailable" as const,
+  };
+
   if (!isValidSolanaWallet(wallet)) {
     return {
       status: "unavailable",
@@ -182,6 +252,7 @@ export async function fetchAssetIntelligence(
       tokens: [],
       tokenAccountCount: null,
       uniqueMintCount: null,
+      tokenPrograms: unavailableTokenPrograms,
       message: "The wallet address is invalid.",
     };
   }
@@ -194,44 +265,64 @@ export async function fetchAssetIntelligence(
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const [balanceResult, tokensResult] = await Promise.allSettled([
-      rpcRequest("getBalance", [wallet, { commitment: "confirmed" }], controller.signal),
-      rpcRequest(
-        "getTokenAccountsByOwner",
-        [
-          wallet,
-          { programId: SPL_TOKEN_PROGRAM_ID },
-          { commitment: "confirmed", encoding: "jsonParsed" },
-        ],
-        controller.signal,
-      ),
-    ]);
+    const [balanceResult, classicTokensResult, token2022Result] =
+      await Promise.allSettled([
+        rpcRequest(
+          "getBalance",
+          [wallet, { commitment: "confirmed" }],
+          controller.signal,
+        ),
+        ...SPL_TOKEN_PROGRAM_IDS.map((programId) =>
+          rpcRequest(
+            "getTokenAccountsByOwner",
+            [
+              wallet,
+              { programId },
+              { commitment: "confirmed", encoding: "jsonParsed" },
+            ],
+            controller.signal,
+          ),
+        ),
+      ]);
 
     const sol =
       balanceResult.status === "fulfilled"
         ? parseSolBalance(balanceResult.value)
         : { lamports: null, amount: null };
-    const parsedTokens =
-      tokensResult.status === "fulfilled"
-        ? parseTokenAccounts(tokensResult.value)
-        : { tokens: [], tokenAccountCount: null, uniqueMintCount: null };
+
+    const tokenResults: ParsedTokenAccounts[] = [];
+    if (classicTokensResult.status === "fulfilled") {
+      tokenResults.push(parseTokenAccounts(classicTokensResult.value));
+    }
+    if (token2022Result.status === "fulfilled") {
+      tokenResults.push(parseTokenAccounts(token2022Result.value));
+    }
+    const parsedTokens = mergeTokenResults(tokenResults);
+
     const succeeded =
       Number(balanceResult.status === "fulfilled") +
-      Number(tokensResult.status === "fulfilled");
+      Number(classicTokensResult.status === "fulfilled") +
+      Number(token2022Result.status === "fulfilled");
 
     return {
       status:
-        succeeded === 2 ? "available" : succeeded === 1 ? "partial" : "unavailable",
+        succeeded === 3 ? "available" : succeeded > 0 ? "partial" : "unavailable",
       source: "solana-rpc",
       network: "mainnet-beta",
       sol,
       ...parsedTokens,
+      tokenPrograms: {
+        classic:
+          classicTokensResult.status === "fulfilled" ? "available" : "unavailable",
+        token2022:
+          token2022Result.status === "fulfilled" ? "available" : "unavailable",
+      },
       message:
-        succeeded === 2
+        succeeded === 3
           ? null
-          : succeeded === 1
-            ? "Some asset data is temporarily unavailable."
-            : "Solana asset data is temporarily unavailable.",
+          : succeeded > 0
+            ? "Some mainnet asset data is temporarily unavailable."
+            : "Solana mainnet asset data is temporarily unavailable.",
     };
   } catch {
     return {
@@ -242,7 +333,8 @@ export async function fetchAssetIntelligence(
       tokens: [],
       tokenAccountCount: null,
       uniqueMintCount: null,
-      message: "Solana asset data is temporarily unavailable.",
+      tokenPrograms: unavailableTokenPrograms,
+      message: "Solana mainnet asset data is temporarily unavailable.",
     };
   } finally {
     clearTimeout(timeout);
