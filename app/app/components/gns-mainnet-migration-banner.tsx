@@ -17,6 +17,7 @@ import {
   getGnsPrivyChain,
   getGnsRpcUrl,
   isGnsRegistrationConfig,
+  parsePendingGnsRegistration,
   type GnsRegistrationConfig,
 } from "../lib/gns-registration";
 import { useGwapOs } from "./os-provider";
@@ -39,14 +40,38 @@ type MigrationPayload = {
   error?: string;
 };
 
+type SyncRegistration = {
+  name: string;
+  fullName: string;
+  txSignature: string;
+  network: "devnet" | "testnet" | "mainnet-beta";
+  status: "submitted" | "indexing" | "active" | "failed";
+  error: string | null;
+};
+
+type SyncPayload = {
+  registration?: SyncRegistration | null;
+  error?: string;
+};
+
 type ActionState = {
-  status: "idle" | "preparing" | "signing" | "confirming" | "syncing" | "submitted" | "success" | "error";
+  status:
+    | "idle"
+    | "preparing"
+    | "signing"
+    | "confirming"
+    | "syncing"
+    | "submitted"
+    | "success"
+    | "error";
   message: string;
   signature: string | null;
   config: GnsRegistrationConfig | null;
 };
 
-function pendingReceipt(
+const RECONCILE_POLL_MS = 2_500;
+
+function writePendingReceipt(
   config: GnsRegistrationConfig,
   name: string,
   owner: string,
@@ -64,7 +89,34 @@ function pendingReceipt(
       }),
     );
   } catch {
-    // Server-side receipt tracking remains available once the API is reached.
+    // The authenticated server receipt is the canonical recovery path.
+  }
+}
+
+function readPendingReceipt(owner: string) {
+  try {
+    const raw = window.localStorage.getItem(GNS_PENDING_REGISTRATION_STORAGE_KEY);
+    if (!raw) return null;
+    return parsePendingGnsRegistration(JSON.parse(raw) as unknown, owner);
+  } catch {
+    return null;
+  }
+}
+
+function clearPendingReceipt(owner: string) {
+  try {
+    const raw = window.localStorage.getItem(GNS_PENDING_REGISTRATION_STORAGE_KEY);
+    if (!raw) return;
+    const value = JSON.parse(raw) as { owner?: unknown };
+    if (value.owner === owner) {
+      window.localStorage.removeItem(GNS_PENDING_REGISTRATION_STORAGE_KEY);
+    }
+  } catch {
+    try {
+      window.localStorage.removeItem(GNS_PENDING_REGISTRATION_STORAGE_KEY);
+    } catch {
+      // Browser storage is only a secondary recovery aid.
+    }
   }
 }
 
@@ -90,6 +142,7 @@ export function GnsMainnetMigrationBanner() {
   const { wallets: privySolanaWallets } = usePrivySolanaWallets();
   const { signAndSendTransaction } = useSignAndSendTransaction();
   const inFlightRef = useRef(false);
+  const recoveryEnabledRef = useRef(true);
   const [migration, setMigration] = useState<MigrationPayload | null>(null);
   const [action, setAction] = useState<ActionState>({
     status: "idle",
@@ -123,10 +176,164 @@ export function GnsMainnetMigrationBanner() {
     }
   }, [authenticatedFetch, gnsIdentity.name, gnsIdentity.status]);
 
+  const trackReceipt = useCallback(
+    async (name: string, signature: string) => {
+      const response = await authenticatedFetch("/api/gns/registration-status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "track",
+          name,
+          txSignature: signature,
+          network: "mainnet-beta",
+        }),
+      });
+      const payload = (await response.json().catch(() => null)) as SyncPayload | null;
+      return response.ok ? payload?.registration ?? null : null;
+    },
+    [authenticatedFetch],
+  );
+
+  const clearServerReceipt = useCallback(async () => {
+    await authenticatedFetch("/api/gns/registration-status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "clear" }),
+    }).catch(() => null);
+  }, [authenticatedFetch]);
+
+  const reconcileTrackedReceipt = useCallback(async () => {
+    const response = await authenticatedFetch("/api/gns/registration-status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "reconcile" }),
+    });
+    const payload = (await response.json().catch(() => null)) as SyncPayload | null;
+    return response.ok ? payload?.registration ?? null : null;
+  }, [authenticatedFetch]);
+
+  const recoverPendingMigration = useCallback(async () => {
+    if (
+      !recoveryEnabledRef.current ||
+      inFlightRef.current ||
+      gnsIdentity.status !== "found" ||
+      !gnsIdentity.name
+    ) {
+      return;
+    }
+
+    let registration: SyncRegistration | null = null;
+    try {
+      const response = await authenticatedFetch("/api/gns/registration-status", {
+        cache: "no-store",
+      });
+      if (response.ok) {
+        const payload = (await response.json()) as SyncPayload;
+        registration = payload.registration ?? null;
+      }
+
+      if (
+        !registration ||
+        registration.network !== "mainnet-beta" ||
+        registration.name !== gnsIdentity.name
+      ) {
+        const local = readPendingReceipt(account.verifiedWallet);
+        if (
+          !local ||
+          local.config.network !== "mainnet-beta" ||
+          local.name !== gnsIdentity.name
+        ) {
+          recoveryEnabledRef.current = false;
+          return;
+        }
+        registration = await trackReceipt(local.name, local.signature);
+      }
+
+      if (!registration) return;
+      if (registration.status === "failed") {
+        recoveryEnabledRef.current = false;
+        setAction({
+          status: "error",
+          message: registration.error || "The tracked mainnet migration failed.",
+          signature: registration.txSignature,
+          config: null,
+        });
+        return;
+      }
+      if (registration.status === "active") {
+        recoveryEnabledRef.current = false;
+        clearPendingReceipt(account.verifiedWallet);
+        setAction({
+          status: "success",
+          message: `${registration.fullName} is mainnet-active.`,
+          signature: registration.txSignature,
+          config: null,
+        });
+        await loadMigration();
+        router.refresh();
+        return;
+      }
+
+      setAction((current) => ({
+        ...current,
+        status: "submitted",
+        message:
+          registration?.error ||
+          "A confirmed mainnet migration receipt is being reconciled automatically. Do not sign again.",
+        signature: registration?.txSignature ?? current.signature,
+      }));
+      const reconciled = await reconcileTrackedReceipt();
+      if (reconciled?.status === "active") {
+        recoveryEnabledRef.current = false;
+        clearPendingReceipt(account.verifiedWallet);
+        setAction({
+          status: "success",
+          message: `${reconciled.fullName} is mainnet-active.`,
+          signature: reconciled.txSignature,
+          config: null,
+        });
+        await loadMigration();
+        router.refresh();
+      } else if (reconciled?.status === "failed") {
+        recoveryEnabledRef.current = false;
+        setAction({
+          status: "error",
+          message: reconciled.error || "The tracked mainnet migration failed.",
+          signature: reconciled.txSignature,
+          config: null,
+        });
+      }
+    } catch {
+      // Keep polling only when a local/server mainnet receipt has been detected.
+      if (!registration) recoveryEnabledRef.current = false;
+    }
+  }, [
+    account.verifiedWallet,
+    authenticatedFetch,
+    gnsIdentity.name,
+    gnsIdentity.status,
+    loadMigration,
+    reconcileTrackedReceipt,
+    router,
+    trackReceipt,
+  ]);
+
   useEffect(() => {
     const timer = window.setTimeout(() => void loadMigration(), 0);
     return () => window.clearTimeout(timer);
   }, [loadMigration]);
+
+  useEffect(() => {
+    recoveryEnabledRef.current = true;
+    const initial = window.setTimeout(() => void recoverPendingMigration(), 0);
+    const poll = window.setInterval(() => {
+      if (recoveryEnabledRef.current) void recoverPendingMigration();
+    }, RECONCILE_POLL_MS);
+    return () => {
+      window.clearTimeout(initial);
+      window.clearInterval(poll);
+    };
+  }, [recoverPendingMigration]);
 
   async function migrateToMainnet() {
     if (
@@ -140,9 +347,11 @@ export function GnsMainnetMigrationBanner() {
     }
 
     inFlightRef.current = true;
+    recoveryEnabledRef.current = true;
     const name = gnsIdentity.name;
     let signature = "";
     let transactionFailed = false;
+    let configPayload: GnsRegistrationConfig | null = null;
 
     try {
       setAction({
@@ -154,17 +363,18 @@ export function GnsMainnetMigrationBanner() {
       const configResponse = await authenticatedFetch("/api/gns/register", {
         cache: "no-store",
       });
-      const configPayload = (await configResponse.json().catch(() => null)) as unknown;
-      if (!configResponse.ok || !isGnsRegistrationConfig(configPayload)) {
+      const rawConfig = (await configResponse.json().catch(() => null)) as unknown;
+      if (!configResponse.ok || !isGnsRegistrationConfig(rawConfig)) {
         throw new Error(
           "GWAP OS is not yet configured for the GNS mainnet cutover.",
         );
       }
-      if (configPayload.network !== "mainnet-beta") {
+      if (rawConfig.network !== "mainnet-beta") {
         throw new Error(
           "Mainnet migration is staged, but production signing remains disabled until the network cutover.",
         );
       }
+      configPayload = rawConfig;
 
       const owner = new PublicKey(account.verifiedWallet);
       const connection = new Connection(getGnsRpcUrl(configPayload.network), "confirmed");
@@ -210,7 +420,8 @@ export function GnsMainnetMigrationBanner() {
         signature = encodeGnsSignature(result.signature);
       }
 
-      pendingReceipt(configPayload, name, account.verifiedWallet, signature);
+      writePendingReceipt(configPayload, name, account.verifiedWallet, signature);
+      await trackReceipt(name, signature).catch(() => null);
       setAction({
         status: "confirming",
         message: "Mainnet transaction submitted. Waiting for Solana confirmation…",
@@ -224,6 +435,9 @@ export function GnsMainnetMigrationBanner() {
       );
       if (confirmation.value.err) {
         transactionFailed = true;
+        recoveryEnabledRef.current = false;
+        clearPendingReceipt(account.verifiedWallet);
+        await clearServerReceipt();
         throw new Error("The GNS program rejected this mainnet migration transaction.");
       }
 
@@ -242,10 +456,29 @@ export function GnsMainnetMigrationBanner() {
         | { error?: string }
         | null;
       if (!syncResponse.ok) {
+        const tracked = await trackReceipt(name, signature).catch(() => null);
+        const reconciled = tracked
+          ? await reconcileTrackedReceipt().catch(() => null)
+          : null;
+        if (reconciled?.status === "active") {
+          recoveryEnabledRef.current = false;
+          clearPendingReceipt(account.verifiedWallet);
+          setAction({
+            status: "success",
+            message: `${name}.gwap is mainnet-active.`,
+            signature,
+            config: configPayload,
+          });
+          await loadMigration();
+          router.refresh();
+          return;
+        }
+
         setAction({
           status: "submitted",
           message:
             syncPayload?.error ||
+            reconciled?.error ||
             "Mainnet is confirmed and the receipt is queued for automatic registry reconciliation. Do not sign again.",
           signature,
           config: configPayload,
@@ -253,6 +486,9 @@ export function GnsMainnetMigrationBanner() {
         return;
       }
 
+      recoveryEnabledRef.current = false;
+      clearPendingReceipt(account.verifiedWallet);
+      await clearServerReceipt();
       setAction({
         status: "success",
         message: `${name}.gwap is mainnet-active.`,
@@ -269,6 +505,7 @@ export function GnsMainnetMigrationBanner() {
           message:
             "The transaction was broadcast. Automatic reconciliation will continue in GWAP OS—do not sign a duplicate transaction.",
           signature,
+          config: configPayload ?? current.config,
         }));
       } else {
         setAction((current) => ({
