@@ -243,6 +243,13 @@ export async function getGnsRegistrationConfig(): Promise<GnsRegistrationConfig>
     const treasury = asString(payload?.treasury);
     const network = asNetwork(payload?.network);
     const feeLamports = asNumber(payload?.fee_lamports);
+    const protocolVersion =
+      payload?.protocol_version === "rollout-v1" ? "rollout-v1" : "legacy-v1";
+    const rolloutConfigured = asBoolean(payload?.rollout_configured);
+    const publicRegistrationEnabled = asBoolean(
+      payload?.public_registration_enabled,
+    );
+    const migrationEnabled = asBoolean(payload?.migration_enabled);
     const expectedProgramId =
       process.env.GNS_EXPECTED_PROGRAM_ID?.trim() || CANONICAL_GNS_PROGRAM_ID;
     const expectedTreasury =
@@ -264,7 +271,8 @@ export async function getGnsRegistrationConfig(): Promise<GnsRegistrationConfig>
       !isPublicKey(treasury) ||
       programId !== expectedProgramId ||
       treasury !== expectedTreasury ||
-      network !== expectedNetwork
+      network !== expectedNetwork ||
+      (protocolVersion === "rollout-v1" && !rolloutConfigured)
     ) {
       throw new Error("GNS deployment configuration failed validation");
     }
@@ -276,6 +284,9 @@ export async function getGnsRegistrationConfig(): Promise<GnsRegistrationConfig>
       onChainMode: true,
       programId,
       treasury,
+      protocolVersion,
+      publicRegistrationEnabled,
+      migrationEnabled,
     };
   } finally {
     clearTimeout(timeout);
@@ -317,7 +328,9 @@ export async function registerGnsIdentity({
           ? "That .gwap name has already been registered."
           : response.status === 400
             ? "GNS rejected the confirmed transaction receipt."
-            : "GNS could not record the confirmed transaction.";
+            : response.status === 503
+              ? "GNS registration or migration is not enabled yet."
+              : "GNS could not record the confirmed transaction.";
       throw new GnsApiError(message, response.status);
     }
 
