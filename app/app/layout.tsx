@@ -5,6 +5,7 @@ import { AuthSetupRequired } from "../components/auth-setup-required";
 import { WalletAuthProvider } from "../components/wallet-auth-provider";
 import { isWalletAuthConfigured } from "../lib/auth-config";
 import { getAuthenticatedWalletIdentity } from "../lib/privy-server";
+import { GnsMainnetMigrationBanner } from "./components/gns-mainnet-migration-banner";
 import { GnsRegistrationSyncBridge } from "./components/gns-registration-sync-bridge";
 import { GwapOsProvider } from "./components/os-provider";
 import { OsShell } from "./components/os-shell";
@@ -45,7 +46,10 @@ export default async function GwapOsLayout({ children }: { children: ReactNode }
         initialState={state}
       >
         <GnsRegistrationSyncBridge />
-        <OsShell>{children}</OsShell>
+        <OsShell>
+          <GnsMainnetMigrationBanner />
+          {children}
+        </OsShell>
       </GwapOsProvider>
     </WalletAuthProvider>
   );
