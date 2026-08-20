@@ -66,23 +66,6 @@ GwapScore, reputation status, verification coverage, proof coverage, trust recom
 ### What can I do next?
 Personalized next-best actions based on missing identity/trust signals and active user work.
 
-## Intent routing
-
-Surface actions such as:
-
-- Build my reputation
-- Analyze a wallet
-- Verify myself
-- Verify someone else
-- Find opportunities
-- Win clients / get hired
-- Hire with confidence
-- Launch something
-- Integrate GWAP
-- Understand my portfolio
-
-Intent routes should activate the relevant GWAP capabilities without requiring users to understand internal module names.
-
 ## Identity Strength
 
 Identity Strength is a progression signal, not a financial/reputation score. It measures coverage of verified account signals and actionable profile completeness.
@@ -131,6 +114,28 @@ One system, different emphasis:
 
 Do not fork the underlying product into separate applications for each audience. Adapt ordering, recommendations, and shortcuts.
 
+### Adaptive persona implementation
+
+GWAP OS stores one account-synced persona preference:
+
+- `builder`
+- `freelancer`
+- `creator`
+- `investor`
+- `business`
+- `general`
+
+Persona selection changes emphasis, action ordering, and next-best recommendations only. It never changes entitlement or hides capabilities.
+
+Universal trust prerequisites stay ahead of persona-specific recommendations:
+
+1. establish `.gwap` identity;
+2. complete enough public context to be understandable;
+3. make reputation/trust state inspectable;
+4. then prioritize the user's chosen outcome path.
+
+This keeps personalization useful without creating six disconnected versions of GWAP OS.
+
 ## Product presentation rule
 
 Never lead with a product name when a clearer outcome exists.
@@ -153,6 +158,8 @@ Phase A — UX architecture
 - universal action bar
 - outcome-based navigation
 - next-best-action recommendations
+- account-synced persona selection
+- persona-aware action ordering and recommendations
 
 Phase B — trust graph expansion
 - social verification
