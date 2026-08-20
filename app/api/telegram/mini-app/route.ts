@@ -29,10 +29,15 @@ import {
 import { checkRateLimit } from "../../../lib/request-guard";
 import {
   createTelegramMiniAppSession,
+  getTelegramInitDataFromRequest,
   TELEGRAM_MINI_APP_SESSION_COOKIE,
   TELEGRAM_MINI_APP_SESSION_MAX_AGE_SECONDS,
   verifyTelegramMiniAppRequest,
 } from "../../../lib/telegram-mini-app-auth";
+import {
+  TelegramMiniAppRemoteAuthError,
+  verifyTelegramMiniAppInitDataRemotely,
+} from "../../../lib/telegram-mini-app-auth-remote";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -60,8 +65,17 @@ async function readBody(request: Request) {
 }
 
 async function authenticate(request: Request) {
-  const identity = verifyTelegramMiniAppRequest(request);
+  let identity = verifyTelegramMiniAppRequest(request);
+  if (!identity) {
+    const initData = getTelegramInitDataFromRequest(request);
+    if (initData) {
+      identity = await verifyTelegramMiniAppInitDataRemotely(initData, {
+        requestId: crypto.randomUUID(),
+      });
+    }
+  }
   if (!identity) return null;
+
   const account: TelegramAccountInput = {
     telegramUserId: identity.telegramUserId,
     username: identity.username,
@@ -73,8 +87,21 @@ async function authenticate(request: Request) {
   return identity;
 }
 
+function remoteAuthUnavailable(error: unknown) {
+  console.error("telegram_mini_app_remote_auth_failed", {
+    name: error instanceof Error ? error.name : "Error",
+    status: error instanceof TelegramMiniAppRemoteAuthError ? error.status : undefined,
+  });
+  return json({ error: "Telegram verification is temporarily unavailable." }, 503);
+}
+
 export async function GET(request: Request) {
-  const identity = await authenticate(request);
+  let identity;
+  try {
+    identity = await authenticate(request);
+  } catch (error) {
+    return remoteAuthUnavailable(error);
+  }
   if (!identity) return json({ error: "Telegram session could not be verified." }, 401);
 
   const rate = await checkRateLimit(`telegram-mini-app-read:${identity.telegramUserId}`, 120, 60_000);
@@ -128,7 +155,12 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const identity = await authenticate(request);
+  let identity;
+  try {
+    identity = await authenticate(request);
+  } catch (error) {
+    return remoteAuthUnavailable(error);
+  }
   if (!identity) return json({ error: "Telegram session could not be verified." }, 401);
 
   const rate = await checkRateLimit(`telegram-mini-app-write:${identity.telegramUserId}`, 90, 60_000);
