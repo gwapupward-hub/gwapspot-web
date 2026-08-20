@@ -88,6 +88,20 @@ export async function createDailyIdeasAccountLinkToken(telegramUserId: string) {
   return { token, expiresAt: record.expiresAt };
 }
 
+export async function inspectDailyIdeasAccountLinkToken(token: unknown) {
+  if (typeof token !== "string" || !LINK_TOKEN_PATTERN.test(token)) return null;
+  const redis = getWorkspaceRedis();
+  const record = await redis.get<LinkTokenRecord>(linkTokenKey(token));
+  if (!record || !validTelegramUserId(record.telegramUserId) || Date.parse(record.expiresAt) <= Date.now()) {
+    if (record) await redis.del(linkTokenKey(token)).catch(() => 0);
+    return null;
+  }
+  return {
+    telegramUserId: record.telegramUserId,
+    expiresAt: record.expiresAt,
+  };
+}
+
 function mergeArrayBy<T>(left: T[], right: T[], keyFor: (value: T) => string, limit: number) {
   const merged = new Map<string, T>();
   for (const item of [...left, ...right]) {
@@ -157,6 +171,64 @@ async function migrateSubjectData(sourceSubject: string, targetSubject: string) 
     ).sort((a, b) => Date.parse(b.deliveredAt || "") - Date.parse(a.deliveredAt || ""));
     await redis.set(getPrivateStorageKey("daily-ideas-delivery-history", targetSubject), merged);
   }
+}
+
+export async function migrateDailyIdeasGwapIdentity(
+  legacyGwapUserId: string,
+  canonicalGwapUserId: string,
+) {
+  if (!validGwapUserId(legacyGwapUserId) || !validGwapUserId(canonicalGwapUserId)) {
+    return { ok: false as const, reason: "invalid" as const };
+  }
+  if (legacyGwapUserId === canonicalGwapUserId) return { ok: true as const, migrated: false };
+
+  const redis = getWorkspaceRedis();
+  const [legacyLink, canonicalLink] = await Promise.all([
+    getDailyIdeasIdentityLinkForGwap(legacyGwapUserId),
+    getDailyIdeasIdentityLinkForGwap(canonicalGwapUserId),
+  ]);
+  if (legacyLink && canonicalLink && legacyLink.telegramUserId !== canonicalLink.telegramUserId) {
+    return { ok: false as const, reason: "identity_conflict" as const };
+  }
+
+  await migrateSubjectData(
+    gwapDailyIdeasSubject(legacyGwapUserId),
+    gwapDailyIdeasSubject(canonicalGwapUserId),
+  );
+
+  const link = canonicalLink || legacyLink;
+  if (!link) return { ok: true as const, migrated: true };
+
+  const telegramLink = await getDailyIdeasIdentityLinkForTelegram(link.telegramUserId);
+  if (
+    telegramLink &&
+    telegramLink.gwapUserId !== legacyGwapUserId &&
+    telegramLink.gwapUserId !== canonicalGwapUserId
+  ) {
+    return { ok: false as const, reason: "identity_conflict" as const };
+  }
+
+  const account = await redis.get<TelegramAccountRecord>(telegramAccountKey(link.telegramUserId));
+  const canonical: DailyIdeasIdentityLink = {
+    ...link,
+    gwapUserId: canonicalGwapUserId,
+  };
+  await Promise.all([
+    redis.set(telegramLinkKey(canonical.telegramUserId), canonical),
+    redis.set(gwapLinkKey(canonical.gwapUserId), canonical),
+    ...(account?.id
+      ? [
+          redis.set(telegramAccountKey(canonical.telegramUserId), {
+            ...account,
+            gwapUserId: canonical.gwapUserId,
+            gnsIdentity: canonical.gnsIdentity,
+            updatedAt: new Date().toISOString(),
+          } satisfies TelegramAccountRecord),
+        ]
+      : []),
+  ]);
+  await redis.del(gwapLinkKey(legacyGwapUserId)).catch(() => 0);
+  return { ok: true as const, migrated: true, link: canonical };
 }
 
 export async function consumeDailyIdeasAccountLinkToken(
