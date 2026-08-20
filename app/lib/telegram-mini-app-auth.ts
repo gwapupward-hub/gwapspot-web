@@ -23,8 +23,8 @@ type MiniAppSessionPayload = {
   exp: number;
 };
 
-function sessionSecret(botToken: string) {
-  return createHmac("sha256", "GWAPTelegramMiniAppSession").update(botToken).digest();
+function sessionSecret(signingKey: string) {
+  return createHmac("sha256", "GWAPTelegramMiniAppSession").update(signingKey).digest();
 }
 
 function secureTextEqual(left: string, right: string) {
@@ -46,6 +46,12 @@ export function getDailyIdeasTelegramBotToken() {
   return process.env.DAILY_IDEAS_TELEGRAM_BOT_TOKEN?.trim() || process.env.TELEGRAM_BOT_TOKEN?.trim() || "";
 }
 
+export function getTelegramMiniAppSessionSigningKey() {
+  return process.env.TELEGRAM_MINI_APP_SESSION_SECRET?.trim() ||
+    process.env.DAILY_IDEAS_INTERNAL_API_KEY?.trim() ||
+    getDailyIdeasTelegramBotToken();
+}
+
 export function verifyTelegramMiniAppInitData(
   initData: unknown,
   options: { botToken?: string; nowSeconds?: number; maxAgeSeconds?: number } = {},
@@ -59,12 +65,16 @@ export function verifyTelegramMiniAppInitData(
   });
 }
 
+function resolveSessionSigningKey(options: { signingKey?: string; botToken?: string }) {
+  return options.signingKey?.trim() || options.botToken?.trim() || getTelegramMiniAppSessionSigningKey();
+}
+
 export function createTelegramMiniAppSession(
   identity: VerifiedTelegramMiniAppIdentity,
-  options: { botToken?: string; nowSeconds?: number } = {},
+  options: { signingKey?: string; botToken?: string; nowSeconds?: number } = {},
 ) {
-  const botToken = options.botToken?.trim() || getDailyIdeasTelegramBotToken();
-  if (!botToken) return "";
+  const signingKey = resolveSessionSigningKey(options);
+  if (!signingKey) return "";
   const nowSeconds = options.nowSeconds ?? Math.floor(Date.now() / 1000);
   const payload: MiniAppSessionPayload = {
     v: 1,
@@ -78,21 +88,21 @@ export function createTelegramMiniAppSession(
     exp: nowSeconds + TELEGRAM_MINI_APP_SESSION_MAX_AGE_SECONDS,
   };
   const encoded = Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
-  const signature = createHmac("sha256", sessionSecret(botToken)).update(encoded).digest("base64url");
+  const signature = createHmac("sha256", sessionSecret(signingKey)).update(encoded).digest("base64url");
   return `${encoded}.${signature}`;
 }
 
 export function verifyTelegramMiniAppSession(
   token: unknown,
-  options: { botToken?: string; nowSeconds?: number } = {},
+  options: { signingKey?: string; botToken?: string; nowSeconds?: number } = {},
 ): VerifiedTelegramMiniAppIdentity | null {
   if (typeof token !== "string" || token.length < 40 || token.length > 4_000) return null;
   const [encoded, suppliedSignature, extra] = token.split(".");
   if (!encoded || !suppliedSignature || extra) return null;
 
-  const botToken = options.botToken?.trim() || getDailyIdeasTelegramBotToken();
-  if (!botToken) return null;
-  const expectedSignature = createHmac("sha256", sessionSecret(botToken)).update(encoded).digest("base64url");
+  const signingKey = resolveSessionSigningKey(options);
+  if (!signingKey) return null;
+  const expectedSignature = createHmac("sha256", sessionSecret(signingKey)).update(encoded).digest("base64url");
   if (!secureTextEqual(suppliedSignature, expectedSignature)) return null;
 
   let payload: MiniAppSessionPayload;
