@@ -82,21 +82,20 @@ export function verifyTelegramMiniAppInitData(
 
   const normalized = normalizeTelegramAccountInput({
     telegramUserId: user.id,
-    username: boundedText(user.username, 64) || undefined,
-    firstName: boundedText(user.first_name, 80) || undefined,
-    lastName: boundedText(user.last_name, 80) || undefined,
+    username: boundedText(user.username, 32) || undefined,
+    firstName: boundedText(user.first_name, 64) || undefined,
+    lastName: boundedText(user.last_name, 64) || undefined,
     languageCode: boundedText(user.language_code, 16) || undefined,
-    isPremium: user.is_premium === true,
   });
   if (!normalized) return null;
 
   return {
     telegramUserId: normalized.telegramUserId,
     firstName: normalized.firstName || "Builder",
-    lastName: normalized.lastName || null,
-    username: normalized.username || null,
-    languageCode: normalized.languageCode || null,
-    isPremium: normalized.isPremium === true,
+    lastName: normalized.lastName,
+    username: normalized.username,
+    languageCode: normalized.languageCode,
+    isPremium: user.is_premium === true,
     photoUrl: boundedText(user.photo_url, 1_024) || null,
     authDate,
     startParam: boundedText(params.get("start_param"), 128) || null,
