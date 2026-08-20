@@ -5,12 +5,13 @@ import { useMemo } from "react";
 import { GwapScoreDisplay } from "../../components/gwap-score-display";
 import type { GwapScoreResult } from "../../lib/gwap-score";
 import type { EcosystemProduct } from "../../lib/ecosystem";
-import { getProfileCompletion } from "../lib/os-state";
+import { getProfileCompletion, type GwapPersona } from "../lib/os-state";
 import { useGwapOs } from "./os-provider";
 import { WalletPortfolioCard } from "./wallet-portfolio-card";
 
 const outcomeActions = [
   {
+    key: "reputation",
     href: "/app/score",
     label: "Build my reputation",
     product: "GwapScore",
@@ -18,6 +19,7 @@ const outcomeActions = [
     note: "Understand your trust signal and what can strengthen it.",
   },
   {
+    key: "identity",
     href: "/app/identity",
     label: "Verify my identity",
     product: "GNS",
@@ -25,6 +27,7 @@ const outcomeActions = [
     note: "Claim or strengthen the digital identity attached to your wallet.",
   },
   {
+    key: "opportunity",
     href: "/app/ideas",
     label: "Find an opportunity",
     product: "Daily Ideas",
@@ -32,6 +35,7 @@ const outcomeActions = [
     note: "Discover, save, develop, validate, and build something useful.",
   },
   {
+    key: "work",
     href: "/app/marketplace",
     label: "Turn trust into work",
     product: "Marketplace",
@@ -39,6 +43,7 @@ const outcomeActions = [
     note: "Use reputation and verified identity in real economic activity.",
   },
   {
+    key: "proof",
     href: "/app/vault",
     label: "Prove something privately",
     product: "Private Proof Vault",
@@ -46,6 +51,7 @@ const outcomeActions = [
     note: "Prepare selective proof and credential workflows without oversharing.",
   },
   {
+    key: "integrate",
     href: "/app/developer",
     label: "Integrate GWAP",
     product: "Developer API",
@@ -53,6 +59,94 @@ const outcomeActions = [
     note: "Bring GWAP identity, intelligence, and trust signals into another product.",
   },
 ] as const;
+
+type OutcomeKey = (typeof outcomeActions)[number]["key"];
+
+const personaProfiles: Record<
+  GwapPersona,
+  {
+    label: string;
+    short: string;
+    description: string;
+    priorities: OutcomeKey[];
+    recommendation: { href: string; title: string; detail: string; label: string };
+  }
+> = {
+  general: {
+    label: "Explore GWAP",
+    short: "General",
+    description: "Start with identity, trust, wallet intelligence, and opportunities.",
+    priorities: ["identity", "reputation", "opportunity", "proof", "work", "integrate"],
+    recommendation: {
+      href: "/app/ideas",
+      title: "Discover what GWAP can help you do",
+      detail: "Use Daily Ideas and the trust tools around it to find an opportunity worth acting on.",
+      label: "Explore opportunities",
+    },
+  },
+  builder: {
+    label: "Build products",
+    short: "Builder",
+    description: "Prioritize APIs, opportunities, wallet intelligence, and execution.",
+    priorities: ["integrate", "opportunity", "identity", "reputation", "proof", "work"],
+    recommendation: {
+      href: "/app/developer",
+      title: "Turn GWAP infrastructure into a building block",
+      detail: "Create an API key and start integrating identity, wallet intelligence, and trust signals into your own product.",
+      label: "Open developer tools",
+    },
+  },
+  freelancer: {
+    label: "Win clients",
+    short: "Freelancer",
+    description: "Prioritize credibility, proof, profile strength, and paid work.",
+    priorities: ["reputation", "proof", "work", "identity", "opportunity", "integrate"],
+    recommendation: {
+      href: "/app/marketplace",
+      title: "Put your credibility in front of real opportunities",
+      detail: "Use your verified identity and reputation as context when you pursue work, clients, and collaborations.",
+      label: "Explore work",
+    },
+  },
+  creator: {
+    label: "Grow my influence",
+    short: "Creator",
+    description: "Prioritize reputation, identity, proof, and monetizable opportunities.",
+    priorities: ["reputation", "identity", "proof", "opportunity", "work", "integrate"],
+    recommendation: {
+      href: "/app/score",
+      title: "Strengthen the trust behind your audience",
+      detail: "Build a reputation layer that can travel with you into collaborations, sponsorships, commerce, and future social verification.",
+      label: "Build reputation",
+    },
+  },
+  investor: {
+    label: "Evaluate opportunities",
+    short: "Investor",
+    description: "Prioritize wallet intelligence, identity, reputation, and counterparty trust.",
+    priorities: ["reputation", "identity", "proof", "opportunity", "integrate", "work"],
+    recommendation: {
+      href: "/app/score",
+      title: "Make trust part of your diligence process",
+      detail: "Use identity and reputation signals alongside the mainnet portfolio view before you evaluate counterparties and opportunities.",
+      label: "Inspect trust signals",
+    },
+  },
+  business: {
+    label: "Operate a business",
+    short: "Business",
+    description: "Prioritize integrations, counterparties, proof, reputation, and hiring.",
+    priorities: ["integrate", "reputation", "proof", "work", "identity", "opportunity"],
+    recommendation: {
+      href: "/app/developer",
+      title: "Bring GWAP trust infrastructure into your workflow",
+      detail: "Use the developer layer to make wallet intelligence, identity, and trust signals available inside your own product or operations.",
+      label: "Open developer tools",
+    },
+  },
+};
+
+const personaOrder: GwapPersona[] = ["builder", "freelancer", "creator", "investor", "business", "general"];
 
 function shortWallet(wallet: string) {
   return `${wallet.slice(0, 5)}…${wallet.slice(-5)}`;
@@ -63,9 +157,11 @@ function clamp(value: number, min: number, max: number) {
 }
 
 export function DashboardView({ products }: { products: EcosystemProduct[] }) {
-  const { account, gnsIdentity, state, syncStatus } = useGwapOs();
+  const { account, gnsIdentity, state, syncStatus, updateSettings } = useGwapOs();
   const liveProducts = products.filter((product) => product.status === "Live").length;
   const profileCompletion = getProfileCompletion(state.profile);
+  const persona = state.settings.persona;
+  const personaProfile = personaProfiles[persona];
 
   const recentNames = useMemo(() => {
     return state.recent
@@ -73,6 +169,13 @@ export function DashboardView({ products }: { products: EcosystemProduct[] }) {
       .filter((value): value is string => Boolean(value))
       .slice(0, 3);
   }, [products, state.recent]);
+
+  const personalizedActions = useMemo(() => {
+    const priority = new Map(personaProfile.priorities.map((key, index) => [key, index]));
+    return [...outcomeActions].sort(
+      (left, right) => (priority.get(left.key) ?? 99) - (priority.get(right.key) ?? 99),
+    );
+  }, [personaProfile.priorities]);
 
   const identityTitle =
     gnsIdentity.fullName ||
@@ -121,21 +224,8 @@ export function DashboardView({ products }: { products: EcosystemProduct[] }) {
         label: "Open reputation",
       };
     }
-    if (state.ideaProjects.length === 0) {
-      return {
-        href: "/app/ideas",
-        title: "Turn trust into momentum",
-        detail: "Your identity foundation is taking shape. Use Daily Ideas to discover an opportunity and move it toward execution.",
-        label: "Discover opportunities",
-      };
-    }
-    return {
-      href: "/app/marketplace",
-      title: "Put your credibility to work",
-      detail: "Use your identity, reputation, and active projects to participate in economic activity across the GWAP ecosystem.",
-      label: "Explore Marketplace",
-    };
-  }, [gnsIdentity.scoreStatus, gnsIdentity.status, profileCompletion, state.ideaProjects.length]);
+    return personaProfile.recommendation;
+  }, [gnsIdentity.scoreStatus, gnsIdentity.status, personaProfile.recommendation, profileCompletion]);
 
   const logs = [
     `[identity] wallet verified: ${shortWallet(account.verifiedWallet)}`,
@@ -148,6 +238,7 @@ export function DashboardView({ products }: { products: EcosystemProduct[] }) {
     gnsIdentity.scoreStatus === "scored"
       ? `[trust] reputation signal: ${gnsIdentity.score}${gnsIdentity.scoreTier ? ` (${gnsIdentity.scoreTier})` : ""}`
       : `[trust] ${gnsIdentity.scoreMessage}`,
+    `[workspace] mode: ${personaProfile.short.toLowerCase()}`,
     `[wallet] portfolio source: Solana mainnet-beta`,
     `[sync] workspace: ${syncStatus}`,
     `[ecosystem] ${liveProducts} products currently live`,
@@ -168,6 +259,36 @@ export function DashboardView({ products }: { products: EcosystemProduct[] }) {
             <small>IDENTITY STRENGTH</small>
             <strong>{identityStrength}%</strong>
           </span>
+        </div>
+      </section>
+
+      <section className="os-app-launcher">
+        <div className="os-section-heading-v2">
+          <span className="os-terminal-label">PERSONALIZE MY GWAP OS</span>
+          <p>Tell GWAP OS what kind of value you are here to create. This changes emphasis and recommendations, not your access.</p>
+        </div>
+        <div className="os-process-grid">
+          {personaOrder.map((option) => {
+            const profile = personaProfiles[option];
+            const active = option === persona;
+            return (
+              <button
+                type="button"
+                key={option}
+                className={`os-process-tile${active ? " is-active" : ""}`}
+                aria-pressed={active}
+                onClick={() => updateSettings({ persona: option })}
+              >
+                <span className="os-process-icon" aria-hidden="true">{active ? "●" : "○"}</span>
+                <span>
+                  <strong>{profile.label}</strong>
+                  <small>{profile.short.toUpperCase()} MODE</small>
+                  <em>{profile.description}</em>
+                </span>
+                <i aria-hidden="true">{active ? "✓" : "→"}</i>
+              </button>
+            );
+          })}
         </div>
       </section>
 
@@ -212,23 +333,23 @@ export function DashboardView({ products }: { products: EcosystemProduct[] }) {
         </div>
 
         <aside className="os-runtime-panel os-runtime-note">
-          <span className="os-terminal-label">WHAT SHOULD I DO NEXT?</span>
+          <span className="os-terminal-label">WHAT SHOULD I DO NEXT? · {personaProfile.short.toUpperCase()}</span>
           <h2>{nextAction.title}</h2>
           <p>{nextAction.detail}</p>
           <div className="os-inline-actions">
             <Link href={nextAction.href}>{nextAction.label} →</Link>
           </div>
-          <small>GWAP OS recommends the next action from your current identity, profile, reputation, and active-work state.</small>
+          <small>Identity and profile prerequisites stay universal. After that, recommendations adapt to what you use GWAP OS to accomplish.</small>
         </aside>
       </section>
 
       <section className="os-app-launcher">
         <div className="os-section-heading-v2">
           <span className="os-terminal-label">WHAT ARE YOU HERE TO DO?</span>
-          <p>Choose an outcome. GWAP OS will take you to the capability that powers it.</p>
+          <p>Actions are ordered for {personaProfile.short.toLowerCase()} mode. Every capability remains available.</p>
         </div>
         <div className="os-process-grid">
-          {outcomeActions.map((action) => (
+          {personalizedActions.map((action) => (
             <Link href={action.href} key={action.href} className="os-process-tile">
               <span className="os-process-icon" aria-hidden="true">{action.icon}</span>
               <span>
