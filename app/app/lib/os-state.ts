@@ -6,7 +6,8 @@ export type IdeaProject = { id: string; ideaId: string; title: string; status: "
 export type MarketplaceRole = "developer" | "designer" | "marketer" | "researcher" | "operations";
 export type MarketplaceIntent = { id: string; projectId: string; role: MarketplaceRole; brief: string; budget: string; timeline: string; status: "Draft" | "Ready"; createdAt: string; updatedAt: string };
 export type GwapProfile = { displayName: string; handle: string; bio: string; primaryWallet: string; website: string; location: string; updatedAt: string };
-export type GwapSettings = { compactMode: boolean; reduceMotion: boolean; bootAnimation: boolean; productUpdates: boolean; communityUpdates: boolean };
+export type GwapPersona = "general" | "builder" | "freelancer" | "creator" | "investor" | "business";
+export type GwapSettings = { compactMode: boolean; reduceMotion: boolean; bootAnimation: boolean; productUpdates: boolean; communityUpdates: boolean; persona: GwapPersona };
 export type GwapOsState = { profile: GwapProfile; favorites: string[]; recent: RecentLaunch[]; ideas: DailyIdea[]; ideaProjects: IdeaProject[]; marketplaceIntents: MarketplaceIntent[]; settings: GwapSettings };
 export type GwapAccount = { displayName: string; email: string; embeddedWallet: string | null; verifiedWallet: string; walletProvider: "embedded" | "external" };
 export type GnsIdentity = { status: "found" | "none" | "unavailable"; name: string | null; fullName: string | null; avatar: string | null; bio: string | null; score: number | null; scoreTier: GwapScoreTier | null; scoreStatus: GwapScoreStatus; scoreMessage: string; verified: boolean; isGenesis: boolean; tier: "premium" | "free" | null; profileUrl: string | null; updatedAt: string | null };
@@ -17,6 +18,7 @@ const safeText = (value: unknown, fallback: string, maxLength: number) => typeof
 const safeBoolean = (value: unknown, fallback: boolean) => typeof value === "boolean" ? value : fallback;
 const safeSlug = (value: unknown): value is string => typeof value === "string" && /^[a-z0-9-]{1,64}$/.test(value);
 const safeId = (value: unknown) => safeText(value, "", 80).replace(/[^A-Za-z0-9_-]/g, "");
+const safePersona = (value: unknown): GwapPersona => ["general", "builder", "freelancer", "creator", "investor", "business"].includes(typeof value === "string" ? value : "") ? value as GwapPersona : "general";
 
 function normalizeIdea(value: unknown): DailyIdea | null {
   if (!value || typeof value !== "object") return null;
@@ -66,7 +68,7 @@ function normalizeMarketplaceIntent(value: unknown): MarketplaceIntent | null {
   };
 }
 
-export const defaultGwapOsState: GwapOsState = { profile: { displayName: "GWAP Builder", handle: "gwap-builder", bio: "", primaryWallet: "", website: "", location: "", updatedAt: "" }, favorites: ["gns", "gwapscore", "isnad-sunnah"], recent: [], ideas: [], ideaProjects: [], marketplaceIntents: [], settings: { compactMode: false, reduceMotion: false, bootAnimation: true, productUpdates: true, communityUpdates: true } };
+export const defaultGwapOsState: GwapOsState = { profile: { displayName: "GWAP Builder", handle: "gwap-builder", bio: "", primaryWallet: "", website: "", location: "", updatedAt: "" }, favorites: ["gns", "gwapscore", "isnad-sunnah"], recent: [], ideas: [], ideaProjects: [], marketplaceIntents: [], settings: { compactMode: false, reduceMotion: false, bootAnimation: true, productUpdates: true, communityUpdates: true, persona: "general" } };
 export function createDefaultGwapOsState(): GwapOsState { return { profile: { ...defaultGwapOsState.profile }, favorites: [...defaultGwapOsState.favorites], recent: [], ideas: [], ideaProjects: [], marketplaceIntents: [], settings: { ...defaultGwapOsState.settings } }; }
 
 export function normalizeGwapOsState(value: unknown): GwapOsState {
@@ -81,7 +83,7 @@ export function normalizeGwapOsState(value: unknown): GwapOsState {
     ideas: Array.isArray(candidate.ideas) ? candidate.ideas.map(normalizeIdea).filter((idea): idea is DailyIdea => Boolean(idea)).slice(0, 12) : [],
     ideaProjects: Array.isArray(candidate.ideaProjects) ? candidate.ideaProjects.map(normalizeProject).filter((project): project is IdeaProject => Boolean(project)).slice(0, 8) : [],
     marketplaceIntents: Array.isArray(candidate.marketplaceIntents) ? candidate.marketplaceIntents.map(normalizeMarketplaceIntent).filter((intent): intent is MarketplaceIntent => Boolean(intent)).slice(0, 12) : [],
-    settings: { compactMode: safeBoolean(settings.compactMode, defaultGwapOsState.settings.compactMode), reduceMotion: safeBoolean(settings.reduceMotion, defaultGwapOsState.settings.reduceMotion), bootAnimation: safeBoolean(settings.bootAnimation, defaultGwapOsState.settings.bootAnimation), productUpdates: safeBoolean(settings.productUpdates, defaultGwapOsState.settings.productUpdates), communityUpdates: safeBoolean(settings.communityUpdates, defaultGwapOsState.settings.communityUpdates) },
+    settings: { compactMode: safeBoolean(settings.compactMode, defaultGwapOsState.settings.compactMode), reduceMotion: safeBoolean(settings.reduceMotion, defaultGwapOsState.settings.reduceMotion), bootAnimation: safeBoolean(settings.bootAnimation, defaultGwapOsState.settings.bootAnimation), productUpdates: safeBoolean(settings.productUpdates, defaultGwapOsState.settings.productUpdates), communityUpdates: safeBoolean(settings.communityUpdates, defaultGwapOsState.settings.communityUpdates), persona: safePersona(settings.persona) },
   };
 }
 export function areGwapOsStatesEqual(left: GwapOsState, right: GwapOsState) { return JSON.stringify(left) === JSON.stringify(right); }

@@ -11,12 +11,12 @@ import { SignOutButton } from "./sign-out-button";
 
 const dock = [
   { href: "/app", label: "Home", icon: "⌂" },
-  { href: "/app/ideas", label: "Ideas", icon: "✦" },
-  { href: "/app/marketplace", label: "Market", icon: "▤" },
+  { href: "/app/ideas", label: "Discover", icon: "✦" },
+  { href: "/app/marketplace", label: "Work", icon: "▤" },
   { href: "/app/identity", label: "Identity", icon: "◎" },
-  { href: "/app/vault", label: "Vault", icon: "◇" },
-  { href: "/app/score", label: "Score", icon: "↗" },
-  { href: "/app/developer", label: "API", icon: "{}" },
+  { href: "/app/vault", label: "Proof", icon: "◇" },
+  { href: "/app/score", label: "Trust", icon: "↗" },
+  { href: "/app/developer", label: "Build", icon: "{}" },
 ] as const;
 
 function compactWallet(wallet: string) {
@@ -81,13 +81,13 @@ export function OsShell({ children }: { children: ReactNode }) {
         <div className="os-menubar-status" aria-label="Wallet identity status">
           <span className={`os-runtime-dot state-${gnsIdentity.status}`} />
           <span className="os-status-item"><small>IDENTITY</small><strong>{handle}</strong></span>
-          <span className="os-status-item"><small>GWAPSCORE</small><strong>{gnsIdentity.score ?? "—"}</strong></span>
-          <span className="os-status-item os-balance"><small>BALANCE</small><strong>{balance}</strong></span>
+          <span className="os-status-item"><small>TRUST</small><strong>{gnsIdentity.score ?? "—"}</strong></span>
+          <span className="os-status-item os-balance"><small>WALLET</small><strong>{balance}</strong></span>
         </div>
 
         <div className="os-menubar-actions">
-          <button type="button" className="os-command-trigger" onClick={() => setCommandOpen(true)} aria-label="Open command palette">
-            <span>⌘</span> K
+          <button type="button" className="os-command-trigger" onClick={() => setCommandOpen(true)} aria-label="Open GWAP action bar">
+            <span>✦</span> Ask GWAP
           </button>
           <Link href="/app/settings" className={pathname.startsWith("/app/settings") ? "is-active" : undefined} aria-label="Settings">⚙</Link>
           <SignOutButton compact />
@@ -109,7 +109,7 @@ export function OsShell({ children }: { children: ReactNode }) {
 
       <section className="os-v2-workspace">{children}</section>
 
-      <nav className="os-dock" aria-label="GWAP OS applications">
+      <nav className="os-dock" aria-label="GWAP OS outcomes">
         {dock.map((item) => {
           const active = item.href === "/app" ? pathname === item.href : pathname.startsWith(item.href);
           return (
