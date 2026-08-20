@@ -62,8 +62,11 @@ export function verifyTelegramMiniAppInitData(
   const providedHash = params.get("hash")?.trim() || "";
   if (!providedHash) return null;
 
+  // Telegram's bot-token HMAC covers every received field except `hash`.
+  // Bot API 9.x added `signature`; unlike Ed25519 third-party validation,
+  // `signature` must remain in the HMAC data-check string.
   const dataCheckString = [...params.entries()]
-    .filter(([key]) => key !== "hash" && key !== "signature")
+    .filter(([key]) => key !== "hash")
     .sort(([left], [right]) => left.localeCompare(right))
     .map(([key, value]) => `${key}=${value}`)
     .join("\n");
