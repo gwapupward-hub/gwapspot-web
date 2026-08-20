@@ -4,6 +4,7 @@ import {
   DailyIdeasConfigurationError,
   getDailyIdeasConfiguration,
 } from "../../../lib/daily-ideas-generator";
+import { resolveDailyIdeasGwapAccount } from "../../../lib/daily-ideas-gwap-account";
 import { getNextDailyIdea } from "../../../lib/daily-ideas-inventory";
 import { getAuthenticatedWalletIdentity } from "../../../lib/privy-server";
 import { checkRateLimit, hasValidOrigin } from "../../../lib/request-guard";
@@ -30,7 +31,14 @@ export async function POST(request: Request) {
   if (!identity) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!hasValidOrigin(request)) return NextResponse.json({ error: "Invalid origin" }, { status: 403 });
 
-  const rate = await checkRateLimit(`ideas-generate:${identity.userId}`, 8, 60_000);
+  let account;
+  try {
+    account = await resolveDailyIdeasGwapAccount(identity);
+  } catch {
+    return NextResponse.json({ error: "GWAP account identity could not be resolved" }, { status: 409 });
+  }
+
+  const rate = await checkRateLimit(`ideas-generate:${account.id}`, 8, 60_000);
   if (!rate.allowed) {
     return NextResponse.json(
       { error: "Idea generation limit reached. Try again shortly." },
@@ -41,7 +49,7 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as { category?: unknown };
     const result = await getNextDailyIdea({
-      subject: `gwap:${identity.userId}`,
+      subject: `gwap:${account.id}`,
       category: body.category,
       mode: "idea",
     });
