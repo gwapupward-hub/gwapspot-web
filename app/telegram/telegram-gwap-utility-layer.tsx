@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-type TelegramWebApp = {
+type TelegramUtilityWebApp = {
   initData: string;
   openLink(url: string): void;
   HapticFeedback?: {
@@ -11,15 +11,13 @@ type TelegramWebApp = {
   };
 };
 
+type TelegramWindow = Window & {
+  Telegram?: { WebApp?: TelegramUtilityWebApp };
+};
+
 type BootstrapData = {
   linkedIdentity: { gnsIdentity: string | null; linkedAt: string } | null;
 };
-
-declare global {
-  interface Window {
-    Telegram?: { WebApp?: TelegramWebApp };
-  }
-}
 
 const actions = [
   {
@@ -45,7 +43,7 @@ const actions = [
 ] as const;
 
 export default function TelegramGwapUtilityLayer() {
-  const [telegram, setTelegram] = useState<TelegramWebApp | null>(null);
+  const [telegram, setTelegram] = useState<TelegramUtilityWebApp | null>(null);
   const [open, setOpen] = useState(false);
   const [identity, setIdentity] = useState<BootstrapData["linkedIdentity"]>(null);
   const [loadingIdentity, setLoadingIdentity] = useState(true);
@@ -59,7 +57,7 @@ export default function TelegramGwapUtilityLayer() {
     else feedback.notificationOccurred(type);
   }, [telegram]);
 
-  const loadIdentity = useCallback(async (webApp: TelegramWebApp) => {
+  const loadIdentity = useCallback(async (webApp: TelegramUtilityWebApp) => {
     try {
       const response = await fetch("/api/telegram/mini-app", {
         method: "GET",
@@ -77,7 +75,7 @@ export default function TelegramGwapUtilityLayer() {
   useEffect(() => {
     let cancelled = false;
     const detect = () => {
-      const webApp = window.Telegram?.WebApp;
+      const webApp = (window as TelegramWindow).Telegram?.WebApp;
       if (!cancelled && webApp?.initData) {
         setTelegram(webApp);
         void loadIdentity(webApp);
