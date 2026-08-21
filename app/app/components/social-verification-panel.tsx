@@ -1,7 +1,7 @@
 "use client";
 
 import { usePrivy } from "@privy-io/react-auth";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 type ShareTheme = "green" | "red" | "blue" | "purple" | "silver" | "orange";
 
@@ -100,23 +100,21 @@ export function SocialVerificationPanel() {
   const platform = payload?.platforms.find((item) => item.platform === "x") ?? null;
   const record = payload?.records.find((item) => item.platform === "x") ?? null;
   const pending = record?.status === "challenge-issued" || record?.status === "awaiting-post";
-
-  const proofUrl = useMemo(() => {
-    if (!record?.challengeCode || typeof window === "undefined") return "";
-    return `${window.location.origin}/v/${encodeURIComponent(record.challengeCode)}?theme=${record.shareTheme}`;
-  }, [record?.challengeCode, record?.shareTheme]);
-
-  const shareText = useMemo(() => {
-    if (!record?.challengeCode || !proofUrl) return "";
-    return [
-      `Verifying control of @${record.socialHandle} with @GwapSpot.`,
-      "",
-      `GWAP Public Proof: ${record.challengeCode}`,
-      "",
-      "Build your digital trust ↓",
-      proofUrl,
-    ].join("\n");
-  }, [proofUrl, record?.challengeCode, record?.socialHandle]);
+  const proofUrl =
+    record?.challengeCode && typeof window !== "undefined"
+      ? `${window.location.origin}/v/${encodeURIComponent(record.challengeCode)}?theme=${record.shareTheme}`
+      : "";
+  const shareText =
+    record?.challengeCode && proofUrl
+      ? [
+          `Verifying control of @${record.socialHandle} with @GwapSpot.`,
+          "",
+          `GWAP Public Proof: ${record.challengeCode}`,
+          "",
+          "Build your digital trust ↓",
+          proofUrl,
+        ].join("\n")
+      : "";
 
   async function action(body: Record<string, unknown>) {
     setBusy(true);
