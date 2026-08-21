@@ -12,6 +12,18 @@ type AccountLinkPayload = {
   };
 };
 
+type SocialVerificationPayload = {
+  summary?: {
+    enabled?: boolean;
+    verifiedCount?: number;
+  };
+};
+
+type SocialSummary = {
+  enabled: boolean;
+  verifiedCount: number;
+};
+
 function signalStateLabel(signal: TrustSignal) {
   if (signal.state === "verified") return "VERIFIED";
   if (signal.state === "incomplete") return "ACTION NEEDED";
@@ -23,6 +35,7 @@ export function TrustGraphView() {
   const { getAccessToken } = usePrivy();
   const { account, gnsIdentity, state } = useGwapOs();
   const [telegramLinked, setTelegramLinked] = useState<boolean | null>(null);
+  const [socialVerification, setSocialVerification] = useState<SocialSummary | null | undefined>(undefined);
 
   useEffect(() => {
     let active = true;
@@ -30,23 +43,51 @@ export function TrustGraphView() {
     const timer = window.setTimeout(() => controller.abort(), 4500);
 
     void getAccessToken()
-      .then((token) =>
-        fetch("/api/account", {
-          cache: "no-store",
-          credentials: "same-origin",
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-          signal: controller.signal,
-        }),
-      )
-      .then(async (response) => {
-        if (!response.ok) throw new Error("Account link status unavailable");
-        return (await response.json()) as AccountLinkPayload;
-      })
-      .then((payload) => {
-        if (active) setTelegramLinked(Boolean(payload.linkedAccounts?.telegram));
+      .then(async (token) => {
+        const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+        const [accountResult, socialResult] = await Promise.allSettled([
+          fetch("/api/account", {
+            cache: "no-store",
+            credentials: "same-origin",
+            headers,
+            signal: controller.signal,
+          }).then(async (response) => {
+            if (!response.ok) throw new Error("Account link status unavailable");
+            return (await response.json()) as AccountLinkPayload;
+          }),
+          fetch("/api/gwapscore/social-verification", {
+            cache: "no-store",
+            credentials: "same-origin",
+            headers,
+            signal: controller.signal,
+          }).then(async (response) => {
+            if (!response.ok) throw new Error("Social verification unavailable");
+            return (await response.json()) as SocialVerificationPayload;
+          }),
+        ]);
+
+        if (!active) return;
+        setTelegramLinked(
+          accountResult.status === "fulfilled"
+            ? Boolean(accountResult.value.linkedAccounts?.telegram)
+            : null,
+        );
+        if (socialResult.status === "fulfilled") {
+          setSocialVerification({
+            enabled: socialResult.value.summary?.enabled === true,
+            verifiedCount:
+              typeof socialResult.value.summary?.verifiedCount === "number"
+                ? socialResult.value.summary.verifiedCount
+                : 0,
+          });
+        } else {
+          setSocialVerification(null);
+        }
       })
       .catch(() => {
-        if (active) setTelegramLinked(null);
+        if (!active) return;
+        setTelegramLinked(null);
+        setSocialVerification(null);
       })
       .finally(() => window.clearTimeout(timer));
 
@@ -64,8 +105,9 @@ export function TrustGraphView() {
         state,
         telegramLinked,
         walletVerified: Boolean(account.verifiedWallet),
+        socialVerification,
       }),
-    [account.verifiedWallet, gnsIdentity, state, telegramLinked],
+    [account.verifiedWallet, gnsIdentity, socialVerification, state, telegramLinked],
   );
 
   const verifiedCount = graph.signals.filter((signal) => signal.state === "verified").length;
@@ -117,7 +159,7 @@ export function TrustGraphView() {
           <p>
             {graph.nextAction
               ? graph.nextAction.summary
-              : "GWAP has no incomplete live trust signal to recommend right now. Planned social and proof capabilities remain excluded until their backends are active."}
+              : "GWAP has no incomplete live trust signal to recommend right now. Planned capabilities remain excluded until their backends are active."}
           </p>
           {graph.nextAction?.href && graph.nextAction.actionLabel ? (
             <Link href={graph.nextAction.href}>{graph.nextAction.actionLabel} →</Link>
@@ -152,7 +194,7 @@ export function TrustGraphView() {
           <span className="os-terminal-label">RELATIONSHIP PROVENANCE</span>
           <h2>See why GWAP believes your accounts are connected.</h2>
           <p>
-            Trust Coverage tells you which signals exist. Relationship Graph shows the underlying account, wallet, .gwap, and Telegram connections—and whether each edge is authenticated, explicitly linked, resolved by protocol, or still only planned.
+            Trust Coverage tells you which signals exist. Relationship Graph shows the underlying account, wallet, .gwap, Telegram, and verified social connections—and the provenance behind each edge.
           </p>
           <Link href="/app/trust/relationships">Open Relationship Graph →</Link>
         </aside>
@@ -168,10 +210,10 @@ export function TrustGraphView() {
 
       <section className="os-v2-layout">
         <aside className="os-runtime-panel os-runtime-note">
-          <span className="os-terminal-label">COMING INTO THE GRAPH</span>
-          <h2>Social Proof of Control + Private Proof Vault</h2>
+          <span className="os-terminal-label">PRIVATE PROOFS</span>
+          <h2>Private Proof Vault remains the next planned trust capability.</h2>
           <p>
-            These capabilities are intentionally visible as planned, not verified. Once their production backends ship, they can join this graph as measurable trust signals with their own provenance and permissions.
+            Proof Vault stays excluded from live coverage until its secure backend exists. Social Proof-of-Control activates independently when its signed platform verifier is connected.
           </p>
           <Link href="/app/vault">View Proof Vault status →</Link>
         </aside>
