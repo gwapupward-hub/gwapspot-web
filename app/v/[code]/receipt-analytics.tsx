@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 
 type Props = { code: string; theme: string };
 
@@ -20,7 +20,7 @@ export function ReceiptAnalytics({ code, theme }: Props) {
   return null;
 }
 
-export function ReceiptCta({ code, theme, href, children, primary = false }: Props & { href: string; children: React.ReactNode; primary?: boolean }) {
+export function ReceiptCta({ code, theme, href, children, primary = false }: Props & { href: string; children: ReactNode; primary?: boolean }) {
   return (
     <a
       href={href}
