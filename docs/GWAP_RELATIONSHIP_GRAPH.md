@@ -33,7 +33,7 @@ A live protocol establishes the relationship independently. Initial example: GNS
 
 A supported social-platform verifier independently observed the one-time GWAP challenge after the required platform-specific control actions. Initial flow requires the user to follow the canonical GWAP account and DM the exact one-time challenge from the social account being verified.
 
-The browser's "I sent the DM" action is never sufficient to create this provenance. Only the signed server-to-server verifier bridge can complete verification.
+The browser's "I sent the DM" action is never sufficient to create this provenance. Only the explicitly enabled, signed server-to-server verifier bridge can complete verification.
 
 ### planned
 
@@ -80,10 +80,13 @@ Challenge requirements:
 - challenge is account- and platform-scoped;
 - challenge expires automatically;
 - requested social handle is normalized and bound before issuance;
-- the same verified handle cannot belong to two canonical GWAP accounts;
 - completing a browser action never verifies the account;
 - the platform verifier must independently prove both the required follow and observed DM challenge;
 - verifier callbacks use an HMAC-signed raw request body;
+- production verification requires an explicit server-side enable flag in addition to the signing secret;
+- successful verification binds both the displayed handle and the platform's stable account identifier to the canonical GWAP account;
+- handle and stable-account claims are acquired atomically enough to reject concurrent double-claims and are released on revocation;
+- the same platform account cannot be verified to two canonical GWAP accounts even if its handle changes;
 - the bridge stores only the verification receipt needed for provenance, not private DM content.
 
 A verified social edge records at minimum:
@@ -91,7 +94,7 @@ A verified social edge records at minimum:
 - GWAP account ID
 - platform
 - normalized platform handle
-- optional stable platform account identifier
+- stable platform account identifier
 - verification timestamp
 - challenge identifier
 - current status
@@ -99,7 +102,7 @@ A verified social edge records at minimum:
 
 ## Trust Graph integration
 
-Proof of Control contributes live Trust Coverage only when the signed platform verifier is configured. Before that, the capability remains `planned` with zero trust weight.
+Proof of Control contributes live Trust Coverage only when the signed platform verifier is explicitly enabled and configured. Before that, the capability remains `planned` with zero trust weight.
 
 When the verifier is active:
 
