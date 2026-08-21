@@ -31,17 +31,16 @@ const gnsFound = {
   updatedAt: null,
 };
 
+const account = {
+  id: "gwap_abc",
+  linkedAccounts: { privy: true, telegram: { userId: "12345" } },
+  wallets: [{ address: "Wallet111111111111111111111111111111111", kind: "external", primary: true }],
+  primaryWallet: "Wallet111111111111111111111111111111111",
+  primaryGnsIdentity: "emerald",
+};
+
 test("derives authenticated wallet, resolved GNS, and linked Telegram edges", () => {
-  const graph = deriveRelationshipGraph(
-    {
-      id: "gwap_abc",
-      linkedAccounts: { privy: true, telegram: { userId: "12345" } },
-      wallets: [{ address: "Wallet111111111111111111111111111111111", kind: "external", primary: true }],
-      primaryWallet: "Wallet111111111111111111111111111111111",
-      primaryGnsIdentity: "emerald",
-    },
-    gnsFound,
-  );
+  const graph = deriveRelationshipGraph(account, gnsFound);
 
   assert.equal(graph.edges.find((edge) => edge.label === "anchors account")?.provenance, "authenticated");
   assert.equal(graph.edges.find((edge) => edge.label === "resolves to")?.provenance, "resolved");
@@ -49,13 +48,41 @@ test("derives authenticated wallet, resolved GNS, and linked Telegram edges", ()
   assert.equal(graph.verifiedEdges, 3);
 });
 
+test("verified social account enters graph only through Proof-of-Control provenance", () => {
+  const graph = deriveRelationshipGraph(account, gnsFound, {
+    enabled: true,
+    records: [
+      {
+        platform: "x",
+        socialHandle: "builder",
+        status: "verified",
+        verifiedAt: "2026-08-21T00:00:00.000Z",
+      },
+    ],
+  });
+
+  const socialEdge = graph.edges.find((edge) => edge.provenance === "proof-of-control");
+  assert.equal(socialEdge?.verified, true);
+  assert.equal(socialEdge?.label, "controls account");
+  assert.equal(graph.nodes.find((node) => node.id === "social:x:builder")?.state, "verified");
+  assert.equal(graph.verifiedEdges, 4);
+});
+
+test("enabled verifier with no completed challenge does not create a verified social edge", () => {
+  const graph = deriveRelationshipGraph(account, gnsFound, {
+    enabled: true,
+    records: [{ platform: "x", socialHandle: "builder", status: "awaiting-dm" }],
+  });
+
+  assert.equal(graph.edges.some((edge) => edge.provenance === "proof-of-control"), false);
+  assert.equal(graph.nodes.find((node) => node.id === "social:available")?.state, "available");
+});
+
 test("planned social and counterparty relationships never count as verified", () => {
   const graph = deriveRelationshipGraph(
     {
-      id: "gwap_abc",
+      ...account,
       linkedAccounts: { privy: true, telegram: null },
-      wallets: [{ address: "Wallet111111111111111111111111111111111", kind: "external", primary: true }],
-      primaryWallet: "Wallet111111111111111111111111111111111",
       primaryGnsIdentity: null,
     },
     { ...gnsFound, status: "none", name: null, fullName: null },
@@ -68,13 +95,7 @@ test("planned social and counterparty relationships never count as verified", ()
 
 test("GNS outage creates no falsely verified relationship edge", () => {
   const graph = deriveRelationshipGraph(
-    {
-      id: "gwap_abc",
-      linkedAccounts: { privy: true, telegram: null },
-      wallets: [{ address: "Wallet111111111111111111111111111111111", kind: "external", primary: true }],
-      primaryWallet: "Wallet111111111111111111111111111111111",
-      primaryGnsIdentity: "emerald",
-    },
+    { ...account, linkedAccounts: { privy: true, telegram: null } },
     { ...gnsFound, status: "unavailable", name: null, fullName: null },
   );
 
