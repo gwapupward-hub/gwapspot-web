@@ -10,9 +10,9 @@ const source = fs.readFileSync(file, "utf8");
 const compiled = ts.transpileModule(source, {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
 }).outputText;
-const module = { exports: {} };
-vm.runInNewContext(compiled, { module, exports: module.exports, require });
-const { deriveRelationshipGraph } = module.exports;
+const testModule = { exports: {} };
+vm.runInNewContext(compiled, { module: testModule, exports: testModule.exports, require });
+const { deriveRelationshipGraph } = testModule.exports;
 
 const gnsFound = {
   status: "found",
