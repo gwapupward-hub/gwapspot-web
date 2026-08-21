@@ -4,6 +4,7 @@ import Link from "next/link";
 import { GwapScoreDisplay } from "../../components/gwap-score-display";
 import type { GwapScoreResult } from "../../lib/gwap-score";
 import { useGwapOs } from "./os-provider";
+import { SocialVerificationPanel } from "./social-verification-panel";
 
 export function ScoreView() {
   const { account, gnsIdentity } = useGwapOs();
@@ -19,17 +20,38 @@ export function ScoreView() {
 
   return (
     <div className="os-page os-runtime-page">
-      <header className="os-runtime-heading"><span className="os-terminal-label">~/score</span><h1>Reputation signal.</h1><p>GWAP OS retrieves the wallet&apos;s canonical 300–900 protocol score directly, then applies the shared configurable GWAP tier map.</p></header>
+      <header className="os-runtime-heading">
+        <span className="os-terminal-label">~/score</span>
+        <h1>Build reputation people can verify.</h1>
+        <p>
+          GwapScore combines reputation signals with explicit proof of account control. Social verification strengthens provenance; it does not silently rewrite the current score model.
+        </p>
+      </header>
+
       <section className="os-runtime-grid">
         <article className="os-runtime-panel os-score-console">
           <div className="os-console-chrome"><span>gwapscore.read</span><span>{hasScore ? "LIVE" : "NO SIGNAL"}</span></div>
           <GwapScoreDisplay result={score} variant="hero" />
           <div className="os-score-track" aria-label={hasScore ? `GwapScore ${gnsIdentity.score} out of 900` : "GwapScore unavailable"}><i style={{ width: hasScore ? `${progress}%` : "0%" }} /></div>
           <div className="os-score-range"><span>300</span><span>900</span></div>
-          <dl><div><dt>Wallet</dt><dd>{account.verifiedWallet}</dd></div><div><dt>Identity</dt><dd>{gnsIdentity.fullName || "No .gwap detected"}</dd></div><div><dt>Verification</dt><dd>{gnsIdentity.verified ? "VERIFIED" : "UNVERIFIED"}</dd></div></dl>
+          <dl>
+            <div><dt>Wallet</dt><dd>{account.verifiedWallet}</dd></div>
+            <div><dt>Identity</dt><dd>{gnsIdentity.fullName || "No .gwap detected"}</dd></div>
+            <div><dt>Verification</dt><dd>{gnsIdentity.verified ? "VERIFIED" : "UNVERIFIED"}</dd></div>
+          </dl>
         </article>
-        <aside className="os-runtime-panel os-runtime-note"><span className="os-terminal-label">SOURCE STATUS</span><h2>{hasScore ? "Canonical wallet score." : gnsIdentity.scoreStatus === "unscored" ? "Wallet is unscored." : "Score service unavailable."}</h2><p>{gnsIdentity.scoreMessage} Identity resolution and scoring are independent, so a registry slowdown never becomes a made-up score.</p><Link href="/app/identity">Open Identity</Link></aside>
+        <aside className="os-runtime-panel os-runtime-note">
+          <span className="os-terminal-label">SOURCE STATUS</span>
+          <h2>{hasScore ? "Canonical wallet score." : gnsIdentity.scoreStatus === "unscored" ? "Wallet is unscored." : "Score service unavailable."}</h2>
+          <p>{gnsIdentity.scoreMessage} Identity resolution, social Proof-of-Control, and scoring remain separate provenance layers, so one service cannot manufacture another signal.</p>
+          <div className="os-inline-actions">
+            <Link href="/app/trust">Open Trust Graph →</Link>
+            <Link href="/app/trust/relationships">View relationships →</Link>
+          </div>
+        </aside>
       </section>
+
+      <SocialVerificationPanel />
     </div>
   );
 }

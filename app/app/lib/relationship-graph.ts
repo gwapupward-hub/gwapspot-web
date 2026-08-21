@@ -8,8 +8,13 @@ export type RelationshipNodeType =
   | "social"
   | "counterparty";
 
-export type RelationshipNodeState = "verified" | "linked" | "planned" | "unavailable";
-export type RelationshipProvenance = "authenticated" | "account-link" | "resolved" | "planned";
+export type RelationshipNodeState = "verified" | "linked" | "available" | "planned" | "unavailable";
+export type RelationshipProvenance =
+  | "authenticated"
+  | "account-link"
+  | "resolved"
+  | "proof-of-control"
+  | "planned";
 
 export type RelationshipNode = {
   id: string;
@@ -52,6 +57,16 @@ type AccountPayload = {
   primaryGnsIdentity?: string | null;
 };
 
+export type SocialRelationshipInput = {
+  enabled: boolean;
+  records: Array<{
+    platform: string;
+    socialHandle: string;
+    status: string;
+    verifiedAt?: string | null;
+  }>;
+};
+
 function compact(value: string) {
   return value.length > 14 ? `${value.slice(0, 6)}…${value.slice(-5)}` : value;
 }
@@ -59,6 +74,7 @@ function compact(value: string) {
 export function deriveRelationshipGraph(
   account: AccountPayload,
   gnsIdentity: GnsIdentity,
+  socialVerification?: SocialRelationshipInput | null,
 ): RelationshipGraph {
   const accountNodeId = `account:${account.id}`;
   const nodes: RelationshipNode[] = [
@@ -154,44 +170,76 @@ export function deriveRelationshipGraph(
     });
   }
 
-  nodes.push(
-    {
+  const verifiedSocial = socialVerification?.records.filter((record) => record.status === "verified") ?? [];
+  if (verifiedSocial.length) {
+    for (const record of verifiedSocial) {
+      const nodeId = `social:${record.platform}:${record.socialHandle.toLowerCase()}`;
+      nodes.push({
+        id: nodeId,
+        type: "social",
+        label: `@${record.socialHandle}`,
+        detail: `${record.platform.toUpperCase()} · GWAP Public Proof`,
+        state: "verified",
+        primary: false,
+      });
+      edges.push({
+        id: `${accountNodeId}->${nodeId}`,
+        from: accountNodeId,
+        to: nodeId,
+        label: "controls account",
+        provenance: "proof-of-control",
+        verified: true,
+        detail: "GWAP independently retrieved the public verification post, matched the one-time challenge, and bound the platform's stable author account to this GWAP identity.",
+      });
+    }
+  } else if (socialVerification?.enabled) {
+    nodes.push({
+      id: "social:available",
+      type: "social",
+      label: "Social Proof of Control",
+      detail: "GWAP Public Proof available in GwapScore",
+      state: "available",
+      primary: false,
+    });
+  } else {
+    nodes.push({
       id: "social:planned",
       type: "social",
       label: "Social Proof of Control",
-      detail: "Planned GwapScore verification",
-      state: "planned",
+      detail: "X Public Proof verifier not active",
+      state: socialVerification === null ? "unavailable" : "planned",
       primary: false,
-    },
-    {
-      id: "counterparty:planned",
-      type: "counterparty",
-      label: "Trusted counterparties",
-      detail: "Planned relationship signal",
-      state: "planned",
-      primary: false,
-    },
-  );
-  edges.push(
-    {
-      id: `${accountNodeId}->social:planned`,
-      from: accountNodeId,
-      to: "social:planned",
-      label: "future verification",
-      provenance: "planned",
-      verified: false,
-      detail: "Social relationships will remain non-verifying until Proof-of-Control ships.",
-    },
-    {
-      id: `${accountNodeId}->counterparty:planned`,
-      from: accountNodeId,
-      to: "counterparty:planned",
-      label: "future relationship",
-      provenance: "planned",
-      verified: false,
-      detail: "Marketplace and transaction relationships will join only when their provenance is production-ready.",
-    },
-  );
+    });
+    if (socialVerification !== null) {
+      edges.push({
+        id: `${accountNodeId}->social:planned`,
+        from: accountNodeId,
+        to: "social:planned",
+        label: "future verification",
+        provenance: "planned",
+        verified: false,
+        detail: "Social relationships remain non-verifying until GWAP Public Proof is explicitly enabled with production X API access.",
+      });
+    }
+  }
+
+  nodes.push({
+    id: "counterparty:planned",
+    type: "counterparty",
+    label: "Trusted counterparties",
+    detail: "Planned relationship signal",
+    state: "planned",
+    primary: false,
+  });
+  edges.push({
+    id: `${accountNodeId}->counterparty:planned`,
+    from: accountNodeId,
+    to: "counterparty:planned",
+    label: "future relationship",
+    provenance: "planned",
+    verified: false,
+    detail: "Marketplace and transaction relationships will join only when their provenance is production-ready.",
+  });
 
   return {
     nodes,
