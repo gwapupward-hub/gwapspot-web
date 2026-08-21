@@ -71,7 +71,7 @@ export function deriveTrustGraph({
             label: "Verified social control",
             product: "GwapScore",
             state: "planned",
-            summary: "Proof-of-Control is built, but the signed platform verifier is not connected yet.",
+            summary: "GWAP Public Proof is built, but the X API verifier is not enabled yet.",
             actionLabel: "View verification status",
             href: "/app/score#social-verification",
             weight: 0,
@@ -92,7 +92,7 @@ export function deriveTrustGraph({
               label: "Verified social control",
               product: "GwapScore",
               state: "incomplete",
-              summary: "Verify control of a supported social account using GWAP's follow + DM challenge.",
+              summary: "Verify control of your X account by publishing GWAP's one-time Public Proof challenge and submitting the post URL.",
               actionLabel: "Verify social account",
               href: "/app/score#social-verification",
               weight: 10,
@@ -180,8 +180,6 @@ export function deriveTrustGraph({
     },
   ];
 
-  // Operational outages should never make the user look less trustworthy.
-  // Only live, measurable signals with a known state contribute to coverage.
   const measurable = signals.filter((signal) => signal.weight > 0 && signal.state !== "unavailable");
   const availableWeight = measurable.reduce((sum, signal) => sum + signal.weight, 0);
   const verifiedWeight = measurable
