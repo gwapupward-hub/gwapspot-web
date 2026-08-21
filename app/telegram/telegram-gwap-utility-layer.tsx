@@ -16,36 +16,27 @@ type TelegramWindow = Window & {
 };
 
 type BootstrapData = {
+  user: { firstName: string; lastName: string | null; username: string | null };
   linkedIdentity: { gnsIdentity: string | null; linkedAt: string } | null;
 };
 
 const actions = [
-  {
-    label: "Trust Graph",
-    detail: "See what strengthens your credibility.",
-    href: "https://www.gwapspot.com/app/trust",
-  },
-  {
-    label: "Verify X account",
-    detail: "Launch GWAP Public Proof.",
-    href: "https://www.gwapspot.com/app/score#social-verification",
-  },
-  {
-    label: "Relationship Graph",
-    detail: "See how your verified identities connect.",
-    href: "https://www.gwapspot.com/app/trust/relationships",
-  },
-  {
-    label: "Wallet & portfolio",
-    detail: "Open your full GWAP OS wallet workspace.",
-    href: "https://www.gwapspot.com/app",
-  },
+  { label: "Trust Graph", detail: "See what strengthens your credibility.", href: "https://www.gwapspot.com/app/trust" },
+  { label: "Verify X account", detail: "Launch GWAP Public Proof.", href: "https://www.gwapspot.com/app/score#social-verification" },
+  { label: "Relationship Graph", detail: "See how your verified identities connect.", href: "https://www.gwapspot.com/app/trust/relationships" },
+  { label: "Wallet & portfolio", detail: "Open your full GWAP OS wallet workspace.", href: "https://www.gwapspot.com/app" },
 ] as const;
+
+function linkedDate(value: string) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+}
 
 export default function TelegramGwapUtilityLayer() {
   const [telegram, setTelegram] = useState<TelegramUtilityWebApp | null>(null);
   const [open, setOpen] = useState(false);
   const [identity, setIdentity] = useState<BootstrapData["linkedIdentity"]>(null);
+  const [telegramUser, setTelegramUser] = useState<BootstrapData["user"] | null>(null);
   const [loadingIdentity, setLoadingIdentity] = useState(true);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -59,14 +50,11 @@ export default function TelegramGwapUtilityLayer() {
 
   const loadIdentity = useCallback(async (webApp: TelegramUtilityWebApp) => {
     try {
-      const response = await fetch("/api/telegram/mini-app", {
-        method: "GET",
-        cache: "no-store",
-        headers: { "x-telegram-init-data": webApp.initData },
-      });
+      const response = await fetch("/api/telegram/mini-app", { method: "GET", cache: "no-store", headers: { "x-telegram-init-data": webApp.initData } });
       if (!response.ok) return;
       const payload = (await response.json()) as BootstrapData;
       setIdentity(payload.linkedIdentity);
+      setTelegramUser(payload.user);
     } finally {
       setLoadingIdentity(false);
     }
@@ -83,17 +71,10 @@ export default function TelegramGwapUtilityLayer() {
       }
       return false;
     };
-
     if (detect()) return () => { cancelled = true; };
-    const timer = window.setInterval(() => {
-      if (detect()) window.clearInterval(timer);
-    }, 250);
+    const timer = window.setInterval(() => { if (detect()) window.clearInterval(timer); }, 250);
     const stop = window.setTimeout(() => window.clearInterval(timer), 2500);
-    return () => {
-      cancelled = true;
-      window.clearInterval(timer);
-      window.clearTimeout(stop);
-    };
+    return () => { cancelled = true; window.clearInterval(timer); window.clearTimeout(stop); };
   }, [loadIdentity]);
 
   const openExternal = useCallback((href: string) => {
@@ -109,17 +90,14 @@ export default function TelegramGwapUtilityLayer() {
     try {
       const response = await fetch("/api/telegram/mini-app", {
         method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "x-telegram-init-data": telegram.initData,
-        },
+        headers: { "content-type": "application/json", "x-telegram-init-data": telegram.initData },
         body: JSON.stringify({ action: "link-token" }),
       });
-      const result = (await response.json().catch(() => null)) as { linked?: boolean; gnsIdentity?: string | null; url?: string; error?: string } | null;
+      const result = (await response.json().catch(() => null)) as { linked?: boolean; gnsIdentity?: string | null; linkedAt?: string; url?: string; error?: string } | null;
       if (!response.ok) throw new Error(result?.error || "Could not start account linking.");
       if (result?.linked) {
-        setIdentity({ gnsIdentity: result.gnsIdentity || null, linkedAt: new Date().toISOString() });
-        setMessage(result.gnsIdentity ? `Linked as ${result.gnsIdentity}` : "GWAP account linked.");
+        setIdentity({ gnsIdentity: result.gnsIdentity || null, linkedAt: result.linkedAt || new Date().toISOString() });
+        setMessage(result.gnsIdentity ? `Linked as ${result.gnsIdentity}.gwap` : "GWAP account link exists. Open Manage connection to inspect it.");
         haptic("success");
       } else if (result?.url) {
         telegram.openLink(new URL(result.url, window.location.origin).href);
@@ -133,96 +111,32 @@ export default function TelegramGwapUtilityLayer() {
   }, [busy, haptic, telegram]);
 
   if (!telegram) return null;
+  const telegramLabel = telegramUser?.username ? `@${telegramUser.username}` : telegramUser ? [telegramUser.firstName, telegramUser.lastName].filter(Boolean).join(" ") : "Telegram account";
 
   return (
     <>
-      <button
-        type="button"
-        aria-label="Open GWAP utility actions"
-        aria-expanded={open}
-        onClick={() => { setOpen((value) => !value); haptic("tap"); }}
-        style={{
-          position: "fixed",
-          right: 14,
-          bottom: "calc(78px + env(safe-area-inset-bottom, 0px))",
-          zIndex: 70,
-          minWidth: 54,
-          height: 54,
-          borderRadius: 18,
-          border: "1px solid rgba(19,221,19,.38)",
-          background: "rgba(6,9,7,.94)",
-          color: "#13DD13",
-          fontWeight: 900,
-          letterSpacing: ".05em",
-          boxShadow: "0 14px 44px rgba(0,0,0,.38)",
-          backdropFilter: "blur(18px)",
-        }}
-      >
-        GWAP
-      </button>
+      <button type="button" aria-label="Open GWAP utility actions" aria-expanded={open} onClick={() => { setOpen((value) => !value); haptic("tap"); }} style={{ position: "fixed", right: 14, bottom: "calc(78px + env(safe-area-inset-bottom, 0px))", zIndex: 70, minWidth: 54, height: 54, borderRadius: 18, border: "1px solid rgba(19,221,19,.38)", background: "rgba(6,9,7,.94)", color: "#13DD13", fontWeight: 900, letterSpacing: ".05em", boxShadow: "0 14px 44px rgba(0,0,0,.38)", backdropFilter: "blur(18px)" }}>GWAP</button>
 
       {open ? (
-        <div
-          role="dialog"
-          aria-modal="false"
-          aria-label="GWAP Telegram utilities"
-          style={{
-            position: "fixed",
-            left: 12,
-            right: 12,
-            bottom: "calc(144px + env(safe-area-inset-bottom, 0px))",
-            zIndex: 69,
-            maxWidth: 520,
-            margin: "0 auto",
-            border: "1px solid rgba(255,255,255,.1)",
-            borderRadius: 24,
-            background: "rgba(7,9,8,.97)",
-            color: "#f7f7f7",
-            boxShadow: "0 30px 90px rgba(0,0,0,.52)",
-            padding: 18,
-            backdropFilter: "blur(22px)",
-          }}
-        >
+        <div role="dialog" aria-modal="false" aria-label="GWAP Telegram utilities" style={{ position: "fixed", left: 12, right: 12, bottom: "calc(144px + env(safe-area-inset-bottom, 0px))", zIndex: 69, maxWidth: 520, margin: "0 auto", border: "1px solid rgba(255,255,255,.1)", borderRadius: 24, background: "rgba(7,9,8,.97)", color: "#f7f7f7", boxShadow: "0 30px 90px rgba(0,0,0,.52)", padding: 18, backdropFilter: "blur(22px)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-start" }}>
-            <div>
-              <div style={{ color: "#13DD13", fontSize: 11, fontWeight: 900, letterSpacing: ".15em" }}>GWAP UTILITIES</div>
-              <h2 style={{ margin: "7px 0 5px", fontSize: 22 }}>Your trust tools, one tap away.</h2>
-              <p style={{ margin: 0, color: "#9aa19c", fontSize: 13, lineHeight: 1.5 }}>Telegram stays lightweight. Sensitive wallet signing and full reputation workflows hand off to GWAP OS.</p>
-            </div>
+            <div><div style={{ color: "#13DD13", fontSize: 11, fontWeight: 900, letterSpacing: ".15em" }}>GWAP UTILITIES</div><h2 style={{ margin: "7px 0 5px", fontSize: 22 }}>Your trust tools, one tap away.</h2><p style={{ margin: 0, color: "#9aa19c", fontSize: 13, lineHeight: 1.5 }}>Telegram stays lightweight. Sensitive wallet signing and identity management hand off to authenticated GWAP OS.</p></div>
             <button type="button" onClick={() => setOpen(false)} aria-label="Close GWAP utilities" style={{ border: 0, background: "transparent", color: "#c9ceca", fontSize: 24 }}>×</button>
           </div>
 
           <div style={{ marginTop: 16, padding: 13, borderRadius: 16, background: "rgba(255,255,255,.035)", border: "1px solid rgba(255,255,255,.08)" }}>
-            <div style={{ fontSize: 11, color: "#727a74", letterSpacing: ".12em", fontWeight: 800 }}>GWAP ACCOUNT</div>
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginTop: 8 }}>
-              <strong>{loadingIdentity ? "Checking identity…" : identity?.gnsIdentity || (identity ? "GWAP account linked" : "Not linked yet")}</strong>
-              {!loadingIdentity && !identity ? (
-                <button type="button" disabled={busy} onClick={() => void linkAccount()} style={{ border: "1px solid rgba(19,221,19,.45)", background: "rgba(19,221,19,.08)", color: "#13DD13", borderRadius: 11, padding: "9px 11px", fontWeight: 800 }}>{busy ? "Linking…" : "Link"}</button>
-              ) : null}
+            <div style={{ fontSize: 11, color: "#727a74", letterSpacing: ".12em", fontWeight: 800 }}>IDENTITY CONNECTION</div>
+            <div style={{ marginTop: 9 }}><strong style={{ display: "block" }}>{telegramLabel}</strong><span style={{ color: "#8e9690", fontSize: 12 }}>Telegram</span></div>
+            <div style={{ marginTop: 10 }}><strong style={{ display: "block" }}>{loadingIdentity ? "Checking GWAP identity…" : identity?.gnsIdentity ? `${identity.gnsIdentity}.gwap` : identity ? "GWAP account linked · identity name unavailable" : "Not linked yet"}</strong>{identity ? <span style={{ color: "#8e9690", fontSize: 12 }}>Linked {linkedDate(identity.linkedAt)}</span> : null}</div>
+            <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+              {!loadingIdentity && !identity ? <button type="button" disabled={busy} onClick={() => void linkAccount()} style={{ border: "1px solid rgba(19,221,19,.45)", background: "rgba(19,221,19,.08)", color: "#13DD13", borderRadius: 11, padding: "9px 11px", fontWeight: 800 }}>{busy ? "Linking…" : "Link GWAP account"}</button> : null}
+              {!loadingIdentity && identity ? <button type="button" onClick={() => openExternal("https://www.gwapspot.com/app/ideas?manageTelegram=1")} style={{ border: "1px solid rgba(255,255,255,.14)", background: "rgba(255,255,255,.05)", color: "#f7f7f7", borderRadius: 11, padding: "9px 11px", fontWeight: 800 }}>Manage connection ↗</button> : null}
             </div>
             {message ? <p style={{ margin: "8px 0 0", color: "#b6bcb8", fontSize: 12 }}>{message}</p> : null}
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 9, marginTop: 12 }}>
-            {actions.map((action) => (
-              <button
-                key={action.label}
-                type="button"
-                onClick={() => openExternal(action.href)}
-                style={{
-                  minHeight: 94,
-                  textAlign: "left",
-                  borderRadius: 16,
-                  border: "1px solid rgba(255,255,255,.08)",
-                  background: "rgba(255,255,255,.035)",
-                  color: "#f7f7f7",
-                  padding: 13,
-                }}
-              >
-                <strong style={{ display: "block", fontSize: 14 }}>{action.label}</strong>
-                <span style={{ display: "block", color: "#8e9690", fontSize: 12, lineHeight: 1.45, marginTop: 6 }}>{action.detail}</span>
-              </button>
-            ))}
+            {actions.map((action) => <button key={action.label} type="button" onClick={() => openExternal(action.href)} style={{ minHeight: 94, textAlign: "left", borderRadius: 16, border: "1px solid rgba(255,255,255,.08)", background: "rgba(255,255,255,.035)", color: "#f7f7f7", padding: 13 }}><strong style={{ display: "block", fontSize: 14 }}>{action.label}</strong><span style={{ display: "block", color: "#8e9690", fontSize: 12, lineHeight: 1.45, marginTop: 6 }}>{action.detail}</span></button>)}
           </div>
         </div>
       ) : null}
