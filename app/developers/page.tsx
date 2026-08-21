@@ -5,7 +5,7 @@ import { createPageMetadata } from "../lib/metadata";
 export const metadata = createPageMetadata({
   title: "GWAP Intelligence API for Developers",
   description:
-    "Integrate GNS identity, GwapScore, Solana portfolio intelligence, and wallet exposure risk through one GWAP API.",
+    "Integrate GNS identity, GwapScore, Solana portfolio intelligence, wallet exposure risk, and GWAP trust infrastructure through one developer platform.",
   path: "/developers",
 });
 
@@ -58,6 +58,24 @@ export default function DevelopersPage() {
       </section>
 
       <section className="inner-section">
+        <div className="split-panel">
+          <div>
+            <span className="eyebrow"><SparkIcon /> X API v2 · GWAP Public Proof</span>
+            <h2>Read a public X post to verify Proof of Control.</h2>
+            <p>GWAP Public Proof uses read-only X API access. After a user publishes a one-time GWAP challenge and submits that public post URL, GWAP retrieves the specific post and author data to verify that the claimed X account published the challenge.</p>
+            <p>GWAP does not publish posts or read Direct Messages for this verification method.</p>
+          </div>
+          <div>
+            <code>GET /2/tweets/:id</code>
+            <p><code>tweet.fields=author_id</code></p>
+            <p><code>expansions=author_id</code></p>
+            <p><code>user.fields=username</code></p>
+            <Link href="/public-proof">Public Proof documentation <ArrowIcon /></Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="inner-section">
         <div className="contact-grid">
           {plans.map((plan) => (
             <article className="contact-card" key={plan.name}>
@@ -78,9 +96,12 @@ export default function DevelopersPage() {
             <h2>Create a key from GWAP OS.</h2>
             <p>The developer console handles credentials, account-wide quota, usage analytics, and paid Growth or Scale checkout.</p>
           </div>
-          <Link className="primary-button" href="/app/developer">
-            Developer console <ArrowIcon />
-          </Link>
+          <div className="inner-hero-actions">
+            <Link className="primary-button" href="/app/developer">
+              Developer console <ArrowIcon />
+            </Link>
+            <Link className="secondary-button" href="/docs">Docs</Link>
+          </div>
         </div>
       </section>
     </PageShell>

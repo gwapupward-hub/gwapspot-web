@@ -56,9 +56,9 @@ export function SiteHeader() {
         <Link href="/launch">Launch</Link>
         <Link href="/ecosystem">Ecosystem</Link>
         <Link href="/developers">Developers</Link>
+        <Link href="/docs">Docs</Link>
         <Link href="/about">About</Link>
         <Link href="/roadmap">Roadmap</Link>
-        <Link href="/changelog">Build Log</Link>
         <Link href="/community">Community</Link>
         <Link href="/contact">Contact</Link>
       </nav>
@@ -66,6 +66,7 @@ export function SiteHeader() {
       <nav className="mobile-quick-nav" aria-label="Mobile navigation">
         <Link href="/" data-native-nav>Home</Link>
         <Link href="/ecosystem" data-native-nav>Ecosystem</Link>
+        <Link href="/docs" data-native-nav>Docs</Link>
         <Link href="/app" data-native-nav>GWAP OS</Link>
       </nav>
 
@@ -98,6 +99,8 @@ export function SiteFooter() {
 
       <div className="footer-links">
         <Link href="/app">GWAP OS</Link>
+        <Link href="/public-proof">Public Proof</Link>
+        <Link href="/docs">Docs</Link>
         <Link href="/launch">Launchpad</Link>
         <Link href="/ecosystem">Ecosystem</Link>
         <Link href="/developers">Developers</Link>
@@ -146,15 +149,17 @@ export function PageHero({ eyebrow, title, description, children }: PageHeroProp
   );
 }
 
+type ProductCardProps = {
+  product: EcosystemProduct;
+  index: number;
+  headingLevel?: "h3" | "h4";
+};
+
 export function ProductCard({
   product,
   index,
   headingLevel = "h3",
-}: {
-  product: EcosystemProduct;
-  index: number;
-  headingLevel?: "h3" | "h4";
-}) {
+}: ProductCardProps) {
   const ProductHeading = headingLevel;
 
   return (
