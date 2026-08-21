@@ -7,6 +7,7 @@ import {
   deriveRelationshipGraph,
   type RelationshipEdge,
   type RelationshipNode,
+  type SocialRelationshipInput,
 } from "../lib/relationship-graph";
 import { useGwapOs } from "./os-provider";
 
@@ -25,6 +26,16 @@ type AccountPayload = {
   primaryGnsIdentity?: string | null;
 };
 
+type SocialPayload = {
+  summary?: { enabled?: boolean };
+  records?: Array<{
+    platform?: string;
+    socialHandle?: string;
+    status?: string;
+    verifiedAt?: string | null;
+  }>;
+};
+
 function nodeIcon(node: RelationshipNode) {
   if (node.type === "account") return "◎";
   if (node.type === "wallet") return "◈";
@@ -38,6 +49,7 @@ function provenanceLabel(edge: RelationshipEdge) {
   if (edge.provenance === "authenticated") return "AUTHENTICATED";
   if (edge.provenance === "account-link") return "ACCOUNT LINK";
   if (edge.provenance === "resolved") return "RESOLVED";
+  if (edge.provenance === "proof-of-control") return "PROOF OF CONTROL";
   return "PLANNED";
 }
 
@@ -45,6 +57,7 @@ export function RelationshipGraphView() {
   const { getAccessToken } = usePrivy();
   const { account, gnsIdentity } = useGwapOs();
   const [accountGraph, setAccountGraph] = useState<AccountPayload | null>(null);
+  const [socialVerification, setSocialVerification] = useState<SocialRelationshipInput | null | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [unavailable, setUnavailable] = useState(false);
 
@@ -54,25 +67,67 @@ export function RelationshipGraphView() {
     const timeout = window.setTimeout(() => controller.abort(), 4500);
 
     void getAccessToken()
-      .then((token) =>
-        fetch("/api/account", {
-          cache: "no-store",
-          credentials: "same-origin",
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-          signal: controller.signal,
-        }),
-      )
-      .then(async (response) => {
-        if (!response.ok) throw new Error("Relationship data unavailable");
-        return (await response.json()) as AccountPayload;
-      })
-      .then((payload) => {
+      .then(async (token) => {
+        const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+        const [accountResult, socialResult] = await Promise.allSettled([
+          fetch("/api/account", {
+            cache: "no-store",
+            credentials: "same-origin",
+            headers,
+            signal: controller.signal,
+          }).then(async (response) => {
+            if (!response.ok) throw new Error("Relationship data unavailable");
+            return (await response.json()) as AccountPayload;
+          }),
+          fetch("/api/gwapscore/social-verification", {
+            cache: "no-store",
+            credentials: "same-origin",
+            headers,
+            signal: controller.signal,
+          }).then(async (response) => {
+            if (!response.ok) throw new Error("Social relationship data unavailable");
+            return (await response.json()) as SocialPayload;
+          }),
+        ]);
+
         if (!active) return;
-        setAccountGraph(payload);
-        setUnavailable(false);
+        if (accountResult.status === "fulfilled") {
+          setAccountGraph(accountResult.value);
+          setUnavailable(false);
+        } else {
+          setUnavailable(true);
+        }
+
+        if (socialResult.status === "fulfilled") {
+          setSocialVerification({
+            enabled: socialResult.value.summary?.enabled === true,
+            records: (socialResult.value.records || [])
+              .filter(
+                (record): record is {
+                  platform: string;
+                  socialHandle: string;
+                  status: string;
+                  verifiedAt?: string | null;
+                } =>
+                  typeof record.platform === "string" &&
+                  typeof record.socialHandle === "string" &&
+                  typeof record.status === "string",
+              )
+              .map((record) => ({
+                platform: record.platform,
+                socialHandle: record.socialHandle,
+                status: record.status,
+                verifiedAt: record.verifiedAt ?? null,
+              })),
+          });
+        } else {
+          setSocialVerification(null);
+        }
       })
       .catch(() => {
-        if (active) setUnavailable(true);
+        if (!active) return;
+        setUnavailable(true);
+        setSocialVerification(null);
       })
       .finally(() => {
         window.clearTimeout(timeout);
@@ -88,8 +143,8 @@ export function RelationshipGraphView() {
 
   const graph = useMemo(() => {
     if (!accountGraph) return null;
-    return deriveRelationshipGraph(accountGraph, gnsIdentity);
-  }, [accountGraph, gnsIdentity]);
+    return deriveRelationshipGraph(accountGraph, gnsIdentity, socialVerification);
+  }, [accountGraph, gnsIdentity, socialVerification]);
 
   return (
     <div className="os-page os-home-v2">
@@ -98,7 +153,7 @@ export function RelationshipGraphView() {
           <span className="os-terminal-label">GWAP://TRUST/RELATIONSHIPS</span>
           <h1>See exactly what is <span>connected.</span></h1>
           <p>
-            Relationship Graph shows how your GWAP account, wallets, .gwap identity, and linked services relate to each other—and the provenance GWAP uses before calling any connection verified.
+            Relationship Graph shows how your GWAP account, wallets, .gwap identity, Telegram, and verified social accounts relate to each other—and the provenance GWAP requires before calling any connection verified.
           </p>
         </div>
         <div className="os-runtime-badge state-found">
@@ -114,7 +169,7 @@ export function RelationshipGraphView() {
         <section className="os-runtime-panel os-runtime-note" role="status">
           <span className="os-terminal-label">RELATIONSHIP GRAPH</span>
           <h2>Loading canonical account relationships…</h2>
-          <p>GWAP is reading your authenticated account record and live identity resolution.</p>
+          <p>GWAP is reading your authenticated account record, live identity resolution, and Proof-of-Control state.</p>
         </section>
       ) : null}
 
@@ -138,7 +193,7 @@ export function RelationshipGraphView() {
                   <span className="os-terminal-label">ROOT ENTITY</span>
                   <h2>{gnsIdentity.fullName || account.displayName || "GWAP Account"}</h2>
                   <p>
-                    The GWAP account is the root identity record. Wallets, names, Telegram, and future verified services attach to this record only through explicit provenance.
+                    The GWAP account is the root identity record. Wallets, names, Telegram, and social accounts attach to this record only through explicit provenance.
                   </p>
                   <div className="os-identity-meta">
                     <span><small>NODES</small><strong>{graph.nodes.length}</strong></span>
@@ -153,7 +208,7 @@ export function RelationshipGraphView() {
               <span className="os-terminal-label">PROVENANCE RULE</span>
               <h2>No mystery connections.</h2>
               <p>
-                Authenticated means the active session proves wallet control. Account Link means GWAP stored an explicit canonical relationship. Resolved means a live protocol such as GNS establishes the edge. Planned relationships are never treated as verified.
+                Authenticated means the active session proves wallet control. Account Link means GWAP stored an explicit canonical relationship. Resolved means a live protocol such as GNS establishes the edge. Proof of Control means a signed platform verifier observed the one-time challenge. Planned relationships are never treated as verified.
               </p>
             </aside>
           </section>
@@ -198,12 +253,12 @@ export function RelationshipGraphView() {
 
           <section className="os-v2-layout">
             <aside className="os-runtime-panel os-runtime-note">
-              <span className="os-terminal-label">NEXT: PROOF OF CONTROL</span>
-              <h2>Social accounts will join through proof, not usernames.</h2>
+              <span className="os-terminal-label">SOCIAL PROOF OF CONTROL</span>
+              <h2>{socialVerification?.records.some((record) => record.status === "verified") ? "Verified social control is live in your graph." : socialVerification?.enabled ? "Social verification is ready when you are." : "Platform verification is staged."}</h2>
               <p>
-                When GwapScore social verification ships, X and other supported accounts will enter this graph only after the user completes the Proof-of-Control challenge. Until then they remain planned nodes.
+                A social account becomes a verified relationship only after GWAP observes the one-time challenge through the signed platform verifier. Matching usernames never create a trust edge.
               </p>
-              <Link href="/app/score">Open GwapScore →</Link>
+              <Link href="/app/score#social-verification">Manage social verification →</Link>
             </aside>
             <aside className="os-runtime-panel os-runtime-note">
               <span className="os-terminal-label">NEXT: COUNTERPARTIES</span>
