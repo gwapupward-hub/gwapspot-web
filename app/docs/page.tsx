@@ -68,7 +68,7 @@ export default function DocsPage() {
             <span className="eyebrow"><SparkIcon /> Public Proof technical reference</span>
             <h2>X integration is narrow and read-only.</h2>
             <p>
-              GWAP Public Proof does not ask X to publish on a user's behalf. The user publishes a generated challenge, then GWAP reads only the submitted public post and author data needed to verify Proof of Control.
+              GWAP Public Proof does not ask X to publish on a user&apos;s behalf. The user publishes a generated challenge, then GWAP reads only the submitted public post and author data needed to verify Proof of Control.
             </p>
           </div>
           <div>
