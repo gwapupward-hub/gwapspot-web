@@ -1,7 +1,7 @@
 "use client";
 
 import { usePrivy } from "@privy-io/react-auth";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 type PlatformConfig = {
   platform: "x";
@@ -93,12 +93,6 @@ export function SocialVerificationPanel() {
     }, 4_000);
     return () => window.clearInterval(poll);
   }, [load, pending]);
-
-  const remaining = useMemo(() => {
-    if (!record || !pending) return null;
-    const ms = Date.parse(record.expiresAt) - Date.now();
-    return Math.max(0, Math.ceil(ms / 60_000));
-  }, [pending, record]);
 
   async function action(body: Record<string, unknown>) {
     setBusy(true);
@@ -201,7 +195,7 @@ export function SocialVerificationPanel() {
           1. Follow <a href={`https://x.com/${platform.officialHandle}`} target="_blank" rel="noreferrer">@{platform.officialHandle} ↗</a>. 2. From @{record.socialHandle}, DM the exact challenge below. 3. GWAP will confirm the platform event automatically.
         </p>
         <div className="os-identity-console">
-          <div className="os-console-chrome"><span>ONE-TIME CHALLENGE</span><span>{remaining ?? platform.challengeTtlMinutes} MIN LEFT</span></div>
+          <div className="os-console-chrome"><span>ONE-TIME CHALLENGE</span><span>EXPIRES IN {platform.challengeTtlMinutes} MIN</span></div>
           <div className="os-identity-body">
             <div className="os-identity-copy">
               <span className="os-terminal-label">SEND EXACTLY</span>
