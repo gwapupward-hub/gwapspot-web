@@ -149,6 +149,14 @@ export function TrustGraphView() {
 
       <section className="os-v2-layout">
         <aside className="os-runtime-panel os-runtime-note">
+          <span className="os-terminal-label">RELATIONSHIP PROVENANCE</span>
+          <h2>See why GWAP believes your accounts are connected.</h2>
+          <p>
+            Trust Coverage tells you which signals exist. Relationship Graph shows the underlying account, wallet, .gwap, and Telegram connections—and whether each edge is authenticated, explicitly linked, resolved by protocol, or still only planned.
+          </p>
+          <Link href="/app/trust/relationships">Open Relationship Graph →</Link>
+        </aside>
+        <aside className="os-runtime-panel os-runtime-note">
           <span className="os-terminal-label">WHAT TRUST COVERAGE MEANS</span>
           <h2>Coverage is not your GwapScore.</h2>
           <p>
@@ -156,6 +164,9 @@ export function TrustGraphView() {
           </p>
           <Link href="/app/score">Open GwapScore →</Link>
         </aside>
+      </section>
+
+      <section className="os-v2-layout">
         <aside className="os-runtime-panel os-runtime-note">
           <span className="os-terminal-label">COMING INTO THE GRAPH</span>
           <h2>Social Proof of Control + Private Proof Vault</h2>
