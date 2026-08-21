@@ -7,6 +7,7 @@ import {
 import { resolveDailyIdeasGwapAccount } from "../../../lib/daily-ideas-gwap-account";
 import {
   canLinkTelegramToGwapAccount,
+  getGwapAccountById,
   linkTelegramToGwapAccount,
   unlinkTelegramFromGwapAccount,
 } from "../../../lib/gwap-account";
@@ -67,8 +68,12 @@ export async function DELETE(request: Request) {
 
     const canonical = await unlinkTelegramFromGwapAccount(resolved.account.id, snapshot.telegramUserId);
     if (!canonical.ok) {
-      auditAuthEvent("daily-ideas.account-unlink", resolved.identity.userId, "failed");
-      return NextResponse.json({ error: "The canonical GWAP account link could not be removed." }, { status: 409 });
+      const current = await getGwapAccountById(resolved.account.id);
+      const alreadyUnlinked = canonical.reason === "link_mismatch" && current?.telegramUserId === null;
+      if (!alreadyUnlinked) {
+        auditAuthEvent("daily-ideas.account-unlink", resolved.identity.userId, "failed");
+        return NextResponse.json({ error: "The canonical GWAP account link could not be removed." }, { status: 409 });
+      }
     }
 
     const dailyIdeas = await removeDailyIdeasTelegramIdentityLink(resolved.account.id, snapshot.telegramUserId);
