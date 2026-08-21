@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 const commands = [
   { label: "Show my trust graph", path: "/app/trust", hint: "trust graph · verification · coverage · credibility · signals" },
+  { label: "Show my relationships", path: "/app/trust/relationships", hint: "relationship graph · wallet links · .gwap · Telegram · provenance · connected accounts" },
   { label: "Build my reputation", path: "/app/score", hint: "GwapScore · trust · reputation · credibility" },
   { label: "Verify my identity", path: "/app/identity", hint: "GNS · .gwap · identity · name" },
   { label: "Strengthen my profile", path: "/app/profile", hint: "profile · bio · public identity" },
@@ -96,7 +97,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
             </button>
           ))}
           {!filtered.length ? (
-            <p>No action matches that request yet. Try identity, trust graph, reputation, wallet, proof, opportunity, marketplace, or API.</p>
+            <p>No action matches that request yet. Try identity, relationships, trust graph, reputation, wallet, proof, opportunity, marketplace, or API.</p>
           ) : null}
         </div>
       </section>
