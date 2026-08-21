@@ -48,7 +48,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
 
-  const payload = JSON.parse(raw || "null") as VerifierPayload | null;
+  let payload: VerifierPayload | null = null;
+  try {
+    payload = JSON.parse(raw || "null") as VerifierPayload | null;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 });
+  }
+
   if (
     !payload ||
     !isSocialPlatform(payload.platform) ||
