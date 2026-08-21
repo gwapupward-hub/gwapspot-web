@@ -28,7 +28,7 @@ export default function TermsPage() {
           </div>
           <div>
             <p>You must use GWAP lawfully and provide accurate information when a feature requires it. You are responsible for safeguarding wallets, authentication methods, API keys, linked accounts, and devices used to access GWAP.</p>
-            <p>Do not attempt to impersonate another person or organization, falsely claim control of an external account, or submit another person's content as your own verification evidence.</p>
+            <p>Do not attempt to impersonate another person or organization, falsely claim control of an external account, or submit another person&apos;s content as your own verification evidence.</p>
           </div>
         </div>
       </section>
@@ -110,7 +110,7 @@ export default function TermsPage() {
           <div>
             <span className="eyebrow"><SparkIcon /> Questions</span>
             <h2>Need clarification?</h2>
-            <p>Review the documentation and privacy policy or use GWAP's official contact channels.</p>
+            <p>Review the documentation and privacy policy or use GWAP&apos;s official contact channels.</p>
           </div>
           <div className="inner-hero-actions">
             <Link className="primary-button" href="/docs">Read docs</Link>
