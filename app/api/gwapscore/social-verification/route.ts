@@ -12,6 +12,7 @@ import {
   revokeSocialVerification,
   submitPublicProofPost,
 } from "../../../lib/social-proof-control";
+import { diagnoseXPublicProofLookup } from "../../../lib/x-public-proof-diagnostics";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -177,6 +178,35 @@ export async function POST(request: Request) {
           account_already_verified:
             "That X account is already verified to another GWAP account.",
         } as const;
+
+        if (result.reason === "post_unavailable" && body.platform === "x") {
+          const diagnostic = await diagnoseXPublicProofLookup(postUrl);
+          const diagnosticMessages = {
+            x_auth_failed:
+              "X rejected the GWAP API credential. Regenerate or replace the X Bearer Token in Vercel, then redeploy.",
+            x_api_access_denied:
+              "X recognized the credential but this developer plan/app cannot read that post endpoint. Check X API access and billing/tier permissions.",
+            x_rate_limited:
+              "X rate-limited the Public Proof lookup. Wait for the X API window to reset before retrying.",
+            post_not_found:
+              "X returned Post not found. Confirm the post is public and has not been deleted.",
+            author_expansion_missing:
+              "X returned the post but did not return its author profile. GWAP cannot verify account control without the stable author identity.",
+            x_api_error:
+              "X API is temporarily unavailable or timed out while GWAP was reading the post.",
+            post_unavailable:
+              "GWAP could not read that public post from X. Confirm it is public and try again.",
+          } as const;
+          return NextResponse.json(
+            {
+              error: diagnosticMessages[diagnostic],
+              diagnostic,
+              record: result.record ? publicRecord(result.record) : null,
+            },
+            { status: 502 },
+          );
+        }
+
         return NextResponse.json(
           {
             error: messages[result.reason],
