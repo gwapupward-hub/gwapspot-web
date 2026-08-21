@@ -1,4 +1,4 @@
-# GWAP Relationship Graph — Phase B.2
+# GWAP Relationship Graph — Phase B.2+
 
 Status: implementation contract
 
@@ -29,6 +29,12 @@ GWAP has stored an explicit canonical relationship through a controlled link flo
 
 A live protocol establishes the relationship independently. Initial example: GNS resolving a `.gwap` name to the verified wallet.
 
+### proof-of-control
+
+A supported social-platform verifier independently observed the one-time GWAP challenge after the required platform-specific control actions. Initial flow requires the user to follow the canonical GWAP account and DM the exact one-time challenge from the social account being verified.
+
+The browser's "I sent the DM" action is never sufficient to create this provenance. Only the signed server-to-server verifier bridge can complete verification.
+
 ### planned
 
 The relationship type is part of the roadmap but has no production verification authority. Planned edges must never count as verified or increase trust coverage.
@@ -42,10 +48,10 @@ Live:
 - additional linked/embedded wallets
 - primary `.gwap` identity when GNS resolution succeeds
 - Telegram identity when the canonical account-link exists
+- supported social identities after Proof-of-Control verification succeeds
 
 Planned:
 
-- social identities using GwapScore Proof of Control
 - trusted counterparties sourced from Marketplace/transaction provenance
 - organizations and teams
 - endorsements
@@ -59,27 +65,49 @@ Planned:
 3. Service outages create an unavailable state, not a negative trust event.
 4. Inference may eventually assist discovery, but inference alone must never establish a verified edge.
 5. Public usernames, display names, avatars, or matching profile text are not proof of control.
-6. Social relationships become verified only after the platform-specific Proof-of-Control challenge succeeds.
+6. Social relationships become verified only after the platform-specific Proof-of-Control challenge succeeds through the signed verifier bridge.
 7. Economic relationships require a transaction, agreement, marketplace event, proof, or other attributable source before becoming verified.
+8. Missing or expired social verification is not itself a negative GwapScore event.
 
-## Proof-of-Control readiness
+## Proof-of-Control lifecycle
 
-Future social verification should enter the graph through a challenge lifecycle:
+Social verification uses:
 
-`unlinked → challenge-issued → challenge-observed → verified → expired/revoked`
+`unlinked → challenge-issued → awaiting-dm → verified → revoked/expired`
 
-A verified social edge should record at minimum:
+Challenge requirements:
+
+- challenge is account- and platform-scoped;
+- challenge expires automatically;
+- requested social handle is normalized and bound before issuance;
+- the same verified handle cannot belong to two canonical GWAP accounts;
+- completing a browser action never verifies the account;
+- the platform verifier must independently prove both the required follow and observed DM challenge;
+- verifier callbacks use an HMAC-signed raw request body;
+- the bridge stores only the verification receipt needed for provenance, not private DM content.
+
+A verified social edge records at minimum:
 
 - GWAP account ID
 - platform
-- platform account identifier
-- verification method
+- normalized platform handle
+- optional stable platform account identifier
 - verification timestamp
-- challenge/version identifier
+- challenge identifier
 - current status
-- revocation/expiry state when applicable
+- revocation/expiry state
 
-Do not store private message contents when a minimal verification receipt is sufficient.
+## Trust Graph integration
+
+Proof of Control contributes live Trust Coverage only when the signed platform verifier is configured. Before that, the capability remains `planned` with zero trust weight.
+
+When the verifier is active:
+
+- no verified social account → `incomplete` live signal;
+- at least one verified social account → `verified` live signal;
+- verifier/status infrastructure failure → `unavailable`, excluded from the coverage denominator.
+
+Proof of Control is a provenance signal. It does **not** automatically change the GwapScore formula in this phase.
 
 ## Counterparty readiness
 
@@ -97,13 +125,13 @@ Each edge must cite its source domain and lifecycle rather than collapsing every
 
 ## UX rule
 
-The default interface should be understandable without graph-theory knowledge. Lead with entities and plain-language relationships, then expose provenance labels such as `AUTHENTICATED`, `ACCOUNT LINK`, and `RESOLVED`.
+The default interface should be understandable without graph-theory knowledge. Lead with entities and plain-language relationships, then expose provenance labels such as `AUTHENTICATED`, `ACCOUNT LINK`, `RESOLVED`, and `PROOF OF CONTROL`.
 
 ## Current non-goals
 
 - no inferred social edges
-- no fake social verification
+- no username-only social verification
 - no fake Proof Vault credentials
-- no reputation-score changes
+- no GwapScore formula changes from verification alone
 - no automatic negative scoring from missing relationships
 - no public exposure of raw internal account identifiers beyond the authenticated user's own OS
