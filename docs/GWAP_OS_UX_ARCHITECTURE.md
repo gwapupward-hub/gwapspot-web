@@ -102,9 +102,40 @@ Initial live signals:
 - GwapScore availability;
 - canonical Telegram account link.
 
-Planned signals must remain visibly non-verifying until production-ready. In particular, social Proof-of-Control and Private Proof Vault claims cannot count toward coverage before those systems ship.
-
 Trust Coverage is distinct from Identity Strength and GwapScore. It measures verified coverage of currently measurable trust signals; it is not a credit score and must never be presented as one.
+
+## GWAP Public Proof
+
+GWAP Public Proof is the initial production social Proof-of-Control method and a product-led distribution surface.
+
+Flow:
+
+1. the authenticated GWAP user claims a supported social account;
+2. the user chooses one approved GWAP share color;
+3. GWAP issues a short-lived one-time challenge;
+4. GWAP generates a branded verification link and prewritten public post;
+5. the user publishes the post from the claimed account;
+6. the user submits the public post URL;
+7. GWAP independently retrieves the post through the platform API;
+8. GWAP verifies the exact challenge, author username, and stable platform account ID;
+9. Trust Graph and Relationship Graph receive verified Proof-of-Control provenance.
+
+The public verification link is a living receipt with pending, verified, revoked, and expired states.
+
+Initial approved campaign themes:
+
+- Neon Green
+- Red
+- Electric Blue
+- Purple
+- White / Silver
+- Orange
+
+The selected share theme is cosmetic and may later be analyzed for shares, click-throughs, and conversions. Marketing performance must never change verification status, Trust Coverage, or GwapScore.
+
+The verification page is also an acquisition surface into GWAP OS, `.gwap` identity, reputation, wallet intelligence, and other ecosystem capabilities.
+
+A future private/DM Proof-of-Control method may establish the same control fact without requiring a public post. Its provenance must remain distinguishable from Public Proof.
 
 ## Universal GWAP action bar
 
@@ -115,6 +146,8 @@ Example intents:
 - Check a wallet
 - Find a .gwap name
 - Show my trust graph
+- Show my relationships
+- Verify a social account
 - Show my reputation
 - Improve my identity
 - Open my portfolio
@@ -185,19 +218,20 @@ Phase A — UX architecture
 - account-synced persona selection
 - persona-aware action ordering and recommendations
 
-Phase B — Trust Graph
+Phase B — Trust architecture
 - explainable verification coverage
 - live vs incomplete vs unavailable vs planned signal states
 - canonical account-link visibility
+- relationship provenance graph
 - direct trust-strengthening actions
 - operational outages excluded from user trust penalties
-- social verification and Proof Vault remain planned until their production backends exist
+- GWAP Public Proof social verification
+- themed public verification receipts and share surfaces
 
 Later Phase B expansion
-- Proof-of-Control social verification
+- private/DM Proof-of-Control alternative
 - Proof Vault activation
-- richer provenance and relationship signals
-- entity relationship graph
+- richer provenance and counterparty signals
 
 Phase C — economic activation
 - reputation-backed Marketplace flows
@@ -213,6 +247,7 @@ Phase C — economic activation
 - no speculative trust score changes
 - no duplicate backend architecture
 - no burying existing products behind marketing copy
+- no allowing marketing mechanics to weaken proof rigor
 
 ## Success test
 
