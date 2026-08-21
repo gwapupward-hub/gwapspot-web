@@ -5,9 +5,21 @@ import { getPrivateStorageKey, getWorkspaceRedis } from "./redis";
 
 export const SOCIAL_PLATFORMS = ["x"] as const;
 export type SocialPlatform = (typeof SOCIAL_PLATFORMS)[number];
+
+export const PUBLIC_PROOF_THEMES = [
+  "green",
+  "red",
+  "blue",
+  "purple",
+  "silver",
+  "orange",
+] as const;
+export type PublicProofTheme = (typeof PUBLIC_PROOF_THEMES)[number];
+
+export type SocialVerificationMethod = "public-post";
 export type SocialVerificationStatus =
   | "challenge-issued"
-  | "awaiting-dm"
+  | "awaiting-post"
   | "verified"
   | "revoked"
   | "expired";
@@ -15,15 +27,19 @@ export type SocialVerificationStatus =
 export type SocialVerificationRecord = {
   accountId: string;
   platform: SocialPlatform;
+  method: SocialVerificationMethod;
   socialHandle: string;
   challengeCode: string;
+  shareTheme: PublicProofTheme;
   status: SocialVerificationStatus;
   issuedAt: string;
   expiresAt: string;
   verifiedAt: string | null;
   revokedAt: string | null;
   externalAccountId: string | null;
-  schemaVersion: 1;
+  postUrl: string | null;
+  postId: string | null;
+  schemaVersion: 2;
 };
 
 export type SocialPlatformConfig = {
@@ -31,7 +47,9 @@ export type SocialPlatformConfig = {
   label: string;
   officialHandle: string;
   verifierEnabled: boolean;
+  verificationMethod: SocialVerificationMethod;
   challengeTtlMinutes: number;
+  shareThemes: PublicProofTheme[];
 };
 
 type ChallengeLocator = {
@@ -39,7 +57,22 @@ type ChallengeLocator = {
   platform: SocialPlatform;
 };
 
-const CHALLENGE_TTL_SECONDS = 20 * 60;
+type XPostLookup = {
+  data?: {
+    id?: string;
+    text?: string;
+    author_id?: string;
+  };
+  includes?: {
+    users?: Array<{
+      id?: string;
+      username?: string;
+    }>;
+  };
+  errors?: unknown;
+};
+
+const CHALLENGE_TTL_SECONDS = 30 * 60;
 const VERIFIED_TTL_SECONDS = 365 * 24 * 60 * 60;
 const CHALLENGE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
@@ -58,10 +91,10 @@ function verifiedHandleKey(platform: SocialPlatform, handle: string) {
   );
 }
 
-function verifiedExternalAccountKey(platform: SocialPlatform, externalAccountId: string) {
+function verifiedExternalAccountKey(platform: SocialPlatform, accountId: string) {
   return getPrivateStorageKey(
     "social-proof-control-external-account",
-    `${platform}:${externalAccountId.trim()}`,
+    `${platform}:${accountId.trim()}`,
   );
 }
 
@@ -69,6 +102,13 @@ export function isSocialPlatform(value: unknown): value is SocialPlatform {
   return (
     typeof value === "string" &&
     (SOCIAL_PLATFORMS as readonly string[]).includes(value)
+  );
+}
+
+export function isPublicProofTheme(value: unknown): value is PublicProofTheme {
+  return (
+    typeof value === "string" &&
+    (PUBLIC_PROOF_THEMES as readonly string[]).includes(value)
   );
 }
 
@@ -82,12 +122,11 @@ export function isValidSocialHandle(platform: SocialPlatform, value: string) {
   return false;
 }
 
-function envEnabled(value: string | undefined) {
-  return /^(1|true|yes|on)$/i.test(value?.trim() || "");
-}
-
-function getVerifierSecret() {
-  return process.env.GWAPSCORE_SOCIAL_VERIFICATION_WEBHOOK_SECRET?.trim() || "";
+function socialVerifierEnabled() {
+  return (
+    process.env.GWAPSCORE_SOCIAL_VERIFIER_ENABLED?.trim().toLowerCase() ===
+      "true" && Boolean(process.env.GWAPSCORE_X_BEARER_TOKEN?.trim())
+  );
 }
 
 export function getSocialPlatformConfig(
@@ -100,27 +139,26 @@ export function getSocialPlatformConfig(
       officialHandle: normalizeSocialHandle(
         process.env.GWAPSCORE_X_OFFICIAL_HANDLE || "_GwapSpot",
       ),
-      verifierEnabled:
-        envEnabled(process.env.GWAPSCORE_SOCIAL_VERIFIER_ENABLED) &&
-        Boolean(getVerifierSecret()),
+      verifierEnabled: socialVerifierEnabled(),
+      verificationMethod: "public-post",
       challengeTtlMinutes: CHALLENGE_TTL_SECONDS / 60,
+      shareThemes: [...PUBLIC_PROOF_THEMES],
     };
   }
+
   return {
     platform,
     label: platform,
     officialHandle: "",
     verifierEnabled: false,
+    verificationMethod: "public-post",
     challengeTtlMinutes: CHALLENGE_TTL_SECONDS / 60,
+    shareThemes: [...PUBLIC_PROOF_THEMES],
   };
 }
 
 export function getSocialVerifierSecret() {
-  return getVerifierSecret();
-}
-
-export function isSocialVerifierEnabled(platform: SocialPlatform) {
-  return getSocialPlatformConfig(platform).verifierEnabled;
+  return process.env.GWAPSCORE_SOCIAL_VERIFICATION_WEBHOOK_SECRET?.trim() || "";
 }
 
 function generateChallengeCode() {
@@ -138,18 +176,20 @@ function normalizeRecord(value: unknown): SocialVerificationRecord | null {
   if (
     typeof record.accountId !== "string" ||
     !isSocialPlatform(record.platform) ||
+    record.method !== "public-post" ||
     typeof record.socialHandle !== "string" ||
     typeof record.challengeCode !== "string" ||
+    !isPublicProofTheme(record.shareTheme) ||
     ![
       "challenge-issued",
-      "awaiting-dm",
+      "awaiting-post",
       "verified",
       "revoked",
       "expired",
     ].includes(record.status || "") ||
     typeof record.issuedAt !== "string" ||
     typeof record.expiresAt !== "string" ||
-    record.schemaVersion !== 1
+    record.schemaVersion !== 2
   ) {
     return null;
   }
@@ -158,15 +198,15 @@ function normalizeRecord(value: unknown): SocialVerificationRecord | null {
 
 function isExpired(record: SocialVerificationRecord) {
   return (
-    record.status !== "verified" &&
-    record.status !== "revoked" &&
-    Date.now() >= Date.parse(record.expiresAt)
+    record.status !== "verified" && Date.now() >= Date.parse(record.expiresAt)
   );
 }
 
 async function saveRecord(record: SocialVerificationRecord) {
   const ttl =
-    record.status === "verified" ? VERIFIED_TTL_SECONDS : CHALLENGE_TTL_SECONDS + 60;
+    record.status === "verified"
+      ? VERIFIED_TTL_SECONDS
+      : CHALLENGE_TTL_SECONDS + 60;
   await getWorkspaceRedis().set(
     verificationKey(record.accountId, record.platform),
     record,
@@ -180,7 +220,9 @@ export async function getSocialVerification(
   platform: SocialPlatform,
 ) {
   const record = normalizeRecord(
-    await getWorkspaceRedis().get<unknown>(verificationKey(accountId, platform)),
+    await getWorkspaceRedis().get<unknown>(
+      verificationKey(accountId, platform),
+    ),
   );
   if (!record) return null;
   if (!isExpired(record)) return record;
@@ -211,6 +253,7 @@ export async function issueSocialChallenge(
   accountId: string,
   platform: SocialPlatform,
   handle: string,
+  shareTheme: PublicProofTheme,
 ) {
   const config = getSocialPlatformConfig(platform);
   if (!config.verifierEnabled) {
@@ -221,13 +264,19 @@ export async function issueSocialChallenge(
   if (!isValidSocialHandle(platform, socialHandle)) {
     return { ok: false as const, reason: "invalid_handle" as const };
   }
+  if (!isPublicProofTheme(shareTheme)) {
+    return { ok: false as const, reason: "invalid_theme" as const };
+  }
 
   const redis = getWorkspaceRedis();
   const claimedBy = await redis.get<string>(
     verifiedHandleKey(platform, socialHandle),
   );
   if (claimedBy && claimedBy !== accountId) {
-    return { ok: false as const, reason: "handle_already_verified" as const };
+    return {
+      ok: false as const,
+      reason: "handle_already_verified" as const,
+    };
   }
 
   const existing = await getSocialVerification(accountId, platform);
@@ -245,11 +294,16 @@ export async function issueSocialChallenge(
     existing?.status === "verified" &&
     existing.socialHandle !== socialHandle
   ) {
-    return { ok: false as const, reason: "revoke_existing_first" as const };
+    return {
+      ok: false as const,
+      reason: "revoke_existing_first" as const,
+    };
   }
 
   if (existing) {
-    await redis.del(challengeIndexKey(existing.challengeCode)).catch(() => 0);
+    await redis
+      .del(challengeIndexKey(existing.challengeCode))
+      .catch(() => 0);
   }
 
   const now = new Date();
@@ -257,8 +311,10 @@ export async function issueSocialChallenge(
   const record: SocialVerificationRecord = {
     accountId,
     platform,
+    method: "public-post",
     socialHandle,
     challengeCode,
+    shareTheme,
     status: "challenge-issued",
     issuedAt: now.toISOString(),
     expiresAt: new Date(
@@ -267,7 +323,9 @@ export async function issueSocialChallenge(
     verifiedAt: null,
     revokedAt: null,
     externalAccountId: null,
-    schemaVersion: 1,
+    postUrl: null,
+    postId: null,
+    schemaVersion: 2,
   };
 
   await Promise.all([
@@ -281,20 +339,121 @@ export async function issueSocialChallenge(
   return { ok: true as const, record, alreadyVerified: false as const };
 }
 
-export async function markSocialChallengeSent(
-  accountId: string,
-  platform: SocialPlatform,
-) {
-  const record = await getSocialVerification(accountId, platform);
-  if (
-    !record ||
-    record.status === "expired" ||
-    record.status === "revoked"
-  ) {
+export function extractXPostId(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  try {
+    const url = new URL(trimmed);
+    const host = url.hostname.toLowerCase().replace(/^www\./, "");
+    if (host !== "x.com" && host !== "twitter.com") return null;
+    const match = url.pathname.match(/\/status\/(\d+)/);
+    return match?.[1] || null;
+  } catch {
     return null;
   }
-  if (record.status === "verified") return record;
-  return saveRecord({ ...record, status: "awaiting-dm" });
+}
+
+async function lookupXPost(postId: string) {
+  const bearer = process.env.GWAPSCORE_X_BEARER_TOKEN?.trim();
+  if (!bearer) return null;
+
+  const url = new URL(`https://api.x.com/2/tweets/${postId}`);
+  url.searchParams.set("tweet.fields", "author_id");
+  url.searchParams.set("expansions", "author_id");
+  url.searchParams.set("user.fields", "username");
+
+  const response = await fetch(url, {
+    cache: "no-store",
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${bearer}`,
+    },
+    signal: AbortSignal.timeout(8_000),
+  });
+  if (!response.ok) return null;
+  return (await response.json()) as XPostLookup;
+}
+
+export async function submitPublicProofPost(
+  accountId: string,
+  platform: SocialPlatform,
+  postUrl: string,
+) {
+  if (platform !== "x") {
+    return { ok: false as const, reason: "unsupported_method" as const };
+  }
+
+  const record = await getSocialVerification(accountId, platform);
+  if (!record) return { ok: false as const, reason: "challenge_not_found" as const };
+  if (record.status === "verified") {
+    return { ok: true as const, record, alreadyVerified: true as const };
+  }
+  if (record.status === "expired" || isExpired(record)) {
+    return { ok: false as const, reason: "challenge_expired" as const };
+  }
+
+  const postId = extractXPostId(postUrl);
+  if (!postId) return { ok: false as const, reason: "invalid_post_url" as const };
+
+  const awaiting: SocialVerificationRecord = {
+    ...record,
+    status: "awaiting-post",
+    postUrl: postUrl.trim(),
+    postId,
+  };
+  await saveRecord(awaiting);
+
+  const lookup = await lookupXPost(postId);
+  const post = lookup?.data;
+  const authorId = post?.author_id?.trim() || "";
+  const author = lookup?.includes?.users?.find((user) => user.id === authorId);
+  const authorHandle = normalizeSocialHandle(author?.username || "");
+  const text = post?.text || "";
+
+  if (!post || !authorId || !authorHandle) {
+    return { ok: false as const, reason: "post_unavailable" as const, record: awaiting };
+  }
+  if (!text.toUpperCase().includes(record.challengeCode.toUpperCase())) {
+    return { ok: false as const, reason: "challenge_missing" as const, record: awaiting };
+  }
+  if (authorHandle !== record.socialHandle) {
+    return { ok: false as const, reason: "handle_mismatch" as const, record: awaiting };
+  }
+
+  const redis = getWorkspaceRedis();
+  const handleKey = verifiedHandleKey(platform, authorHandle);
+  const accountKey = verifiedExternalAccountKey(platform, authorId);
+  const [claimedByHandle, claimedByAccount] = await Promise.all([
+    redis.get<string>(handleKey),
+    redis.get<string>(accountKey),
+  ]);
+  if (
+    (claimedByHandle && claimedByHandle !== accountId) ||
+    (claimedByAccount && claimedByAccount !== accountId)
+  ) {
+    return {
+      ok: false as const,
+      reason: "account_already_verified" as const,
+      record: awaiting,
+    };
+  }
+
+  const verified: SocialVerificationRecord = {
+    ...awaiting,
+    status: "verified",
+    verifiedAt: new Date().toISOString(),
+    revokedAt: null,
+    externalAccountId: authorId,
+  };
+
+  await Promise.all([
+    saveRecord(verified),
+    redis.set(handleKey, accountId, { ex: VERIFIED_TTL_SECONDS }),
+    redis.set(accountKey, accountId, { ex: VERIFIED_TTL_SECONDS }),
+    redis.del(challengeIndexKey(record.challengeCode)),
+  ]);
+
+  return { ok: true as const, record: verified, alreadyVerified: false as const };
 }
 
 export async function verifySocialChallenge(input: {
@@ -303,26 +462,17 @@ export async function verifySocialChallenge(input: {
   socialHandle: string;
   externalAccountId: string;
 }) {
-  if (!isSocialVerifierEnabled(input.platform)) {
-    return { ok: false as const, reason: "verifier_unavailable" as const };
-  }
-
-  const externalAccountId = input.externalAccountId.trim();
-  if (!externalAccountId || externalAccountId.length > 128) {
-    return { ok: false as const, reason: "external_account_required" as const };
-  }
-
+  // Retained for future private/DM verification adapters. Public Post is the
+  // initial production method and verifies directly through the X API.
   const redis = getWorkspaceRedis();
-  const challengeCode = input.challengeCode.trim().toUpperCase();
-  const locator = await redis.get<ChallengeLocator>(
-    challengeIndexKey(challengeCode),
-  );
+  const code = input.challengeCode.trim().toUpperCase();
+  const locator = await redis.get<ChallengeLocator>(challengeIndexKey(code));
   if (!locator || locator.platform !== input.platform) {
     return { ok: false as const, reason: "challenge_not_found" as const };
   }
 
   const record = await getSocialVerification(locator.accountId, locator.platform);
-  if (!record || record.challengeCode !== challengeCode) {
+  if (!record || record.challengeCode !== code) {
     return { ok: false as const, reason: "challenge_not_found" as const };
   }
   if (record.status === "expired" || isExpired(record)) {
@@ -334,41 +484,22 @@ export async function verifySocialChallenge(input: {
     return { ok: false as const, reason: "handle_mismatch" as const };
   }
 
+  const externalAccountId = input.externalAccountId.trim().slice(0, 128);
+  if (!externalAccountId) {
+    return { ok: false as const, reason: "external_account_required" as const };
+  }
+
   const handleKey = verifiedHandleKey(record.platform, socialHandle);
-  const externalKey = verifiedExternalAccountKey(
-    record.platform,
-    externalAccountId,
-  );
-  const [handleOwner, externalOwner] = await Promise.all([
+  const accountKey = verifiedExternalAccountKey(record.platform, externalAccountId);
+  const [claimedByHandle, claimedByAccount] = await Promise.all([
     redis.get<string>(handleKey),
-    redis.get<string>(externalKey),
+    redis.get<string>(accountKey),
   ]);
   if (
-    (handleOwner && handleOwner !== record.accountId) ||
-    (externalOwner && externalOwner !== record.accountId)
+    (claimedByHandle && claimedByHandle !== record.accountId) ||
+    (claimedByAccount && claimedByAccount !== record.accountId)
   ) {
-    return { ok: false as const, reason: "social_account_already_verified" as const };
-  }
-
-  const handleClaimed =
-    handleOwner === record.accountId ||
-    (await redis.setIfAbsent(handleKey, record.accountId, VERIFIED_TTL_SECONDS));
-  if (!handleClaimed) {
-    return { ok: false as const, reason: "social_account_already_verified" as const };
-  }
-
-  const externalClaimed =
-    externalOwner === record.accountId ||
-    (await redis.setIfAbsent(
-      externalKey,
-      record.accountId,
-      VERIFIED_TTL_SECONDS,
-    ));
-  if (!externalClaimed) {
-    if (!handleOwner) {
-      await redis.deleteIfValue(handleKey, record.accountId).catch(() => false);
-    }
-    return { ok: false as const, reason: "social_account_already_verified" as const };
+    return { ok: false as const, reason: "handle_already_verified" as const };
   }
 
   const verified: SocialVerificationRecord = {
@@ -378,20 +509,12 @@ export async function verifySocialChallenge(input: {
     revokedAt: null,
     externalAccountId,
   };
-
-  try {
-    await saveRecord(verified);
-  } catch (error) {
-    if (!handleOwner) {
-      await redis.deleteIfValue(handleKey, record.accountId).catch(() => false);
-    }
-    if (!externalOwner) {
-      await redis.deleteIfValue(externalKey, record.accountId).catch(() => false);
-    }
-    throw error;
-  }
-
-  await redis.del(challengeIndexKey(record.challengeCode));
+  await Promise.all([
+    saveRecord(verified),
+    redis.set(handleKey, record.accountId, { ex: VERIFIED_TTL_SECONDS }),
+    redis.set(accountKey, record.accountId, { ex: VERIFIED_TTL_SECONDS }),
+    redis.del(challengeIndexKey(record.challengeCode)),
+  ]);
   return { ok: true as const, record: verified };
 }
 
@@ -401,13 +524,14 @@ export async function revokeSocialVerification(
 ) {
   const record = await getSocialVerification(accountId, platform);
   if (!record) return null;
+
   const revoked: SocialVerificationRecord = {
     ...record,
     status: "revoked",
     revokedAt: new Date().toISOString(),
   };
   const redis = getWorkspaceRedis();
-  const deletes: Promise<unknown>[] = [
+  const operations: Promise<unknown>[] = [
     saveRecord(revoked),
     redis.del(challengeIndexKey(record.challengeCode)).catch(() => 0),
     redis
@@ -418,7 +542,7 @@ export async function revokeSocialVerification(
       .catch(() => false),
   ];
   if (record.externalAccountId) {
-    deletes.push(
+    operations.push(
       redis
         .deleteIfValue(
           verifiedExternalAccountKey(platform, record.externalAccountId),
@@ -427,6 +551,6 @@ export async function revokeSocialVerification(
         .catch(() => false),
     );
   }
-  await Promise.all(deletes);
+  await Promise.all(operations);
   return revoked;
 }
