@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import TelegramGwapUtilityLayer from "./telegram-gwap-utility-layer";
 import TelegramMiniApp from "./telegram-mini-app";
 
 export const metadata: Metadata = {
@@ -13,5 +14,10 @@ export default function TelegramPage() {
     process.env.NEXT_PUBLIC_DAILY_IDEAS_TELEGRAM_BOT_USERNAME?.trim().replace(/^@/, "") ||
     "";
 
-  return <TelegramMiniApp botUsername={botUsername} />;
+  return (
+    <>
+      <TelegramMiniApp botUsername={botUsername} />
+      <TelegramGwapUtilityLayer />
+    </>
+  );
 }
