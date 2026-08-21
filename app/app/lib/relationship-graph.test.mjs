@@ -68,10 +68,10 @@ test("verified social account enters graph only through Proof-of-Control provena
   assert.equal(graph.verifiedEdges, 4);
 });
 
-test("enabled verifier with no completed challenge does not create a verified social edge", () => {
+test("enabled verifier with no completed public challenge does not create a verified social edge", () => {
   const graph = deriveRelationshipGraph(account, gnsFound, {
     enabled: true,
-    records: [{ platform: "x", socialHandle: "builder", status: "awaiting-dm" }],
+    records: [{ platform: "x", socialHandle: "builder", status: "awaiting-post" }],
   });
 
   assert.equal(graph.edges.some((edge) => edge.provenance === "proof-of-control"), false);
