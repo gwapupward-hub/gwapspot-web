@@ -178,7 +178,7 @@ export function deriveRelationshipGraph(
         id: nodeId,
         type: "social",
         label: `@${record.socialHandle}`,
-        detail: `${record.platform.toUpperCase()} · Proof of Control`,
+        detail: `${record.platform.toUpperCase()} · GWAP Public Proof`,
         state: "verified",
         primary: false,
       });
@@ -189,7 +189,7 @@ export function deriveRelationshipGraph(
         label: "controls account",
         provenance: "proof-of-control",
         verified: true,
-        detail: "GWAP matched a one-time challenge to the social account through the signed platform verifier after the required follow and DM flow.",
+        detail: "GWAP independently retrieved the public verification post, matched the one-time challenge, and bound the platform's stable author account to this GWAP identity.",
       });
     }
   } else if (socialVerification?.enabled) {
@@ -197,7 +197,7 @@ export function deriveRelationshipGraph(
       id: "social:available",
       type: "social",
       label: "Social Proof of Control",
-      detail: "Verification available in GwapScore",
+      detail: "GWAP Public Proof available in GwapScore",
       state: "available",
       primary: false,
     });
@@ -206,7 +206,7 @@ export function deriveRelationshipGraph(
       id: "social:planned",
       type: "social",
       label: "Social Proof of Control",
-      detail: "Verifier bridge not active",
+      detail: "X Public Proof verifier not active",
       state: socialVerification === null ? "unavailable" : "planned",
       primary: false,
     });
@@ -218,7 +218,7 @@ export function deriveRelationshipGraph(
         label: "future verification",
         provenance: "planned",
         verified: false,
-        detail: "Social relationships remain non-verifying until the signed Proof-of-Control platform bridge is active.",
+        detail: "Social relationships remain non-verifying until GWAP Public Proof is explicitly enabled with production X API access.",
       });
     }
   }
