@@ -22,15 +22,81 @@ export type TrustGraph = {
   nextAction: TrustSignal | null;
 };
 
+type SocialVerificationSummary = {
+  enabled: boolean;
+  verifiedCount: number;
+};
+
 type TrustGraphInput = {
   gnsIdentity: GnsIdentity;
   state: GwapOsState;
   telegramLinked: boolean | null;
   walletVerified: boolean;
+  socialVerification?: SocialVerificationSummary | null;
 };
 
-export function deriveTrustGraph({ gnsIdentity, state, telegramLinked, walletVerified }: TrustGraphInput): TrustGraph {
+export function deriveTrustGraph({
+  gnsIdentity,
+  state,
+  telegramLinked,
+  walletVerified,
+  socialVerification,
+}: TrustGraphInput): TrustGraph {
   const profileCompletion = getProfileCompletion(state.profile);
+  const socialSignal: TrustSignal = socialVerification === undefined
+    ? {
+        id: "social",
+        label: "Verified social control",
+        product: "GwapScore",
+        state: "planned",
+        summary: "Proof-of-Control social verification is staged but not active in this client state.",
+        actionLabel: null,
+        href: null,
+        weight: 0,
+      }
+    : socialVerification === null
+      ? {
+          id: "social",
+          label: "Verified social control",
+          product: "GwapScore",
+          state: "unavailable",
+          summary: "Social Proof-of-Control status could not be loaded right now.",
+          actionLabel: "Open GwapScore",
+          href: "/app/score#social-verification",
+          weight: 10,
+        }
+      : !socialVerification.enabled
+        ? {
+            id: "social",
+            label: "Verified social control",
+            product: "GwapScore",
+            state: "planned",
+            summary: "Proof-of-Control is built, but the signed platform verifier is not connected yet.",
+            actionLabel: "View verification status",
+            href: "/app/score#social-verification",
+            weight: 0,
+          }
+        : socialVerification.verifiedCount > 0
+          ? {
+              id: "social",
+              label: "Verified social control",
+              product: "GwapScore",
+              state: "verified",
+              summary: `${socialVerification.verifiedCount} social account${socialVerification.verifiedCount === 1 ? " is" : "s are"} verified through Proof of Control.`,
+              actionLabel: "Manage verification",
+              href: "/app/score#social-verification",
+              weight: 10,
+            }
+          : {
+              id: "social",
+              label: "Verified social control",
+              product: "GwapScore",
+              state: "incomplete",
+              summary: "Verify control of a supported social account using GWAP's follow + DM challenge.",
+              actionLabel: "Verify social account",
+              href: "/app/score#social-verification",
+              weight: 10,
+            };
 
   const signals: TrustSignal[] = [
     {
@@ -101,16 +167,7 @@ export function deriveTrustGraph({ gnsIdentity, state, telegramLinked, walletVer
       href: telegramLinked === true ? null : "/app/settings",
       weight: 10,
     },
-    {
-      id: "social",
-      label: "Verified social control",
-      product: "GwapScore",
-      state: "planned",
-      summary: "Proof-of-Control social verification is planned for GwapScore and is not active in this release.",
-      actionLabel: null,
-      href: null,
-      weight: 0,
-    },
+    socialSignal,
     {
       id: "proofs",
       label: "Private verified proofs",
