@@ -4,6 +4,7 @@ import { checkDistributedRateLimit } from "../../../../lib/redis";
 import {
   getSocialVerifierSecret,
   isSocialPlatform,
+  isSocialVerifierEnabled,
   verifySocialChallenge,
 } from "../../../../lib/social-proof-control";
 
@@ -19,7 +20,11 @@ type VerifierPayload = {
   dmObserved?: unknown;
 };
 
-function validSignature(raw: string, signatureHeader: string | null, secret: string) {
+function validSignature(
+  raw: string,
+  signatureHeader: string | null,
+  secret: string,
+) {
   if (!signatureHeader || !secret) return false;
   const provided = signatureHeader.replace(/^sha256=/i, "").trim().toLowerCase();
   if (!/^[a-f0-9]{64}$/.test(provided)) return false;
@@ -32,10 +37,17 @@ function validSignature(raw: string, signatureHeader: string | null, secret: str
 export async function POST(request: Request) {
   const secret = getSocialVerifierSecret();
   if (!secret) {
-    return NextResponse.json({ error: "Verifier bridge is not configured" }, { status: 503 });
+    return NextResponse.json(
+      { error: "Verifier bridge is not configured" },
+      { status: 503 },
+    );
   }
 
-  const rate = await checkDistributedRateLimit("social-proof-control:webhook", 240, 60_000);
+  const rate = await checkDistributedRateLimit(
+    "social-proof-control:webhook",
+    240,
+    60_000,
+  );
   if (!rate.allowed) {
     return NextResponse.json(
       { error: "Rate limited" },
@@ -59,9 +71,21 @@ export async function POST(request: Request) {
     !payload ||
     !isSocialPlatform(payload.platform) ||
     typeof payload.challengeCode !== "string" ||
-    typeof payload.socialHandle !== "string"
+    typeof payload.socialHandle !== "string" ||
+    typeof payload.externalAccountId !== "string" ||
+    !payload.externalAccountId.trim()
   ) {
-    return NextResponse.json({ error: "Invalid verifier payload" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Invalid verifier payload" },
+      { status: 400 },
+    );
+  }
+
+  if (!isSocialVerifierEnabled(payload.platform)) {
+    return NextResponse.json(
+      { error: "Verifier bridge is not enabled" },
+      { status: 503 },
+    );
   }
 
   // The platform bridge is responsible for proving both facts from the
@@ -78,8 +102,7 @@ export async function POST(request: Request) {
     challengeCode: payload.challengeCode,
     platform: payload.platform,
     socialHandle: payload.socialHandle,
-    externalAccountId:
-      typeof payload.externalAccountId === "string" ? payload.externalAccountId : null,
+    externalAccountId: payload.externalAccountId,
   });
 
   if (!result.ok) {
@@ -90,6 +113,7 @@ export async function POST(request: Request) {
     ok: true,
     platform: result.record.platform,
     socialHandle: result.record.socialHandle,
+    externalAccountId: result.record.externalAccountId,
     status: result.record.status,
     verifiedAt: result.record.verifiedAt,
   });
