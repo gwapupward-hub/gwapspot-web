@@ -2,7 +2,7 @@
 
 import { usePrivy } from "@privy-io/react-auth";
 import { useSignTransaction, useWallets } from "@privy-io/react-auth/solana";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useGwapOs } from "../components/os-provider";
 import { bytesToHex, createProofId, hashFile, proofMetadataHash, shorten } from "../lib/ppv/core";
 import { getPpvCluster, getPpvCoreProgramId, prepareCreateProofTransaction } from "../lib/ppv/solana";
@@ -51,7 +51,11 @@ export default function PpvVaultClient() {
     } catch {}
   }, [authenticatedFetch]);
 
-  useEffect(() => { void loadProofs(); }, [loadProofs]);
+  function selectMode(tab: Mode) {
+    setMode(tab);
+    setError("");
+    if (tab === "activity") void loadProofs();
+  }
 
   async function createProof() {
     if (!file) { setError("Choose a file to prove first."); return; }
@@ -156,7 +160,7 @@ export default function PpvVaultClient() {
 
       <nav className="ppv-tabs" aria-label="PPV workspace">
         {(["create", "verify", "activity"] as const).map((tab) => (
-          <button key={tab} type="button" aria-pressed={mode === tab} onClick={() => { setMode(tab); setError(""); }}>
+          <button key={tab} type="button" aria-pressed={mode === tab} onClick={() => selectMode(tab)}>
             {tab === "create" ? "Create Proof" : tab === "verify" ? "Verify Proof" : "Activity"}
           </button>
         ))}
