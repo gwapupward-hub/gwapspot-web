@@ -5,11 +5,15 @@ import { AuthSetupRequired } from "../components/auth-setup-required";
 import { WalletAuthProvider } from "../components/wallet-auth-provider";
 import { isWalletAuthConfigured } from "../lib/auth-config";
 import { getAuthenticatedWalletIdentity } from "../lib/privy-server";
+import { GnsIdentityHydrationBridge } from "./components/gns-identity-hydration-bridge";
 import { GnsRegistrationSyncBridge } from "./components/gns-registration-sync-bridge";
 import { GwapOsProvider } from "./components/os-provider";
 import { OsShell } from "./components/os-shell";
-import { resolveGnsIdentity } from "./lib/gns";
-import { loadAccountWorkspace, seedNewWorkspaceFromGns } from "./lib/os-server";
+import {
+  cachedGnsIdentity,
+  loadAccountWorkspace,
+  seedNewWorkspaceFromGns,
+} from "./lib/os-server";
 
 export const metadata: Metadata = {
   title: "GWAP OS",
@@ -26,10 +30,8 @@ export default async function GwapOsLayout({ children }: { children: ReactNode }
   const identity = await getAuthenticatedWalletIdentity();
   if (!identity) redirect("/sign-in?redirect_url=/app");
 
-  const [workspace, gnsIdentity] = await Promise.all([
-    loadAccountWorkspace(identity),
-    resolveGnsIdentity(identity.verifiedWallet),
-  ]);
+  const workspace = await loadAccountWorkspace(identity);
+  const gnsIdentity = cachedGnsIdentity(workspace.gwapAccount.primaryGnsIdentity);
   const state = seedNewWorkspaceFromGns(
     workspace.state,
     workspace.hasCloudState,
@@ -44,6 +46,7 @@ export default async function GwapOsLayout({ children }: { children: ReactNode }
         hasCloudState={workspace.hasCloudState}
         initialState={state}
       >
+        <GnsIdentityHydrationBridge />
         <GnsRegistrationSyncBridge />
         <OsShell>{children}</OsShell>
       </GwapOsProvider>
