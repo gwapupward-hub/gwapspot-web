@@ -11,6 +11,7 @@ type Insets = {
 
 type TelegramFullscreenWebApp = {
   initData?: string;
+  platform?: string;
   isFullscreen?: boolean;
   viewportHeight?: number;
   viewportStableHeight?: number;
@@ -41,28 +42,68 @@ const TELEGRAM_VIEWPORT_VARS = [
   "--tg-content-safe-area-inset-right",
   "--tg-content-safe-area-inset-bottom",
   "--tg-content-safe-area-inset-left",
+  "--gwap-tg-host-top-clearance",
 ] as const;
+
+function numeric(value: number | undefined) {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : 0;
+}
 
 function setPixelVariable(name: string, value: number | undefined) {
   if (typeof value !== "number" || !Number.isFinite(value) || value < 0) return;
-  document.documentElement.style.setProperty(name, `${value}px`);
+  document.documentElement.style.setProperty(name, `${Math.round(value)}px`);
+}
+
+function resolveHostTopClearance(webApp: TelegramFullscreenWebApp) {
+  const safeTop = numeric(webApp.safeAreaInset?.top);
+  const reportedContentTop = numeric(webApp.contentSafeAreaInset?.top);
+  const reportedTop = Math.max(safeTop, reportedContentTop);
+
+  if (!webApp.isFullscreen) return reportedTop;
+
+  // Telegram iOS can transiently report contentSafeAreaInset.top close to the
+  // device notch inset while the transparent fullscreen Close/menu controls
+  // are still settling. The screenshots from production showed real content
+  // underneath those controls. Only add a fallback host-control reserve when
+  // Telegram's reported content inset does not already exceed the device inset.
+  const platform = (webApp.platform || "").toLowerCase();
+  const hostControlsAreNotRepresented = reportedContentTop <= safeTop + 12;
+  const hostControlReserve = platform === "ios" ? 72 : 56;
+
+  return hostControlsAreNotRepresented
+    ? safeTop + hostControlReserve
+    : reportedTop;
 }
 
 function syncTelegramViewport(webApp: TelegramFullscreenWebApp) {
   setPixelVariable("--tg-viewport-height", webApp.viewportHeight);
   setPixelVariable("--tg-viewport-stable-height", webApp.viewportStableHeight);
 
-  setPixelVariable("--tg-safe-area-inset-top", webApp.safeAreaInset?.top);
-  setPixelVariable("--tg-safe-area-inset-right", webApp.safeAreaInset?.right);
-  setPixelVariable("--tg-safe-area-inset-bottom", webApp.safeAreaInset?.bottom);
-  setPixelVariable("--tg-safe-area-inset-left", webApp.safeAreaInset?.left);
+  const safeTop = numeric(webApp.safeAreaInset?.top);
+  const safeRight = numeric(webApp.safeAreaInset?.right);
+  const safeBottom = numeric(webApp.safeAreaInset?.bottom);
+  const safeLeft = numeric(webApp.safeAreaInset?.left);
+  const contentTop = numeric(webApp.contentSafeAreaInset?.top);
+  const contentRight = numeric(webApp.contentSafeAreaInset?.right);
+  const contentBottom = numeric(webApp.contentSafeAreaInset?.bottom);
+  const contentLeft = numeric(webApp.contentSafeAreaInset?.left);
+  const resolvedTop = resolveHostTopClearance(webApp);
 
-  setPixelVariable("--tg-content-safe-area-inset-top", webApp.contentSafeAreaInset?.top);
-  setPixelVariable("--tg-content-safe-area-inset-right", webApp.contentSafeAreaInset?.right);
-  setPixelVariable("--tg-content-safe-area-inset-bottom", webApp.contentSafeAreaInset?.bottom);
-  setPixelVariable("--tg-content-safe-area-inset-left", webApp.contentSafeAreaInset?.left);
+  setPixelVariable("--tg-safe-area-inset-top", safeTop);
+  setPixelVariable("--tg-safe-area-inset-right", safeRight);
+  setPixelVariable("--tg-safe-area-inset-bottom", safeBottom);
+  setPixelVariable("--tg-safe-area-inset-left", safeLeft);
+
+  // Keep the platform's raw content values for every edge except top. The top
+  // value is hardened against a known transient iOS fullscreen overlap.
+  setPixelVariable("--tg-content-safe-area-inset-top", resolvedTop);
+  setPixelVariable("--tg-content-safe-area-inset-right", contentRight);
+  setPixelVariable("--tg-content-safe-area-inset-bottom", contentBottom);
+  setPixelVariable("--tg-content-safe-area-inset-left", contentLeft);
+  setPixelVariable("--gwap-tg-host-top-clearance", resolvedTop);
 
   document.documentElement.dataset.telegramFullscreen = webApp.isFullscreen ? "true" : "false";
+  document.documentElement.dataset.telegramPlatform = (webApp.platform || "unknown").toLowerCase();
 }
 
 export default function TelegramFullscreenController() {
@@ -78,21 +119,24 @@ export default function TelegramFullscreenController() {
 
       syncTelegramViewport(webApp);
 
-      // Telegram recommends explicitly setting host colors in fullscreen so
-      // status-bar/navigation controls retain predictable contrast.
       webApp.setHeaderColor?.(HOST_BG);
       webApp.setBackgroundColor?.(HOST_BG);
       if (webApp.isVersionAtLeast?.("7.10")) webApp.setBottomBarColor?.(HOST_BG);
 
-      const sync = () => syncTelegramViewport(webApp);
+      const sync = () => {
+        // Telegram may update safe areas over several frames while fullscreen
+        // settles, so synchronize immediately and once more after animation.
+        syncTelegramViewport(webApp);
+        window.setTimeout(() => {
+          if (!cancelled) syncTelegramViewport(webApp);
+        }, 180);
+      };
+
       const fullscreenFailed = (...args: unknown[]) => {
         const failure = args[0];
         const error = failure && typeof failure === "object" && "error" in failure
           ? String((failure as { error?: unknown }).error || "")
           : "";
-
-        // ALREADY_FULLSCREEN is success-equivalent; UNSUPPORTED falls back to
-        // Telegram's expanded full-height mode without disrupting the app.
         if (error === "ALREADY_FULLSCREEN") sync();
       };
 
@@ -142,6 +186,7 @@ export default function TelegramFullscreenController() {
         document.documentElement.style.removeProperty(variable);
       }
       delete document.documentElement.dataset.telegramFullscreen;
+      delete document.documentElement.dataset.telegramPlatform;
     };
   }, []);
 
