@@ -14,7 +14,7 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   const themeName = normalizePublicProofTheme(receipt?.shareTheme || query.theme); const theme = PUBLIC_PROOF_THEME[themeName];
   const handle = receipt?.socialHandle ? `@${receipt.socialHandle}` : "GWAP identity"; const title = `${handle} · GWAP Public Proof`;
   const description = receipt ? `${statusCopy(receipt.status)}. Public Proof establishes social-account control through a one-time challenge.` : "GWAP Public Proof — verify digital identity through a one-time public challenge.";
-  const image = `/v/${encodeURIComponent(code)}/opengraph-image?v=3&theme=${themeName}`;
+  const image = `/v/${encodeURIComponent(code)}/opengraph-image?v=4&theme=${themeName}`;
   return { title, description, robots: { index: false, follow: true }, openGraph: { title, description, type: "website", images: [{ url: image, width: 1200, height: 600, alt: `${theme.label} GWAP Public Proof` }] }, twitter: { card: "summary_large_image", title, description, images: [image] } };
 }
 
