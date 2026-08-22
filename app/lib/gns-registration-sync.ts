@@ -6,6 +6,8 @@ import {
   resolveGnsName,
 } from "../app/lib/gns";
 import type { GnsNetwork } from "../app/lib/gns-registration";
+import { updateGwapAccountGnsIdentity } from "./gwap-account";
+import { isGwapAccountId } from "./gwap-account-core";
 import { getPrivateStorageKey, getWorkspaceRedis } from "./redis";
 
 const REGISTRATION_SYNC_TTL_SECONDS = 24 * 60 * 60;
@@ -35,10 +37,6 @@ function registrationKey(accountId: string) {
   return getPrivateStorageKey("gns-registration-sync", accountId);
 }
 
-function validAccountId(value: string) {
-  return /^gwap_[a-f0-9]{24}$/.test(value);
-}
-
 function validName(value: string) {
   return /^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$/.test(value);
 }
@@ -55,8 +53,7 @@ function isRecord(value: unknown): value is GnsRegistrationSyncRecord {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const record = value as Partial<GnsRegistrationSyncRecord>;
   return (
-    typeof record.accountId === "string" &&
-    validAccountId(record.accountId) &&
+    isGwapAccountId(record.accountId) &&
     typeof record.owner === "string" &&
     record.owner.length >= 32 &&
     record.owner.length <= 44 &&
@@ -84,7 +81,7 @@ function isRecord(value: unknown): value is GnsRegistrationSyncRecord {
 }
 
 export async function getGnsRegistrationSync(accountId: string) {
-  if (!validAccountId(accountId)) return null;
+  if (!isGwapAccountId(accountId)) return null;
   const value = await getWorkspaceRedis().get<unknown>(registrationKey(accountId));
   return isRecord(value) && value.accountId === accountId ? value : null;
 }
@@ -97,7 +94,7 @@ export async function trackGnsRegistrationSync(input: {
   network: GnsNetwork;
 }) {
   if (
-    !validAccountId(input.accountId) ||
+    !isGwapAccountId(input.accountId) ||
     !validName(input.name) ||
     !validSignature(input.txSignature) ||
     !isNetwork(input.network)
@@ -142,6 +139,17 @@ async function saveRecord(record: GnsRegistrationSyncRecord) {
   return record;
 }
 
+async function activateRecord(record: GnsRegistrationSyncRecord, recovered: boolean) {
+  await updateGwapAccountGnsIdentity(record.accountId, record.name);
+  return saveRecord({
+    ...record,
+    status: "active",
+    updatedAt: new Date().toISOString(),
+    recovered,
+    error: null,
+  });
+}
+
 export async function reconcileGnsRegistrationSync(accountId: string) {
   const record = await getGnsRegistrationSync(accountId);
   if (!record || record.status === "active" || record.status === "failed") {
@@ -164,23 +172,11 @@ export async function reconcileGnsRegistrationSync(accountId: string) {
       txSignature: attempting.txSignature,
     });
 
-    return saveRecord({
-      ...attempting,
-      status: "active",
-      updatedAt: new Date().toISOString(),
-      recovered: false,
-      error: null,
-    });
+    return activateRecord(attempting, false);
   } catch (error) {
     const resolved = await resolveGnsName(attempting.name);
     if (resolved?.found && resolved.owner === attempting.owner) {
-      return saveRecord({
-        ...attempting,
-        status: "active",
-        updatedAt: new Date().toISOString(),
-        recovered: true,
-        error: null,
-      });
+      return activateRecord(attempting, true);
     }
 
     if (resolved?.found && resolved.owner && resolved.owner !== attempting.owner) {
@@ -207,6 +203,6 @@ export async function reconcileGnsRegistrationSync(accountId: string) {
 }
 
 export async function clearGnsRegistrationSync(accountId: string) {
-  if (!validAccountId(accountId)) return 0;
+  if (!isGwapAccountId(accountId)) return 0;
   return getWorkspaceRedis().del(registrationKey(accountId));
 }
