@@ -21,7 +21,7 @@ export function createProofId() {
 }
 
 export async function sha256Bytes(bytes: Uint8Array) {
-  return new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
+  return new Uint8Array(await crypto.subtle.digest("SHA-256", bytes as BufferSource));
 }
 
 export async function hashFile(file: File) {
