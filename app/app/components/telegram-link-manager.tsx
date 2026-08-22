@@ -51,7 +51,12 @@ export function TelegramLinkManager() {
 
   useEffect(() => {
     if (!visible) return;
-    void load().catch((cause) => setError(cause instanceof Error ? cause.message : "Telegram link status could not load."));
+    const timer = window.setTimeout(() => {
+      void load().catch((cause) => {
+        setError(cause instanceof Error ? cause.message : "Telegram link status could not load.");
+      });
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [load, visible]);
 
   async function unlink() {
