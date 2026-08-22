@@ -3,6 +3,7 @@ import "server-only";
 import type { WalletIdentity } from "../../lib/privy-server";
 import { getOrCreateGwapAccount } from "../../lib/gwap-account";
 import { getPrivateStorageKey, getWorkspaceRedis } from "../../lib/redis";
+import { getGnsProfileUrl } from "./gns";
 import {
   defaultGwapOsState,
   createDefaultGwapOsState,
@@ -14,6 +15,51 @@ import {
 
 function workspaceKey(subject: string) {
   return getPrivateStorageKey("workspace", subject);
+}
+
+function normalizeCachedGnsName(value: string | null) {
+  if (!value) return null;
+  const name = value.trim().toLowerCase().replace(/\.gwap$/i, "");
+  return /^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$/.test(name) ? name : null;
+}
+
+export function cachedGnsIdentity(primaryGnsIdentity: string | null): GnsIdentity {
+  const name = normalizeCachedGnsName(primaryGnsIdentity);
+  if (!name) {
+    return {
+      status: "none",
+      name: null,
+      fullName: null,
+      avatar: null,
+      bio: null,
+      score: null,
+      scoreTier: null,
+      scoreStatus: "unavailable",
+      scoreMessage: "GwapScore loads independently from GNS identity.",
+      verified: false,
+      isGenesis: false,
+      tier: null,
+      profileUrl: null,
+      updatedAt: null,
+    };
+  }
+
+  return {
+    status: "found",
+    name,
+    fullName: `${name}.gwap`,
+    avatar: null,
+    bio: null,
+    score: null,
+    scoreTier: null,
+    scoreStatus: "unavailable",
+    scoreMessage: "GwapScore loads independently from GNS identity.",
+    verified: true,
+    isGenesis: false,
+    tier: null,
+    profileUrl: getGnsProfileUrl(name),
+    updatedAt: null,
+  };
 }
 
 export async function loadAccountWorkspace(identity: WalletIdentity) {
