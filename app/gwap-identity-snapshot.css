@@ -1,0 +1,331 @@
+/* Responsive identity snapshot treatment for an available .gwap lookup result. */
+.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: minmax(0, 1.32fr) minmax(190px, .68fr);
+  gap: clamp(18px, 3vw, 28px);
+  min-height: 352px;
+  margin-top: 14px;
+  padding: clamp(22px, 3.4vw, 30px);
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 10% 18%, rgba(19,221,19,.13), transparent 32%),
+    radial-gradient(circle at 84% 74%, rgba(141,92,255,.08), transparent 34%),
+    linear-gradient(145deg, rgba(5,13,7,.98), rgba(3,5,4,.98) 48%, rgba(7,5,10,.98));
+  box-shadow:
+    inset 0 1px rgba(255,255,255,.08),
+    0 24px 66px rgba(0,0,0,.38),
+    0 0 44px rgba(19,221,19,.045);
+}
+
+.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="])::before,
+.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="])::after {
+  position: absolute;
+  z-index: -1;
+  color: rgba(255,255,255,.028);
+  font-weight: 900;
+  letter-spacing: -.08em;
+  line-height: .78;
+  pointer-events: none;
+  user-select: none;
+}
+
+.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="])::before {
+  content: "GWAP";
+  top: 36px;
+  right: -22px;
+  font-size: clamp(108px, 18vw, 176px);
+}
+
+.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="])::after {
+  content: "IDENTITY";
+  right: -8px;
+  bottom: 18px;
+  font-size: clamp(82px, 13vw, 132px);
+}
+
+.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) > div:first-child {
+  position: relative;
+  z-index: 2;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  padding-top: 52px;
+}
+
+.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) > div:first-child::before {
+  content: ".GWAP LOOKUP RESULT";
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
+  max-width: 100%;
+  padding: 9px 13px 9px 30px;
+  border: 1px solid rgba(19,221,19,.34);
+  border-radius: 999px;
+  background: rgba(8,51,11,.5);
+  color: #bff6c4;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  box-shadow: inset 0 1px rgba(255,255,255,.05);
+}
+
+.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) > div:first-child::after {
+  content: "";
+  position: absolute;
+  top: 14px;
+  left: 13px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--gwap-green);
+  box-shadow: 0 0 14px rgba(19,221,19,.92);
+}
+
+.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) > div:first-child > small {
+  margin-top: auto;
+  color: transparent;
+  font-size: 0;
+}
+
+.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) > div:first-child > small::before {
+  content: "YOUR GWAP IDENTITY";
+  color: #a97cff;
+  font-size: clamp(9px, 1.4vw, 11px);
+  font-weight: 900;
+  letter-spacing: .16em;
+}
+
+.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) > div:first-child > strong {
+  display: block;
+  margin-top: 12px;
+  overflow-wrap: anywhere;
+  color: #f7faf7;
+  font-size: clamp(31px, 5.2vw, 48px);
+  font-weight: 860;
+  line-height: .96;
+  letter-spacing: -.055em;
+  text-wrap: balance;
+}
+
+.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) > div:first-child > p {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin: 18px 0 0;
+  padding: 14px 15px;
+  border: 1px solid rgba(141,92,255,.2);
+  border-radius: 14px;
+  background: rgba(255,255,255,.025);
+  color: transparent;
+  font-size: 0;
+}
+
+.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) > div:first-child > p::before {
+  content: "●  Identity available   •   Ready for GwapSpot OS";
+  color: #dce8dd;
+  font-size: 9px;
+  font-weight: 760;
+  line-height: 1.45;
+}
+
+.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) > div:first-child > p::after {
+  content: "STATUS  AVAILABLE    ·    LAYER  GNS";
+  color: #9a72ea;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 8px;
+  font-weight: 850;
+  letter-spacing: .1em;
+}
+
+.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) .hero-utility-result-actions {
+  position: relative;
+  z-index: 2;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 9px;
+  width: auto;
+  padding-top: 54px;
+}
+
+.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) .hero-utility-result-actions::before {
+  content: "AVAILABLE TO CLAIM";
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 9px 12px;
+  border: 1px solid rgba(255,133,46,.32);
+  border-radius: 999px;
+  background: rgba(64,29,5,.38);
+  color: #ffb275;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .11em;
+  white-space: nowrap;
+}
+
+.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) .hero-utility-result-actions > a {
+  min-height: 104px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  padding: 18px 16px;
+  border: 1px solid rgba(19,221,19,.8);
+  border-radius: 20px;
+  background: linear-gradient(135deg, #17ef22, #10cb17);
+  color: #001b03;
+  box-shadow: inset 0 1px rgba(255,255,255,.36), 0 18px 40px rgba(19,221,19,.18);
+  font-size: 0;
+  font-weight: 900;
+  text-align: center;
+  transition: transform .22s ease, filter .22s ease, box-shadow .22s ease;
+}
+
+.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) .hero-utility-result-actions > a::before {
+  content: "CLAIM YOUR IDENTITY";
+  font-size: clamp(14px, 2.1vw, 18px);
+  line-height: 1;
+  letter-spacing: -.02em;
+}
+
+.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) .hero-utility-result-actions > a::after {
+  content: "ENTER GWAPSPOT OS →";
+  font-size: 8px;
+  font-weight: 850;
+  letter-spacing: .08em;
+}
+
+.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) .hero-utility-result-actions > a span {
+  display: none;
+}
+
+.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) .hero-utility-result-actions > a:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.06);
+  color: #001b03;
+  border-color: rgba(255,255,255,.18);
+  box-shadow: inset 0 1px rgba(255,255,255,.4), 0 22px 48px rgba(19,221,19,.24);
+}
+
+.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) .hero-utility-result-actions > button {
+  min-height: 38px;
+  width: 100%;
+  border-color: rgba(255,255,255,.1);
+  background: rgba(255,255,255,.025);
+  color: #879188;
+  font-size: 8px;
+}
+
+@media (max-width: 680px) {
+  .hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    min-height: 0;
+    padding: 18px;
+    border-radius: 19px;
+  }
+
+  .hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="])::before {
+    top: 84px;
+    right: -28px;
+    font-size: 100px;
+  }
+
+  .hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="])::after {
+    right: -24px;
+    bottom: 156px;
+    font-size: 72px;
+  }
+
+  .hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) > div:first-child {
+    padding-top: 48px;
+  }
+
+  .hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) > div:first-child > strong {
+    margin-top: 10px;
+    font-size: clamp(28px, 9.4vw, 38px);
+    line-height: .98;
+  }
+
+  .hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) > div:first-child > p {
+    margin-top: 15px;
+    padding: 12px 13px;
+  }
+
+  .hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) > div:first-child > p::before,
+  .hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) > div:first-child > p::after {
+    font-size: 7.5px;
+    line-height: 1.5;
+  }
+
+  .hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) .hero-utility-result-actions {
+    width: 100%;
+    padding-top: 45px;
+  }
+
+  .hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) .hero-utility-result-actions::before {
+    right: auto;
+    left: 0;
+    padding: 8px 10px;
+    font-size: 7px;
+  }
+
+  .hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) .hero-utility-result-actions > a {
+    min-height: 82px;
+    border-radius: 17px;
+  }
+
+  .hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) .hero-utility-result-actions > a::before {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 420px) {
+  .hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) {
+    padding: 16px;
+  }
+
+  .hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) > div:first-child::before {
+    padding: 8px 10px 8px 26px;
+    font-size: 7px;
+  }
+
+  .hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) > div:first-child::after {
+    top: 12px;
+    left: 11px;
+  }
+
+  .hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) > div:first-child > strong {
+    font-size: clamp(27px, 9vw, 34px);
+  }
+
+  .hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) > div:first-child > p::before {
+    content: "●  Identity available\AReady for GwapSpot OS";
+    white-space: pre-line;
+  }
+
+  .hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) > div:first-child > p::after {
+    content: "STATUS  AVAILABLE\A LAYER  GNS";
+    white-space: pre-line;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) .hero-utility-result-actions > a {
+    transition: none;
+  }
+}
