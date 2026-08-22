@@ -21,32 +21,46 @@ export default async function Image({ params }: Props) {
           width: "100%",
           height: "100%",
           display: "flex",
-          position: "relative",
           alignItems: "center",
           justifyContent: "center",
-          background: `radial-gradient(circle at 50% 45%, ${theme.accent} 0%, ${theme.accent} 18%, #111 65%, #020202 100%)`,
-          color: "white",
-          fontFamily: "Arial, sans-serif",
+          backgroundColor: "#030303",
+          color: "#ffffff",
         }}
       >
         <div
           style={{
-            width: 690,
-            height: 690,
+            width: 1180,
+            height: 570,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            background: "#020202",
-            borderRadius: 240,
-            boxShadow: `0 0 90px ${theme.glow}`,
+            border: `5px solid ${theme.accent}`,
+            borderRadius: 80,
+            backgroundColor: "#080808",
           }}
         >
-          <div style={{ fontSize: 46, color: theme.accent, marginBottom: 4 }}>♛</div>
-          <div style={{ fontSize: 150, fontWeight: 900, letterSpacing: -10, color: "#030303", WebkitTextStroke: `5px ${theme.accent}` }}>GWAP</div>
-          <div style={{ marginTop: 22, fontSize: 26, letterSpacing: 9, color: theme.accent, fontWeight: 800 }}>{status}</div>
-          <div style={{ marginTop: 14, fontSize: 34, fontWeight: 800 }}>@{receipt?.socialHandle || "identity"}</div>
-          <div style={{ marginTop: 12, fontSize: 20, color: "#b7b7b7" }}>{receipt?.challengeCode || code.toUpperCase()}</div>
+          <div
+            style={{
+              width: 72,
+              height: 72,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              border: `4px solid ${theme.accent}`,
+              borderRadius: 999,
+              color: theme.accent,
+              fontSize: 30,
+              fontWeight: 900,
+              marginBottom: 20,
+            }}
+          >
+            G
+          </div>
+          <div style={{ display: "flex", fontSize: 122, fontWeight: 900, letterSpacing: -6, color: theme.accent }}>GWAP</div>
+          <div style={{ display: "flex", marginTop: 18, fontSize: 28, letterSpacing: 8, color: theme.accent, fontWeight: 800 }}>{status}</div>
+          <div style={{ display: "flex", marginTop: 18, fontSize: 38, fontWeight: 800 }}>@{receipt?.socialHandle || "identity"}</div>
+          <div style={{ display: "flex", marginTop: 14, fontSize: 22, color: "#b7b7b7" }}>{receipt?.challengeCode || code.toUpperCase()}</div>
         </div>
       </div>
     ),
