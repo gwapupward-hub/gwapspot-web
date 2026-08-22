@@ -185,6 +185,34 @@ export async function linkTelegramToGwapAccount(
   });
 }
 
+export async function unlinkTelegramFromGwapAccount(accountId: string, telegramUserId: string) {
+  if (!isGwapAccountId(accountId) || !isTelegramUserId(telegramUserId)) {
+    return { ok: false as const, reason: "invalid" as const };
+  }
+
+  return withLock("account", accountId, async () => {
+    const account = await readAccount(accountId);
+    if (!account) return { ok: false as const, reason: "account_missing" as const };
+    if (account.telegramUserId !== telegramUserId) {
+      return { ok: false as const, reason: "link_mismatch" as const };
+    }
+
+    const redis = getWorkspaceRedis();
+    const next: GwapAccountRecord = {
+      ...account,
+      telegramUserId: null,
+      updatedAt: new Date().toISOString(),
+    };
+
+    await Promise.all([
+      redis.set(accountKey(next.id), next),
+      redis.del(telegramMapKey(telegramUserId)),
+    ]);
+
+    return { ok: true as const, account: next };
+  });
+}
+
 export async function updateGwapAccountGnsIdentity(accountId: string, gnsIdentity: string | null) {
   return withLock("account", accountId, async () => {
     const account = await readAccount(accountId);
