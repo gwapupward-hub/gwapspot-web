@@ -42,7 +42,23 @@ export default async function Image({ params }: Props) {
             boxShadow: `0 0 90px ${theme.glow}`,
           }}
         >
-          <div style={{ fontSize: 46, color: theme.accent, marginBottom: 4 }}>♛</div>
+          <div
+            style={{
+              width: 66,
+              height: 66,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              border: `3px solid ${theme.accent}`,
+              borderRadius: 999,
+              color: theme.accent,
+              fontSize: 28,
+              fontWeight: 900,
+              marginBottom: 10,
+            }}
+          >
+            G
+          </div>
           <div style={{ fontSize: 150, fontWeight: 900, letterSpacing: -10, color: "#030303", WebkitTextStroke: `5px ${theme.accent}` }}>GWAP</div>
           <div style={{ marginTop: 22, fontSize: 26, letterSpacing: 9, color: theme.accent, fontWeight: 800 }}>{status}</div>
           <div style={{ marginTop: 14, fontSize: 34, fontWeight: 800 }}>@{receipt?.socialHandle || "identity"}</div>
