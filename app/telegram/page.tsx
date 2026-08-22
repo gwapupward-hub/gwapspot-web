@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import TelegramFullscreenController from "./telegram-fullscreen-controller";
 import TelegramGwapUtilityLayer from "./telegram-gwap-utility-layer";
 import TelegramMiniApp from "./telegram-mini-app";
+import polish from "./telegram-fullscreen-polish.module.css";
 
 export const metadata: Metadata = {
   title: "GWAP · Telegram",
@@ -24,10 +25,10 @@ export default function TelegramPage() {
     "";
 
   return (
-    <>
+    <div className={polish.scope}>
       <TelegramFullscreenController />
       <TelegramMiniApp botUsername={botUsername} />
       <TelegramGwapUtilityLayer />
-    </>
+    </div>
   );
 }
