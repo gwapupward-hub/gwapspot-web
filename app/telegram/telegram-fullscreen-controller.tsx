@@ -13,12 +13,15 @@ type TelegramFullscreenWebApp = {
   initData?: string;
   platform?: string;
   isFullscreen?: boolean;
+  isVerticalSwipesEnabled?: boolean;
   viewportHeight?: number;
   viewportStableHeight?: number;
   safeAreaInset?: Insets;
   contentSafeAreaInset?: Insets;
   isVersionAtLeast?(version: string): boolean;
   requestFullscreen?(): void;
+  disableVerticalSwipes?(): void;
+  enableVerticalSwipes?(): void;
   setHeaderColor?(color: string): void;
   setBackgroundColor?(color: string): void;
   setBottomBarColor?(color: string): void;
@@ -83,7 +86,6 @@ function syncTelegramViewport(webApp: TelegramFullscreenWebApp) {
   const safeRight = numeric(webApp.safeAreaInset?.right);
   const safeBottom = numeric(webApp.safeAreaInset?.bottom);
   const safeLeft = numeric(webApp.safeAreaInset?.left);
-  const contentTop = numeric(webApp.contentSafeAreaInset?.top);
   const contentRight = numeric(webApp.contentSafeAreaInset?.right);
   const contentBottom = numeric(webApp.contentSafeAreaInset?.bottom);
   const contentLeft = numeric(webApp.contentSafeAreaInset?.left);
@@ -94,8 +96,6 @@ function syncTelegramViewport(webApp: TelegramFullscreenWebApp) {
   setPixelVariable("--tg-safe-area-inset-bottom", safeBottom);
   setPixelVariable("--tg-safe-area-inset-left", safeLeft);
 
-  // Keep the platform's raw content values for every edge except top. The top
-  // value is hardened against a known transient iOS fullscreen overlap.
   setPixelVariable("--tg-content-safe-area-inset-top", resolvedTop);
   setPixelVariable("--tg-content-safe-area-inset-right", contentRight);
   setPixelVariable("--tg-content-safe-area-inset-bottom", contentBottom);
@@ -112,6 +112,7 @@ export default function TelegramFullscreenController() {
     let pollTimer = 0;
     let stopTimer = 0;
     let cleanupHostEvents: (() => void) | null = null;
+    let restoreVerticalSwipes: (() => void) | null = null;
 
     const configure = () => {
       const webApp = (window as TelegramFullscreenWindow).Telegram?.WebApp;
@@ -123,9 +124,29 @@ export default function TelegramFullscreenController() {
       webApp.setBackgroundColor?.(HOST_BG);
       if (webApp.isVersionAtLeast?.("7.10")) webApp.setBottomBarColor?.(HOST_BG);
 
+      // Telegram's native vertical swipe-to-minimize gesture competes with the
+      // Mini App's own long vertical feed, especially in iOS fullscreen. Disable
+      // that gesture while this route is active so a normal drag belongs to the
+      // web content. Users can still minimize/close from Telegram's header.
+      if (webApp.isVersionAtLeast?.("7.7") && webApp.disableVerticalSwipes) {
+        const shouldRestore = webApp.isVerticalSwipesEnabled !== false;
+        try {
+          webApp.disableVerticalSwipes();
+          if (shouldRestore && webApp.enableVerticalSwipes) {
+            restoreVerticalSwipes = () => {
+              try {
+                webApp.enableVerticalSwipes?.();
+              } catch {
+                // Telegram host teardown must never block route cleanup.
+              }
+            };
+          }
+        } catch {
+          // Gesture control is enhancement-only; preserve normal app behavior.
+        }
+      }
+
       const sync = () => {
-        // Telegram may update safe areas over several frames while fullscreen
-        // settles, so synchronize immediately and once more after animation.
         syncTelegramViewport(webApp);
         window.setTimeout(() => {
           if (!cancelled) syncTelegramViewport(webApp);
@@ -182,6 +203,7 @@ export default function TelegramFullscreenController() {
       window.clearInterval(pollTimer);
       window.clearTimeout(stopTimer);
       cleanupHostEvents?.();
+      restoreVerticalSwipes?.();
       for (const variable of TELEGRAM_VIEWPORT_VARS) {
         document.documentElement.style.removeProperty(variable);
       }
