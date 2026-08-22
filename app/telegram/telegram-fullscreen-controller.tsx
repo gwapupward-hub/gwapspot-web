@@ -30,6 +30,18 @@ type TelegramFullscreenWindow = Window & {
 };
 
 const HOST_BG = "#070908";
+const TELEGRAM_VIEWPORT_VARS = [
+  "--tg-viewport-height",
+  "--tg-viewport-stable-height",
+  "--tg-safe-area-inset-top",
+  "--tg-safe-area-inset-right",
+  "--tg-safe-area-inset-bottom",
+  "--tg-safe-area-inset-left",
+  "--tg-content-safe-area-inset-top",
+  "--tg-content-safe-area-inset-right",
+  "--tg-content-safe-area-inset-bottom",
+  "--tg-content-safe-area-inset-left",
+] as const;
 
 function setPixelVariable(name: string, value: number | undefined) {
   if (typeof value !== "number" || !Number.isFinite(value) || value < 0) return;
@@ -126,6 +138,9 @@ export default function TelegramFullscreenController() {
       window.clearInterval(pollTimer);
       window.clearTimeout(stopTimer);
       cleanupHostEvents?.();
+      for (const variable of TELEGRAM_VIEWPORT_VARS) {
+        document.documentElement.style.removeProperty(variable);
+      }
       delete document.documentElement.dataset.telegramFullscreen;
     };
   }, []);
