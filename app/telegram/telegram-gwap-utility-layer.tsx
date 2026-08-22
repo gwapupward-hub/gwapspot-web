@@ -112,13 +112,14 @@ export default function TelegramGwapUtilityLayer() {
 
   if (!telegram) return null;
   const telegramLabel = telegramUser?.username ? `@${telegramUser.username}` : telegramUser ? [telegramUser.firstName, telegramUser.lastName].filter(Boolean).join(" ") : "Telegram account";
+  const fullscreenSafeBottom = "max(env(safe-area-inset-bottom, 0px), var(--tg-content-safe-area-inset-bottom, 0px))";
 
   return (
     <>
-      <button type="button" aria-label="Open GWAP utility actions" aria-expanded={open} onClick={() => { setOpen((value) => !value); haptic("tap"); }} style={{ position: "fixed", right: 14, bottom: "calc(78px + env(safe-area-inset-bottom, 0px))", zIndex: 70, minWidth: 54, height: 54, borderRadius: 18, border: "1px solid rgba(19,221,19,.38)", background: "rgba(6,9,7,.94)", color: "#13DD13", fontWeight: 900, letterSpacing: ".05em", boxShadow: "0 14px 44px rgba(0,0,0,.38)", backdropFilter: "blur(18px)" }}>GWAP</button>
+      <button type="button" aria-label="Open GWAP utility actions" aria-expanded={open} onClick={() => { setOpen((value) => !value); haptic("tap"); }} style={{ position: "fixed", right: 14, bottom: `calc(78px + ${fullscreenSafeBottom})`, zIndex: 70, minWidth: 54, height: 54, borderRadius: 18, border: "1px solid rgba(19,221,19,.38)", background: "rgba(6,9,7,.94)", color: "#13DD13", fontWeight: 900, letterSpacing: ".05em", boxShadow: "0 14px 44px rgba(0,0,0,.38)", backdropFilter: "blur(18px)" }}>GWAP</button>
 
       {open ? (
-        <div role="dialog" aria-modal="false" aria-label="GWAP Telegram utilities" style={{ position: "fixed", left: 12, right: 12, bottom: "calc(144px + env(safe-area-inset-bottom, 0px))", zIndex: 69, maxWidth: 520, margin: "0 auto", border: "1px solid rgba(255,255,255,.1)", borderRadius: 24, background: "rgba(7,9,8,.97)", color: "#f7f7f7", boxShadow: "0 30px 90px rgba(0,0,0,.52)", padding: 18, backdropFilter: "blur(22px)" }}>
+        <div role="dialog" aria-modal="false" aria-label="GWAP Telegram utilities" style={{ position: "fixed", left: 12, right: 12, bottom: `calc(144px + ${fullscreenSafeBottom})`, zIndex: 69, maxWidth: 520, maxHeight: "min(70dvh, calc(var(--tg-viewport-stable-height, 100dvh) - 180px))", margin: "0 auto", overflowY: "auto", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch", border: "1px solid rgba(255,255,255,.1)", borderRadius: 24, background: "rgba(7,9,8,.97)", color: "#f7f7f7", boxShadow: "0 30px 90px rgba(0,0,0,.52)", padding: 18, backdropFilter: "blur(22px)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-start" }}>
             <div><div style={{ color: "#13DD13", fontSize: 11, fontWeight: 900, letterSpacing: ".15em" }}>GWAP UTILITIES</div><h2 style={{ margin: "7px 0 5px", fontSize: 22 }}>Your trust tools, one tap away.</h2><p style={{ margin: 0, color: "#9aa19c", fontSize: 13, lineHeight: 1.5 }}>Telegram stays lightweight. Sensitive wallet signing and identity management hand off to authenticated GWAP OS.</p></div>
             <button type="button" onClick={() => setOpen(false)} aria-label="Close GWAP utilities" style={{ border: 0, background: "transparent", color: "#c9ceca", fontSize: 24 }}>×</button>
