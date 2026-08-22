@@ -1,18 +1,29 @@
 import { ImageResponse } from "next/og";
 import { getPublicProofReceipt } from "../../lib/social-proof-control";
-import { PUBLIC_PROOF_THEME } from "../../lib/public-proof-brand";
+import { PUBLIC_PROOF_THEME, normalizePublicProofTheme } from "../../lib/public-proof-brand";
 
 export const runtime = "nodejs";
-export const size = { width: 1536, height: 768 };
+export const size = { width: 1200, height: 600 };
 export const contentType = "image/png";
 
 type Props = { params: Promise<{ code: string }> };
 
+function cardStatus(status: string | undefined) {
+  if (status === "verified") return "VERIFIED";
+  if (status === "revoked") return "REVOKED";
+  if (status === "expired") return "EXPIRED";
+  if (status === "awaiting-post") return "POST SUBMITTED";
+  return "PUBLIC PROOF";
+}
+
 export default async function Image({ params }: Props) {
   const { code } = await params;
   const receipt = await getPublicProofReceipt(code).catch(() => null);
-  const theme = PUBLIC_PROOF_THEME[receipt?.shareTheme || "green"];
-  const status = receipt?.status === "verified" ? "VERIFIED" : "PUBLIC PROOF";
+  const themeName = normalizePublicProofTheme(receipt?.shareTheme);
+  const theme = PUBLIC_PROOF_THEME[themeName];
+  const status = cardStatus(receipt?.status);
+  const handle = receipt?.socialHandle ? `@${receipt.socialHandle}` : "GWAP identity";
+  const challenge = receipt?.challengeCode || code.toUpperCase();
 
   return new ImageResponse(
     (
@@ -21,46 +32,83 @@ export default async function Image({ params }: Props) {
           width: "100%",
           height: "100%",
           display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
+          position: "relative",
+          overflow: "hidden",
           backgroundColor: "#030303",
           color: "#ffffff",
         }}
       >
+        <img
+          src={theme.imageUrl}
+          alt=""
+          width={1200}
+          height={600}
+          style={{
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+          }}
+        />
+
         <div
           style={{
-            width: 1180,
-            height: 570,
+            position: "absolute",
+            left: 42,
+            bottom: 38,
+            width: 430,
             display: "flex",
             flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            border: `5px solid ${theme.accent}`,
-            borderRadius: 80,
-            backgroundColor: "#080808",
+            padding: "22px 24px",
+            border: `2px solid ${theme.accent}`,
+            borderRadius: 24,
+            backgroundColor: "#050505",
           }}
         >
           <div
             style={{
-              width: 72,
-              height: 72,
               display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              border: `4px solid ${theme.accent}`,
-              borderRadius: 999,
               color: theme.accent,
-              fontSize: 30,
-              fontWeight: 900,
-              marginBottom: 20,
+              fontSize: 16,
+              fontWeight: 800,
+              letterSpacing: 4,
             }}
           >
-            G
+            GWAP PUBLIC PROOF
           </div>
-          <div style={{ display: "flex", fontSize: 122, fontWeight: 900, letterSpacing: -6, color: theme.accent }}>GWAP</div>
-          <div style={{ display: "flex", marginTop: 18, fontSize: 28, letterSpacing: 8, color: theme.accent, fontWeight: 800 }}>{status}</div>
-          <div style={{ display: "flex", marginTop: 18, fontSize: 38, fontWeight: 800 }}>@{receipt?.socialHandle || "identity"}</div>
-          <div style={{ display: "flex", marginTop: 14, fontSize: 22, color: "#b7b7b7" }}>{receipt?.challengeCode || code.toUpperCase()}</div>
+          <div
+            style={{
+              display: "flex",
+              marginTop: 10,
+              fontSize: 38,
+              fontWeight: 900,
+              letterSpacing: -1,
+            }}
+          >
+            {handle}
+          </div>
+          <div
+            style={{
+              display: "flex",
+              marginTop: 10,
+              fontSize: 16,
+              fontWeight: 800,
+              color: theme.accent,
+            }}
+          >
+            {status}
+          </div>
+          <div
+            style={{
+              display: "flex",
+              marginTop: 6,
+              fontSize: 15,
+              color: "#b7b7b7",
+            }}
+          >
+            Proof code: {challenge}
+          </div>
         </div>
       </div>
     ),
