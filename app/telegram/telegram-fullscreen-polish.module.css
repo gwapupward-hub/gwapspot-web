@@ -1,0 +1,63 @@
+.scope {
+  min-height: var(--tg-viewport-stable-height, 100dvh);
+}
+
+/* The fullscreen host controls are transparent. Keep the product header inside
+   the resolved content-safe frame and reserve its right side for GWAP tools. */
+.scope :global(main > div:first-child > header) {
+  padding-right: 58px;
+}
+
+.scope :global(main > div:first-child > header > span:last-child) {
+  display: none;
+}
+
+/* The lifecycle is a six-step story, not a horizontal carousel. Wrapping keeps
+   Launch visible at every iPhone width instead of clipping the final stage. */
+.scope :global([aria-label="Daily Ideas lifecycle"]) {
+  flex-wrap: wrap;
+  row-gap: 8px;
+  overflow: visible;
+}
+
+.scope :global([aria-label="Daily Ideas lifecycle"] span) {
+  white-space: nowrap;
+}
+
+/* The utility trigger belongs in the product header, not over cards/nav. The
+   component still owns its behavior; this only changes placement in fullscreen. */
+.scope :global(button[aria-label="Open GWAP utility actions"]) {
+  position: absolute !important;
+  top: calc(var(--gwap-tg-host-top-clearance, var(--tg-content-safe-area-inset-top, 0px)) + 17px) !important;
+  right: 16px !important;
+  bottom: auto !important;
+  min-width: 50px !important;
+  width: 50px !important;
+  height: 46px !important;
+  border-radius: 15px !important;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28) !important;
+}
+
+/* Keep our compact tab bar visually separate from Telegram's native MainButton
+   and inside the platform content-safe bottom edge. */
+.scope :global(nav[aria-label="GWAP Telegram navigation"]) {
+  bottom: max(7px, var(--tg-content-safe-area-inset-bottom, 0px));
+  padding: 5px;
+  border-radius: 20px;
+}
+
+.scope :global(nav[aria-label="GWAP Telegram navigation"] button) {
+  min-height: 49px;
+}
+
+@media (max-width: 390px) {
+  .scope :global(button[aria-label="Open GWAP utility actions"]) {
+    right: 12px !important;
+    width: 46px !important;
+    min-width: 46px !important;
+  }
+
+  .scope :global(main > div:first-child > header) {
+    padding-right: 52px;
+  }
+}
