@@ -36,9 +36,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid transaction signature" }, { status: 400 });
     }
 
-    const onChain = await readPpvProof(body.proofId);
+    const onChain = await readPpvProof(identity.verifiedWallet, body.proofId);
     if (!onChain) return NextResponse.json({ error: "Proof not found on-chain" }, { status: 409 });
-    if (onChain.owner !== identity.verifiedWallet || onChain.contentHash !== expectedHash) {
+    if (onChain.authority !== identity.verifiedWallet || onChain.contentHash !== expectedHash) {
       auditAuthEvent("ppv.proof.index", identity.userId, "rejected");
       return NextResponse.json({ error: "Proof authority/hash mismatch" }, { status: 403 });
     }
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     const record = {
       proofId: onChain.proofId,
       proofPda: onChain.proofPda,
-      owner: onChain.owner,
+      owner: onChain.authority,
       contentHash: onChain.contentHash,
       transactionSignature: body.transactionSignature,
       cluster: getPpvCluster(),

@@ -1,29 +1,35 @@
-import { Buffer } from "buffer";
 import {
   Connection,
   PublicKey,
-  SystemProgram,
   Transaction,
-  TransactionInstruction,
-  clusterApiUrl,
+  type TransactionInstruction,
 } from "@solana/web3.js";
 import { hexToBytes } from "./core";
+import {
+  PPV_CLUSTER,
+  getPpvConfig,
+  readPpvConfig,
+} from "./config";
+import {
+  type ProofKind,
+  cancelAgreementInstruction,
+  createAgreementInstruction,
+  createProofInstruction,
+  findAgreementAddress,
+  findProofAddress,
+  proposeRevisionInstruction,
+  revokeProofInstruction,
+  signAgreementInstruction,
+} from "./program";
 
-const CREATE_PROOF_DISCRIMINATOR = Uint8Array.from([153, 56, 206, 152, 237, 25, 106, 154]);
-const CONFIG_SEED = Buffer.from("config");
-const PROOF_SEED = Buffer.from("proof");
-const EVENT_AUTHORITY_SEED = Buffer.from("__event_authority");
-
-export type PpvCluster = "devnet" | "localnet";
+export type PpvCluster = typeof PPV_CLUSTER;
 
 export function getPpvCluster(): PpvCluster {
-  return process.env.NEXT_PUBLIC_PPV_CLUSTER === "localnet" ? "localnet" : "devnet";
+  return PPV_CLUSTER;
 }
 
 export function getPpvRpcUrl() {
-  const configured = process.env.NEXT_PUBLIC_PPV_RPC_URL?.trim();
-  if (configured) return configured;
-  return getPpvCluster() === "localnet" ? "http://127.0.0.1:8899" : clusterApiUrl("devnet");
+  return getPpvConfig().rpcUrl;
 }
 
 export function getPpvConnection() {
@@ -31,83 +37,183 @@ export function getPpvConnection() {
 }
 
 export function getPpvCoreProgramId() {
-  const value = process.env.NEXT_PUBLIC_PPV_CORE_PROGRAM_ID?.trim();
-  if (!value) throw new Error("PPV devnet program is not configured yet.");
-  try {
-    return new PublicKey(value);
-  } catch {
-    throw new Error("PPV devnet program ID is invalid.");
-  }
+  return getPpvConfig().coreProgramId;
 }
 
-export function derivePpvConfigPda(programId = getPpvCoreProgramId()) {
-  return PublicKey.findProgramAddressSync([CONFIG_SEED], programId)[0];
+export function getPpvCommerceProgramId() {
+  return getPpvConfig().commerceProgramId;
 }
 
-export function derivePpvProofPda(proofId: Uint8Array, programId = getPpvCoreProgramId()) {
-  if (proofId.length !== 16) throw new Error("Proof ID must be 16 bytes");
-  return PublicKey.findProgramAddressSync([PROOF_SEED, Buffer.from(proofId)], programId)[0];
+export function isPpvConfigured() {
+  return readPpvConfig().ok;
 }
 
-export function deriveEventAuthorityPda(programId = getPpvCoreProgramId()) {
-  return PublicKey.findProgramAddressSync([EVENT_AUTHORITY_SEED], programId)[0];
+/**
+ * Proof accounts are namespaced by the authority wallet as well as the proof id,
+ * so the same id under two wallets is two different accounts and one wallet can
+ * never occupy another's address. Callers must therefore know the owner; a proof
+ * id alone does not identify an account.
+ */
+export function derivePpvProofPda(
+  owner: PublicKey,
+  proofId: Uint8Array,
+  programId = getPpvCoreProgramId(),
+) {
+  return findProofAddress(programId, owner, proofId);
 }
 
-export async function prepareCreateProofTransaction(input: {
-  owner: string;
-  proofIdHex: string;
-  contentHashHex: string;
-  metadataHashHex: string;
-  proofKind?: number;
-}) {
-  const programId = getPpvCoreProgramId();
-  const owner = new PublicKey(input.owner);
-  const proofId = hexToBytes(input.proofIdHex, 16);
-  const contentHash = hexToBytes(input.contentHashHex, 32);
-  const metadataHash = hexToBytes(input.metadataHashHex, 32);
-  const proofKind = input.proofKind ?? 1;
-  if (!Number.isInteger(proofKind) || proofKind < 0 || proofKind > 8) {
-    throw new Error("Unsupported PPV proof kind");
-  }
+export function derivePpvAgreementPda(
+  partyA: PublicKey,
+  agreementId: Uint8Array,
+  programId = getPpvCommerceProgramId(),
+) {
+  return findAgreementAddress(programId, partyA, agreementId);
+}
 
-  const config = derivePpvConfigPda(programId);
-  const proof = derivePpvProofPda(proofId, programId);
-  const eventAuthority = deriveEventAuthorityPda(programId);
-  const data = Buffer.concat([
-    Buffer.from(CREATE_PROOF_DISCRIMINATOR),
-    Buffer.from(proofId),
-    Buffer.from(contentHash),
-    Buffer.from(metadataHash),
-    Buffer.from(PublicKey.default.toBytes()),
-    Buffer.from([proofKind]),
-  ]);
+export type PreparedPpvTransaction = {
+  connection: Connection;
+  encodedTransaction: Uint8Array;
+  blockhash: string;
+  lastValidBlockHeight: number;
+};
 
-  const instruction = new TransactionInstruction({
-    programId,
-    keys: [
-      { pubkey: owner, isSigner: true, isWritable: true },
-      { pubkey: config, isSigner: false, isWritable: false },
-      { pubkey: proof, isSigner: false, isWritable: true },
-      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
-      { pubkey: eventAuthority, isSigner: false, isWritable: false },
-      { pubkey: programId, isSigner: false, isWritable: false },
-    ],
-    data,
-  });
-
+async function prepare(
+  feePayer: PublicKey,
+  instruction: TransactionInstruction,
+): Promise<PreparedPpvTransaction> {
   const connection = getPpvConnection();
   const latest = await connection.getLatestBlockhash("confirmed");
   const transaction = new Transaction({
-    feePayer: owner,
+    feePayer,
     blockhash: latest.blockhash,
     lastValidBlockHeight: latest.lastValidBlockHeight,
   }).add(instruction);
 
   return {
     connection,
-    encodedTransaction: transaction.serialize({ requireAllSignatures: false, verifySignatures: false }),
-    proofPda: proof.toBase58(),
+    encodedTransaction: transaction.serialize({
+      requireAllSignatures: false,
+      verifySignatures: false,
+    }),
     blockhash: latest.blockhash,
     lastValidBlockHeight: latest.lastValidBlockHeight,
   };
+}
+
+export async function prepareCreateProofTransaction(input: {
+  owner: string;
+  proofIdHex: string;
+  contentHashHex: string;
+  contextHashHex: string;
+  kind?: ProofKind;
+}) {
+  const programId = getPpvCoreProgramId();
+  const owner = new PublicKey(input.owner);
+  const proofId = hexToBytes(input.proofIdHex, 16);
+
+  const instruction = await createProofInstruction({
+    programId,
+    authority: owner,
+    proofId,
+    contentHash: hexToBytes(input.contentHashHex, 32),
+    contextHash: hexToBytes(input.contextHashHex, 32),
+    kind: input.kind ?? "document",
+  });
+
+  return {
+    ...(await prepare(owner, instruction)),
+    proofPda: derivePpvProofPda(owner, proofId, programId).toBase58(),
+  };
+}
+
+export async function prepareRevokeProofTransaction(input: {
+  owner: string;
+  proofPda: string;
+}) {
+  const owner = new PublicKey(input.owner);
+  const instruction = await revokeProofInstruction({
+    programId: getPpvCoreProgramId(),
+    authority: owner,
+    proof: new PublicKey(input.proofPda),
+  });
+  return prepare(owner, instruction);
+}
+
+export async function prepareCreateAgreementTransaction(input: {
+  partyA: string;
+  partyB: string;
+  agreementIdHex: string;
+  contentHashHex: string;
+  termsHashHex: string;
+  expiresAt: bigint;
+}) {
+  const programId = getPpvCommerceProgramId();
+  const partyA = new PublicKey(input.partyA);
+  const agreementId = hexToBytes(input.agreementIdHex, 16);
+
+  const instruction = await createAgreementInstruction({
+    programId,
+    partyA,
+    partyB: new PublicKey(input.partyB),
+    agreementId,
+    contentHash: hexToBytes(input.contentHashHex, 32),
+    termsHash: hexToBytes(input.termsHashHex, 32),
+    expiresAt: input.expiresAt,
+  });
+
+  return {
+    ...(await prepare(partyA, instruction)),
+    agreementPda: derivePpvAgreementPda(partyA, agreementId, programId).toBase58(),
+  };
+}
+
+export async function prepareSignAgreementTransaction(input: {
+  signer: string;
+  agreementPda: string;
+  expectedVersion: number;
+  expectedContentHashHex: string;
+  expectedTermsHashHex: string;
+}) {
+  const signer = new PublicKey(input.signer);
+  const instruction = await signAgreementInstruction({
+    programId: getPpvCommerceProgramId(),
+    signer,
+    agreement: new PublicKey(input.agreementPda),
+    expectedVersion: input.expectedVersion,
+    expectedContentHash: hexToBytes(input.expectedContentHashHex, 32),
+    expectedTermsHash: hexToBytes(input.expectedTermsHashHex, 32),
+  });
+  return prepare(signer, instruction);
+}
+
+export async function prepareProposeRevisionTransaction(input: {
+  signer: string;
+  agreementPda: string;
+  expectedVersion: number;
+  newContentHashHex: string;
+  newTermsHashHex: string;
+}) {
+  const signer = new PublicKey(input.signer);
+  const instruction = await proposeRevisionInstruction({
+    programId: getPpvCommerceProgramId(),
+    signer,
+    agreement: new PublicKey(input.agreementPda),
+    expectedVersion: input.expectedVersion,
+    newContentHash: hexToBytes(input.newContentHashHex, 32),
+    newTermsHash: hexToBytes(input.newTermsHashHex, 32),
+  });
+  return prepare(signer, instruction);
+}
+
+export async function prepareCancelAgreementTransaction(input: {
+  signer: string;
+  agreementPda: string;
+}) {
+  const signer = new PublicKey(input.signer);
+  const instruction = await cancelAgreementInstruction({
+    programId: getPpvCommerceProgramId(),
+    signer,
+    agreement: new PublicKey(input.agreementPda),
+  });
+  return prepare(signer, instruction);
 }
