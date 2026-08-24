@@ -12,12 +12,18 @@ export async function POST(request: Request) {
   if (!rate.allowed) return NextResponse.json({ error: "Too many verification requests" }, { status: 429 });
 
   try {
-    const body = await request.json() as { proofId?: unknown; contentHash?: unknown };
-    if (typeof body.proofId !== "string" || typeof body.contentHash !== "string") {
+    const body = await request.json() as { proofId?: unknown; owner?: unknown; contentHash?: unknown };
+    if (
+      typeof body.proofId !== "string" ||
+      typeof body.owner !== "string" ||
+      typeof body.contentHash !== "string"
+    ) {
+      // Proof accounts are namespaced by authority, so a proof id alone does not
+      // identify one. Verification needs the wallet that created it.
       return NextResponse.json({ error: "Invalid verification payload" }, { status: 400 });
     }
     const supplied = parseContentHash(body.contentHash);
-    const proof = await readPpvProof(body.proofId);
+    const proof = await readPpvProof(body.owner, body.proofId);
     if (!proof) return NextResponse.json({ verified: false, reason: "not_found" }, { status: 404 });
 
     const hashesMatch = timingSafeEqual(Buffer.from(supplied, "hex"), Buffer.from(proof.contentHash, "hex"));
@@ -28,7 +34,7 @@ export async function POST(request: Request) {
       proof: {
         proofId: proof.proofId,
         proofPda: proof.proofPda,
-        owner: proof.owner,
+        owner: proof.authority,
         contentHash: proof.contentHash,
         createdAt: new Date(proof.createdAt * 1000).toISOString(),
         revoked: proof.revoked,

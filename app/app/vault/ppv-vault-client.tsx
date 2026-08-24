@@ -5,10 +5,18 @@ import { useSignTransaction, useWallets } from "@privy-io/react-auth/solana";
 import { useCallback, useMemo, useState } from "react";
 import { useGwapOs } from "../components/os-provider";
 import { bytesToHex, createProofId, hashFile, proofMetadataHash, shorten } from "../lib/ppv/core";
-import { getPpvCluster, getPpvCoreProgramId, prepareCreateProofTransaction } from "../lib/ppv/solana";
+import {
+  getPpvCluster,
+  isPpvConfigured,
+  prepareCreateProofTransaction,
+  prepareRevokeProofTransaction,
+} from "../lib/ppv/solana";
+import { getPpvExplorerUrl } from "../lib/ppv/config";
+import { describePpvProgramError } from "../lib/ppv/program";
 import type { PpvProofIndexRecord, PpvVerificationResult } from "../lib/ppv/types";
+import PpvAgreementsPanel from "./ppv-agreements-panel";
 
-type Mode = "create" | "verify" | "activity";
+type Mode = "create" | "verify" | "agree" | "activity";
 type CreateState = "idle" | "hashing" | "signing" | "confirming" | "indexing" | "done";
 
 export default function PpvVaultClient() {
@@ -24,16 +32,16 @@ export default function PpvVaultClient() {
   const [proofs, setProofs] = useState<PpvProofIndexRecord[]>([]);
   const [verifyFile, setVerifyFile] = useState<File | null>(null);
   const [verifyId, setVerifyId] = useState("");
+  const [verifyOwner, setVerifyOwner] = useState("");
   const [verification, setVerification] = useState<PpvVerificationResult | null>(null);
   const [verifying, setVerifying] = useState(false);
+  const [revoking, setRevoking] = useState("");
   const activeWallet = useMemo(
     () => wallets.find((wallet) => wallet.address === account.verifiedWallet),
     [account.verifiedWallet, wallets],
   );
 
-  const programConfigured = useMemo(() => {
-    try { getPpvCoreProgramId(); return true; } catch { return false; }
-  }, []);
+  const programConfigured = useMemo(() => isPpvConfigured(), []);
 
   const authenticatedFetch = useCallback(async (input: RequestInfo | URL, init?: RequestInit) => {
     const token = await getAccessToken();
@@ -66,19 +74,19 @@ export default function PpvVaultClient() {
     setReceipt(null);
     try {
       setCreateState("hashing");
-      const [contentHash, metadataHash] = await Promise.all([hashFile(file), proofMetadataHash(file)]);
+      const [contentHash, contextHash] = await Promise.all([hashFile(file), proofMetadataHash(file)]);
       const proofId = createProofId();
       const proofIdHex = bytesToHex(proofId);
       const contentHashHex = bytesToHex(contentHash);
-      const metadataHashHex = bytesToHex(metadataHash);
+      const contextHashHex = bytesToHex(contextHash);
 
       setCreateState("signing");
       const prepared = await prepareCreateProofTransaction({
         owner: account.verifiedWallet,
         proofIdHex,
         contentHashHex,
-        metadataHashHex,
-        proofKind: 1,
+        contextHashHex,
+        kind: "document",
       });
       const { signedTransaction } = await signTransaction({ transaction: prepared.encodedTransaction, wallet: activeWallet });
 
@@ -115,19 +123,71 @@ export default function PpvVaultClient() {
       setCreateState("done");
     } catch (cause) {
       setCreateState("idle");
-      setError(cause instanceof Error ? cause.message : "PPV proof creation failed");
+      setError(
+        describePpvProgramError(cause, "core") ??
+          (cause instanceof Error ? cause.message : "PPV proof creation failed"),
+      );
+    }
+  }
+
+  async function revokeProof(proof: PpvProofIndexRecord) {
+    if (!walletsReady || !activeWallet) {
+      setError("Your verified GWAP wallet is not available to sign this revocation.");
+      return;
+    }
+    setError("");
+    setRevoking(proof.proofId);
+    try {
+      const prepared = await prepareRevokeProofTransaction({
+        owner: account.verifiedWallet,
+        proofPda: proof.proofPda,
+      });
+      const { signedTransaction } = await signTransaction({
+        transaction: prepared.encodedTransaction,
+        wallet: activeWallet,
+      });
+      const signature = await prepared.connection.sendRawTransaction(signedTransaction, {
+        maxRetries: 3,
+        skipPreflight: false,
+      });
+      const confirmation = await prepared.connection.confirmTransaction(
+        {
+          signature,
+          blockhash: prepared.blockhash,
+          lastValidBlockHeight: prepared.lastValidBlockHeight,
+        },
+        "confirmed",
+      );
+      if (confirmation.value.err) throw new Error("Solana rejected the revocation.");
+      // Chain is the truth; re-read rather than assuming the write landed as sent.
+      await loadProofs();
+    } catch (cause) {
+      setError(
+        describePpvProgramError(cause, "core") ??
+          (cause instanceof Error ? cause.message : "Revocation failed"),
+      );
+    } finally {
+      setRevoking("");
     }
   }
 
   async function verifyProof() {
     if (!verifyFile || !verifyId.trim()) { setError("Choose the original file and enter its PPV proof ID."); return; }
+    if (verifyOwner.trim() && !/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(verifyOwner.trim())) {
+      setError("That creator wallet is not a valid Solana address.");
+      return;
+    }
     setError(""); setVerification(null); setVerifying(true);
     try {
       const hash = bytesToHex(await hashFile(verifyFile));
       const response = await fetch("/api/ppv/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ proofId: verifyId.trim().toLowerCase(), contentHash: hash }),
+        body: JSON.stringify({
+          proofId: verifyId.trim().toLowerCase(),
+          owner: verifyOwner.trim() || account.verifiedWallet,
+          contentHash: hash,
+        }),
       });
       const payload = await response.json() as PpvVerificationResult & { error?: string };
       if (!response.ok && response.status !== 404) throw new Error(payload.error || "Verification failed");
@@ -159,9 +219,15 @@ export default function PpvVaultClient() {
       </header>
 
       <nav className="ppv-tabs" aria-label="PPV workspace">
-        {(["create", "verify", "activity"] as const).map((tab) => (
+        {(["create", "verify", "agree", "activity"] as const).map((tab) => (
           <button key={tab} type="button" aria-pressed={mode === tab} onClick={() => selectMode(tab)}>
-            {tab === "create" ? "Create Proof" : tab === "verify" ? "Verify Proof" : "Activity"}
+            {tab === "create"
+              ? "Create Proof"
+              : tab === "verify"
+                ? "Verify Proof"
+                : tab === "agree"
+                  ? "Agreements"
+                  : "Activity"}
           </button>
         ))}
       </nav>
@@ -220,6 +286,7 @@ export default function PpvVaultClient() {
             <h2>Verify independently.</h2>
             <p>Select the candidate original. PPV hashes it on your device and compares the result to the on-chain proof record.</p>
             <label className="ppv-field"><span>PPV Proof ID</span><input value={verifyId} onChange={(event) => setVerifyId(event.target.value)} placeholder="32-character proof id" inputMode="text" autoCapitalize="none" /></label>
+            <label className="ppv-field"><span>Creator wallet</span><input value={verifyOwner} onChange={(event) => setVerifyOwner(event.target.value)} placeholder={`Defaults to ${shorten(account.verifiedWallet)}`} inputMode="text" autoCapitalize="none" /><small>Proofs are namespaced per wallet, so verifying someone else&rsquo;s proof needs the wallet that created it.</small></label>
             <label className="ppv-file-picker"><input type="file" onChange={(event) => { setVerifyFile(event.target.files?.[0] ?? null); setVerification(null); }} /><span>{verifyFile ? verifyFile.name : "Choose candidate file"}</span><small>Only its local SHA-256 hash is sent for comparison.</small></label>
             <button className="ppv-primary" type="button" disabled={verifying || !verifyFile || !verifyId.trim() || !programConfigured} onClick={() => void verifyProof()}>{verifying ? "Verifying…" : "Verify against Solana"}</button>
           </article>
@@ -230,10 +297,52 @@ export default function PpvVaultClient() {
         </section>
       ) : null}
 
+      {mode === "agree" && programConfigured ? (
+        <PpvAgreementsPanel verifiedWallet={account.verifiedWallet} />
+      ) : null}
+
       {mode === "activity" ? (
         <section className="ppv-panel">
           <div className="ppv-section-heading"><div><span className="os-terminal-label">YOUR PROOF HISTORY</span><h2>Safe metadata only.</h2></div><button type="button" onClick={() => void loadProofs()}>Refresh</button></div>
-          {proofs.length ? <div className="ppv-proof-list">{proofs.map((proof) => <article key={proof.proofId}><div><strong>{proof.proofId}</strong><span>{new Date(proof.createdAt).toLocaleString()}</span></div><div><span>{shorten(proof.contentHash, 8, 8)}</span><b>{proof.revoked ? "REVOKED" : "ACTIVE"}</b></div></article>)}</div> : <div className="ppv-empty"><strong>No indexed proofs yet.</strong><span>Your first verified proof will appear here.</span></div>}
+          {proofs.length ? (
+            <div className="ppv-proof-list">
+              {proofs.map((proof) => (
+                <article key={proof.proofId}>
+                  <div>
+                    <strong>{proof.proofId}</strong>
+                    <span>{new Date(proof.createdAt).toLocaleString()}</span>
+                  </div>
+                  <div>
+                    <span>{shorten(proof.contentHash, 8, 8)}</span>
+                    <b>{proof.revoked ? "REVOKED" : "ACTIVE"}</b>
+                  </div>
+                  <div className="ppv-proof-actions">
+                    <a
+                      href={getPpvExplorerUrl("tx", proof.transactionSignature)}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                    >
+                      View on Solana Devnet Explorer
+                    </a>
+                    {proof.revoked ? null : (
+                      <button
+                        type="button"
+                        disabled={revoking === proof.proofId}
+                        onClick={() => void revokeProof(proof)}
+                      >
+                        {revoking === proof.proofId ? "Revoking…" : "Revoke"}
+                      </button>
+                    )}
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="ppv-empty">
+              <strong>No indexed proofs yet.</strong>
+              <span>Your first verified proof will appear here.</span>
+            </div>
+          )}
         </section>
       ) : null}
 
@@ -241,7 +350,7 @@ export default function PpvVaultClient() {
 
       <section className="ppv-roadmap-strip" aria-label="PPV roadmap">
         <div className="is-current"><span>01</span><strong>PROVE</strong><small>Building now</small></div>
-        <div><span>02</span><strong>AGREE</strong><small>Pass 2</small></div>
+        <div className="is-current"><span>02</span><strong>AGREE</strong><small>Devnet</small></div>
         <div><span>03</span><strong>GET PAID</strong><small>Pass 3</small></div>
         <div><span>04</span><strong>PROTECT DEALS</strong><small>Security gated</small></div>
       </section>
