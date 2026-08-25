@@ -25,7 +25,7 @@ This replaces the stale implementation in PR #91 with a rebuild from the current
 ## Physical iPhone Safari gate
 
 - [ ] Cold-load homepage and `/#ecosystem`.
-- [ ] Tap GNS, GwapScore, OCCO, DIMI, Isnad, Marketplace, Money Neva $leeps, and Private Proof Vault once each; every card should navigate on the first tap.
+- [ ] Tap GNS, GwapScore, OCCO, DIMI, Daily Ideas 2.0, Marketplace, Money Neva $leeps, and Private Proof Vault once each; every card should navigate on the first tap.
 - [ ] Repeat a product-card tap after a fast scroll.
 - [ ] Tap near the edge of a card; it should still navigate once.
 - [ ] Product page: Home and Back to Ecosystem work on the first tap.

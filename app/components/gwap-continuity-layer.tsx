@@ -9,7 +9,7 @@ const CONTINUITY_MAX_AGE = 8_000;
 const productSignals: Record<string, string> = {
   gns: "#13dd13",
   gwapscore: "#13dd13",
-  "isnad-sunnah": "#13dd13",
+  "daily-ideas": "#13dd13",
   dimi: "#8d5cff",
   occo: "#8d5cff",
   "private-proof-vault": "#8d5cff",

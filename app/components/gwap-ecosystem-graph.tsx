@@ -10,7 +10,7 @@ import {
 import { getProductDestination, isExternalProductDestination, productBySlug } from "../lib/ecosystem";
 
 const graphNodes = [
-  { slug: "isnad-sunnah", shortLabel: "ISNAD", x: 104, y: 136 },
+  { slug: "daily-ideas", shortLabel: "IDEAS", x: 104, y: 136 },
   { slug: "gns", shortLabel: "GNS", x: 290, y: 98 },
   { slug: "gwapscore", shortLabel: "GWAPSCORE", x: 520, y: 164 },
   { slug: "occo", shortLabel: "OCCO", x: 792, y: 116 },
@@ -37,13 +37,13 @@ const graphModes = [
     id: "all",
     label: "All Rails",
     shortLabel: "ALL",
-    description: "The complete designed relationship view across identity, trust, commerce, creator, proof, and intelligence rails.",
+    description: "The complete designed relationship view across identity, trust, opportunity, commerce, creator, proof, and intelligence rails.",
   },
   {
     id: "identity",
     label: "Identity",
     shortLabel: "ID",
-    description: "How portable identity can resolve people, wallets, creators, learning context, and private proof across the ecosystem.",
+    description: "How portable identity can resolve people, wallets, creators, project context, and private proof across the ecosystem.",
   },
   {
     id: "trust",
@@ -101,9 +101,9 @@ const graphRelations = [
   },
   {
     from: "gns",
-    to: "isnad-sunnah",
-    label: "Portable identity",
-    detail: "A shared identity layer could support saved learning context, profiles, and community participation across experiences.",
+    to: "daily-ideas",
+    label: "Identity + opportunity",
+    detail: "Optional portable identity can connect saved opportunities, project attribution, and future collaboration without blocking discovery.",
     channels: ["identity"],
   },
   {
@@ -112,6 +112,13 @@ const graphRelations = [
     label: "Readable credit identity",
     detail: "Institutional wallet intelligence can resolve back to a recognizable identity layer instead of raw addresses alone.",
     channels: ["identity", "intelligence"],
+  },
+  {
+    from: "daily-ideas",
+    to: "marketplace",
+    label: "Opportunity + commerce",
+    detail: "Developed ideas can produce execution briefs for hiring, services, and launch work in the Marketplace.",
+    channels: ["commerce"],
   },
   {
     from: "gwapscore",
@@ -375,7 +382,7 @@ export function GwapEcosystemGraph() {
           <div className="gwap-graph-stage" data-active-product={activeSlug} data-graph-mode={mode}>
             <svg className="gwap-graph-svg" viewBox="0 0 1000 590" role="img" aria-labelledby="gwap-graph-svg-title gwap-graph-svg-desc">
               <title id="gwap-graph-svg-title">GWAP ecosystem relationship paths</title>
-              <desc id="gwap-graph-svg-desc">Animated paths connect product nodes that share identity, reputation, proof, commerce, creator, and credit infrastructure.</desc>
+              <desc id="gwap-graph-svg-desc">Animated paths connect product nodes that share identity, reputation, opportunity, proof, commerce, creator, and credit infrastructure.</desc>
               <defs>
                 <radialGradient id="gwapCoreGlow" cx="50%" cy="50%" r="50%">
                   <stop offset="0%" stopColor="currentColor" stopOpacity=".18" />

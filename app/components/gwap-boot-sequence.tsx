@@ -5,7 +5,7 @@ import { useEffect, useState, type CSSProperties } from "react";
 type BootPhase = "idle" | "booting" | "online" | "done";
 
 const BOOT_SEEN_KEY = "gwap-system-boot-seen-v1";
-const bootModules = ["GNS", "GWAPSCORE", "DIMI", "ISNAD"] as const;
+const bootModules = ["GNS", "GWAPSCORE", "DIMI", "DAILY IDEAS"] as const;
 
 function hasBootedThisSession() {
   try {

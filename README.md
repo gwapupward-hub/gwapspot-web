@@ -37,7 +37,7 @@ Phase 1 establishes the public brand foundation: homepage, ecosystem directory, 
 | GNS | Live |
 | GwapScore | Live |
 | DIMI | Beta |
-| Isnad Sunnah | Live |
+| Daily Ideas 2.0 | Live |
 | Money Neva $leeps | Live |
 | GwapSpot Marketplace | In Development |
 | OCCO | Planned |

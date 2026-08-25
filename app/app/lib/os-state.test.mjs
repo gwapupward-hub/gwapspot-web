@@ -6,6 +6,7 @@ test("new workspaces enable the boot sequence and general persona by default", (
   const state = createDefaultGwapOsState();
   assert.equal(state.settings.bootAnimation, true);
   assert.equal(state.settings.persona, "general");
+  assert.deepEqual(state.favorites, ["gns", "gwapscore", "daily-ideas"]);
 });
 
 test("legacy workspace settings receive new defaults without losing preferences", () => {
@@ -31,4 +32,18 @@ test("supported personas persist and invalid values fail closed to general", () 
 
   assert.equal(creator.settings.persona, "creator");
   assert.equal(invalid.settings.persona, "general");
+});
+
+
+test("retired and unknown product state is removed during normalization", () => {
+  const normalized = normalizeGwapOsState({
+    favorites: ["gns", "retired-product", "daily-ideas"],
+    recent: [
+      { slug: "retired-product", openedAt: "2026-08-25T12:00:00.000Z" },
+      { slug: "daily-ideas", openedAt: "2026-08-25T12:01:00.000Z" },
+    ],
+  });
+
+  assert.deepEqual(normalized.favorites, ["gns", "daily-ideas"]);
+  assert.deepEqual(normalized.recent.map((item) => item.slug), ["daily-ideas"]);
 });

@@ -22,7 +22,7 @@ const productSlugs = new Set([
   "gns",
   "gwapscore",
   "dimi",
-  "isnad-sunnah",
+  "daily-ideas",
   "money-neva-sleeps",
   "marketplace",
   "occo",
@@ -32,7 +32,6 @@ const productSlugs = new Set([
 const productHosts = new Set([
   "gwapspot.fun",
   "dimimusic.xyz",
-  "isnadsunnah.vercel.app",
   "slink.bigovideo.tv",
 ]);
 

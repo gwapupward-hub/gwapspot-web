@@ -47,11 +47,12 @@ export async function POST(request: Request) {
   }
 
   try {
-    const body = (await request.json()) as { category?: unknown };
+    const body = (await request.json()) as { category?: unknown; mode?: unknown };
+    const mode = body.mode === "daily" || body.mode === "discover" ? body.mode : "idea";
     const result = await getNextDailyIdea({
       subject: `gwap:${account.id}`,
       category: body.category,
-      mode: "idea",
+      mode,
     });
     return NextResponse.json({ idea: result.idea, delivery: result.delivery });
   } catch (error) {
