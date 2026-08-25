@@ -1,4 +1,4 @@
-import { ecosystemProducts } from "../../lib/ecosystem";
+import { ecosystemProducts } from "../../lib/ecosystem.ts";
 import type { GwapScoreStatus, GwapScoreTier } from "../../lib/gwap-score";
 
 export type RecentLaunch = { slug: string; openedAt: string };
