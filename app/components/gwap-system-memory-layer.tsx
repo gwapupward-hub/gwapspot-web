@@ -14,7 +14,7 @@ const productSlugs = new Set([
   "gns",
   "gwapscore",
   "dimi",
-  "isnad-sunnah",
+  "daily-ideas",
   "money-neva-sleeps",
   "marketplace",
   "occo",

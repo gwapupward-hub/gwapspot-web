@@ -10,7 +10,7 @@ import { createPageMetadata } from "../lib/metadata";
 export const metadata = createPageMetadata({
   title: "About",
   description:
-    "Learn how GWAP connects identity, trust, commerce, creativity, knowledge, and community into one purpose-driven ecosystem.",
+    "Learn how GWAP connects identity, trust, commerce, creativity, innovation, and community into one purpose-driven ecosystem.",
   path: "/about",
 });
 
@@ -43,7 +43,7 @@ export default function AboutPage() {
       <PageHero
         eyebrow="About GWAP"
         title="Grind With A Purpose is the operating system."
-        description="GWAP is an umbrella ecosystem for products that help people establish identity, build credibility, create, learn, transact, and participate in digital communities."
+        description="GWAP is an umbrella ecosystem for products that help people establish identity, build credibility, discover opportunities, create, transact, and participate in digital communities."
       >
         <Link className="primary-button" href="/ecosystem">
           Explore the ecosystem <ArrowIcon />
@@ -87,8 +87,8 @@ export default function AboutPage() {
             <span>UTILITY</span>
             <h3>Turn infrastructure into action.</h3>
             <p>
-              DIMI, Isnad Sunnah, the marketplace, and MN$ transform the shared
-              network into creative, educational, commercial, and cultural use.
+              DIMI, Daily Ideas 2.0, the marketplace, and MN$ transform the shared
+              network into creative, opportunity-driven, commercial, and cultural use.
             </p>
           </article>
         </div>

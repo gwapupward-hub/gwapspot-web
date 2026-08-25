@@ -1,3 +1,4 @@
+import { ecosystemProducts } from "../../lib/ecosystem";
 import type { GwapScoreStatus, GwapScoreTier } from "../../lib/gwap-score";
 
 export type RecentLaunch = { slug: string; openedAt: string };
@@ -17,6 +18,8 @@ export const MAX_GWAP_OS_STATE_BYTES = 64_000;
 const safeText = (value: unknown, fallback: string, maxLength: number) => typeof value === "string" ? value.trim().slice(0, maxLength) : fallback;
 const safeBoolean = (value: unknown, fallback: boolean) => typeof value === "boolean" ? value : fallback;
 const safeSlug = (value: unknown): value is string => typeof value === "string" && /^[a-z0-9-]{1,64}$/.test(value);
+const activeProductSlugs = new Set(ecosystemProducts.map((product) => product.slug));
+const safeProductSlug = (value: unknown): value is string => safeSlug(value) && activeProductSlugs.has(value);
 const safeId = (value: unknown) => safeText(value, "", 80).replace(/[^A-Za-z0-9_-]/g, "");
 const safePersona = (value: unknown): GwapPersona => ["general", "builder", "freelancer", "creator", "investor", "business"].includes(typeof value === "string" ? value : "") ? value as GwapPersona : "general";
 
@@ -68,7 +71,7 @@ function normalizeMarketplaceIntent(value: unknown): MarketplaceIntent | null {
   };
 }
 
-export const defaultGwapOsState: GwapOsState = { profile: { displayName: "GWAP Builder", handle: "gwap-builder", bio: "", primaryWallet: "", website: "", location: "", updatedAt: "" }, favorites: ["gns", "gwapscore", "isnad-sunnah"], recent: [], ideas: [], ideaProjects: [], marketplaceIntents: [], settings: { compactMode: false, reduceMotion: false, bootAnimation: true, productUpdates: true, communityUpdates: true, persona: "general" } };
+export const defaultGwapOsState: GwapOsState = { profile: { displayName: "GWAP Builder", handle: "gwap-builder", bio: "", primaryWallet: "", website: "", location: "", updatedAt: "" }, favorites: ["gns", "gwapscore", "daily-ideas"], recent: [], ideas: [], ideaProjects: [], marketplaceIntents: [], settings: { compactMode: false, reduceMotion: false, bootAnimation: true, productUpdates: true, communityUpdates: true, persona: "general" } };
 export function createDefaultGwapOsState(): GwapOsState { return { profile: { ...defaultGwapOsState.profile }, favorites: [...defaultGwapOsState.favorites], recent: [], ideas: [], ideaProjects: [], marketplaceIntents: [], settings: { ...defaultGwapOsState.settings } }; }
 
 export function normalizeGwapOsState(value: unknown): GwapOsState {
@@ -78,8 +81,8 @@ export function normalizeGwapOsState(value: unknown): GwapOsState {
   const settings = candidate.settings && typeof candidate.settings === "object" ? candidate.settings : defaultGwapOsState.settings;
   return {
     profile: { displayName: safeText(profile.displayName, defaultGwapOsState.profile.displayName, 80), handle: safeText(profile.handle, defaultGwapOsState.profile.handle, 40).replace(/^@/, "").replace(/[^A-Za-z0-9._-]/g, ""), bio: safeText(profile.bio, "", 240), primaryWallet: safeText(profile.primaryWallet, "", 128), website: safeText(profile.website, "", 240), location: safeText(profile.location, "", 100), updatedAt: safeText(profile.updatedAt, "", 40) },
-    favorites: Array.isArray(candidate.favorites) ? [...new Set(candidate.favorites.filter(safeSlug))].slice(0, 24) : [...defaultGwapOsState.favorites],
-    recent: Array.isArray(candidate.recent) ? candidate.recent.filter((item): item is RecentLaunch => Boolean(item) && typeof item === "object" && safeSlug((item as RecentLaunch).slug) && typeof (item as RecentLaunch).openedAt === "string" && !Number.isNaN(Date.parse((item as RecentLaunch).openedAt))).map((item) => ({ slug: item.slug, openedAt: item.openedAt.slice(0, 40) })).slice(0, 8) : [],
+    favorites: Array.isArray(candidate.favorites) ? [...new Set(candidate.favorites.filter(safeProductSlug))].slice(0, 24) : [...defaultGwapOsState.favorites],
+    recent: Array.isArray(candidate.recent) ? candidate.recent.filter((item): item is RecentLaunch => Boolean(item) && typeof item === "object" && safeProductSlug((item as RecentLaunch).slug) && typeof (item as RecentLaunch).openedAt === "string" && !Number.isNaN(Date.parse((item as RecentLaunch).openedAt))).map((item) => ({ slug: item.slug, openedAt: item.openedAt.slice(0, 40) })).slice(0, 8) : [],
     ideas: Array.isArray(candidate.ideas) ? candidate.ideas.map(normalizeIdea).filter((idea): idea is DailyIdea => Boolean(idea)).slice(0, 12) : [],
     ideaProjects: Array.isArray(candidate.ideaProjects) ? candidate.ideaProjects.map(normalizeProject).filter((project): project is IdeaProject => Boolean(project)).slice(0, 8) : [],
     marketplaceIntents: Array.isArray(candidate.marketplaceIntents) ? candidate.marketplaceIntents.map(normalizeMarketplaceIntent).filter((intent): intent is MarketplaceIntent => Boolean(intent)).slice(0, 12) : [],

@@ -1,5 +1,6 @@
 "use client";
 
+import { track } from "@vercel/analytics";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePrivy } from "@privy-io/react-auth";
@@ -106,6 +107,14 @@ const lifecycleStages: Array<{ key: Exclude<ProjectStatus, "archived">; label: s
 
 function compactWallet(wallet: string) {
   return `${wallet.slice(0, 4)}…${wallet.slice(-4)}`;
+}
+
+function trackProjectStage(name: string, properties: Record<string, string>) {
+  try {
+    track(name, properties);
+  } catch {
+    // Product analytics must never interrupt project work.
+  }
 }
 
 function statusLabel(status: ProjectStatus) {
@@ -250,6 +259,9 @@ export function IdeaLabView() {
     try {
       await action({ action: actionName, projectId: selected.id });
       setProjectReview(null);
+      if (actionName === "validate") trackProjectStage("idea_validation_started", { category: selected.category });
+      if (actionName === "build") trackProjectStage("project_moved_to_building", { category: selected.category });
+      if (actionName === "launch") trackProjectStage("project_launched", { category: selected.category });
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Project stage update failed");
     } finally {

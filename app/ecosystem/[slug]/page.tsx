@@ -90,7 +90,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
             <h1>{product.name}</h1>
             <p>{product.description}</p>
             <div className="inner-hero-actions">
-              {product.externalUrl ? (
+              {product.internalUrl ? (
+                <Link className="primary-button" href={product.internalUrl}>
+                  {product.internalLabel ?? "Open product"} <ArrowIcon />
+                </Link>
+              ) : product.externalUrl ? (
                 <a
                   className="primary-button"
                   href={product.externalUrl}

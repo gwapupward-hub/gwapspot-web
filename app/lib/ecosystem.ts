@@ -16,6 +16,8 @@ export type EcosystemProduct = {
   audience: string;
   capabilities: string[];
   roadmap: string[];
+  internalUrl?: string;
+  internalLabel?: string;
   externalUrl?: string;
   externalLabel?: string;
 };
@@ -103,31 +105,31 @@ export const ecosystemProducts: EcosystemProduct[] = [
     externalLabel: "Open DIMI",
   },
   {
-    slug: "isnad-sunnah",
-    name: "Isnad Sunnah",
-    eyebrow: "Islamic AI",
+    slug: "daily-ideas",
+    name: "Daily Ideas 2.0",
+    eyebrow: "Opportunity engine",
     category: "experience",
     status: "Live",
     accent: "green",
-    logo: "/logos/isnad-sunnah.svg",
-    summary: "An AI-powered Islamic knowledge assistant grounded in the Qur’an, Sunnah, and trusted scholarship.",
+    logo: "/logos/daily-ideas-2.webp",
+    summary: "Turn inspiration into execution through practical opportunity discovery, development, validation, and project launch.",
     description:
-      "Isnad Sunnah organizes specialized Islamic knowledge modules into one learning assistant, with source-aware answers and a focus on practical, trustworthy guidance.",
-    role: "The knowledge and guided-learning layer within GWAP.",
-    audience: "Students, families, communities, teachers, and anyone seeking structured Islamic learning.",
+      "Daily Ideas 2.0 helps people discover worthwhile opportunities, save the strongest ideas, develop them into structured plans, validate demand, and move real projects toward launch.",
+    role: "The discovery, innovation, development, and execution layer for the GWAP ecosystem.",
+    audience: "Founders, creators, builders, students, operators, and anyone deciding what useful project to pursue next.",
     capabilities: [
-      "Islamic Teacher Core",
-      "Tafsīr, Hadith, Fiqh, Seerah, and Tarbiyah modules",
-      "Citation-aware responses and conversation history",
-      "Telegram bot and mobile-first mini app",
+      "Personalized opportunity discovery across the canonical category system",
+      "Shared saves and project state across GWAP OS and Telegram",
+      "Guided development, validation, MVP, architecture, and launch planning",
+      "A persistent Discover → Save → Develop → Validate → Build → Launch lifecycle",
     ],
     roadmap: [
-      "Add guided learning paths and daily knowledge",
-      "Expand Arabic study and research tools",
-      "Introduce community study circles and classrooms",
+      "Deepen evidence-backed validation and market research workflows",
+      "Expand collaboration, attribution, and optional GNS publishing",
+      "Improve personalization from useful repeat behavior without unnecessary generation",
     ],
-    externalUrl: "https://isnadsunnah.vercel.app/",
-    externalLabel: "Open Isnad Sunnah",
+    internalUrl: "/app/ideas",
+    internalLabel: "Open Daily Ideas",
   },
   {
     slug: "money-neva-sleeps",
@@ -249,8 +251,8 @@ export const ecosystemGroups = [
     label: "GWAP Experiences",
     eyebrow: "Products people use",
     description:
-      "Creative, knowledge, commerce, and lifestyle products that turn the shared infrastructure into useful everyday experiences.",
-    signals: ["DIMI", "Isnad", "Marketplace", "Lifestyle"],
+      "Creative, opportunity, commerce, and lifestyle products that turn the shared infrastructure into useful everyday experiences.",
+    signals: ["DIMI", "Daily Ideas", "Marketplace", "Lifestyle"],
   },
 ] as const satisfies ReadonlyArray<{
   id: ProductCategory;

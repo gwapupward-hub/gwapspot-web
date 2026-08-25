@@ -419,7 +419,7 @@
 .premium-product-card[data-gwap-product="gns"] .product-glyph::after { content: ".GWAP"; }
 .premium-product-card[data-gwap-product="gwapscore"] .product-glyph::after { content: "300—900"; }
 .premium-product-card[data-gwap-product="dimi"] .product-glyph::after { content: "▁▃▆▂▅"; letter-spacing: -.03em; }
-.premium-product-card[data-gwap-product="isnad-sunnah"] .product-glyph::after { content: "01·02·03"; }
+.premium-product-card[data-gwap-product="daily-ideas"] .product-glyph::after { content: "DISCOVER"; }
 .premium-product-card[data-gwap-product="money-neva-sleeps"] .product-glyph::after { content: "MN$"; }
 .premium-product-card[data-gwap-product="marketplace"] .product-glyph::after { content: "▦  ▦"; }
 .premium-product-card[data-gwap-product="occo"] .product-glyph::after { content: "A+ / RISK"; }
@@ -443,7 +443,7 @@
   animation: gwapWaveSignature 430ms ease-in-out 2 alternate;
 }
 
-.premium-product-card[data-gwap-product="isnad-sunnah"].gwap-product-activating .product-glyph::after {
+.premium-product-card[data-gwap-product="daily-ideas"].gwap-product-activating .product-glyph::after {
   animation: gwapNodeSignature 560ms var(--gwap-ease-out) both;
 }
 
@@ -553,7 +553,7 @@
 .product-hero[data-gwap-product-hero="gns"] { --gwap-arrival-x: -12px; --gwap-arrival-rotate: -3deg; --gwap-arrival-glow: rgba(19,221,19,.22); }
 .product-hero[data-gwap-product-hero="gwapscore"] { --gwap-arrival-scale: .88; --gwap-arrival-glow: rgba(19,221,19,.28); }
 .product-hero[data-gwap-product-hero="dimi"] { --gwap-arrival-y: 22px; --gwap-arrival-rotate: 2deg; --gwap-arrival-glow: rgba(141,92,255,.25); }
-.product-hero[data-gwap-product-hero="isnad-sunnah"] { --gwap-arrival-x: -18px; --gwap-arrival-glow: rgba(19,221,19,.18); }
+.product-hero[data-gwap-product-hero="daily-ideas"] { --gwap-arrival-x: -18px; --gwap-arrival-glow: rgba(19,221,19,.18); }
 .product-hero[data-gwap-product-hero="money-neva-sleeps"] { --gwap-arrival-x: 14px; --gwap-arrival-rotate: 2deg; --gwap-arrival-glow: rgba(255,133,46,.24); }
 .product-hero[data-gwap-product-hero="marketplace"] { --gwap-arrival-y: 18px; --gwap-arrival-scale: .92; --gwap-arrival-glow: rgba(255,133,46,.24); }
 .product-hero[data-gwap-product-hero="occo"] { --gwap-arrival-y: -12px; --gwap-arrival-scale: .93; --gwap-arrival-glow: rgba(141,92,255,.25); }
