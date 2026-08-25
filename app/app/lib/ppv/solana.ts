@@ -4,12 +4,12 @@ import {
   Transaction,
   type TransactionInstruction,
 } from "@solana/web3.js";
-import { hexToBytes } from "./core";
+import { hexToBytes } from "./core.ts";
 import {
   PPV_CLUSTER,
   getPpvConfig,
   readPpvConfig,
-} from "./config";
+} from "./config.ts";
 import {
   type ProofKind,
   cancelAgreementInstruction,
@@ -20,7 +20,7 @@ import {
   proposeRevisionInstruction,
   revokeProofInstruction,
   signAgreementInstruction,
-} from "./program";
+} from "./program.ts";
 
 export type PpvCluster = typeof PPV_CLUSTER;
 

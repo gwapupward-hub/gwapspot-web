@@ -26,7 +26,7 @@ The wallet signature is the authority. GNS names shown next to a proof are
 | `NEXT_PUBLIC_SOLANA_CLUSTER` | public | no | local, preview, devnet | Must be `devnet` if set at all. Any other value fails startup. |
 | `NEXT_PUBLIC_PPV_CORE_PROGRAM_ID` | public | **yes** | local, preview, devnet | From `deployments/devnet.json`. The protocol's build-only placeholder IDs are rejected by value. |
 | `NEXT_PUBLIC_PPV_COMMERCE_PROGRAM_ID` | public | **yes** | local, preview, devnet | Same. Must differ from the core ID. |
-| `NEXT_PUBLIC_PPV_RPC_URL` | public | no | local, preview, devnet | Browser-visible, so it must be intentionally public and origin/rate restricted. A URL carrying an API key or basic-auth credential is rejected at startup. Defaults to the public devnet endpoint. |
+| `NEXT_PUBLIC_PPV_RPC_URL` | public | no | local, preview, devnet | Browser-visible, so it must be intentionally public and origin/rate restricted. Must be `https`, except for a loopback host — that is how the integration harness points this configuration at `solana-test-validator`. A URL carrying an API key or basic-auth credential is rejected at startup. Defaults to the public devnet endpoint. |
 | `PPV_SOLANA_RPC_URL` | **secret** | no | preview, devnet | Server-only. May carry a provider credential. Used by the PPV verify and index routes. |
 
 Two variables that already exist and are **not** PPV's:
@@ -90,6 +90,41 @@ prior consent. A stale signature is rejected by the program, and the panel says
 which version the signer was on.
 
 Terminal states — Executed and Cancelled — cannot be mutated.
+
+## Verifying the client against the real programs
+
+The unit tests check the client against the **generated IDL**. That catches a
+wrong discriminator or a mislaid field, but not a mistake in how the pieces
+compose at runtime — account ordering under a real signer, Borsh `Option`
+framing on a partially-signed agreement, an error code surfaced by a real
+program, or an expiry measured against a real cluster clock.
+
+`app/app/lib/ppv/integration.test.mjs` closes that gap. It builds the programs
+from a `gwapupward-hub/ppv` checkout, deploys them to a local
+`solana-test-validator`, and drives the whole proof and agreement lifecycle
+through the same `prepare*Transaction` helpers the API routes and the vault UI
+call. A plain `Keypair` stands in for the wallet adapter; nothing else is
+substituted, and nothing is mocked.
+
+```bash
+PPV_PROTOCOL_DIR=/path/to/ppv \
+  node --experimental-strip-types --test app/app/lib/ppv/integration.test.mjs
+```
+
+Requires Anchor 0.30.1 and Solana 1.18.17 on `PATH` (or set `PPV_SOLANA_BIN`).
+`PPV_SKIP_BUILD=1` reuses an existing `anchor build` when iterating. Without
+`PPV_PROTOCOL_DIR` the suite skips, so `npm test` is unaffected.
+
+It runs in CI as the `ppv-integration` job, filtered to diffs that touch
+`app/app/lib/ppv/`, `app/lib/ppv/` or `app/app/vault/`. That job needs a
+repository secret `PPV_PROTOCOL_TOKEN` — a read-only contents token for
+`gwapupward-hub/ppv`, since `GITHUB_TOKEN` cannot reach another repository.
+
+The last case is a decoder-parity check. The browser decoder
+(`app/app/lib/ppv/program.ts`) and the server decoder
+(`app/lib/ppv/chain-decode.ts`) are two independent hand-written readings of the
+same account layout; the harness asserts they agree field for field on every
+account it reads, including the absent-vs-zero cases.
 
 ## Operational health check
 

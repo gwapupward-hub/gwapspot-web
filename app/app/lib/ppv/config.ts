@@ -66,7 +66,15 @@ function readRpcUrl(problems: string[]): string {
     problems.push("NEXT_PUBLIC_PPV_RPC_URL is not a valid URL");
     return clusterApiUrl(PPV_CLUSTER);
   }
-  if (url.protocol !== "https:") {
+  // A loopback endpoint is the one case where plaintext is correct: the traffic
+  // never leaves the machine, and it is how the integration harness points this
+  // real configuration at solana-test-validator. Baked into a browser bundle a
+  // loopback URL is inert rather than dangerous. Every other host must be https.
+  const loopback =
+    url.hostname === "127.0.0.1" ||
+    url.hostname === "localhost" ||
+    url.hostname === "[::1]";
+  if (url.protocol !== "https:" && !(url.protocol === "http:" && loopback)) {
     problems.push("NEXT_PUBLIC_PPV_RPC_URL must use https");
   }
   if (url.username || url.password || url.searchParams.has("api-key")) {
