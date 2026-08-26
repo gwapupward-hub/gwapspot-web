@@ -58,6 +58,19 @@ jobs:
             echo "No PPV changes in this diff; skipping the local-validator run."
           fi
 
+      - name: Require the protocol checkout token
+        if: steps.scope.outputs.run == 'true'
+        env:
+          PPV_PROTOCOL_TOKEN: ${{ secrets.PPV_PROTOCOL_TOKEN }}
+        run: |
+          # Without this, actions/checkout retries an anonymous fetch three
+          # times and fails with "could not read Username", which names neither
+          # the secret nor the repository. Fail once, and say what to do.
+          if [[ -z "${PPV_PROTOCOL_TOKEN}" ]]; then
+            echo "::error::PPV_PROTOCOL_TOKEN is not set. This job checks out the private gwapupward-hub/ppv repository, which GITHUB_TOKEN cannot reach. Add a repository secret named PPV_PROTOCOL_TOKEN holding a fine-grained token scoped to gwapupward-hub/ppv with Contents: Read-only. See docs/PPV_DEVNET.md."
+            exit 1
+          fi
+
       - name: Check out the PPV protocol
         if: steps.scope.outputs.run == 'true'
         uses: actions/checkout@v4
