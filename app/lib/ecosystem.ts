@@ -111,7 +111,7 @@ export const ecosystemProducts: EcosystemProduct[] = [
     category: "experience",
     status: "Live",
     accent: "green",
-    logo: "/logos/daily-ideas-2.webp",
+    logo: "/logos/daily-ideas-2-official.webp",
     summary: "Turn inspiration into execution through practical opportunity discovery, development, validation, and project launch.",
     description:
       "Daily Ideas 2.0 helps people discover worthwhile opportunities, save the strongest ideas, develop them into structured plans, validate demand, and move real projects toward launch.",
