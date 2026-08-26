@@ -34,7 +34,7 @@ test("Daily Ideas owns the active ecosystem product slot", () => {
   assert.match(ecosystem, /name: "Daily Ideas 2\.0"/);
   assert.match(ecosystem, /internalUrl: "\/app\/ideas"/);
   assert.match(productPage, /product\.internalUrl/);
-  assert.equal(existsSync(resolve(publicRoot, "logos/daily-ideas-2.webp")), true);
+  assert.equal(existsSync(resolve(publicRoot, "logos/daily-ideas-2-official.webp")), true);
 });
 
 test("retired product markers stay out of active GWAP source and assets", () => {

@@ -423,7 +423,7 @@ export function DailyIdeasView() {
     <div className="os-page os-runtime-page daily-ideas-page">
       <header className="daily-ideas-heading">
         <div className="daily-ideas-logo">
-          <Image src="/logos/daily-ideas-2.webp" alt="Daily Ideas 2.0 logo" width={176} height={176} sizes="(max-width: 700px) 96px, 132px" priority />
+          <Image src="/logos/daily-ideas-2-official.webp" alt="Daily Ideas 2.0 logo" width={176} height={176} sizes="(max-width: 700px) 96px, 132px" priority />
         </div>
         <div>
           <span className="os-terminal-label">~/daily-ideas · SHARED CORE</span>
