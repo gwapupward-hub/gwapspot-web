@@ -58,17 +58,21 @@ jobs:
             echo "No PPV changes in this diff; skipping the local-validator run."
           fi
 
-      - name: Require a working protocol checkout token
+      - name: Check the protocol checkout token
         if: steps.scope.outputs.run == 'true'
         env:
           PPV_PROTOCOL_TOKEN: ${{ secrets.PPV_PROTOCOL_TOKEN }}
         run: |
           # actions/checkout retries an anonymous fetch three times and fails
           # with "could not read Username", which names neither the secret nor
-          # the repository, and reads identically whether the token is missing,
-          # expired, or simply not scoped to gwapupward-hub/ppv. Ask the API
-          # first so the failure says which of those it is.
-          hint='Add it at Settings > Secrets and variables > Actions. Mint it at https://github.com/settings/personal-access-tokens/new with resource owner gwapupward-hub, repository access limited to gwapupward-hub/ppv, and Contents: Read-only. See docs/PPV_DEVNET.md.'
+          # the repository. Ask the API first so the log says what is wrong.
+          #
+          # Only a case that git cannot survive fails here. A 404 is reported
+          # and then handed to the checkout: this lookup needs Metadata:Read,
+          # so it is conceivable for it to 404 on a token whose Contents:Read
+          # would still clone. A guard must never be stricter than the step it
+          # guards.
+          hint='Mint it at https://github.com/settings/personal-access-tokens/new with resource owner gwapupward-hub, repository access limited to gwapupward-hub/ppv, and Contents: Read-only; a classic token needs the repo scope instead. Then set it at Settings > Secrets and variables > Actions. See docs/PPV_DEVNET.md.'
           if [[ -z "${PPV_PROTOCOL_TOKEN}" ]]; then
             echo "::error::PPV_PROTOCOL_TOKEN is not set. This job checks out the private gwapupward-hub/ppv, which GITHUB_TOKEN cannot reach. ${hint}"
             exit 1
@@ -79,9 +83,18 @@ jobs:
             https://api.github.com/repos/gwapupward-hub/ppv)"
           case "${status}" in
             200) echo "PPV_PROTOCOL_TOKEN can read gwapupward-hub/ppv." ;;
-            401) echo "::error::PPV_PROTOCOL_TOKEN was rejected (401). It is invalid or expired. ${hint}"; exit 1 ;;
-            404) echo "::error::PPV_PROTOCOL_TOKEN is valid but cannot see gwapupward-hub/ppv (404). The repository is private, so this means it is not in the token's selected repositories. ${hint}"; exit 1 ;;
-            *)   echo "::error::Could not verify PPV_PROTOCOL_TOKEN against the GitHub API (HTTP ${status}). ${hint}"; exit 1 ;;
+            401)
+              # Rejected outright. git will be rejected the same way, so stop
+              # here rather than spend the checkout retries proving it.
+              echo "::error::PPV_PROTOCOL_TOKEN was rejected (401): invalid, expired, or malformed. A trailing newline in the secret does this. ${hint}"
+              exit 1
+              ;;
+            404)
+              echo "::warning::PPV_PROTOCOL_TOKEN authenticates but cannot see gwapupward-hub/ppv (404). The repository is private, so it is most likely not among the repositories this token selects. ${hint} Trying the checkout anyway."
+              ;;
+            *)
+              echo "::warning::Could not verify PPV_PROTOCOL_TOKEN against the GitHub API (HTTP ${status}). Trying the checkout anyway."
+              ;;
           esac
 
       - name: Check out the PPV protocol
