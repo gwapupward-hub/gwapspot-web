@@ -58,18 +58,31 @@ jobs:
             echo "No PPV changes in this diff; skipping the local-validator run."
           fi
 
-      - name: Require the protocol checkout token
+      - name: Require a working protocol checkout token
         if: steps.scope.outputs.run == 'true'
         env:
           PPV_PROTOCOL_TOKEN: ${{ secrets.PPV_PROTOCOL_TOKEN }}
         run: |
-          # Without this, actions/checkout retries an anonymous fetch three
-          # times and fails with "could not read Username", which names neither
-          # the secret nor the repository. Fail once, and say what to do.
+          # actions/checkout retries an anonymous fetch three times and fails
+          # with "could not read Username", which names neither the secret nor
+          # the repository, and reads identically whether the token is missing,
+          # expired, or simply not scoped to gwapupward-hub/ppv. Ask the API
+          # first so the failure says which of those it is.
+          hint='Add it at Settings > Secrets and variables > Actions. Mint it at https://github.com/settings/personal-access-tokens/new with resource owner gwapupward-hub, repository access limited to gwapupward-hub/ppv, and Contents: Read-only. See docs/PPV_DEVNET.md.'
           if [[ -z "${PPV_PROTOCOL_TOKEN}" ]]; then
-            echo "::error::PPV_PROTOCOL_TOKEN is not set. This job checks out the private gwapupward-hub/ppv repository, which GITHUB_TOKEN cannot reach. Add a repository secret named PPV_PROTOCOL_TOKEN holding a fine-grained token scoped to gwapupward-hub/ppv with Contents: Read-only. See docs/PPV_DEVNET.md."
+            echo "::error::PPV_PROTOCOL_TOKEN is not set. This job checks out the private gwapupward-hub/ppv, which GITHUB_TOKEN cannot reach. ${hint}"
             exit 1
           fi
+          status="$(curl -sS -o /dev/null -w '%{http_code}' \
+            -H "Authorization: Bearer ${PPV_PROTOCOL_TOKEN}" \
+            -H 'Accept: application/vnd.github+json' \
+            https://api.github.com/repos/gwapupward-hub/ppv)"
+          case "${status}" in
+            200) echo "PPV_PROTOCOL_TOKEN can read gwapupward-hub/ppv." ;;
+            401) echo "::error::PPV_PROTOCOL_TOKEN was rejected (401). It is invalid or expired. ${hint}"; exit 1 ;;
+            404) echo "::error::PPV_PROTOCOL_TOKEN is valid but cannot see gwapupward-hub/ppv (404). The repository is private, so this means it is not in the token's selected repositories. ${hint}"; exit 1 ;;
+            *)   echo "::error::Could not verify PPV_PROTOCOL_TOKEN against the GitHub API (HTTP ${status}). ${hint}"; exit 1 ;;
+          esac
 
       - name: Check out the PPV protocol
         if: steps.scope.outputs.run == 'true'
