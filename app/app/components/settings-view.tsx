@@ -6,6 +6,8 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { GWAP_OS_STORAGE_KEY } from "../lib/os-state";
+import { shortenWalletAddress } from "../lib/wallet-format";
+import { CopyAddressButton } from "./copy-address-button";
 import { useGwapOs } from "./os-provider";
 import { SignOutButton } from "./sign-out-button";
 
@@ -163,8 +165,9 @@ export function SettingsView() {
 
         <div className="os-panel os-settings-panel">
           <div className="os-panel-heading"><div><span>WALLET & SESSION</span><h2>{account.displayName}</h2></div><small>{syncStatus === "error" ? "Sync paused" : "Verified"}</small></div>
-          <p className="os-settings-note">{account.email} · {account.walletProvider === "embedded" ? "Email-created wallet" : "External wallet"}{` · ${account.verifiedWallet.slice(0, 4)}…${account.verifiedWallet.slice(-4)}`}</p>
+          <p className="os-settings-note">{account.email} · {account.walletProvider === "embedded" ? "Email-created wallet" : "External wallet"}{` · ${shortenWalletAddress(account.verifiedWallet)}`}</p>
           <div className="os-account-actions">
+            <CopyAddressButton address={account.verifiedWallet} />
             {account.embeddedWallet ? <button type="button" disabled={exporting} onClick={() => void exportEmbeddedWallet()}>{exporting ? "Opening export…" : "Export embedded wallet"}</button> : null}
             <SignOutButton />
           </div>
