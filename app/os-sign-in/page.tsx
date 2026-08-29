@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { AuthSetupRequired } from "../components/auth-setup-required";
 import { WalletAuthProvider } from "../components/wallet-auth-provider";
+import { WalletHostGate } from "../components/wallet-host-gate";
 import { WalletSignIn } from "../components/wallet-sign-in";
 import { isWalletAuthConfigured } from "../lib/auth-config";
 import { getSafeRedirectPath } from "../lib/safe-redirect";
@@ -27,48 +28,50 @@ export default async function GwapOsSignInPage({
   );
 
   return (
-    <WalletAuthProvider>
-      <main className={styles.gateway}>
-        <div className={styles.ambientOne} aria-hidden="true" />
-        <div className={styles.ambientTwo} aria-hidden="true" />
+    <WalletHostGate>
+      <WalletAuthProvider variant="app">
+          <main className={styles.gateway}>
+          <div className={styles.ambientOne} aria-hidden="true" />
+          <div className={styles.ambientTwo} aria-hidden="true" />
 
-        <section className={styles.identityIntro} aria-labelledby="gwap-os-gateway-title">
-          <div className={styles.brandLine}>
-            <span className={styles.brandMark} aria-hidden="true">
-              <img
-                src="/logos/gwap-agent-clear.svg"
-                alt=""
-                width={46}
-                height={46}
-                decoding="async"
-              />
-            </span>
-            <span className={styles.brandCopy}>
-              <strong>GWAP OS</strong>
-              <small>DIRECT APPLICATION ACCESS</small>
-            </span>
-          </div>
+          <section className={styles.identityIntro} aria-labelledby="gwap-os-gateway-title">
+            <div className={styles.brandLine}>
+              <span className={styles.brandMark} aria-hidden="true">
+                <img
+                  src="/logos/gwap-agent-clear.svg"
+                  alt=""
+                  width={46}
+                  height={46}
+                  decoding="async"
+                />
+              </span>
+              <span className={styles.brandCopy}>
+                <strong>GWAP OS</strong>
+                <small>DIRECT APPLICATION ACCESS</small>
+              </span>
+            </div>
 
-          <span className={styles.kicker}>IDENTITY GATEWAY</span>
-          <h1 id="gwap-os-gateway-title">Enter your GWAP workspace.</h1>
-          <p>
-            One wallet unlocks your identity, applications, activity, and GWAP
-            workspace. Authentication uses a signed Solana message—not a transaction.
-          </p>
+            <span className={styles.kicker}>IDENTITY GATEWAY</span>
+            <h1 id="gwap-os-gateway-title">Enter your GWAP workspace.</h1>
+            <p>
+              One wallet unlocks your identity, applications, activity, and GWAP
+              workspace. Authentication uses a signed Solana message—not a transaction.
+            </p>
 
-          <div className={styles.securityLine} aria-label="Authentication details">
-            <span>SIGNATURE ONLY</span>
-            <i aria-hidden="true" />
-            <span>NO TRANSACTION</span>
-            <i aria-hidden="true" />
-            <span>NO SOL FEE</span>
-          </div>
-        </section>
+            <div className={styles.securityLine} aria-label="Authentication details">
+              <span>SIGNATURE ONLY</span>
+              <i aria-hidden="true" />
+              <span>NO TRANSACTION</span>
+              <i aria-hidden="true" />
+              <span>NO SOL FEE</span>
+            </div>
+          </section>
 
-        <div className={styles.authColumn}>
+          <div className={styles.authColumn}>
           <WalletSignIn redirectPath={redirectPath} variant="app" />
         </div>
-      </main>
-    </WalletAuthProvider>
+        </main>
+      </WalletAuthProvider>
+    </WalletHostGate>
   );
 }

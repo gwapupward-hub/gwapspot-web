@@ -32,3 +32,20 @@ export function isAllowedGwapAppPath(pathname: string) {
     pathname.startsWith("/app/")
   );
 }
+
+/**
+ * Where an unauthenticated request should be sent to sign in. The wallet
+ * client has its own gateway, so app-host traffic never detours through the
+ * public website's sign-in page.
+ */
+export function walletSignInPathForHost(host: string | null | undefined) {
+  return isGwapAppHostname(host) ? "/os-sign-in" : "/sign-in";
+}
+
+/**
+ * Which wallet-authentication client a host should mount. The wallet client
+ * never carries the public website's email onboarding configuration.
+ */
+export function walletAuthVariantForHost(host: string | null | undefined) {
+  return isGwapAppHostname(host) ? ("app" as const) : ("public" as const);
+}

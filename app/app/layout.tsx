@@ -1,14 +1,18 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { AuthSetupRequired } from "../components/auth-setup-required";
 import { WalletAuthProvider } from "../components/wallet-auth-provider";
+import { WalletHostGate } from "../components/wallet-host-gate";
+import { walletSignInPathForHost } from "../lib/app-domain-routing";
 import { isWalletAuthConfigured } from "../lib/auth-config";
 import { getAuthenticatedWalletIdentity } from "../lib/privy-server";
 import { GnsIdentityHydrationBridge } from "./components/gns-identity-hydration-bridge";
 import { GnsRegistrationSyncBridge } from "./components/gns-registration-sync-bridge";
 import { GwapOsProvider } from "./components/os-provider";
 import { OsShell } from "./components/os-shell";
+import { WalletSessionGuard } from "./components/wallet-session-guard";
 import {
   cachedGnsIdentity,
   loadAccountWorkspace,
@@ -28,7 +32,12 @@ export default async function GwapOsLayout({ children }: { children: ReactNode }
   if (!isWalletAuthConfigured()) return <AuthSetupRequired />;
 
   const identity = await getAuthenticatedWalletIdentity();
-  if (!identity) redirect("/sign-in?redirect_url=/app");
+  if (!identity) {
+    const requestHeaders = await headers();
+    const host =
+      requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
+    redirect(`${walletSignInPathForHost(host)}?redirect_url=/app`);
+  }
 
   const workspace = await loadAccountWorkspace(identity);
   const gnsIdentity = cachedGnsIdentity(workspace.gwapAccount.primaryGnsIdentity);
@@ -39,17 +48,20 @@ export default async function GwapOsLayout({ children }: { children: ReactNode }
   );
 
   return (
-    <WalletAuthProvider>
-      <GwapOsProvider
-        account={workspace.account}
-        gnsIdentity={gnsIdentity}
-        hasCloudState={workspace.hasCloudState}
-        initialState={state}
-      >
-        <GnsIdentityHydrationBridge />
-        <GnsRegistrationSyncBridge />
-        <OsShell>{children}</OsShell>
-      </GwapOsProvider>
-    </WalletAuthProvider>
+    <WalletHostGate>
+      <WalletAuthProvider variant="app">
+        <GwapOsProvider
+          account={workspace.account}
+          gnsIdentity={gnsIdentity}
+          hasCloudState={workspace.hasCloudState}
+          initialState={state}
+        >
+          <WalletSessionGuard sessionWallet={identity.verifiedWallet} />
+          <GnsIdentityHydrationBridge />
+          <GnsRegistrationSyncBridge />
+          <OsShell>{children}</OsShell>
+        </GwapOsProvider>
+      </WalletAuthProvider>
+    </WalletHostGate>
   );
 }

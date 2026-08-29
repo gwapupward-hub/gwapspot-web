@@ -4,7 +4,14 @@ import { usePrivy } from "@privy-io/react-auth";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 
-export function RefreshSessionClient({ redirectPath }: { redirectPath: string }) {
+export function RefreshSessionClient({
+  redirectPath,
+  signInPath,
+}: {
+  redirectPath: string;
+  /** The gateway for this host, so the wallet client never detours via /sign-in. */
+  signInPath: string;
+}) {
   const router = useRouter();
   const { getAccessToken, ready } = usePrivy();
   const started = useRef(false);
@@ -18,15 +25,15 @@ export function RefreshSessionClient({ redirectPath }: { redirectPath: string })
         router.replace(
           token
             ? redirectPath
-            : `/sign-in?redirect_url=${encodeURIComponent(redirectPath)}`,
+            : `${signInPath}?redirect_url=${encodeURIComponent(redirectPath)}`,
         );
         router.refresh();
       })
       .catch(() => {
-        router.replace(`/sign-in?redirect_url=${encodeURIComponent(redirectPath)}`);
+        router.replace(`${signInPath}?redirect_url=${encodeURIComponent(redirectPath)}`);
         router.refresh();
       });
-  }, [getAccessToken, ready, redirectPath, router]);
+  }, [getAccessToken, ready, redirectPath, router, signInPath]);
 
   return (
     <main className="auth-gate">

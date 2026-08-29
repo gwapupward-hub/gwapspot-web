@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { AuthSetupRequired } from "../components/auth-setup-required";
 import { RefreshSessionClient } from "../components/refresh-session-client";
 import { WalletAuthProvider } from "../components/wallet-auth-provider";
+import {
+  walletAuthVariantForHost,
+  walletSignInPathForHost,
+} from "../lib/app-domain-routing";
 import { isWalletAuthConfigured } from "../lib/auth-config";
 import { getSafeRedirectPath } from "../lib/safe-redirect";
 
@@ -24,9 +29,16 @@ export default async function RefreshPage({
     Array.isArray(query.redirect_url) ? query.redirect_url[0] : query.redirect_url,
   );
 
+  const requestHeaders = await headers();
+  const host =
+    requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
+
   return (
-    <WalletAuthProvider>
-      <RefreshSessionClient redirectPath={redirectPath} />
+    <WalletAuthProvider variant={walletAuthVariantForHost(host)}>
+      <RefreshSessionClient
+        redirectPath={redirectPath}
+        signInPath={walletSignInPathForHost(host)}
+      />
     </WalletAuthProvider>
   );
 }

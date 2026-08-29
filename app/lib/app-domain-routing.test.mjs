@@ -5,6 +5,8 @@ import {
   isAllowedGwapAppPath,
   isGwapAppHostname,
   normalizeHostname,
+  walletAuthVariantForHost,
+  walletSignInPathForHost,
 } from "./app-domain-routing.ts";
 
 test("normalizes host headers to a bare hostname", () => {
@@ -76,4 +78,19 @@ test("rejects marketing paths on the app domain", () => {
   ]) {
     assert.equal(isAllowedGwapAppPath(pathname), false, pathname);
   }
+});
+
+test("sends each host to its own sign-in gateway", () => {
+  assert.equal(walletSignInPathForHost("app.gwapspot.com"), "/os-sign-in");
+  assert.equal(walletSignInPathForHost("app.gwapspot.com:443"), "/os-sign-in");
+  assert.equal(walletSignInPathForHost("www.gwapspot.com"), "/sign-in");
+  assert.equal(walletSignInPathForHost("gwapspot.com"), "/sign-in");
+  assert.equal(walletSignInPathForHost(null), "/sign-in");
+});
+
+test("mounts the wallet-only auth client on the app host alone", () => {
+  assert.equal(walletAuthVariantForHost("app.gwapspot.com"), "app");
+  assert.equal(walletAuthVariantForHost("www.gwapspot.com"), "public");
+  assert.equal(walletAuthVariantForHost("gwapspot.com"), "public");
+  assert.equal(walletAuthVariantForHost(null), "public");
 });
