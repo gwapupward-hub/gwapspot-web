@@ -1,6 +1,7 @@
 import "server-only";
 
 import { randomBytes } from "node:crypto";
+import { registerSnapshotSubject, unregisterSnapshotSubject } from "./gwapscore-snapshots";
 import { getPrivateStorageKey, getWorkspaceRedis } from "./redis";
 
 export const SOCIAL_PLATFORMS = ["x"] as const;
@@ -96,6 +97,25 @@ function verifiedHandleKey(platform: SocialPlatform, handle: string) {
 }
 function verifiedExternalAccountKey(platform: SocialPlatform, accountId: string) {
   return getPrivateStorageKey("social-proof-control-external-account", `${platform}:${accountId.trim()}`);
+}
+
+/**
+ * Snapshot collection is downstream evidence, never a precondition of Proof of
+ * Control: a registry write that fails must not fail or reverse a verification.
+ */
+async function syncSnapshotSubject(record: SocialVerificationRecord) {
+  if (record.status === "verified" && record.externalAccountId && record.verifiedAt) {
+    await registerSnapshotSubject({
+      accountId: record.accountId,
+      platform: record.platform,
+      externalAccountId: record.externalAccountId,
+      socialHandle: record.socialHandle,
+      verifiedAt: record.verifiedAt,
+      challengeCode: record.challengeCode,
+    }).catch(() => null);
+    return;
+  }
+  await unregisterSnapshotSubject(record.accountId, record.platform).catch(() => false);
 }
 
 export function isSocialPlatform(value: unknown): value is SocialPlatform {
@@ -354,6 +374,7 @@ export async function submitPublicProofPost(accountId: string, platform: SocialP
     redis.set(accountKey, accountId, { ex: VERIFIED_TTL_SECONDS }),
     redis.del(challengeIndexKey(record.challengeCode)),
   ]);
+  await syncSnapshotSubject(verified);
   return { ok: true as const, record: verified, alreadyVerified: false as const };
 }
 
@@ -385,6 +406,7 @@ export async function verifySocialChallenge(input: { challengeCode: string; plat
     redis.set(accountKey, record.accountId, { ex: VERIFIED_TTL_SECONDS }),
     redis.del(challengeIndexKey(record.challengeCode)),
   ]);
+  await syncSnapshotSubject(verified);
   return { ok: true as const, record: verified };
 }
 
@@ -402,5 +424,6 @@ export async function revokeSocialVerification(accountId: string, platform: Soci
     operations.push(redis.deleteIfValue(verifiedExternalAccountKey(platform, record.externalAccountId), accountId).catch(() => false));
   }
   await Promise.all(operations);
+  await syncSnapshotSubject(revoked);
   return revoked;
 }
