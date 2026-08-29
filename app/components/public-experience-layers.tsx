@@ -12,7 +12,18 @@ import { Telemetry } from "../telemetry";
 
 export function PublicExperienceLayers() {
   const pathname = usePathname();
-  if (pathname === "/telegram" || pathname.startsWith("/telegram/")) return null;
+  const isTelegram =
+    pathname === "/telegram" || pathname.startsWith("/telegram/");
+  const isApplicationExperience =
+    pathname === "/os-entry" ||
+    pathname.startsWith("/os-entry/") ||
+    pathname === "/os-sign-in" ||
+    pathname.startsWith("/os-sign-in/") ||
+    pathname === "/refresh" ||
+    pathname === "/app" ||
+    pathname.startsWith("/app/");
+
+  if (isTelegram || isApplicationExperience) return null;
 
   return (
     <>

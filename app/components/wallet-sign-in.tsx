@@ -8,6 +8,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getWalletAuthErrorMessage } from "../lib/wallet-auth-error";
 
+type WalletSignInVariant = "public" | "app";
+
 function encodeBase64(bytes: Uint8Array) {
   let binary = "";
   for (let index = 0; index < bytes.length; index += 1) {
@@ -16,7 +18,13 @@ function encodeBase64(bytes: Uint8Array) {
   return window.btoa(binary);
 }
 
-export function WalletSignIn({ redirectPath }: { redirectPath: string }) {
+export function WalletSignIn({
+  redirectPath,
+  variant = "public",
+}: {
+  redirectPath: string;
+  variant?: WalletSignInVariant;
+}) {
   const router = useRouter();
   const { authenticated, login, ready, user } = usePrivy();
   const { generateSiwsMessage, loginWithSiws } = useLoginWithSiws();
@@ -26,6 +34,7 @@ export function WalletSignIn({ redirectPath }: { redirectPath: string }) {
   const [signing, setSigning] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
   const connectedAddress = publicKey?.toBase58();
+  const isAppVariant = variant === "app";
 
   const hasSolanaWallet = user?.linkedAccounts.some(
     (account) => account.type === "wallet" && account.chainType === "solana",
@@ -80,7 +89,9 @@ export function WalletSignIn({ redirectPath }: { redirectPath: string }) {
   if (!ready) {
     return (
       <section className="wallet-auth-card" aria-busy="true">
-        <span className="wallet-auth-eyebrow">SECURE WALLET SESSION</span>
+        <span className="wallet-auth-eyebrow">
+          {isAppVariant ? "GWAP OS / SECURE ACCESS" : "SECURE WALLET SESSION"}
+        </span>
         <h2>Preparing wallet access…</h2>
       </section>
     );
@@ -88,22 +99,42 @@ export function WalletSignIn({ redirectPath }: { redirectPath: string }) {
 
   return (
     <section className="wallet-auth-card">
-      <nav className="wallet-auth-navigation" aria-label="Sign-in navigation">
-        <button type="button" onClick={goBack}>← Back</button>
-        <Link href="/" data-native-nav>GWAPSpot home</Link>
-      </nav>
-      <div className="wallet-auth-logo-row" aria-hidden="true">
-        <img src="/logos/gwap-agent-clear.svg" alt="" width={38} height={38} decoding="async" />
-        <span />
-        <img src="/logos/occo-official.svg" alt="" width={38} height={38} decoding="async" />
-        <span />
-        <img src="/logos/gns.webp" alt="" width={38} height={38} decoding="async" />
-      </div>
-      <span className="wallet-auth-eyebrow">SOLANA WALLET AUTHENTICATION</span>
-      <h2>Your wallet is your GWAP sign-in.</h2>
+      {isAppVariant ? (
+        <nav className="wallet-auth-navigation" aria-label="Sign-in navigation">
+          <button type="button" onClick={goBack}>← Back to splash</button>
+          <span className="wallet-auth-app-status">GWAP OS</span>
+        </nav>
+      ) : (
+        <nav className="wallet-auth-navigation" aria-label="Sign-in navigation">
+          <button type="button" onClick={goBack}>← Back</button>
+          <Link href="/" data-native-nav>GWAPSpot home</Link>
+        </nav>
+      )}
+
+      {isAppVariant ? (
+        <div className="wallet-auth-logo-row wallet-auth-logo-row-app" aria-hidden="true">
+          <img src="/logos/gwap-agent-clear.svg" alt="" width={44} height={44} decoding="async" />
+        </div>
+      ) : (
+        <div className="wallet-auth-logo-row" aria-hidden="true">
+          <img src="/logos/gwap-agent-clear.svg" alt="" width={38} height={38} decoding="async" />
+          <span />
+          <img src="/logos/occo-official.svg" alt="" width={38} height={38} decoding="async" />
+          <span />
+          <img src="/logos/gns.webp" alt="" width={38} height={38} decoding="async" />
+        </div>
+      )}
+
+      <span className="wallet-auth-eyebrow">
+        {isAppVariant ? "SOLANA IDENTITY" : "SOLANA WALLET AUTHENTICATION"}
+      </span>
+      <h2>
+        {isAppVariant ? "Authenticate with your wallet." : "Your wallet is your GWAP sign-in."}
+      </h2>
       <p>
-        Connect a Solana wallet, then approve one message to prove ownership.
-        This does not submit a transaction or cost SOL.
+        {isAppVariant
+          ? "Connect your Solana wallet, then approve one ownership message to enter GWAP OS. No transaction. No SOL fee."
+          : "Connect a Solana wallet, then approve one message to prove ownership. This does not submit a transaction or cost SOL."}
       </p>
 
       <div className="wallet-auth-actions">
@@ -142,7 +173,7 @@ export function WalletSignIn({ redirectPath }: { redirectPath: string }) {
         )}
 
         <div className="wallet-auth-divider">
-          <span>NO WALLET YET?</span>
+          <span>{isAppVariant ? "NEW TO GWAP?" : "NO WALLET YET?"}</span>
         </div>
         <button
           className="wallet-auth-secondary"
@@ -167,10 +198,19 @@ export function WalletSignIn({ redirectPath }: { redirectPath: string }) {
           {error}
         </p>
       ) : null}
-      <p className="wallet-auth-legal">
-        By continuing, you agree to the <Link href="/terms">GWAPSpot Terms</Link>{" "}
-        and acknowledge the <Link href="/privacy">Privacy Policy</Link>.
-      </p>
+      {isAppVariant ? (
+        <p className="wallet-auth-legal">
+          By continuing, you agree to the{" "}
+          <a href="https://www.gwapspot.com/terms">GWAPSpot Terms</a>{" "}
+          and acknowledge the{" "}
+          <a href="https://www.gwapspot.com/privacy">Privacy Policy</a>.
+        </p>
+      ) : (
+        <p className="wallet-auth-legal">
+          By continuing, you agree to the <Link href="/terms">GWAPSpot Terms</Link>{" "}
+          and acknowledge the <Link href="/privacy">Privacy Policy</Link>.
+        </p>
+      )}
     </section>
   );
 }

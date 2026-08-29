@@ -1,0 +1,288 @@
+.gateway {
+  --gateway-green: #13dd13;
+  position: relative;
+  min-height: 100svh;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(340px, 480px);
+  align-items: center;
+  gap: clamp(36px, 7vw, 104px);
+  padding:
+    max(32px, env(safe-area-inset-top, 0px))
+    max(24px, env(safe-area-inset-right, 0px))
+    max(32px, env(safe-area-inset-bottom, 0px))
+    max(24px, env(safe-area-inset-left, 0px));
+  background:
+    radial-gradient(circle at 16% 18%, rgba(19, 221, 19, 0.14), transparent 32rem),
+    radial-gradient(circle at 84% 78%, rgba(126, 85, 255, 0.11), transparent 28rem),
+    linear-gradient(155deg, #020403 0%, #050806 52%, #020302 100%);
+  color: #f6f8f6;
+  isolation: isolate;
+}
+
+.ambientOne,
+.ambientTwo {
+  position: fixed;
+  z-index: -1;
+  width: 28rem;
+  height: 28rem;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.13;
+  pointer-events: none;
+}
+
+.ambientOne {
+  top: -14rem;
+  left: -11rem;
+  background: var(--gateway-green);
+}
+
+.ambientTwo {
+  right: -14rem;
+  bottom: -15rem;
+  background: #754cff;
+}
+
+.identityIntro {
+  width: min(720px, 100%);
+  padding-left: clamp(0px, 3vw, 36px);
+}
+
+.brandLine {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: clamp(48px, 8vh, 88px);
+}
+
+.brandMark {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(19, 221, 19, 0.22);
+  border-radius: 18px;
+  background: rgba(19, 221, 19, 0.055);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.1), 0 18px 46px rgba(0, 0, 0, 0.28);
+}
+
+.brandMark img {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+}
+
+.brandCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.brandCopy strong {
+  font-size: 17px;
+  letter-spacing: 0.08em;
+}
+
+.brandCopy small,
+.kicker,
+.securityLine {
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: 0.15em;
+}
+
+.brandCopy small {
+  color: #79827b;
+}
+
+.kicker {
+  color: var(--gateway-green);
+}
+
+.identityIntro h1 {
+  max-width: 700px;
+  margin: 18px 0 0;
+  font-size: clamp(54px, 7.6vw, 102px);
+  line-height: 0.92;
+  letter-spacing: -0.06em;
+  text-wrap: balance;
+}
+
+.identityIntro p {
+  max-width: 650px;
+  margin: 26px 0 0;
+  color: #929c94;
+  font-size: clamp(15px, 1.65vw, 18px);
+  line-height: 1.72;
+}
+
+.securityLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 11px;
+  margin-top: 30px;
+  color: #707a72;
+}
+
+.securityLine span:first-child {
+  color: #a4ada6;
+}
+
+.securityLine i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(19, 221, 19, 0.6);
+  box-shadow: 0 0 10px rgba(19, 221, 19, 0.26);
+}
+
+.authColumn {
+  width: 100%;
+  display: grid;
+  justify-items: stretch;
+}
+
+.gateway :global(.wallet-auth-card) {
+  width: 100%;
+  border-color: rgba(255, 255, 255, 0.12);
+  border-radius: 26px;
+  background: linear-gradient(145deg, rgba(12, 16, 13, 0.9), rgba(5, 8, 6, 0.82));
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.1), 0 34px 90px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(18px) saturate(135%);
+  -webkit-backdrop-filter: blur(18px) saturate(135%);
+}
+
+.gateway :global(.wallet-auth-logo-row-app) {
+  margin-bottom: 20px;
+}
+
+.gateway :global(.wallet-auth-logo-row-app img) {
+  border: 1px solid rgba(19, 221, 19, 0.2);
+  border-radius: 14px;
+  background: rgba(19, 221, 19, 0.05);
+}
+
+.gateway :global(.wallet-auth-app-status) {
+  color: #748078;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+}
+
+.gateway :global(.wallet-auth-card h2) {
+  font-size: clamp(30px, 4.2vw, 46px);
+}
+
+.gateway :global(.wallet-auth-navigation) {
+  margin-bottom: 26px;
+}
+
+.gateway :global(.wallet-auth-navigation button) {
+  touch-action: manipulation;
+}
+
+.gateway :global(.wallet-auth-primary),
+.gateway :global(.wallet-auth-secondary) {
+  min-height: 54px;
+  touch-action: manipulation;
+}
+
+@media (max-width: 900px) {
+  .gateway {
+    grid-template-columns: 1fr;
+    align-content: start;
+    gap: 34px;
+    padding-top: max(26px, env(safe-area-inset-top, 0px));
+  }
+
+  .identityIntro {
+    width: min(560px, 100%);
+    margin: 0 auto;
+    padding-left: 0;
+    text-align: center;
+  }
+
+  .brandLine {
+    justify-content: center;
+    margin-bottom: 34px;
+  }
+
+  .identityIntro h1 {
+    margin-right: auto;
+    margin-left: auto;
+    font-size: clamp(46px, 12vw, 74px);
+  }
+
+  .identityIntro p {
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  .securityLine {
+    justify-content: center;
+  }
+
+  .authColumn {
+    width: min(500px, 100%);
+    margin: 0 auto;
+    padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (max-width: 620px) {
+  .gateway {
+    gap: 26px;
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+  }
+
+  .brandLine {
+    margin-bottom: 24px;
+  }
+
+  .brandMark {
+    width: 50px;
+    height: 50px;
+    border-radius: 15px;
+  }
+
+  .brandMark img {
+    width: 40px;
+    height: 40px;
+  }
+
+  .identityIntro h1 {
+    font-size: clamp(42px, 12.6vw, 58px);
+  }
+
+  .identityIntro p {
+    margin-top: 18px;
+    font-size: 14px;
+  }
+
+  .securityLine {
+    margin-top: 20px;
+    gap: 8px;
+    font-size: 7px;
+  }
+
+  .gateway :global(.wallet-auth-card) {
+    padding: 22px 18px;
+    border-radius: 22px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gateway *,
+  .gateway *::before,
+  .gateway *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
