@@ -1,384 +1,299 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
-import { GwapScoreDisplay } from "../../components/gwap-score-display";
-import type { GwapScoreResult } from "../../lib/gwap-score";
+import { useEffect, useMemo, useState } from "react";
 import type { EcosystemProduct } from "../../lib/ecosystem";
-import { getProfileCompletion, type GwapPersona } from "../lib/os-state";
+import { getProfileCompletion } from "../lib/os-state";
+import { fetchSolBalanceLamports, lamportsToSol } from "../lib/rpc-dedupe";
+import { shortenWalletAddress } from "../lib/wallet-format";
+import { GwapGradientLink } from "./gwap-gradient-button";
 import { useGwapOs } from "./os-provider";
 import { WalletPortfolioCard } from "./wallet-portfolio-card";
 
-const outcomeActions = [
-  {
-    key: "reputation",
-    href: "/app/score",
-    label: "Build my reputation",
-    product: "GwapScore",
-    icon: "↗",
-    note: "Understand your trust signal and what can strengthen it.",
-  },
-  {
-    key: "identity",
-    href: "/app/identity",
-    label: "Verify my identity",
-    product: "GNS",
-    icon: "◎",
-    note: "Claim or strengthen the digital identity attached to your wallet.",
-  },
-  {
-    key: "opportunity",
-    href: "/app/ideas",
-    label: "Find an opportunity",
-    product: "Daily Ideas",
-    icon: "✦",
-    note: "Discover, save, develop, validate, and build something useful.",
-  },
-  {
-    key: "work",
-    href: "/app/marketplace",
-    label: "Turn trust into work",
-    product: "Marketplace",
-    icon: "▤",
-    note: "Use reputation and verified identity in real economic activity.",
-  },
-  {
-    key: "proof",
-    href: "/app/vault",
-    label: "Prove something privately",
-    product: "Private Proof Vault",
-    icon: "◇",
-    note: "Prepare selective proof and credential workflows without oversharing.",
-  },
-  {
-    key: "integrate",
-    href: "/app/developer",
-    label: "Integrate GWAP",
-    product: "Developer API",
-    icon: "{}",
-    note: "Bring GWAP identity, intelligence, and trust signals into another product.",
-  },
-] as const;
-
-type OutcomeKey = (typeof outcomeActions)[number]["key"];
-
-const personaProfiles: Record<
-  GwapPersona,
-  {
-    label: string;
-    short: string;
-    description: string;
-    priorities: OutcomeKey[];
-    recommendation: { href: string; title: string; detail: string; label: string };
-  }
-> = {
-  general: {
-    label: "Explore GWAP",
-    short: "General",
-    description: "Start with identity, trust, wallet intelligence, and opportunities.",
-    priorities: ["identity", "reputation", "opportunity", "proof", "work", "integrate"],
-    recommendation: {
-      href: "/app/ideas",
-      title: "Discover what GWAP can help you do",
-      detail: "Use Daily Ideas and the trust tools around it to find an opportunity worth acting on.",
-      label: "Explore opportunities",
-    },
-  },
-  builder: {
-    label: "Build products",
-    short: "Builder",
-    description: "Prioritize APIs, opportunities, wallet intelligence, and execution.",
-    priorities: ["integrate", "opportunity", "identity", "reputation", "proof", "work"],
-    recommendation: {
-      href: "/app/developer",
-      title: "Turn GWAP infrastructure into a building block",
-      detail: "Create an API key and start integrating identity, wallet intelligence, and trust signals into your own product.",
-      label: "Open developer tools",
-    },
-  },
-  freelancer: {
-    label: "Win clients",
-    short: "Freelancer",
-    description: "Prioritize credibility, proof, profile strength, and paid work.",
-    priorities: ["reputation", "proof", "work", "identity", "opportunity", "integrate"],
-    recommendation: {
-      href: "/app/marketplace",
-      title: "Put your credibility in front of real opportunities",
-      detail: "Use your verified identity and reputation as context when you pursue work, clients, and collaborations.",
-      label: "Explore work",
-    },
-  },
-  creator: {
-    label: "Grow my influence",
-    short: "Creator",
-    description: "Prioritize reputation, identity, proof, and monetizable opportunities.",
-    priorities: ["reputation", "identity", "proof", "opportunity", "work", "integrate"],
-    recommendation: {
-      href: "/app/score",
-      title: "Strengthen the trust behind your audience",
-      detail: "Build a reputation layer that can travel with you into collaborations, sponsorships, commerce, and future social verification.",
-      label: "Build reputation",
-    },
-  },
-  investor: {
-    label: "Evaluate opportunities",
-    short: "Investor",
-    description: "Prioritize wallet intelligence, identity, reputation, and counterparty trust.",
-    priorities: ["reputation", "identity", "proof", "opportunity", "integrate", "work"],
-    recommendation: {
-      href: "/app/score",
-      title: "Make trust part of your diligence process",
-      detail: "Use identity and reputation signals alongside the mainnet portfolio view before you evaluate counterparties and opportunities.",
-      label: "Inspect trust signals",
-    },
-  },
-  business: {
-    label: "Operate a business",
-    short: "Business",
-    description: "Prioritize integrations, counterparties, proof, reputation, and hiring.",
-    priorities: ["integrate", "reputation", "proof", "work", "identity", "opportunity"],
-    recommendation: {
-      href: "/app/developer",
-      title: "Bring GWAP trust infrastructure into your workflow",
-      detail: "Use the developer layer to make wallet intelligence, identity, and trust signals available inside your own product or operations.",
-      label: "Open developer tools",
-    },
-  },
-};
-
-const personaOrder: GwapPersona[] = ["builder", "freelancer", "creator", "investor", "business", "general"];
-
-function shortWallet(wallet: string) {
-  return `${wallet.slice(0, 5)}…${wallet.slice(-5)}`;
-}
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value));
-}
-
 export function DashboardView({ products }: { products: EcosystemProduct[] }) {
-  const { account, gnsIdentity, state, syncStatus, updateSettings } = useGwapOs();
-  const liveProducts = products.filter((product) => product.status === "Live").length;
+  const { account, gnsIdentity, state, syncStatus } = useGwapOs();
+  const [solBalance, setSolBalance] = useState<string>("—");
   const profileCompletion = getProfileCompletion(state.profile);
-  const persona = state.settings.persona;
-  const personaProfile = personaProfiles[persona];
 
-  const recentNames = useMemo(() => {
-    return state.recent
-      .map((item) => products.find((product) => product.slug === item.slug)?.name)
-      .filter((value): value is string => Boolean(value))
-      .slice(0, 3);
-  }, [products, state.recent]);
-
-  const personalizedActions = useMemo(() => {
-    const priority = new Map(personaProfile.priorities.map((key, index) => [key, index]));
-    return [...outcomeActions].sort(
-      (left, right) => (priority.get(left.key) ?? 99) - (priority.get(right.key) ?? 99),
-    );
-  }, [personaProfile.priorities]);
-
-  const identityTitle =
-    gnsIdentity.fullName ||
-    (gnsIdentity.status === "none"
-      ? "Identity not initialized"
-      : shortWallet(account.verifiedWallet));
-
-  const score: GwapScoreResult = {
-    status: gnsIdentity.scoreStatus,
-    score: gnsIdentity.score,
-    tier: gnsIdentity.scoreTier,
-    message: gnsIdentity.scoreMessage,
-  };
-
-  const identityStrength = clamp(
-    25 +
-      (gnsIdentity.status === "found" ? 30 : 0) +
-      Math.round((profileCompletion / 100) * 25) +
-      (gnsIdentity.scoreStatus === "scored" ? 20 : 0),
-    0,
-    100,
+  const identity = useMemo(
+    () => gnsIdentity.fullName || shortenWalletAddress(account.verifiedWallet),
+    [account.verifiedWallet, gnsIdentity.fullName],
   );
+
+  useEffect(() => {
+    const rpc = process.env.NEXT_PUBLIC_SOLANA_RPC_URL;
+    if (!rpc) return;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), 3500);
+
+    void fetchSolBalanceLamports(rpc, account.verifiedWallet, {
+      signal: controller.signal,
+    })
+      .then((lamports) => {
+        if (typeof lamports === "number") {
+          setSolBalance(`${lamportsToSol(lamports).toFixed(2)} SOL`);
+        }
+      })
+      .catch(() => undefined)
+      .finally(() => window.clearTimeout(timer));
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timer);
+    };
+  }, [account.verifiedWallet]);
 
   const nextAction = useMemo(() => {
     if (gnsIdentity.status === "none") {
       return {
         href: "/app/identity",
-        title: "Claim your digital identity",
-        detail: "Attach a .gwap identity to your verified wallet so the rest of GWAP OS has a human-readable trust anchor.",
-        label: "Initialize identity",
+        title: "Claim your GwapOS identity",
+        detail:
+          "Turn this wallet into a human-readable .gwap identity that can travel across the GWAP ecosystem.",
+        label: "Claim .gwap",
       };
     }
+
     if (profileCompletion < 67) {
       return {
         href: "/app/profile",
-        title: "Complete your public profile",
-        detail: "A stronger profile gives clients, collaborators, and counterparties more context before they decide to trust you.",
-        label: "Strengthen profile",
+        title: "Strengthen your identity",
+        detail:
+          "Complete your public profile so counterparties have useful context before they transact with you.",
+        label: "Complete profile",
       };
     }
+
     if (gnsIdentity.scoreStatus !== "scored") {
       return {
         href: "/app/score",
-        title: "Understand your reputation",
-        detail: "Inspect the trust signals available to GWAP and see what is still missing before reputation can become more useful.",
-        label: "Open reputation",
+        title: "Activate your reputation layer",
+        detail:
+          "Review the trust signals available to GwapScore and see what is still missing.",
+        label: "Open GwapScore",
       };
     }
-    return personaProfile.recommendation;
-  }, [gnsIdentity.scoreStatus, gnsIdentity.status, personaProfile.recommendation, profileCompletion]);
 
-  const logs = [
-    `[identity] wallet verified: ${shortWallet(account.verifiedWallet)}`,
-    gnsIdentity.status === "found"
-      ? `[identity] .gwap resolved: ${gnsIdentity.fullName ?? gnsIdentity.name}`
-      : gnsIdentity.status === "none"
-        ? "[identity] .gwap identity not yet claimed"
-        : "[identity] registry temporarily unavailable",
-    `[trust] identity strength: ${identityStrength}%`,
-    gnsIdentity.scoreStatus === "scored"
-      ? `[trust] reputation signal: ${gnsIdentity.score}${gnsIdentity.scoreTier ? ` (${gnsIdentity.scoreTier})` : ""}`
-      : `[trust] ${gnsIdentity.scoreMessage}`,
-    `[workspace] mode: ${personaProfile.short.toLowerCase()}`,
-    `[wallet] portfolio source: Solana mainnet-beta`,
-    `[sync] workspace: ${syncStatus}`,
-    `[ecosystem] ${liveProducts} products currently live`,
-    ...(recentNames.length ? [`[recent] ${recentNames.join(" · ")}`] : []),
-  ];
+    return {
+      href: "/app/vault",
+      title: "Put your identity to work",
+      detail:
+        "Create a proof, invoice, or agreement from the wallet identity you already established.",
+      label: "Open Vault",
+    };
+  }, [gnsIdentity.scoreStatus, gnsIdentity.status, profileCompletion]);
+
+  const pulse = useMemo(() => {
+    const items = [
+      gnsIdentity.status === "found"
+        ? {
+            icon: "◎",
+            title: `${gnsIdentity.fullName ?? gnsIdentity.name} is active`,
+            note: "Primary GwapOS identity",
+            status: "Live",
+          }
+        : gnsIdentity.status === "none"
+          ? {
+              icon: "+",
+              title: "No .gwap identity yet",
+              note: "Claim one to make this wallet human-readable",
+              status: "Action",
+            }
+          : {
+              icon: "!",
+              title: "Identity registry unavailable",
+              note: "Wallet access still works while GNS recovers",
+              status: "Degraded",
+            },
+      gnsIdentity.scoreStatus === "scored"
+        ? {
+            icon: "↗",
+            title: `GwapScore ${gnsIdentity.score ?? "—"}`,
+            note: gnsIdentity.scoreTier || "Reputation signal active",
+            status: "Updated",
+          }
+        : {
+            icon: "↗",
+            title: "Reputation still developing",
+            note: gnsIdentity.scoreMessage,
+            status: "Review",
+          },
+      syncStatus === "saved"
+        ? {
+            icon: "✓",
+            title: "GwapOS state synced",
+            note: "Your workspace is current",
+            status: "Saved",
+          }
+        : {
+            icon: "•",
+            title: "Workspace sync in progress",
+            note: "Your wallet remains authenticated",
+            status: syncStatus,
+          },
+    ];
+
+    if (state.recent.length) {
+      const recentProduct = products.find(
+        (product) => product.slug === state.recent[0]?.slug,
+      );
+      if (recentProduct) {
+        items.push({
+          icon: "✦",
+          title: `Recent: ${recentProduct.name}`,
+          note: "Continue where you left off",
+          status: "Recent",
+        });
+      }
+    }
+
+    return items.slice(0, 4);
+  }, [gnsIdentity, products, state.recent, syncStatus]);
 
   return (
-    <div className="os-page os-home-v2">
-      <section className="os-v2-hero">
+    <div className="gwapos-home">
+      <section className="gwapos-hero-card" aria-labelledby="gwapos-home-title">
+        <div className="gwapos-identity-line">
+          <div>
+            <p className="gwapos-kicker">Wallet Command Center</p>
+            <h1 id="gwapos-home-title">{identity}</h1>
+            <p>{shortenWalletAddress(account.verifiedWallet)} · Solana mainnet</p>
+          </div>
+          <span className="gwapos-status-orb" aria-hidden="true" />
+        </div>
+
+        <div className="gwapos-balance-line">
+          <div>
+            <small>AVAILABLE SOL</small>
+            <p>{solBalance}</p>
+          </div>
+          <small>
+            {gnsIdentity.status === "found" ? ".gwap connected" : "wallet verified"}
+          </small>
+        </div>
+
+        <div className="gwapos-wallet-actions" aria-label="Wallet actions">
+          <button
+            className="gwapos-glass-action"
+            type="button"
+            disabled
+            title="Send is coming in the wallet action pass"
+          >
+            Send
+          </button>
+          <button
+            className="gwapos-glass-action"
+            type="button"
+            disabled
+            title="Receive is coming in the wallet action pass"
+          >
+            Receive
+          </button>
+          <button
+            className="gwapos-glass-action"
+            type="button"
+            disabled
+            title="Swap is coming in the wallet action pass"
+          >
+            Swap
+          </button>
+        </div>
+      </section>
+
+      <div className="gwapos-home-grid">
         <div>
-          <span className="os-terminal-label">GWAP://TRUST_OPERATING_LAYER</span>
-          <h1>Turn your identity into <span>leverage.</span></h1>
-          <p>Build credibility, understand what you own, prove what matters, discover opportunities, and put your reputation to work.</p>
-        </div>
-        <div className={`os-runtime-badge state-${gnsIdentity.status}`}>
-          <i />
-          <span>
-            <small>IDENTITY STRENGTH</small>
-            <strong>{identityStrength}%</strong>
-          </span>
-        </div>
-      </section>
-
-      <section className="os-app-launcher">
-        <div className="os-section-heading-v2">
-          <span className="os-terminal-label">PERSONALIZE MY GWAP OS</span>
-          <p>Tell GWAP OS what kind of value you are here to create. This changes emphasis and recommendations, not your access.</p>
-        </div>
-        <div className="os-process-grid">
-          {personaOrder.map((option) => {
-            const profile = personaProfiles[option];
-            const active = option === persona;
-            return (
-              <button
-                type="button"
-                key={option}
-                className={`os-process-tile${active ? " is-active" : ""}`}
-                aria-pressed={active}
-                onClick={() => updateSettings({ persona: option })}
-              >
-                <span className="os-process-icon" aria-hidden="true">{active ? "●" : "○"}</span>
-                <span>
-                  <strong>{profile.label}</strong>
-                  <small>{profile.short.toUpperCase()} MODE</small>
-                  <em>{profile.description}</em>
-                </span>
-                <i aria-hidden="true">{active ? "✓" : "→"}</i>
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="os-v2-layout">
-        <article className="os-identity-console">
-          <div className="os-console-chrome"><span>WHO AM I?</span><span>{gnsIdentity.status === "found" ? "VERIFIED IDENTITY" : "IDENTITY SETUP"}</span></div>
-          <div className="os-identity-body">
-            <div className="os-v2-avatar" aria-hidden="true">{(gnsIdentity.name || account.displayName || "G").slice(0, 1).toUpperCase()}</div>
-            <div className="os-identity-copy">
-              <span className="os-terminal-label">YOUR GWAP IDENTITY</span>
-              <h2>{identityTitle}</h2>
-              <p>{gnsIdentity.bio || state.profile.bio || "Connect the signals that make your identity easier to trust and easier to understand."}</p>
-              <div className="os-identity-meta">
-                <span><small>WALLET</small><strong>{shortWallet(account.verifiedWallet)}</strong></span>
-                <span><small>PROFILE</small><strong>{profileCompletion}%</strong></span>
-                <span><small>STRENGTH</small><strong>{identityStrength}%</strong></span>
+          <section className="gwapos-section" aria-labelledby="pulse-title">
+            <div className="gwapos-section-head">
+              <div>
+                <p className="gwapos-kicker">Your Pulse</p>
+                <h2 id="pulse-title">What matters right now</h2>
               </div>
-              <div className="os-inline-actions">
-                <Link href="/app/identity">Manage identity →</Link>
-                <Link href="/app/profile">Strengthen profile</Link>
+              <p>{pulse.length} signals</p>
+            </div>
+
+            <div className="gwapos-pulse">
+              {pulse.map((item) => (
+                <div className="gwapos-pulse-row" key={`${item.title}-${item.status}`}>
+                  <span aria-hidden="true">{item.icon}</span>
+                  <div>
+                    <p>{item.title}</p>
+                    <small>{item.note}</small>
+                  </div>
+                  <strong>{item.status}</strong>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="gwapos-section" aria-labelledby="portfolio-title">
+            <div className="gwapos-section-head">
+              <div>
+                <p className="gwapos-kicker">Wallet Intelligence</p>
+                <h2 id="portfolio-title">Portfolio snapshot</h2>
+              </div>
+              <p>Live wallet data</p>
+            </div>
+            <div className="gwapos-portfolio-shell">
+              <WalletPortfolioCard />
+            </div>
+          </section>
+        </div>
+
+        <div>
+          <section className="gwapos-section" aria-labelledby="next-action-title">
+            <div className="gwapos-section-head">
+              <div>
+                <p className="gwapos-kicker">Next Action</p>
+                <h2 id="next-action-title">Recommended for this wallet</h2>
               </div>
             </div>
-          </div>
-        </article>
 
-        <aside className="os-runtime-panel os-runtime-note">
-          <span className="os-terminal-label">HOW AM I TRUSTED?</span>
-          <h2>{gnsIdentity.scoreStatus === "scored" ? "Your reputation is active." : "Your trust picture is still developing."}</h2>
-          <GwapScoreDisplay result={score} />
-          <p>{gnsIdentity.scoreMessage}</p>
-          <Link href="/app/score">Understand your reputation →</Link>
-        </aside>
-      </section>
+            <article className="gwapos-next-action">
+              <div>
+                <h3>{nextAction.title}</h3>
+                <p>{nextAction.detail}</p>
+              </div>
+              <GwapGradientLink href={nextAction.href}>{nextAction.label} →</GwapGradientLink>
+            </article>
+          </section>
 
-      <section className="os-v2-layout">
-        <div>
-          <div className="os-section-heading-v2">
-            <span className="os-terminal-label">WHAT DO I OWN?</span>
-            <p>Your verified wallet is read directly from Solana mainnet.</p>
-          </div>
-          <WalletPortfolioCard />
+          <section className="gwapos-section" aria-labelledby="quick-tools-title">
+            <div className="gwapos-section-head">
+              <div>
+                <p className="gwapos-kicker">Quick Tools</p>
+                <h2 id="quick-tools-title">Operate GwapOS</h2>
+              </div>
+            </div>
+
+            <div className="gwapos-pulse">
+              <Link className="gwapos-pulse-row" href="/app/vault">
+                <span aria-hidden="true">◇</span>
+                <div>
+                  <p>Create a proof</p>
+                  <small>Private Proof Vault</small>
+                </div>
+                <strong>Open</strong>
+              </Link>
+              <Link className="gwapos-pulse-row" href="/app/identity">
+                <span aria-hidden="true">◎</span>
+                <div>
+                  <p>Manage identity</p>
+                  <small>.gwap, profile, and wallet</small>
+                </div>
+                <strong>Open</strong>
+              </Link>
+              <Link className="gwapos-pulse-row" href="/app/apps">
+                <span aria-hidden="true">✦</span>
+                <div>
+                  <p>Open GwapOS apps</p>
+                  <small>{products.length} ecosystem tools available</small>
+                </div>
+                <strong>View</strong>
+              </Link>
+            </div>
+          </section>
         </div>
-
-        <aside className="os-runtime-panel os-runtime-note">
-          <span className="os-terminal-label">WHAT SHOULD I DO NEXT? · {personaProfile.short.toUpperCase()}</span>
-          <h2>{nextAction.title}</h2>
-          <p>{nextAction.detail}</p>
-          <div className="os-inline-actions">
-            <Link href={nextAction.href}>{nextAction.label} →</Link>
-          </div>
-          <small>Identity and profile prerequisites stay universal. After that, recommendations adapt to what you use GWAP OS to accomplish.</small>
-        </aside>
-      </section>
-
-      <section className="os-app-launcher">
-        <div className="os-section-heading-v2">
-          <span className="os-terminal-label">WHAT ARE YOU HERE TO DO?</span>
-          <p>Actions are ordered for {personaProfile.short.toLowerCase()} mode. Every capability remains available.</p>
-        </div>
-        <div className="os-process-grid">
-          {personalizedActions.map((action) => (
-            <Link href={action.href} key={action.href} className="os-process-tile">
-              <span className="os-process-icon" aria-hidden="true">{action.icon}</span>
-              <span>
-                <strong>{action.label}</strong>
-                <small>POWERED BY {action.product.toUpperCase()}</small>
-                <em>{action.note}</em>
-              </span>
-              <i aria-hidden="true">→</i>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section className="os-v2-layout">
-        <aside className="os-system-log" aria-label="GWAP trust activity log">
-          <div className="os-console-chrome"><span>GWAP TRUST GRAPH</span><span>LIVE</span></div>
-          <div className="os-log-lines">
-            {logs.map((line, index) => (
-              <p key={`${line}-${index}`}><span>{String(index + 1).padStart(2, "0")}</span>{line}</p>
-            ))}
-          </div>
-        </aside>
-        <aside className="os-runtime-panel os-runtime-note">
-          <span className="os-terminal-label">THE GWAP LOOP</span>
-          <h2>Connect → Verify → Build reputation → Unlock value.</h2>
-          <p>Every verified signal should make the rest of the operating system more useful—from identity and wallet intelligence to opportunities, work, and future proofs.</p>
-          <small>Identity Strength measures verified coverage and profile completeness. It is not your GwapScore and is not a financial credit score.</small>
-        </aside>
-      </section>
+      </div>
     </div>
   );
 }
