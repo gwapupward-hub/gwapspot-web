@@ -44,8 +44,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
+        <style>{'html[data-gwap-app-host="true"] .premium-splash{display:none!important}'}</style>
         <Script id="gwap-intro-state" strategy="beforeInteractive">
-          {'try{if(sessionStorage.getItem("gwap-premium-intro-seen-v2")==="true")document.documentElement.dataset.gwapIntroSeen="true"}catch(e){}'}
+          {'try{const root=document.documentElement;if(location.hostname.toLowerCase()==="app.gwapspot.com")root.dataset.gwapAppHost="true";if(sessionStorage.getItem("gwap-premium-intro-seen-v2")==="true")root.dataset.gwapIntroSeen="true"}catch(e){}'}
         </Script>
         <PublicExperienceLayers />
         {children}

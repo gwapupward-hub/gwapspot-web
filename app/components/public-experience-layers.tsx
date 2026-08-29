@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { ConversionTelemetry } from "./conversion-telemetry";
 import { GwapContinuityLayer } from "./gwap-continuity-layer";
 import { GwapInteractionLayer } from "./gwap-interaction-layer";
@@ -12,6 +13,15 @@ import { Telemetry } from "../telemetry";
 
 export function PublicExperienceLayers() {
   const pathname = usePathname();
+  const [isAppHost, setIsAppHost] = useState(false);
+
+  useEffect(() => {
+    const appHost =
+      document.documentElement.dataset.gwapAppHost === "true" ||
+      window.location.hostname.toLowerCase() === "app.gwapspot.com";
+    setIsAppHost(appHost);
+  }, []);
+
   const isTelegram =
     pathname === "/telegram" || pathname.startsWith("/telegram/");
   const isApplicationExperience =
@@ -23,7 +33,7 @@ export function PublicExperienceLayers() {
     pathname === "/app" ||
     pathname.startsWith("/app/");
 
-  if (isTelegram || isApplicationExperience) return null;
+  if (isAppHost || isTelegram || isApplicationExperience) return null;
 
   return (
     <>

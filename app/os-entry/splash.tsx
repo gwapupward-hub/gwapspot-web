@@ -49,8 +49,13 @@ export function GwapOsSplash() {
       <div
         className={`${styles.entryWrap} ${showEnter ? styles.entryVisible : ""}`}
       >
-        <Link href="/app" className={styles.enterButton} prefetch>
-          Enter Tha GwapSpot
+        <Link
+          href="/app"
+          className={styles.enterButton}
+          prefetch
+          aria-label="Enter Tha GwapSpot"
+        >
+          <span className={styles.srOnly}>Enter Tha GwapSpot</span>
         </Link>
       </div>
     </main>
