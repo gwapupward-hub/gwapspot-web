@@ -153,21 +153,31 @@ export function WalletSignIn({
           {redirecting ? "Opening GWAP OS…" : "Connect Solana wallet"}
         </button>
 
-        <div className="wallet-auth-divider">
-          <span>{isAppVariant ? "NEW TO GWAP?" : "NO WALLET YET?"}</span>
-        </div>
-        <button
-          className="wallet-auth-secondary"
-          type="button"
-          disabled={redirecting}
-          onClick={createWalletWithEmail}
-        >
-          Create a Solana wallet with email
-        </button>
-        <small>
-          Use your existing email address. A self-custodial embedded Solana wallet
-          is created for this account—no password or browser extension required.
-        </small>
+        {isAppVariant ? (
+          <small className="wallet-auth-app-hint">
+            GWAP OS is wallet-native. Approve the signature request in your
+            Solana wallet to enter.
+          </small>
+        ) : (
+          <>
+            <div className="wallet-auth-divider">
+              <span>NO WALLET YET?</span>
+            </div>
+            <button
+              className="wallet-auth-secondary"
+              type="button"
+              disabled={redirecting}
+              onClick={createWalletWithEmail}
+            >
+              Create a Solana wallet with email
+            </button>
+            <small>
+              Use your existing email address. A self-custodial embedded Solana
+              wallet is created for this account—no password or browser
+              extension required.
+            </small>
+          </>
+        )}
       </div>
 
       {authenticated && !hasSolanaWallet ? (

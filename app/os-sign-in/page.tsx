@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
+import { AppAccessColumn } from "../components/app-access-column";
 import { AuthSetupRequired } from "../components/auth-setup-required";
 import { WalletAuthProvider } from "../components/wallet-auth-provider";
-import { WalletSignIn } from "../components/wallet-sign-in";
 import { isWalletAuthConfigured } from "../lib/auth-config";
 import { getSafeRedirectPath } from "../lib/safe-redirect";
 import styles from "./gateway.module.css";
@@ -66,7 +66,7 @@ export default async function GwapOsSignInPage({
         </section>
 
         <div className={styles.authColumn}>
-          <WalletSignIn redirectPath={redirectPath} variant="app" />
+          <AppAccessColumn redirectPath={redirectPath} />
         </div>
       </main>
     </WalletAuthProvider>

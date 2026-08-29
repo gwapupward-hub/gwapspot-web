@@ -487,6 +487,11 @@ html[data-gwap-reduce-motion="true"] .gwap-os *::after { scroll-behavior: auto !
 .wallet-auth-card .wallet-auth-error { color: #ff9e9e; }
 .wallet-auth-card .wallet-auth-legal { color: #667068; font-size: 8px; }
 .wallet-auth-legal a { color: #9aa49c; text-decoration: underline; text-underline-offset: 2px; }
+.wallet-auth-app-hint { color: #7f8981; font-size: 9px; line-height: 1.55; }
+a.wallet-auth-primary,
+a.wallet-auth-secondary { display: inline-flex; align-items: center; justify-content: center; text-align: center; text-decoration: none; }
+.wallet-auth-inline-link { border: 0; padding: 0; background: transparent; color: #13dd13; font: inherit; font-weight: 900; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.wallet-auth-inline-link:focus-visible { outline: 2px solid #13dd13; outline-offset: 2px; }
 .wallet-adapter-modal-wrapper { border: 1px solid rgba(255,255,255,.14); background: #0a0d0b; }
 .wallet-adapter-button { font-family: inherit; }
 
