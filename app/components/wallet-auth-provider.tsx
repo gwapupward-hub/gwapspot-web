@@ -31,6 +31,7 @@ const walletAuthConfig: PrivyClientConfig = {
     walletChainType: "solana-only",
     walletList: [
       "phantom",
+      "jupiter",
       "solflare",
       "backpack",
       "detected_solana_wallets",

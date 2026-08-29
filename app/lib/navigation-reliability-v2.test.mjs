@@ -67,13 +67,23 @@ test("mobile navigation reliability v2 keeps product navigation isolated", () =>
   assert.match(wallet, /<Link href="\/" data-native-nav>GWAPSpot home<\/Link>/);
   assert.match(wallet, /variant = "public"/);
   assert.match(wallet, /variant="app"|WalletSignInVariant/);
-  assert.match(wallet, /usePrivySolanaWallets/);
-  assert.match(wallet, /activeWallet\.signMessage/);
+  assert.match(wallet, /useLogin/);
+  assert.match(wallet, /onComplete: \(\) =>/);
+  assert.match(wallet, /void navigateWhenSessionReady\(\)/);
+  assert.match(wallet, /onError: \(loginError\) =>/);
+  assert.match(wallet, /login\(\{ loginMethods: \["wallet"\] \}\)/);
+  assert.match(wallet, /login\(\{ loginMethods: \["email"\] \}\)/);
   assert.match(wallet, /waitForAccessToken/);
+  assert.match(wallet, /if \(!ready\)/);
+  assert.doesNotMatch(wallet, /solanaWalletsReady/);
+  assert.doesNotMatch(wallet, /usePrivySolanaWallets/);
+  assert.doesNotMatch(wallet, /useLoginWithSiws/);
+  assert.doesNotMatch(wallet, /useConnectWallet/);
   assert.doesNotMatch(wallet, /useWalletModal/);
   assert.doesNotMatch(wallet, /from "next\/image"/);
 
   assert.match(walletProvider, /toSolanaWalletConnectors/);
+  assert.match(walletProvider, /"jupiter"/);
   assert.match(walletProvider, /detected_solana_wallets/);
   assert.match(walletProvider, /externalWallets:/);
   assert.match(walletProvider, /autoConnect=\{false\}/);
