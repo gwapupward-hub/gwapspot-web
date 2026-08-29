@@ -4,6 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { fetchSolBalanceLamports, lamportsToSol } from "../lib/rpc-dedupe";
+import { shortenWalletAddress } from "../lib/wallet-format";
 import { BootSequence } from "./boot-sequence";
 import { CommandPalette } from "./command-palette";
 import { useGwapOs } from "./os-provider";
@@ -19,10 +21,6 @@ const dock = [
   { href: "/app/developer", label: "Build", icon: "{}" },
 ] as const;
 
-function compactWallet(wallet: string) {
-  return `${wallet.slice(0, 4)}…${wallet.slice(-4)}`;
-}
-
 function breadcrumb(pathname: string) {
   if (pathname === "/app") return "~/home";
   return `~${pathname.replace(/^\/app/, "")}`;
@@ -35,7 +33,7 @@ export function OsShell({ children }: { children: ReactNode }) {
   const [balance, setBalance] = useState<string>("—");
 
   const handle = useMemo(
-    () => gnsIdentity.fullName || compactWallet(account.verifiedWallet),
+    () => gnsIdentity.fullName || shortenWalletAddress(account.verifiedWallet),
     [account.verifiedWallet, gnsIdentity.fullName],
   );
 
@@ -45,16 +43,15 @@ export function OsShell({ children }: { children: ReactNode }) {
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), 3500);
 
-    void fetch(rpc, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getBalance", params: [account.verifiedWallet, { commitment: "confirmed" }] }),
+    // Deduped + bounded-retry balance read: repeated mounts share one in-flight
+    // request instead of firing duplicate getBalance calls.
+    void fetchSolBalanceLamports(rpc, account.verifiedWallet, {
       signal: controller.signal,
     })
-      .then((response) => (response.ok ? response.json() : Promise.reject(new Error("RPC failed"))))
-      .then((payload: { result?: { value?: number } }) => {
-        const lamports = payload.result?.value;
-        if (typeof lamports === "number") setBalance(`${(lamports / 1_000_000_000).toFixed(2)} SOL`);
+      .then((lamports) => {
+        if (typeof lamports === "number") {
+          setBalance(`${lamportsToSol(lamports).toFixed(2)} SOL`);
+        }
       })
       .catch(() => undefined)
       .finally(() => window.clearTimeout(timer));
