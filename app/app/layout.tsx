@@ -13,6 +13,7 @@ import { GnsIdentityHydrationBridge } from "./components/gns-identity-hydration-
 import { GnsRegistrationSyncBridge } from "./components/gns-registration-sync-bridge";
 import { GwapOsProvider } from "./components/os-provider";
 import { OsShell } from "./components/os-shell";
+import "./gwapos-wallet.css";
 import {
   cachedGnsIdentity,
   loadAccountWorkspace,
