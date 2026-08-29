@@ -1,15 +1,22 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { AppAccessColumn } from "../components/app-access-column";
 import { AuthSetupRequired } from "../components/auth-setup-required";
 import { isWalletAuthConfigured } from "../lib/auth-config";
+import {
+  gwapOsAppMetadata,
+  gwapOsAppViewport,
+} from "../lib/gwapos-app-metadata";
 import { getSafeRedirectPath } from "../lib/safe-redirect";
 import styles from "./gateway.module.css";
 
 export const metadata: Metadata = {
+  ...gwapOsAppMetadata,
   title: "Enter GWAP OS",
   description: "Secure wallet access to GWAP OS.",
   robots: { index: false, follow: false },
 };
+
+export const viewport: Viewport = gwapOsAppViewport;
 
 export const dynamic = "force-dynamic";
 
