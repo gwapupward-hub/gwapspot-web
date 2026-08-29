@@ -1,25 +1,12 @@
 "use client";
 
-import {
-  useConnectWallet,
-  useLoginWithSiws,
-  usePrivy,
-} from "@privy-io/react-auth";
-import { useWallets as usePrivySolanaWallets } from "@privy-io/react-auth/solana";
+import { useLogin, usePrivy } from "@privy-io/react-auth";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getWalletAuthErrorMessage } from "../lib/wallet-auth-error";
 
 type WalletSignInVariant = "public" | "app";
-
-function encodeBase64(bytes: Uint8Array) {
-  let binary = "";
-  for (let index = 0; index < bytes.length; index += 1) {
-    binary += String.fromCharCode(bytes[index]);
-  }
-  return window.btoa(binary);
-}
 
 export function WalletSignIn({
   redirectPath,
@@ -29,26 +16,11 @@ export function WalletSignIn({
   variant?: WalletSignInVariant;
 }) {
   const router = useRouter();
-  const { authenticated, getAccessToken, login, ready, user } = usePrivy();
-  const { generateSiwsMessage, loginWithSiws } = useLoginWithSiws();
-  const {
-    ready: solanaWalletsReady,
-    wallets: solanaWallets,
-  } = usePrivySolanaWallets();
+  const { authenticated, getAccessToken, ready, user } = usePrivy();
   const [error, setError] = useState("");
-  const [signing, setSigning] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
   const navigationStarted = useRef(false);
-  const activeWallet = solanaWallets[0];
-  const connectedAddress = activeWallet?.address;
   const isAppVariant = variant === "app";
-
-  const { connectWallet } = useConnectWallet({
-    onSuccess: () => setError(""),
-    onError: (connectError) => {
-      setError(getWalletAuthErrorMessage(connectError));
-    },
-  });
 
   const hasSolanaWallet = user?.linkedAccounts.some(
     (account) => account.type === "wallet" && account.chainType === "solana",
@@ -81,6 +53,17 @@ export function WalletSignIn({
     }
   }, [redirectPath, waitForAccessToken]);
 
+  const { login } = useLogin({
+    onComplete: () => {
+      void navigateWhenSessionReady();
+    },
+    onError: (loginError) => {
+      navigationStarted.current = false;
+      setRedirecting(false);
+      setError(getWalletAuthErrorMessage({ code: loginError }));
+    },
+  });
+
   useEffect(() => {
     if (!ready || !authenticated || !hasSolanaWallet) return;
     const navigationTimer = window.setTimeout(
@@ -90,37 +73,9 @@ export function WalletSignIn({
     return () => window.clearTimeout(navigationTimer);
   }, [authenticated, hasSolanaWallet, navigateWhenSessionReady, ready]);
 
-  async function signInWithWallet() {
-    if (!activeWallet) {
-      setError("Choose a Solana wallet to continue.");
-      return;
-    }
-
-    setSigning(true);
-    setError("");
-
-    try {
-      const message = await generateSiwsMessage({ address: activeWallet.address });
-      const { signature } = await activeWallet.signMessage({
-        message: new TextEncoder().encode(message),
-      });
-
-      await loginWithSiws({
-        message,
-        signature: encodeBase64(signature),
-      });
-      setRedirecting(true);
-      await navigateWhenSessionReady();
-    } catch (loginError) {
-      setError(getWalletAuthErrorMessage(loginError));
-    } finally {
-      setSigning(false);
-    }
-  }
-
   function openWalletSelector() {
     setError("");
-    connectWallet();
+    login({ loginMethods: ["wallet"] });
   }
 
   function goBack() {
@@ -137,7 +92,7 @@ export function WalletSignIn({
     login({ loginMethods: ["email"] });
   }
 
-  if (!ready || !solanaWalletsReady) {
+  if (!ready) {
     return (
       <section className="wallet-auth-card" aria-busy="true">
         <span className="wallet-auth-eyebrow">
@@ -189,39 +144,14 @@ export function WalletSignIn({
       </p>
 
       <div className="wallet-auth-actions">
-        {!activeWallet ? (
-          <button
-            className="wallet-auth-primary"
-            type="button"
-            onClick={openWalletSelector}
-          >
-            Connect Solana wallet
-          </button>
-        ) : (
-          <>
-            <div className="wallet-auth-connected">
-              <span>{activeWallet.standardWallet.name || "Solana wallet"}</span>
-              <strong>
-                {connectedAddress?.slice(0, 5)}…{connectedAddress?.slice(-5)}
-              </strong>
-              <button type="button" onClick={openWalletSelector}>
-                Change
-              </button>
-            </div>
-            <button
-              className="wallet-auth-primary"
-              type="button"
-              disabled={signing || redirecting}
-              onClick={() => void signInWithWallet()}
-            >
-              {redirecting
-                ? "Opening GWAP OS…"
-                : signing
-                  ? "Waiting for signature…"
-                  : "Sign message and continue"}
-            </button>
-          </>
-        )}
+        <button
+          className="wallet-auth-primary"
+          type="button"
+          disabled={redirecting}
+          onClick={openWalletSelector}
+        >
+          {redirecting ? "Opening GWAP OS…" : "Connect Solana wallet"}
+        </button>
 
         <div className="wallet-auth-divider">
           <span>{isAppVariant ? "NEW TO GWAP?" : "NO WALLET YET?"}</span>
@@ -229,6 +159,7 @@ export function WalletSignIn({
         <button
           className="wallet-auth-secondary"
           type="button"
+          disabled={redirecting}
           onClick={createWalletWithEmail}
         >
           Create a Solana wallet with email
