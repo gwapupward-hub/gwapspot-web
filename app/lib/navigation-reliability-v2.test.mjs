@@ -68,6 +68,9 @@ test("mobile navigation reliability v2 keeps product navigation isolated", () =>
   assert.match(wallet, /variant = "public"/);
   assert.match(wallet, /variant="app"|WalletSignInVariant/);
   assert.match(wallet, /useLogin/);
+  assert.match(wallet, /onComplete: \(\) =>/);
+  assert.match(wallet, /void navigateWhenSessionReady\(\)/);
+  assert.match(wallet, /onError: \(loginError\) =>/);
   assert.match(wallet, /login\(\{ loginMethods: \["wallet"\] \}\)/);
   assert.match(wallet, /login\(\{ loginMethods: \["email"\] \}\)/);
   assert.match(wallet, /waitForAccessToken/);
