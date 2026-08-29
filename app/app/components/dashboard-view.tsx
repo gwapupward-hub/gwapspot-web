@@ -6,6 +6,7 @@ import type { EcosystemProduct } from "../../lib/ecosystem";
 import { getProfileCompletion } from "../lib/os-state";
 import { fetchSolBalanceLamports, lamportsToSol } from "../lib/rpc-dedupe";
 import { shortenWalletAddress } from "../lib/wallet-format";
+import { GwapGradientLink } from "./gwap-gradient-button";
 import { useGwapOs } from "./os-provider";
 import { WalletPortfolioCard } from "./wallet-portfolio-card";
 
@@ -252,7 +253,7 @@ export function DashboardView({ products }: { products: EcosystemProduct[] }) {
                 <h3>{nextAction.title}</h3>
                 <p>{nextAction.detail}</p>
               </div>
-              <Link href={nextAction.href}>{nextAction.label} →</Link>
+              <GwapGradientLink href={nextAction.href}>{nextAction.label} →</GwapGradientLink>
             </article>
           </section>
 
