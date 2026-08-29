@@ -238,8 +238,18 @@ export async function checkDistributedRateLimit(
   const redis = getWorkspaceRedis();
   const count = await redis.incr(key);
 
+  // INCR creates the key without a TTL, so the first caller in a window sets
+  // one. A failure here must not reject the request: the counter itself
+  // already succeeded, and keys are window-scoped, so the worst case is that
+  // this one window's key is retained rather than expired. Letting the error
+  // propagate would turn a storage hiccup into a 503 for a caller that is
+  // comfortably within its limit.
   if (count === 1) {
-    await redis.expire(key, Math.max(2, Math.ceil(windowMs / 1_000) + 1));
+    try {
+      await redis.expire(key, Math.max(2, Math.ceil(windowMs / 1_000) + 1));
+    } catch {
+      // Retained key, not a failed request.
+    }
   }
 
   const retryAfter = Math.max(

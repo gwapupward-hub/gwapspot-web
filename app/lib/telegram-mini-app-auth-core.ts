@@ -67,7 +67,10 @@ export function verifyTelegramMiniAppInitData(
   // `signature` must remain in the HMAC data-check string.
   const dataCheckString = [...params.entries()]
     .filter(([key]) => key !== "hash")
-    .sort(([left], [right]) => left.localeCompare(right))
+    // Telegram signs the data-check string sorted by code unit. localeCompare
+    // is ICU/locale dependent and gives punctuation such as "_" a different
+    // weight, so it can order keys differently from what Telegram signed.
+    .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
     .map(([key, value]) => `${key}=${value}`)
     .join("\n");
 
