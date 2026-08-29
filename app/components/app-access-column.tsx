@@ -1,5 +1,6 @@
 "use client";
 
+import { osAuthStateLabel } from "../lib/os-auth-state";
 import { useWalletHost } from "./use-wallet-host";
 import { WalletHostGateway } from "./wallet-host-gateway";
 import { WalletSignIn } from "./wallet-sign-in";
@@ -15,7 +16,7 @@ export function AppAccessColumn({ redirectPath }: { redirectPath: string }) {
     return (
       <section className="wallet-auth-card" aria-busy="true">
         <span className="wallet-auth-eyebrow">GWAP OS / SECURE ACCESS</span>
-        <h2>Detecting your wallet…</h2>
+        <h2>{osAuthStateLabel("DETECTING_WALLET")}</h2>
         <p>Checking for a supported Solana wallet in this browser.</p>
       </section>
     );
