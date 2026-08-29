@@ -40,6 +40,18 @@ test("the app domain gates the full client behind wallet-host detection", () => 
   assert.doesNotMatch(page, /<WalletSignIn/);
 });
 
+test("Privy mounts only for supported wallet hosts, not the gateway", () => {
+  const column = read("../components/app-access-column.tsx");
+  const page = read("../os-sign-in/page.tsx");
+  // The sign-in page no longer wraps everything in the wallet provider.
+  assert.doesNotMatch(page, /WalletAuthProvider/);
+  // The provider is mounted inside the column, only around the ready-state
+  // sign-in — so the gateway/detection surfaces never depend on the SDK.
+  const readyIndex = column.indexOf('host.status === "ready"');
+  const providerIndex = column.indexOf("<WalletAuthProvider>");
+  assert.ok(readyIndex > 0 && providerIndex > readyIndex);
+});
+
 test("sign-out terminates the session, not only the wallet connection", () => {
   const signOut = read("../app/components/sign-out-button.tsx");
   const logoutIndex = signOut.indexOf("await logout()");
