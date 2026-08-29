@@ -1,5 +1,5 @@
-import type { GnsIdentity, GwapOsState } from "./os-state";
-import { getProfileCompletion } from "./os-state";
+import type { GnsIdentity, GwapOsState } from "./os-state.ts";
+import { getProfileCompletion } from "./os-state.ts";
 
 export type TrustSignalState = "verified" | "incomplete" | "planned" | "unavailable";
 
