@@ -4,6 +4,7 @@ import Link from "next/link";
 import { GwapScoreDisplay } from "../../components/gwap-score-display";
 import type { GwapScoreResult } from "../../lib/gwap-score";
 import { useGwapOs } from "./os-provider";
+import { SocialSnapshotPanel } from "./social-snapshot-panel";
 import { SocialVerificationPanel } from "./social-verification-panel";
 
 export function ScoreView() {
@@ -52,6 +53,7 @@ export function ScoreView() {
       </section>
 
       <SocialVerificationPanel />
+      <SocialSnapshotPanel />
     </div>
   );
 }

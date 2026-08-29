@@ -8,6 +8,8 @@ GWAP Public Proof converts social-account verification into both a trust primiti
 
 The trust event is the independently verified public platform post. The share image, color, copy, and landing page are acquisition surfaces and never weaken verification requirements.
 
+Verification is the entry condition for observation, not a reputation measurement in itself. Once an account is verified, GwapScore Snapshot v1 collects its longitudinal public evidence — see `GWAPSCORE_SNAPSHOT_V1.md`. Neither layer changes GwapScore mathematics.
+
 ## Initial X flow
 
 1. Authenticated user enters the X handle they claim to control.
