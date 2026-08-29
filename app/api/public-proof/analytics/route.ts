@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getPublicLookupSubject } from "../../../lib/public-lookup";
 import { checkDistributedRateLimit } from "../../../lib/redis";
 import { isPublicProofEvent, trackPublicProofEvent } from "../../../lib/public-proof-analytics";
 import { isPublicProofTheme } from "../../../lib/social-proof-control";
@@ -6,8 +7,8 @@ import { isPublicProofTheme } from "../../../lib/social-proof-control";
 export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
-  const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  const rate = await checkDistributedRateLimit(`public-proof-analytics:${forwarded}`, 60, 60_000).catch(() => ({ allowed: true, retryAfter: 0 }));
+  const subject = getPublicLookupSubject(request.headers);
+  const rate = await checkDistributedRateLimit(`public-proof-analytics:${subject}`, 60, 60_000).catch(() => ({ allowed: true, retryAfter: 0 }));
   if (!rate.allowed) return NextResponse.json({ ok: false }, { status: 429, headers: { "Retry-After": String(rate.retryAfter) } });
 
   const body = await request.json().catch(() => null) as { event?: unknown; challengeCode?: unknown; theme?: unknown } | null;

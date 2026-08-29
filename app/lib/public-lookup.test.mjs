@@ -45,11 +45,52 @@ test("rejects non-Solana wallet addresses", () => {
   );
 });
 
-test("uses the first forwarded client address without exposing it in output", () => {
+test("prefers the platform-set real client address", () => {
   const headers = new Headers({
-    "x-forwarded-for": "203.0.113.8, 10.0.0.2",
+    "x-real-ip": "203.0.113.8",
+    "x-forwarded-for": "198.51.100.7, 203.0.113.8",
   });
   assert.equal(getPublicLookupSubject(headers), "203.0.113.8");
+});
+
+test("uses the last forwarded hop, which the caller cannot forge", () => {
+  // The platform appends the real peer address rather than replacing the
+  // header, so a caller-supplied first hop must never become the rate-limit
+  // subject — otherwise rotating it defeats the limit entirely.
+  const spoofed = new Headers({
+    "x-forwarded-for": "1.2.3.4, 203.0.113.8",
+  });
+  assert.equal(getPublicLookupSubject(spoofed), "203.0.113.8");
+
+  const rotated = new Headers({
+    "x-forwarded-for": "9.9.9.9, 203.0.113.8",
+  });
+  assert.equal(
+    getPublicLookupSubject(rotated),
+    getPublicLookupSubject(spoofed),
+    "a forged first hop must not change the rate-limit subject",
+  );
+});
+
+test("handles a single-hop and whitespace-padded forwarded header", () => {
+  assert.equal(
+    getPublicLookupSubject(new Headers({ "x-forwarded-for": "203.0.113.8" })),
+    "203.0.113.8",
+  );
+  assert.equal(
+    getPublicLookupSubject(
+      new Headers({ "x-forwarded-for": " 198.51.100.7 ,  203.0.113.8 " }),
+    ),
+    "203.0.113.8",
+  );
+});
+
+test("falls back to a constant when no address is available", () => {
+  assert.equal(getPublicLookupSubject(new Headers()), "unknown");
+  assert.equal(
+    getPublicLookupSubject(new Headers({ "x-forwarded-for": " , " })),
+    "unknown",
+  );
 });
 
 test("shortens long public addresses", () => {

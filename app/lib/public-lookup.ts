@@ -65,9 +65,25 @@ export function normalizePublicLookup(
   return { mode, value, fullName: `${value}.gwap` };
 }
 
+// The client can send its own X-Forwarded-For; the platform appends the real
+// peer address rather than replacing the header, so the FIRST hop is caller
+// controlled and rotating it defeats any per-subject limit built on it. Trust
+// x-real-ip, which the platform sets itself, and fall back to the LAST
+// forwarded hop — the one nearest the edge — never the first.
 export function getPublicLookupSubject(headers: Headers) {
-  const forwarded = headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-  return forwarded || headers.get("x-real-ip")?.trim() || "unknown";
+  const realIp = headers.get("x-real-ip")?.trim();
+  if (realIp) return realIp;
+
+  const forwarded = headers.get("x-forwarded-for");
+  if (forwarded) {
+    const hops = forwarded
+      .split(",")
+      .map((hop) => hop.trim())
+      .filter(Boolean);
+    if (hops.length > 0) return hops[hops.length - 1];
+  }
+
+  return "unknown";
 }
 
 export function shortAddress(value: string, start = 6, end = 4) {
