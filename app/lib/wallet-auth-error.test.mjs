@@ -13,10 +13,27 @@ test("reports disabled Solana login instead of asking the user to reconnect", ()
   );
 });
 
-test("keeps cancelled signatures distinct from verification failures", () => {
+test("explains app-domain and session bootstrap failures", () => {
+  assert.equal(
+    getWalletAuthErrorMessage(new Error("Origin not allowed")),
+    "GWAP OS wallet sign-in is not enabled for this domain yet.",
+  );
+  assert.equal(
+    getWalletAuthErrorMessage(
+      new Error("Authenticated wallet session has no access token"),
+    ),
+    "Your wallet was verified, but the secure session was not created. Try signing in again.",
+  );
+});
+
+test("keeps cancelled and unsupported signatures distinct", () => {
   assert.equal(
     getWalletAuthErrorMessage(new Error("User rejected the request")),
     "The signature request was cancelled. Nothing was changed.",
+  );
+  assert.equal(
+    getWalletAuthErrorMessage(new Error("signMessage is not supported")),
+    "This wallet cannot sign the ownership message required by GWAP OS.",
   );
   assert.equal(
     getWalletAuthErrorMessage(new Error("Network unavailable")),

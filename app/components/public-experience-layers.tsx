@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { ConversionTelemetry } from "./conversion-telemetry";
 import { GwapContinuityLayer } from "./gwap-continuity-layer";
 import { GwapInteractionLayer } from "./gwap-interaction-layer";
@@ -11,16 +11,22 @@ import { GwapTouchProductNavigationLayer } from "./gwap-touch-product-navigation
 import PremiumSplash from "./premium-splash";
 import { Telemetry } from "../telemetry";
 
+const subscribeToAppHost = () => () => undefined;
+
+function getIsAppHost() {
+  return (
+    document.documentElement.dataset.gwapAppHost === "true" ||
+    window.location.hostname.toLowerCase() === "app.gwapspot.com"
+  );
+}
+
 export function PublicExperienceLayers() {
   const pathname = usePathname();
-  const [isAppHost, setIsAppHost] = useState(false);
-
-  useEffect(() => {
-    const appHost =
-      document.documentElement.dataset.gwapAppHost === "true" ||
-      window.location.hostname.toLowerCase() === "app.gwapspot.com";
-    setIsAppHost(appHost);
-  }, []);
+  const isAppHost = useSyncExternalStore(
+    subscribeToAppHost,
+    getIsAppHost,
+    () => false,
+  );
 
   const isTelegram =
     pathname === "/telegram" || pathname.startsWith("/telegram/");

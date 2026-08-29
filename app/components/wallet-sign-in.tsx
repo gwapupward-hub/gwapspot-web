@@ -1,11 +1,14 @@
 "use client";
 
-import { useLoginWithSiws, usePrivy } from "@privy-io/react-auth";
-import { useWallet } from "@solana/wallet-adapter-react";
-import { useWalletModal } from "@solana/wallet-adapter-react-ui";
+import {
+  useConnectWallet,
+  useLoginWithSiws,
+  usePrivy,
+} from "@privy-io/react-auth";
+import { useWallets as usePrivySolanaWallets } from "@privy-io/react-auth/solana";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getWalletAuthErrorMessage } from "../lib/wallet-auth-error";
 
 type WalletSignInVariant = "public" | "app";
@@ -26,28 +29,70 @@ export function WalletSignIn({
   variant?: WalletSignInVariant;
 }) {
   const router = useRouter();
-  const { authenticated, login, ready, user } = usePrivy();
+  const { authenticated, getAccessToken, login, ready, user } = usePrivy();
   const { generateSiwsMessage, loginWithSiws } = useLoginWithSiws();
-  const { connected, publicKey, signMessage, wallet } = useWallet();
-  const { setVisible } = useWalletModal();
+  const {
+    ready: solanaWalletsReady,
+    wallets: solanaWallets,
+  } = usePrivySolanaWallets();
   const [error, setError] = useState("");
   const [signing, setSigning] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
-  const connectedAddress = publicKey?.toBase58();
+  const navigationStarted = useRef(false);
+  const activeWallet = solanaWallets[0];
+  const connectedAddress = activeWallet?.address;
   const isAppVariant = variant === "app";
+
+  const { connectWallet } = useConnectWallet({
+    onSuccess: () => setError(""),
+    onError: (connectError) => {
+      setError(getWalletAuthErrorMessage(connectError));
+    },
+  });
 
   const hasSolanaWallet = user?.linkedAccounts.some(
     (account) => account.type === "wallet" && account.chainType === "solana",
   );
 
+  const waitForAccessToken = useCallback(async () => {
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      const token = await getAccessToken();
+      if (token) return token;
+      await new Promise((resolve) => window.setTimeout(resolve, 150 * (attempt + 1)));
+    }
+    return null;
+  }, [getAccessToken]);
+
+  const navigateWhenSessionReady = useCallback(async () => {
+    if (navigationStarted.current) return;
+    navigationStarted.current = true;
+
+    try {
+      const token = await waitForAccessToken();
+      if (!token) {
+        throw new Error("Authenticated wallet session has no access token");
+      }
+      setRedirecting(true);
+      window.location.replace(redirectPath);
+    } catch (sessionError) {
+      navigationStarted.current = false;
+      setRedirecting(false);
+      setError(getWalletAuthErrorMessage(sessionError));
+    }
+  }, [redirectPath, waitForAccessToken]);
+
   useEffect(() => {
     if (!ready || !authenticated || !hasSolanaWallet) return;
-    window.location.replace(redirectPath);
-  }, [authenticated, hasSolanaWallet, ready, redirectPath]);
+    const navigationTimer = window.setTimeout(
+      () => void navigateWhenSessionReady(),
+      0,
+    );
+    return () => window.clearTimeout(navigationTimer);
+  }, [authenticated, hasSolanaWallet, navigateWhenSessionReady, ready]);
 
   async function signInWithWallet() {
-    if (!publicKey || !signMessage) {
-      setError("Choose a wallet that supports message signing to continue.");
+    if (!activeWallet) {
+      setError("Choose a Solana wallet to continue.");
       return;
     }
 
@@ -55,21 +100,27 @@ export function WalletSignIn({
     setError("");
 
     try {
-      const address = publicKey.toBase58();
-      const message = await generateSiwsMessage({ address });
-      const signature = await signMessage(new TextEncoder().encode(message));
+      const message = await generateSiwsMessage({ address: activeWallet.address });
+      const { signature } = await activeWallet.signMessage({
+        message: new TextEncoder().encode(message),
+      });
 
       await loginWithSiws({
         message,
         signature: encodeBase64(signature),
       });
       setRedirecting(true);
-      window.location.replace(redirectPath);
+      await navigateWhenSessionReady();
     } catch (loginError) {
       setError(getWalletAuthErrorMessage(loginError));
     } finally {
       setSigning(false);
     }
+  }
+
+  function openWalletSelector() {
+    setError("");
+    connectWallet();
   }
 
   function goBack() {
@@ -86,7 +137,7 @@ export function WalletSignIn({
     login({ loginMethods: ["email"] });
   }
 
-  if (!ready) {
+  if (!ready || !solanaWalletsReady) {
     return (
       <section className="wallet-auth-card" aria-busy="true">
         <span className="wallet-auth-eyebrow">
@@ -138,22 +189,22 @@ export function WalletSignIn({
       </p>
 
       <div className="wallet-auth-actions">
-        {!connected ? (
+        {!activeWallet ? (
           <button
             className="wallet-auth-primary"
             type="button"
-            onClick={() => setVisible(true)}
+            onClick={openWalletSelector}
           >
             Connect Solana wallet
           </button>
         ) : (
           <>
             <div className="wallet-auth-connected">
-              <span>{wallet?.adapter.name ?? "Solana wallet"}</span>
+              <span>{activeWallet.standardWallet.name || "Solana wallet"}</span>
               <strong>
                 {connectedAddress?.slice(0, 5)}…{connectedAddress?.slice(-5)}
               </strong>
-              <button type="button" onClick={() => setVisible(true)}>
+              <button type="button" onClick={openWalletSelector}>
                 Change
               </button>
             </div>

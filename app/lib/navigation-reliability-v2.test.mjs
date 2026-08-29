@@ -14,10 +14,12 @@ test("mobile navigation reliability v2 keeps product navigation isolated", () =>
   const touchNavigation = read("../components/gwap-touch-product-navigation-layer.tsx");
   const publicExperience = read("../components/public-experience-layers.tsx");
   const splash = read("../components/premium-splash.tsx");
+  const appSplash = read("../os-entry/splash.tsx");
   const layout = read("../layout.tsx");
   const shell = read("../components/site-shell.tsx");
   const productPage = read("../ecosystem/[slug]/page.tsx");
   const wallet = read("../components/wallet-sign-in.tsx");
+  const walletProvider = read("../components/wallet-auth-provider.tsx");
   const styles = read("../styles.css");
   const reliabilityCss = read("../navigation-reliability-v2.css");
 
@@ -65,7 +67,23 @@ test("mobile navigation reliability v2 keeps product navigation isolated", () =>
   assert.match(wallet, /<Link href="\/" data-native-nav>GWAPSpot home<\/Link>/);
   assert.match(wallet, /variant = "public"/);
   assert.match(wallet, /variant="app"|WalletSignInVariant/);
+  assert.match(wallet, /usePrivySolanaWallets/);
+  assert.match(wallet, /activeWallet\.signMessage/);
+  assert.match(wallet, /waitForAccessToken/);
+  assert.doesNotMatch(wallet, /useWalletModal/);
   assert.doesNotMatch(wallet, /from "next\/image"/);
+
+  assert.match(walletProvider, /toSolanaWalletConnectors/);
+  assert.match(walletProvider, /detected_solana_wallets/);
+  assert.match(walletProvider, /externalWallets:/);
+  assert.match(walletProvider, /autoConnect=\{false\}/);
+
+  assert.match(appSplash, /STARTUP_PROGRESS_DEADLINE_MS/);
+  assert.match(appSplash, /ABSOLUTE_PLAYBACK_DEADLINE_MS/);
+  assert.match(appSplash, /video\.play\(\)/);
+  assert.match(appSplash, /onStalled=\{handleStalledPlayback\}/);
+  assert.match(appSplash, /prefers-reduced-motion: reduce/);
+  assert.match(appSplash, /revealFinalFrame/);
 
   assert.match(reliabilityCss, /touch-action: manipulation/);
   assert.match(reliabilityCss, /\.premium-product-card > \*/);
