@@ -433,6 +433,12 @@ html[data-gwap-reduce-motion="true"] .gwap-os *::after { scroll-behavior: auto !
 }
 .auth-gate-card > div { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 28px; }
 .auth-gate-link { color: #a1aba3; font-size: 10px; font-weight: 800; }
+/* GwapOS loading state: black backdrop + centered crowned G with restrained green glow. */
+.gwapos-loading { background: #000; }
+.gwapos-loading .auth-gate-card { display: grid; justify-items: center; text-align: center; background: transparent; border-color: rgba(19,221,19,.14); }
+.gwapos-loading-mark { width: 96px; height: 96px; margin: 0 auto 18px; filter: drop-shadow(0 0 18px rgba(19,221,19,.42)); animation: gwapos-mark-pulse 2.4s ease-in-out infinite; }
+@keyframes gwapos-mark-pulse { 0%, 100% { opacity: .85; transform: scale(1); } 50% { opacity: 1; transform: scale(1.03); } }
+@media (prefers-reduced-motion: reduce) { .gwapos-loading-mark { animation: none; } }
 .wallet-auth-card {
   width: min(460px, 100%);
   padding: clamp(24px, 4vw, 38px);
