@@ -1,0 +1,186 @@
+.gate {
+  --gate-green: #13dd13;
+  position: relative;
+  min-height: 100svh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 26px;
+  padding:
+    max(28px, env(safe-area-inset-top, 0px))
+    max(22px, env(safe-area-inset-right, 0px))
+    max(32px, env(safe-area-inset-bottom, 0px))
+    max(22px, env(safe-area-inset-left, 0px));
+  text-align: center;
+  color: #f2f5f2;
+  background:
+    radial-gradient(circle at 50% 12%, rgba(19, 221, 19, 0.13), transparent 26rem),
+    linear-gradient(170deg, #020403 0%, #050806 58%, #020302 100%);
+}
+
+.panel {
+  width: min(100%, 420px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.mark {
+  width: 54px;
+  height: 54px;
+  object-fit: contain;
+}
+
+.kicker {
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(19, 221, 19, 0.86);
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(25px, 7vw, 32px);
+  line-height: 1.16;
+  letter-spacing: -0.02em;
+  font-weight: 640;
+}
+
+.body {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.58;
+  color: rgba(233, 240, 233, 0.7);
+}
+
+.hostLine {
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(233, 240, 233, 0.54);
+}
+
+.hostLine code {
+  color: rgba(19, 221, 19, 0.9);
+  font-size: 13px;
+}
+
+.actions {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.primary,
+.secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Wallet WebViews are thumb-driven: every control clears 44px. */
+  min-height: 50px;
+  padding: 0 20px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 160ms ease, opacity 160ms ease;
+}
+
+.primary:active,
+.secondary:active {
+  transform: scale(0.985);
+}
+
+.primary {
+  border: 1px solid rgba(19, 221, 19, 0.5);
+  background: linear-gradient(180deg, rgba(19, 221, 19, 0.2), rgba(19, 221, 19, 0.08));
+  color: #eafdea;
+}
+
+.secondary {
+  border: 1px solid rgba(240, 248, 240, 0.14);
+  background: rgba(240, 248, 240, 0.04);
+  color: rgba(238, 245, 238, 0.85);
+}
+
+.instructions {
+  width: 100%;
+  margin: 2px 0 0;
+  padding: 16px 18px;
+  border-radius: 14px;
+  border: 1px solid rgba(240, 248, 240, 0.1);
+  background: rgba(255, 255, 255, 0.035);
+  text-align: left;
+  font-size: 14px;
+  line-height: 1.62;
+  color: rgba(233, 240, 233, 0.76);
+}
+
+.instructions ol {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 7px;
+}
+
+.wallets {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.wallet {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(240, 248, 240, 0.12);
+  background: rgba(255, 255, 255, 0.035);
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  color: rgba(233, 240, 233, 0.72);
+}
+
+.status {
+  min-height: 18px;
+  font-size: 13px;
+  color: rgba(19, 221, 19, 0.85);
+}
+
+.detecting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.pulse {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 2px solid rgba(19, 221, 19, 0.25);
+  border-top-color: rgba(19, 221, 19, 0.95);
+  animation: spin 900ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse {
+    animation: none;
+    border-top-color: rgba(19, 221, 19, 0.45);
+  }
+
+  .primary:active,
+  .secondary:active {
+    transform: none;
+  }
+}
