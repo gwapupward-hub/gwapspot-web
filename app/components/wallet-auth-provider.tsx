@@ -1,6 +1,7 @@
 "use client";
 
 import { PrivyProvider, type PrivyClientConfig } from "@privy-io/react-auth";
+import { toSolanaWalletConnectors } from "@privy-io/react-auth/solana";
 import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
 import {
   ConnectionProvider,
@@ -19,14 +20,25 @@ const endpoint =
   process.env.NEXT_PUBLIC_SOLANA_RPC_URL?.trim() ||
   clusterApiUrl(WalletAdapterNetwork.Mainnet);
 const walletAdapters: [] = [];
+const solanaConnectors = toSolanaWalletConnectors({ shouldAutoConnect: true });
+
 const walletAuthConfig: PrivyClientConfig = {
-  loginMethods: ["email"],
+  loginMethods: ["wallet", "email"],
   appearance: {
     theme: "dark",
     accentColor: "#13dd13",
     logo: "/logos/gwap-agent.png",
     walletChainType: "solana-only",
-    showWalletLoginFirst: false,
+    walletList: [
+      "phantom",
+      "solflare",
+      "backpack",
+      "detected_solana_wallets",
+    ],
+    showWalletLoginFirst: true,
+  },
+  externalWallets: {
+    solana: { connectors: solanaConnectors },
   },
   embeddedWallets: {
     ethereum: { createOnLogin: "off" },
@@ -45,7 +57,7 @@ export function WalletAuthProvider({ children }: { children: ReactNode }) {
       config={walletAuthConfig}
     >
       <ConnectionProvider endpoint={endpoint}>
-        <WalletProvider wallets={walletAdapters} autoConnect>
+        <WalletProvider wallets={walletAdapters} autoConnect={false}>
           <WalletModalProvider>{children}</WalletModalProvider>
         </WalletProvider>
       </ConnectionProvider>
