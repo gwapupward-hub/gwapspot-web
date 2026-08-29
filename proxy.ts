@@ -1,54 +1,35 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isWalletAuthConfigured } from "./app/lib/auth-config";
-import {
-  isAllowedGwapAppPath,
-  isGwapAppHostname,
-} from "./app/lib/app-domain-routing";
+import { resolveProxyAction } from "./app/lib/proxy-routing";
 
 export default function proxy(request: NextRequest) {
   const forwardedHost = request.headers.get("x-forwarded-host");
   const host = forwardedHost ?? request.headers.get("host");
-  const isAppDomain = isGwapAppHostname(host);
-  const pathname = request.nextUrl.pathname;
 
-  if (isAppDomain) {
-    if (pathname === "/") {
-      const target = request.nextUrl.clone();
-      target.pathname = "/os-entry";
-      return NextResponse.rewrite(target);
-    }
+  const action = resolveProxyAction({
+    host,
+    pathname: request.nextUrl.pathname,
+    search: request.nextUrl.search,
+    walletAuthConfigured: isWalletAuthConfigured(),
+    hasPrivyToken: request.cookies.has("privy-token"),
+    hasPrivySession: request.cookies.has("privy-session"),
+  });
 
-    if (pathname === "/sign-in" || pathname.startsWith("/sign-in/")) {
-      const target = request.nextUrl.clone();
-      target.pathname = "/os-sign-in";
-      return NextResponse.redirect(target);
-    }
-
-    if (!isAllowedGwapAppPath(pathname)) {
-      const target = request.nextUrl.clone();
-      target.pathname = "/";
-      target.search = "";
-      return NextResponse.redirect(target);
-    }
-  }
-
-  if (!pathname.startsWith("/app")) {
-    return NextResponse.next();
-  }
-
-  if (!isWalletAuthConfigured()) return NextResponse.next();
-
-  const redirectPath = `${pathname}${request.nextUrl.search}`;
-  if (request.cookies.has("privy-token")) return NextResponse.next();
+  if (action.kind === "next") return NextResponse.next();
 
   const target = request.nextUrl.clone();
-  target.pathname = request.cookies.has("privy-session")
-    ? "/refresh"
-    : isAppDomain
-      ? "/os-sign-in"
-      : "/sign-in";
-  target.search = "";
-  target.searchParams.set("redirect_url", redirectPath);
+  target.pathname = action.pathname;
+
+  if (action.kind === "rewrite") {
+    return NextResponse.rewrite(target);
+  }
+
+  if (!action.preserveSearch) {
+    target.search = "";
+  }
+  if (action.redirectParam) {
+    target.searchParams.set("redirect_url", action.redirectParam);
+  }
   return NextResponse.redirect(target);
 }
 
