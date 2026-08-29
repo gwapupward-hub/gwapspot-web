@@ -118,6 +118,19 @@ test("counts Wallet Standard wallets that advertise a Solana signing feature", (
   assert.equal(env.standardSignerCount, 2);
 });
 
+test("wallet-host hook discovers modern Wallet Standard registrations", () => {
+  const hook = read("../components/use-wallet-host.ts");
+  // Modern Wallet Standard is event-based. The app must consume the callback
+  // carried by register-wallet and announce app-ready so wallets that loaded
+  // first can register synchronously.
+  assert.match(hook, /wallet-standard:register-wallet/);
+  assert.match(hook, /wallet-standard:app-ready/);
+  assert.match(hook, /new CustomEvent\("wallet-standard:app-ready"/);
+  assert.match(hook, /typeof callback === "function"/);
+  assert.match(hook, /callback as \(api: WalletStandardRegisterApi\)/);
+  assert.match(hook, /standardSignerCount = Math\.max/);
+});
+
 test("app.gwapspot.com renders the wallet-host gateway for ordinary browsers", () => {
   const column = read("../components/app-access-column.tsx");
   // Detection gates what the app domain serves.
