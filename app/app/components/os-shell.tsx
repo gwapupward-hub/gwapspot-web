@@ -8,17 +8,17 @@ import { fetchSolBalanceLamports, lamportsToSol } from "../lib/rpc-dedupe";
 import { shortenWalletAddress } from "../lib/wallet-format";
 import { BootSequence } from "./boot-sequence";
 import { CommandPalette } from "./command-palette";
+import { GwapActionSheet } from "./gwap-action-sheet";
+import { GwapMetalButton } from "./gwap-metal-button";
 import { useGwapOs } from "./os-provider";
 import { SignOutButton } from "./sign-out-button";
 
 const dock = [
   { href: "/app", label: "Home", icon: "⌂" },
-  { href: "/app/ideas", label: "Discover", icon: "✦" },
-  { href: "/app/marketplace", label: "Work", icon: "▤" },
   { href: "/app/identity", label: "Identity", icon: "◎" },
-  { href: "/app/vault", label: "Proof", icon: "◇" },
-  { href: "/app/trust", label: "Trust", icon: "↗" },
-  { href: "/app/developer", label: "Build", icon: "{}" },
+  { href: "/app/vault", label: "Vault", icon: "◇" },
+  { href: "/app/activity", label: "Activity", icon: "↗" },
+  { href: "/app/apps", label: "Apps", icon: "✦" },
 ] as const;
 
 function breadcrumb(pathname: string) {
@@ -28,8 +28,18 @@ function breadcrumb(pathname: string) {
 
 export function OsShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { account, gnsIdentity, keepAccountState, migrateLocalState, migrationAvailable, retrySync, state, syncStatus } = useGwapOs();
+  const {
+    account,
+    gnsIdentity,
+    keepAccountState,
+    migrateLocalState,
+    migrationAvailable,
+    retrySync,
+    state,
+    syncStatus,
+  } = useGwapOs();
   const [commandOpen, setCommandOpen] = useState(false);
+  const [actionOpen, setActionOpen] = useState(false);
   const [balance, setBalance] = useState<string>("—");
 
   const handle = useMemo(
@@ -43,8 +53,6 @@ export function OsShell({ children }: { children: ReactNode }) {
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), 3500);
 
-    // Deduped + bounded-retry balance read: repeated mounts share one in-flight
-    // request instead of firing duplicate getBalance calls.
     void fetchSolBalanceLamports(rpc, account.verifiedWallet, {
       signal: controller.signal,
     })
@@ -63,55 +71,120 @@ export function OsShell({ children }: { children: ReactNode }) {
   }, [account.verifiedWallet]);
 
   return (
-    <main className="gwap-os os-v2">
+    <main className="gwap-os os-v2 gwapos-wallet-mode">
       <div className="os-v2-grid" aria-hidden="true" />
       <div className="os-v2-glow" aria-hidden="true" />
-      <BootSequence enabled={state.settings.bootAnimation} gnsIdentity={gnsIdentity} reduceMotion={state.settings.reduceMotion} />
+      <BootSequence
+        enabled={state.settings.bootAnimation}
+        gnsIdentity={gnsIdentity}
+        reduceMotion={state.settings.reduceMotion}
+      />
       <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
+      <GwapActionSheet
+        open={actionOpen}
+        onClose={() => setActionOpen(false)}
+        hasGnsIdentity={gnsIdentity.status === "found"}
+      />
 
       <header className="os-menubar">
         <Link href="/app" className="os-menubar-brand" aria-label="GWAP OS home">
-          <Image src="/logos/gwap-agent.png" alt="" width={32} height={32} priority />
-          <span><strong>GWAP OS</strong><small>{breadcrumb(pathname)}</small></span>
+          <Image
+            src="/gwapos/icons/v1/gwapos-icon-64.png"
+            alt=""
+            width={32}
+            height={32}
+            priority
+          />
+          <span>
+            <strong>GWAP OS</strong>
+            <small>{breadcrumb(pathname)}</small>
+          </span>
         </Link>
 
         <div className="os-menubar-status" aria-label="Wallet identity status">
           <span className={`os-runtime-dot state-${gnsIdentity.status}`} />
-          <span className="os-status-item"><small>IDENTITY</small><strong>{handle}</strong></span>
-          <span className="os-status-item"><small>TRUST</small><strong>{gnsIdentity.score ?? "—"}</strong></span>
-          <span className="os-status-item os-balance"><small>WALLET</small><strong>{balance}</strong></span>
+          <span className="os-status-item">
+            <small>IDENTITY</small>
+            <strong>{handle}</strong>
+          </span>
+          <span className="os-status-item">
+            <small>TRUST</small>
+            <strong>{gnsIdentity.score ?? "—"}</strong>
+          </span>
+          <span className="os-status-item os-balance">
+            <small>WALLET</small>
+            <strong>{balance}</strong>
+          </span>
         </div>
 
         <div className="os-menubar-actions">
-          <button type="button" className="os-command-trigger" onClick={() => setCommandOpen(true)} aria-label="Open GWAP action bar">
+          <button
+            type="button"
+            className="os-command-trigger"
+            onClick={() => setCommandOpen(true)}
+            aria-label="Open GWAP command palette"
+          >
             <span>✦</span> Ask GWAP
           </button>
-          <Link href="/app/settings" className={pathname.startsWith("/app/settings") ? "is-active" : undefined} aria-label="Settings">⚙</Link>
+          <Link
+            href="/app/settings"
+            className={pathname.startsWith("/app/settings") ? "is-active" : undefined}
+            aria-label="Settings"
+          >
+            ⚙
+          </Link>
           <SignOutButton compact />
         </div>
       </header>
 
       {migrationAvailable ? (
         <section className="os-sync-banner" role="status">
-          <span><strong>Local workspace found</strong><small>Choose which account state should become authoritative.</small></span>
-          <div><button type="button" onClick={migrateLocalState}>Move to account</button><button type="button" onClick={keepAccountState}>Keep account version</button></div>
+          <span>
+            <strong>Local workspace found</strong>
+            <small>Choose which account state should become authoritative.</small>
+          </span>
+          <div>
+            <button type="button" onClick={migrateLocalState}>Move to account</button>
+            <button type="button" onClick={keepAccountState}>Keep account version</button>
+          </div>
         </section>
       ) : null}
+
       {syncStatus === "error" ? (
         <section className="os-sync-banner is-error" role="alert">
-          <span><strong>Account sync paused</strong><small>Changes remain staged on this device.</small></span>
+          <span>
+            <strong>Account sync paused</strong>
+            <small>Changes remain staged on this device.</small>
+          </span>
           <button type="button" onClick={retrySync}>Retry sync</button>
         </section>
       ) : null}
 
       <section className="os-v2-workspace">{children}</section>
 
-      <nav className="os-dock" aria-label="GWAP OS outcomes">
+      <div className="gwapos-action-fab">
+        <GwapMetalButton
+          compact
+          aria-label="Open GwapOS actions"
+          aria-expanded={actionOpen}
+          onClick={() => setActionOpen(true)}
+        >
+          +
+        </GwapMetalButton>
+      </div>
+
+      <nav className="os-dock" aria-label="GwapOS navigation">
         {dock.map((item) => {
           const active = item.href === "/app" ? pathname === item.href : pathname.startsWith(item.href);
           return (
-            <Link key={item.href} href={item.href} className={active ? "is-active" : undefined} aria-current={active ? "page" : undefined}>
-              <span aria-hidden="true">{item.icon}</span><small>{item.label}</small>
+            <Link
+              key={item.href}
+              href={item.href}
+              className={active ? "is-active" : undefined}
+              aria-current={active ? "page" : undefined}
+            >
+              <span aria-hidden="true">{item.icon}</span>
+              <small>{item.label}</small>
             </Link>
           );
         })}
