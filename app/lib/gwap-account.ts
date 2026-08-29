@@ -120,7 +120,6 @@ export async function getOrCreateGwapAccount(
   options: { primaryGnsIdentity?: string | null } = {},
 ) {
   return withLock("privy", identity.userId, async () => {
-    const redis = getWorkspaceRedis();
     let account = await readMappedAccount(privyMapKey(identity.userId));
 
     if (!account) {

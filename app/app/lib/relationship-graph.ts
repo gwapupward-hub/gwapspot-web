@@ -1,4 +1,4 @@
-import type { GnsIdentity } from "./os-state";
+import type { GnsIdentity } from "./os-state.ts";
 
 export type RelationshipNodeType =
   | "account"

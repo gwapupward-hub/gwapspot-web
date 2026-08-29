@@ -1,18 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import ts from "typescript";
-import vm from "node:vm";
-import fs from "node:fs";
-import path from "node:path";
-
-const file = path.resolve("app/app/lib/relationship-graph.ts");
-const source = fs.readFileSync(file, "utf8");
-const compiled = ts.transpileModule(source, {
-  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
-}).outputText;
-const testModule = { exports: {} };
-vm.runInNewContext(compiled, { module: testModule, exports: testModule.exports, require });
-const { deriveRelationshipGraph } = testModule.exports;
+import { deriveRelationshipGraph } from "./relationship-graph.ts";
 
 const gnsFound = {
   status: "found",

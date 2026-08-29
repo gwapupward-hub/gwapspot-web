@@ -52,5 +52,12 @@ export async function GET(request: Request, context: RouteContext) {
     );
   }
 
-  return json(await buildWalletIntelligence(wallet));
+  try {
+    return json(await buildWalletIntelligence(wallet));
+  } catch {
+    return json(
+      { error: "Wallet intelligence is temporarily unavailable." },
+      503,
+    );
+  }
 }
