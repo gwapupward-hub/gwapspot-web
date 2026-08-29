@@ -45,6 +45,12 @@ are detected in their in-app browsers. Do not remove
 `externalWallets.solana.connectors` from the `PrivyProvider`; Privy will warn and
 mobile wallet connection will become unreliable.
 
+The identity gateway starts Privy's wallet login flow directly with
+`loginMethods: ["wallet"]`. Privy owns wallet selection, connection, and SIWS as
+one operation. Do not make the login action wait on a separate connected-wallet
+inventory; that inventory is for post-connection signing and transaction work,
+not for deciding whether the user may open the login flow.
+
 Solana Wallet Adapter remains mounted without bundled legacy adapters for
 downstream compatibility. It must not auto-connect in parallel with Privy.
 Authenticated GNS signing and registration fall back to Privy's connected
