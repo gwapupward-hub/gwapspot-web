@@ -5,7 +5,12 @@ function readErrorField(error: unknown, field: string) {
   return typeof value === "string" ? value : null;
 }
 
-export function getWalletAuthErrorMessage(error: unknown) {
+export type WalletAuthSurface = "public" | "app";
+
+export function getWalletAuthErrorMessage(
+  error: unknown,
+  surface: WalletAuthSurface = "public",
+) {
   const fingerprint = [
     error instanceof Error ? error.message : null,
     readErrorField(error, "privyErrorCode"),
@@ -17,7 +22,10 @@ export function getWalletAuthErrorMessage(error: unknown) {
     .join(" ");
 
   if (/disallowed_login_method|login with solana wallet not allowed/i.test(fingerprint)) {
-    return "Solana wallet sign-in is temporarily unavailable. Use email or try again later.";
+    // The app client has no email path to fall back to, so it must not offer one.
+    return surface === "app"
+      ? "Solana wallet sign-in is temporarily unavailable. Try again in a moment."
+      : "Solana wallet sign-in is temporarily unavailable. Use email or try again later.";
   }
 
   if (/origin.*(?:not allowed|unauthorized)|invalid origin/i.test(fingerprint)) {

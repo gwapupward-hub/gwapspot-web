@@ -20,6 +20,7 @@ test("mobile navigation reliability v2 keeps product navigation isolated", () =>
   const productPage = read("../ecosystem/[slug]/page.tsx");
   const wallet = read("../components/wallet-sign-in.tsx");
   const walletProvider = read("../components/wallet-auth-provider.tsx");
+  const walletAuthConfig = read("./wallet-auth-config.ts");
   const styles = read("../styles.css");
   const reliabilityCss = read("../navigation-reliability-v2.css");
 
@@ -83,10 +84,13 @@ test("mobile navigation reliability v2 keeps product navigation isolated", () =>
   assert.doesNotMatch(wallet, /from "next\/image"/);
 
   assert.match(walletProvider, /toSolanaWalletConnectors/);
-  assert.match(walletProvider, /"jupiter"/);
-  assert.match(walletProvider, /detected_solana_wallets/);
-  assert.match(walletProvider, /externalWallets:/);
   assert.match(walletProvider, /autoConnect=\{false\}/);
+  // The Privy client configuration moved to a shared, unit-tested module so
+  // the public and wallet clients can differ without diverging by accident.
+  assert.match(walletProvider, /buildWalletAuthConfig/);
+  assert.match(walletAuthConfig, /"jupiter"/);
+  assert.match(walletAuthConfig, /detected_solana_wallets/);
+  assert.match(walletAuthConfig, /externalWallets:/);
 
   assert.match(appSplash, /STARTUP_PROGRESS_DEADLINE_MS/);
   assert.match(appSplash, /ABSOLUTE_PLAYBACK_DEADLINE_MS/);

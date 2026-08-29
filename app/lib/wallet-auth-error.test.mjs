@@ -13,6 +13,13 @@ test("reports disabled Solana login instead of asking the user to reconnect", ()
   );
 });
 
+test("never points the wallet-only app client at the email path", () => {
+  assert.equal(
+    getWalletAuthErrorMessage({ code: "disallowed_login_method" }, "app"),
+    "Solana wallet sign-in is temporarily unavailable. Try again in a moment.",
+  );
+});
+
 test("explains app-domain and session bootstrap failures", () => {
   assert.equal(
     getWalletAuthErrorMessage(new Error("Origin not allowed")),

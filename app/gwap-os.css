@@ -483,6 +483,19 @@ html[data-gwap-reduce-motion="true"] .gwap-os *::after { scroll-behavior: auto !
 .wallet-auth-connected span { overflow: hidden; font-size: 10px; font-weight: 850; text-overflow: ellipsis; white-space: nowrap; }
 .wallet-auth-connected strong { color: #9da69f; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 9px; }
 .wallet-auth-connected button { border: 0; background: transparent; color: #13dd13; font: inherit; font-size: 8px; font-weight: 900; cursor: pointer; }
+.wallet-auth-card .wallet-auth-address {
+  display: inline-flex;
+  align-self: flex-start;
+  margin: 12px 0 0;
+  padding: 7px 12px;
+  border: 1px solid rgba(19,221,19,.24);
+  border-radius: 999px;
+  background: rgba(19,221,19,.06);
+  color: #cfe6d2;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  letter-spacing: .02em;
+}
 .wallet-auth-card .wallet-auth-status { color: #13dd13; }
 .wallet-auth-card .wallet-auth-error { color: #ff9e9e; }
 .wallet-auth-card .wallet-auth-legal { color: #667068; font-size: 8px; }
