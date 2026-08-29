@@ -118,12 +118,12 @@ export function DashboardView({ products }: { products: EcosystemProduct[] }) {
             note: gnsIdentity.scoreMessage,
             status: "Review",
           },
-      syncStatus === "synced"
+      syncStatus === "saved"
         ? {
             icon: "✓",
             title: "GwapOS state synced",
             note: "Your workspace is current",
-            status: "Synced",
+            status: "Saved",
           }
         : {
             icon: "•",
