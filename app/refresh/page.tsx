@@ -1,14 +1,21 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { AuthSetupRequired } from "../components/auth-setup-required";
 import { RefreshSessionClient } from "../components/refresh-session-client";
 import { WalletAuthProvider } from "../components/wallet-auth-provider";
 import { isWalletAuthConfigured } from "../lib/auth-config";
+import {
+  gwapOsAppMetadata,
+  gwapOsAppViewport,
+} from "../lib/gwapos-app-metadata";
 import { getSafeRedirectPath } from "../lib/safe-redirect";
 
 export const metadata: Metadata = {
+  ...gwapOsAppMetadata,
   title: "Refresh GWAP OS session",
   robots: { index: false, follow: false },
 };
+
+export const viewport: Viewport = gwapOsAppViewport;
 
 export const dynamic = "force-dynamic";
 
