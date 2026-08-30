@@ -78,7 +78,7 @@ export function DashboardView({ products }: { products: EcosystemProduct[] }) {
       href: "/app/vault",
       title: "Put your identity to work",
       detail:
-        "Create a proof, invoice, or agreement from the wallet identity you already established.",
+        "Review the proof and exact-version agreement capabilities available through Private Proof Vault.",
       label: "Open Vault",
     };
   }, [gnsIdentity.scoreStatus, gnsIdentity.status, profileCompletion]);
@@ -177,23 +177,18 @@ export function DashboardView({ products }: { products: EcosystemProduct[] }) {
             className="gwapos-glass-action"
             type="button"
             disabled
-            title="Send is coming in the wallet action pass"
+            title="Send remains gated until the wallet transaction pass"
           >
             Send
           </button>
-          <button
-            className="gwapos-glass-action"
-            type="button"
-            disabled
-            title="Receive is coming in the wallet action pass"
-          >
+          <Link className="gwapos-glass-action" href="/app/receive">
             Receive
-          </button>
+          </Link>
           <button
             className="gwapos-glass-action"
             type="button"
             disabled
-            title="Swap is coming in the wallet action pass"
+            title="Swap remains gated until the wallet transaction pass"
           >
             Swap
           </button>
@@ -269,8 +264,8 @@ export function DashboardView({ products }: { products: EcosystemProduct[] }) {
               <Link className="gwapos-pulse-row" href="/app/vault">
                 <span aria-hidden="true">◇</span>
                 <div>
-                  <p>Create a proof</p>
-                  <small>Private Proof Vault</small>
+                  <p>Open Proof Vault</p>
+                  <small>Proof and agreement foundation</small>
                 </div>
                 <strong>Open</strong>
               </Link>
