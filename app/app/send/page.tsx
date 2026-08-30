@@ -9,12 +9,13 @@ import {
   Transaction,
 } from "@solana/web3.js";
 import bs58 from "bs58";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useGwapOs } from "../components/os-provider";
 import { recordWalletActivity } from "../lib/wallet-activity";
 import styles from "./send-mode.module.css";
 
 const LAMPORTS_PER_SOL = BigInt(1_000_000_000);
+const MAINNET_GENESIS_HASH = "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp";
 
 type ResolvedRecipient = {
   input: string;
@@ -30,6 +31,8 @@ type Review = {
   balanceLamports: bigint;
   feeLamports: bigint;
 };
+
+type SendPhase = "edit" | "review" | "signing" | "confirming" | "uncertain" | "success";
 
 type GnsResolvePayload = {
   fullName?: string;
@@ -68,10 +71,11 @@ export default function SendPage() {
   const [amountInput, setAmountInput] = useState("");
   const [resolved, setResolved] = useState<ResolvedRecipient | null>(null);
   const [review, setReview] = useState<Review | null>(null);
-  const [phase, setPhase] = useState<"edit" | "review" | "signing" | "confirming" | "success">("edit");
+  const [phase, setPhase] = useState<SendPhase>("edit");
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
   const [signature, setSignature] = useState("");
+  const sendLock = useRef(false);
 
   const rpcUrl = process.env.NEXT_PUBLIC_SOLANA_RPC_URL?.trim() || clusterApiUrl("mainnet-beta");
   const connection = useMemo(() => new Connection(rpcUrl, "confirmed"), [rpcUrl]);
@@ -79,6 +83,13 @@ export default function SendPage() {
     () => wallets.find((wallet) => wallet.address === account.verifiedWallet) ?? null,
     [account.verifiedWallet, wallets],
   );
+
+  async function assertMainnet() {
+    const genesisHash = await connection.getGenesisHash();
+    if (genesisHash !== MAINNET_GENESIS_HASH) {
+      throw new Error("GWAP_NETWORK_MISMATCH");
+    }
+  }
 
   async function resolveRecipient(value = recipientInput): Promise<ResolvedRecipient | null> {
     const input = value.trim();
@@ -160,6 +171,16 @@ export default function SendPage() {
     }
   }
 
+  async function validateWalletDestination(recipientKey: PublicKey) {
+    if (!PublicKey.isOnCurve(recipientKey.toBytes())) {
+      throw new Error("GWAP_RECIPIENT_NOT_WALLET");
+    }
+    const accountInfo = await connection.getAccountInfo(recipientKey, "confirmed");
+    if (accountInfo?.executable) {
+      throw new Error("GWAP_RECIPIENT_EXECUTABLE");
+    }
+  }
+
   async function prepareReview() {
     setError("");
     setStatus("");
@@ -179,9 +200,11 @@ export default function SendPage() {
     }
 
     try {
-      setStatus("Checking balance and network fee…");
+      setStatus("Verifying mainnet, recipient, balance and network fee…");
+      await assertMainnet();
       const sender = new PublicKey(account.verifiedWallet);
       const recipientKey = new PublicKey(recipient.address);
+      await validateWalletDestination(recipientKey);
       const [{ blockhash }, balance] = await Promise.all([
         connection.getLatestBlockhash("confirmed"),
         connection.getBalance(sender, "confirmed"),
@@ -194,7 +217,8 @@ export default function SendPage() {
         }),
       );
       const fee = await connection.getFeeForMessage(transaction.compileMessage(), "confirmed");
-      const feeLamports = BigInt(fee.value ?? 5_000);
+      if (fee.value == null) throw new Error("GWAP_FEE_UNAVAILABLE");
+      const feeLamports = BigInt(fee.value);
       const balanceLamports = BigInt(balance);
 
       if (amountLamports + feeLamports > balanceLamports) {
@@ -208,17 +232,89 @@ export default function SendPage() {
       setReview({ recipient, amountInput: amountInput.trim(), amountLamports, balanceLamports, feeLamports });
       setPhase("review");
       setStatus("");
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : "";
+      if (message === "GWAP_NETWORK_MISMATCH") {
+        setError("Send is blocked because the configured Solana RPC is not mainnet-beta.");
+      } else if (message === "GWAP_RECIPIENT_NOT_WALLET" || message === "GWAP_RECIPIENT_EXECUTABLE") {
+        setError("Send Mode accepts user wallet addresses only. Program, PDA, and executable destinations are blocked in this flow.");
+      } else if (message === "GWAP_FEE_UNAVAILABLE") {
+        setError("Solana did not return a reliable network fee. No signature was requested.");
+      } else {
+        setError("Could not safely prepare the transfer with the Solana network. No signature was requested.");
+      }
+      setStatus("");
+    }
+  }
+
+  function markConfirmed(signatureText: string, recipient: ResolvedRecipient) {
+    if (!review) return;
+    recordWalletActivity({
+      id: signatureText,
+      kind: "send",
+      sender: account.verifiedWallet,
+      signature: signatureText,
+      recipient: recipient.address,
+      recipientLabel: recipient.label,
+      amountSol: review.amountInput,
+      createdAt: new Date().toISOString(),
+    });
+    setReview({ ...review, recipient });
+    setSignature(signatureText);
+    setPhase("success");
+    setError("");
+    setStatus("Confirmed on Solana.");
+  }
+
+  async function checkBroadcastStatus() {
+    if (!review) return;
+    setError("");
+
+    if (!signature) {
+      setStatus("GwapOS did not receive a transaction signature. Check your wallet's recent activity before starting over.");
+      return;
+    }
+
+    try {
+      setStatus("Checking this exact signature on Solana…");
+      const response = await connection.getSignatureStatuses([signature], { searchTransactionHistory: true });
+      const transactionStatus = response.value[0];
+
+      if (!transactionStatus) {
+        setStatus("Solana has not reported a final result for this signature yet. Do not send again; check again shortly.");
+        return;
+      }
+
+      if (transactionStatus.err) {
+        setPhase("edit");
+        setReview(null);
+        setSignature("");
+        setError("This transaction failed on-chain, so the SOL transfer did not complete. A network fee may still have been charged. Review a fresh balance before retrying.");
+        setStatus("");
+        return;
+      }
+
+      if (transactionStatus.confirmationStatus === "confirmed" || transactionStatus.confirmationStatus === "finalized") {
+        markConfirmed(signature, review.recipient);
+        return;
+      }
+
+      setStatus("The transaction is visible but not confirmed yet. Do not send again; check status again shortly.");
     } catch {
-      setError("Could not prepare the transfer with the Solana network. No signature was requested.");
+      setError("Could not verify the transaction status right now. Do not retry the transfer until you verify it in your wallet or Explorer.");
       setStatus("");
     }
   }
 
   async function confirmAndSend() {
-    if (!review || !signingWallet) return;
+    if (!review || !signingWallet || sendLock.current) return;
+    sendLock.current = true;
     setError("");
+    let walletPromptRequested = false;
+    let broadcastSignature = "";
 
     try {
+      await assertMainnet();
       let recipient = review.recipient;
 
       if (recipient.gnsName) {
@@ -244,6 +340,7 @@ export default function SendPage() {
 
       const sender = new PublicKey(account.verifiedWallet);
       const destination = new PublicKey(recipient.address);
+      await validateWalletDestination(destination);
       const [{ blockhash, lastValidBlockHeight }, balance] = await Promise.all([
         connection.getLatestBlockhash("confirmed"),
         connection.getBalance(sender, "confirmed"),
@@ -256,7 +353,8 @@ export default function SendPage() {
         }),
       );
       const fee = await connection.getFeeForMessage(transaction.compileMessage(), "confirmed");
-      const feeLamports = BigInt(fee.value ?? 5_000);
+      if (fee.value == null) throw new Error("GWAP_FEE_UNAVAILABLE");
+      const feeLamports = BigInt(fee.value);
       if (review.amountLamports + feeLamports > BigInt(balance)) {
         setPhase("review");
         setError("The wallet balance changed and no longer covers this transfer plus the network fee.");
@@ -265,45 +363,66 @@ export default function SendPage() {
 
       setPhase("signing");
       setStatus("Review and approve the transaction in your wallet. GwapOS cannot approve it for you.");
+      walletPromptRequested = true;
       const result = await signAndSendTransaction({
         transaction: new Uint8Array(
           transaction.serialize({ requireAllSignatures: false, verifySignatures: false }),
         ),
         wallet: currentWallet,
       });
-      const signatureText = bs58.encode(result.signature);
-      setSignature(signatureText);
+      broadcastSignature = bs58.encode(result.signature);
+      setSignature(broadcastSignature);
       setPhase("confirming");
       setStatus("Transaction broadcast. Waiting for Solana confirmation…");
 
-      const confirmation = await connection.confirmTransaction(
-        { signature: signatureText, blockhash, lastValidBlockHeight },
-        "confirmed",
-      );
-      if (confirmation.value.err) throw new Error("Transaction failed during confirmation");
-
-      recordWalletActivity({
-        id: signatureText,
-        kind: "send",
-        signature: signatureText,
-        recipient: recipient.address,
-        recipientLabel: recipient.label,
-        amountSol: review.amountInput,
-        createdAt: new Date().toISOString(),
-      });
-
-      setReview({ ...review, recipient });
-      setPhase("success");
-      setStatus("Confirmed on Solana.");
+      try {
+        const confirmation = await connection.confirmTransaction(
+          { signature: broadcastSignature, blockhash, lastValidBlockHeight },
+          "confirmed",
+        );
+        if (confirmation.value.err) {
+          setPhase("edit");
+          setReview(null);
+          setSignature("");
+          setError("The transaction reached Solana but failed on-chain. No SOL transfer completed; a network fee may have been charged.");
+          setStatus("");
+          return;
+        }
+        markConfirmed(broadcastSignature, recipient);
+      } catch {
+        setReview({ ...review, recipient });
+        setPhase("uncertain");
+        setError("The transaction was broadcast, but confirmation could not be established. Do not send again until this exact signature is checked.");
+        setStatus("");
+      }
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : "";
-      setPhase("review");
-      setError(
-        /reject|declin|cancel|denied/i.test(message)
-          ? "The transaction was not approved. Nothing was sent."
-          : "The transfer was not confirmed. Check your wallet before retrying to avoid sending twice.",
-      );
+      const rejected = /reject|declin|cancel|denied/i.test(message);
+
+      if (message === "GWAP_NETWORK_MISMATCH") {
+        setPhase("review");
+        setError("Send is blocked because the configured Solana RPC is not mainnet-beta.");
+      } else if (message === "GWAP_RECIPIENT_NOT_WALLET" || message === "GWAP_RECIPIENT_EXECUTABLE") {
+        setPhase("edit");
+        setReview(null);
+        setError("The destination is not a standard user wallet. No transaction was submitted.");
+      } else if (message === "GWAP_FEE_UNAVAILABLE") {
+        setPhase("review");
+        setError("Solana did not return a reliable network fee. No transaction was submitted.");
+      } else if (rejected) {
+        setPhase("review");
+        setError("The transaction was not approved. Nothing was sent.");
+      } else if (walletPromptRequested) {
+        if (broadcastSignature) setSignature(broadcastSignature);
+        setPhase("uncertain");
+        setError("The wallet interaction ended without a reliable final result. Do not retry automatically. Check your wallet activity first.");
+      } else {
+        setPhase("review");
+        setError("The transfer could not be prepared safely. No wallet approval was requested.");
+      }
       setStatus("");
+    } finally {
+      sendLock.current = false;
     }
   }
 
@@ -402,7 +521,7 @@ export default function SendPage() {
         </section>
       ) : null}
 
-      {review && phase !== "edit" && phase !== "success" ? (
+      {review && (phase === "review" || phase === "signing" || phase === "confirming") ? (
         <section className={styles.panel} aria-labelledby="send-review-title">
           <div className={styles.panelHead}>
             <div>
@@ -464,11 +583,54 @@ export default function SendPage() {
         </section>
       ) : null}
 
+      {review && phase === "uncertain" ? (
+        <section className={styles.panel} aria-labelledby="send-uncertain-title">
+          <div className={styles.panelHead}>
+            <div>
+              <p className={styles.kicker}>Status check required</p>
+              <h2 id="send-uncertain-title">Do not send again yet.</h2>
+            </div>
+            <span className={styles.step}>Safety lock</span>
+          </div>
+          <div className={styles.warning}>
+            The wallet may already have broadcast this transfer. GwapOS disables the normal resend path until you verify what happened.
+          </div>
+          {signature ? (
+            <div className={styles.review}>
+              <div className={styles.reviewRow}><small>Signature</small><strong>{signature}</strong></div>
+              <div className={styles.reviewRow}><small>Recipient</small><strong>{review.recipient.label}</strong></div>
+              <div className={styles.reviewRow}><small>Amount</small><strong>{review.amountInput} SOL</strong></div>
+            </div>
+          ) : null}
+          {error ? <p className={styles.error} role="alert">{error}</p> : null}
+          <p className={styles.status} role="status" aria-live="polite">{status}</p>
+          <div className={styles.actions}>
+            <button className={styles.primary} type="button" onClick={() => void checkBroadcastStatus()}>
+              {signature ? "Check this signature" : "Show safety guidance"}
+            </button>
+            {signature ? (
+              <a
+                className={styles.secondary}
+                href={`https://explorer.solana.com/tx/${encodeURIComponent(signature)}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open Explorer
+              </a>
+            ) : (
+              <button className={styles.secondary} type="button" onClick={editTransfer}>
+                I checked my wallet — start over
+              </button>
+            )}
+          </div>
+        </section>
+      ) : null}
+
       {review && phase === "success" ? (
         <section className={styles.success} aria-labelledby="send-success-title">
           <span className={styles.successBadge}>Confirmed</span>
           <h2 id="send-success-title">SOL sent.</h2>
-          <p className={styles.copy}>The transfer is confirmed on Solana and has been added to this device's GwapOS wallet activity.</p>
+          <p className={styles.copy}>The transfer is confirmed on Solana and has been added to this device's GwapOS wallet activity for this wallet only.</p>
           <div className={styles.successMeta}>
             <div><small>Recipient</small><strong>{review.recipient.label}</strong></div>
             <div><small>Amount</small><strong>{review.amountInput} SOL</strong></div>
@@ -489,7 +651,7 @@ export default function SendPage() {
       ) : null}
 
       <p className={styles.notice}>
-        Mainnet only. Send Mode currently transfers native SOL only; SPL tokens and swaps remain gated for separate review.
+        Mainnet native SOL only. GwapOS verifies the RPC genesis hash before signing. SPL tokens and swaps remain gated for separate review.
       </p>
     </div>
   );
