@@ -87,7 +87,7 @@ export function IdentityWalletView() {
           </div>
           <div className={styles.pipeline} style={{ marginTop: 12 }}>
             <div className={styles.pipelineRow}><span className={styles.pipelineIcon}>◎</span><div><strong>.gwap resolution</strong><small>{displayName} is mounted for this wallet.</small></div><span className={styles.pipelineState}>Live</span></div>
-            <div className={styles.pipelineRow}><span className={styles.pipelineIcon}>◇</span><div><strong>GwapScore context</strong><small>Reputation travels with your GwapOS identity.</small></div><span className={styles.pipelineState}>{gnsIdentity.scoreStatus === "ready" ? "Live" : "Sync"}</span></div>
+            <div className={styles.pipelineRow}><span className={styles.pipelineIcon}>◇</span><div><strong>GwapScore context</strong><small>Reputation travels with your GwapOS identity.</small></div><span className={styles.pipelineState}>{gnsIdentity.scoreStatus === "scored" ? "Live" : "Sync"}</span></div>
             <div className={styles.pipelineRow}><span className={styles.pipelineIcon}>✓</span><div><strong>Proof of ownership</strong><small>The wallet that authenticated this session anchors the identity.</small></div><span className={styles.pipelineState}>{gnsIdentity.verified ? "Verified" : "Pending"}</span></div>
           </div>
         </section>
