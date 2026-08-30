@@ -14,7 +14,7 @@ const groups = [
     label: "Wallet",
     actions: [
       { href: "/app", label: "Send", note: "Move assets from your verified wallet", enabled: false },
-      { href: "/app", label: "Receive", note: "Show your wallet identity", enabled: false },
+      { href: "/app/receive", label: "Receive", note: "Share your verified wallet or .gwap identity", enabled: true },
       { href: "/app", label: "Swap", note: "Swap from your connected wallet", enabled: false },
     ],
   },
