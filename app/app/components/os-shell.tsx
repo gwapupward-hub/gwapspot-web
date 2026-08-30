@@ -72,6 +72,51 @@ export function OsShell({ children }: { children: ReactNode }) {
 
   return (
     <main className="gwap-os os-v2 gwapos-wallet-mode">
+      <style>{`
+        .gwapos-mobile-signout { display: none; }
+        @media (max-width: 720px) {
+          .gwapos-mobile-signout {
+            position: fixed;
+            top: calc(10px + env(safe-area-inset-top));
+            right: 12px;
+            z-index: 96;
+            display: block;
+          }
+          .gwapos-mobile-signout .os-sign-out-control {
+            display: block;
+          }
+          .gwapos-mobile-signout .os-sign-out {
+            min-height: 36px;
+            padding: 0 12px;
+            border: 1px solid rgba(255,255,255,.1);
+            border-radius: 999px;
+            background: rgba(5, 8, 6, .82);
+            color: rgba(247,255,247,.82);
+            box-shadow: inset 0 1px rgba(255,255,255,.05), 0 10px 28px rgba(0,0,0,.28);
+            backdrop-filter: blur(18px) saturate(125%);
+            -webkit-backdrop-filter: blur(18px) saturate(125%);
+            font: inherit;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: .05em;
+          }
+          .gwapos-mobile-signout .os-sign-out:disabled {
+            opacity: .58;
+          }
+          .gwapos-mobile-signout .os-sign-out-control > span[role="alert"] {
+            position: absolute;
+            top: 42px;
+            right: 0;
+            width: 160px;
+            padding: 7px 9px;
+            border: 1px solid rgba(255,98,98,.22);
+            border-radius: 10px;
+            background: rgba(22,6,6,.94);
+            color: #ff9a9a;
+            font-size: 9px;
+          }
+        }
+      `}</style>
       <div className="os-v2-grid" aria-hidden="true" />
       <div className="os-v2-glow" aria-hidden="true" />
       <BootSequence
@@ -136,6 +181,10 @@ export function OsShell({ children }: { children: ReactNode }) {
           <SignOutButton compact />
         </div>
       </header>
+
+      <div className="gwapos-mobile-signout">
+        <SignOutButton compact />
+      </div>
 
       {migrationAvailable ? (
         <section className="os-sync-banner" role="status">
