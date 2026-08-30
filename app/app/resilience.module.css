@@ -81,12 +81,16 @@
 
 .primary,
 .secondary {
+  display: inline-flex;
   min-height: 44px;
+  align-items: center;
+  justify-content: center;
   border-radius: 14px;
   padding: 0 16px;
   font: inherit;
   font-size: 12px;
   font-weight: 800;
+  text-decoration: none;
   cursor: pointer;
 }
 
@@ -97,13 +101,9 @@
 }
 
 .secondary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   border: 1px solid rgba(255,255,255,.1);
   background: rgba(255,255,255,.045);
   color: rgba(247,255,247,.88);
-  text-decoration: none;
 }
 
 .primary:focus-visible,
