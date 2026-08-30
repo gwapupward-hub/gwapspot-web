@@ -173,14 +173,9 @@ export function DashboardView({ products }: { products: EcosystemProduct[] }) {
         </div>
 
         <div className="gwapos-wallet-actions" aria-label="Wallet actions">
-          <button
-            className="gwapos-glass-action"
-            type="button"
-            disabled
-            title="Send remains gated until the wallet transaction pass"
-          >
+          <Link className="gwapos-glass-action" href="/app/send">
             Send
-          </button>
+          </Link>
           <Link className="gwapos-glass-action" href="/app/receive">
             Receive
           </Link>

@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ecosystemProducts } from "../../lib/ecosystem";
-import { shortenWalletAddress } from "../lib/wallet-format";
 import { useGwapOs } from "../components/os-provider";
+import { readWalletActivity, subscribeWalletActivity, type WalletActivityRecord } from "../lib/wallet-activity";
+import { shortenWalletAddress } from "../lib/wallet-format";
 import styles from "./activity.module.css";
 
-type ActivityFilter = "all" | "identity" | "apps" | "ideas" | "work";
+type ActivityFilter = "all" | "wallet" | "identity" | "apps" | "ideas" | "work";
 type ActivityEvent = {
   id: string;
   category: Exclude<ActivityFilter, "all">;
@@ -21,6 +22,7 @@ type ActivityEvent = {
 
 const filters: Array<{ key: ActivityFilter; label: string }> = [
   { key: "all", label: "All" },
+  { key: "wallet", label: "Wallet" },
   { key: "identity", label: "Identity" },
   { key: "apps", label: "Apps" },
   { key: "ideas", label: "Ideas" },
@@ -34,9 +36,20 @@ function formatTime(value: string | null) {
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
+function signatureLabel(signature: string) {
+  return signature.length > 16 ? `${signature.slice(0, 7)}…${signature.slice(-7)}` : signature;
+}
+
 export default function ActivityPage() {
   const { account, gnsIdentity, state, syncStatus } = useGwapOs();
   const [filter, setFilter] = useState<ActivityFilter>("all");
+  const [walletActivity, setWalletActivity] = useState<WalletActivityRecord[]>([]);
+
+  useEffect(() => {
+    const refresh = () => setWalletActivity(readWalletActivity());
+    refresh();
+    return subscribeWalletActivity(refresh);
+  }, []);
 
   const events = useMemo<ActivityEvent[]>(() => {
     const items: ActivityEvent[] = [
@@ -50,6 +63,18 @@ export default function ActivityPage() {
         timestamp: null,
       },
     ];
+
+    walletActivity.forEach((record) => {
+      items.push({
+        id: `wallet-${record.signature}`,
+        category: "wallet",
+        icon: "↗",
+        title: `Sent ${record.amountSol} SOL`,
+        detail: `To ${record.recipientLabel} · ${signatureLabel(record.signature)}`,
+        label: "Confirmed",
+        timestamp: record.createdAt,
+      });
+    });
 
     if (gnsIdentity.status === "found") {
       items.push({
@@ -135,7 +160,7 @@ export default function ActivityPage() {
       if (!b.timestamp) return 1;
       return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
     });
-  }, [account.verifiedWallet, gnsIdentity, state]);
+  }, [account.verifiedWallet, gnsIdentity, state, walletActivity]);
 
   const visibleEvents = filter === "all" ? events : events.filter((event) => event.category === filter);
   const nonSessionEvents = events.filter((event) => event.id !== "wallet-session");
@@ -146,7 +171,7 @@ export default function ActivityPage() {
         <div>
           <p className={styles.kicker}>Activity</p>
           <h1>Your GwapOS timeline</h1>
-          <p>Identity, apps, ideas and work in one place.</p>
+          <p>Wallet, identity, apps, ideas and work in one place.</p>
         </div>
         <span className={styles.sync}>{syncStatus}</span>
       </header>
@@ -161,8 +186,8 @@ export default function ActivityPage() {
           <strong className={styles.green}>{gnsIdentity.status === "found" ? gnsIdentity.fullName : "Wallet"}</strong>
         </div>
         <div className={styles.summaryCard}>
-          <span>Projects</span>
-          <strong>{state.ideaProjects.length}</strong>
+          <span>Confirmed sends</span>
+          <strong>{walletActivity.length}</strong>
         </div>
       </section>
 
@@ -206,7 +231,7 @@ export default function ActivityPage() {
         {!visibleEvents.length ? (
           <div className={styles.empty}>
             <strong>No activity in this category yet.</strong>
-            <p>As you use GwapOS, meaningful account events will collect here without inventing blockchain history that is not available.</p>
+            <p>Confirmed sends are cached on this device after Solana confirmation. GwapOS does not invent pending or failed wallet history.</p>
           </div>
         ) : null}
       </section>
