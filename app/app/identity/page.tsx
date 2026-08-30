@@ -1,5 +1,5 @@
-import { IdentityView } from "../components/identity-view";
+import { IdentityWalletView } from "../components/identity-wallet-view";
 
 export default function IdentityPage() {
-  return <IdentityView />;
+  return <IdentityWalletView />;
 }
