@@ -46,10 +46,10 @@ export default function ActivityPage() {
   const [walletActivity, setWalletActivity] = useState<WalletActivityRecord[]>([]);
 
   useEffect(() => {
-    const refresh = () => setWalletActivity(readWalletActivity());
+    const refresh = () => setWalletActivity(readWalletActivity(account.verifiedWallet));
     refresh();
     return subscribeWalletActivity(refresh);
-  }, []);
+  }, [account.verifiedWallet]);
 
   const events = useMemo<ActivityEvent[]>(() => {
     const items: ActivityEvent[] = [
@@ -231,7 +231,7 @@ export default function ActivityPage() {
         {!visibleEvents.length ? (
           <div className={styles.empty}>
             <strong>No activity in this category yet.</strong>
-            <p>Confirmed sends are cached on this device after Solana confirmation. GwapOS does not invent pending or failed wallet history.</p>
+            <p>Confirmed sends are cached on this device for the currently authenticated wallet only. GwapOS does not invent pending or failed wallet history.</p>
           </div>
         ) : null}
       </section>
