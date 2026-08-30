@@ -21,10 +21,10 @@ const groups = [
   {
     label: "Vault",
     actions: [
-      { href: "/app/vault", label: "Create Proof", note: "Anchor evidence with Private Proof Vault", enabled: true },
-      { href: "/app/vault", label: "Create Invoice", note: "Prepare a payment request", enabled: true },
-      { href: "/app/vault", label: "Create Agreement", note: "Prepare terms for wallet signatures", enabled: true },
-      { href: "/app/vault", label: "Request Payment", note: "Create a payable request", enabled: true },
+      { href: "/app/vault", label: "Proof Workspace", note: "Review PPV proof capabilities and deployment readiness", enabled: true },
+      { href: "/app/vault", label: "Agreement Workspace", note: "Review exact-version agreement capabilities", enabled: true },
+      { href: "/app/vault", label: "Create Invoice", note: "Invoice flows remain outside the current PPV foundation", enabled: false },
+      { href: "/app/vault", label: "Request Payment", note: "Settlement stays gated until the commerce layer is ready", enabled: false },
     ],
   },
   {
@@ -83,7 +83,7 @@ export function GwapActionSheet({ open, onClose, hasGnsIdentity }: GwapActionShe
                   ) : (
                     <button type="button" key={action.label} disabled>
                       <strong>{action.label}</strong>
-                      <small>{action.note} · coming next</small>
+                      <small>{action.note} · gated</small>
                       <i aria-hidden="true">—</i>
                     </button>
                   ))}

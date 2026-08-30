@@ -14,6 +14,7 @@ import { GnsRegistrationSyncBridge } from "./components/gns-registration-sync-br
 import { GwapOsProvider } from "./components/os-provider";
 import { OsShell } from "./components/os-shell";
 import "./gwapos-wallet.css";
+import "./gwapos-mobile-hardening.css";
 import {
   cachedGnsIdentity,
   loadAccountWorkspace,

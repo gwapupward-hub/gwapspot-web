@@ -1,0 +1,198 @@
+/* Wallet Mode hardening: narrow-screen ergonomics only. */
+.gwapos-wallet-mode,
+.gwapos-wallet-mode * {
+  box-sizing: border-box;
+}
+
+.gwapos-wallet-mode a,
+.gwapos-wallet-mode button {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.gwapos-wallet-mode a:focus-visible,
+.gwapos-wallet-mode button:focus-visible {
+  outline: 2px solid #13dd13;
+  outline-offset: 3px;
+}
+
+.gwapos-wallet-mode .os-v2-workspace,
+.gwapos-wallet-mode .gwapos-home,
+.gwapos-wallet-mode .gwapos-hero-card,
+.gwapos-wallet-mode .gwapos-glass-card,
+.gwapos-wallet-mode .gwapos-pulse,
+.gwapos-wallet-mode .gwapos-next-action {
+  min-width: 0;
+}
+
+.gwapos-wallet-mode .gwap-action-sheet {
+  max-height: calc(100dvh - env(safe-area-inset-top) - 18px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 720px) {
+  .gwap-os.gwapos-wallet-mode {
+    min-height: 100svh;
+    overflow-x: clip;
+    overscroll-behavior-x: none;
+  }
+
+  .gwapos-wallet-mode .os-v2-workspace {
+    width: 100%;
+    min-width: 0;
+    padding-bottom: calc(136px + env(safe-area-inset-bottom));
+  }
+
+  .gwapos-wallet-mode .gwapos-home {
+    width: 100%;
+    max-width: 100%;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .gwapos-wallet-mode .gwapos-section-head {
+    align-items: flex-end;
+    gap: 10px;
+  }
+
+  .gwapos-wallet-mode .gwapos-section-head > div,
+  .gwapos-wallet-mode .gwapos-section-head > p,
+  .gwapos-wallet-mode .gwapos-pulse-row > div,
+  .gwapos-wallet-mode .gwapos-next-action > div {
+    min-width: 0;
+  }
+
+  .gwapos-wallet-mode .gwapos-section-head h2,
+  .gwapos-wallet-mode .gwapos-pulse-row p,
+  .gwapos-wallet-mode .gwapos-pulse-row small,
+  .gwapos-wallet-mode .gwapos-next-action h3,
+  .gwapos-wallet-mode .gwapos-next-action p {
+    overflow-wrap: anywhere;
+  }
+
+  .gwapos-wallet-mode .gwapos-pulse {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .gwapos-wallet-mode .gwapos-pulse-row {
+    gap: 10px;
+    min-height: 60px;
+  }
+
+  .gwapos-wallet-mode .gwapos-pulse-row > span:first-child {
+    width: 34px;
+    height: 34px;
+    border-radius: 11px;
+  }
+
+  .gwapos-wallet-mode .gwapos-pulse-row > strong {
+    flex: 0 0 auto;
+    max-width: 74px;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .gwapos-wallet-mode .gwapos-wallet-actions {
+    gap: 8px;
+  }
+
+  .gwapos-wallet-mode .gwapos-glass-action,
+  .gwapos-wallet-mode .gwap-gradient-button,
+  .gwapos-wallet-mode .gwap-gradient-link {
+    min-height: 44px;
+  }
+
+  .gwapos-wallet-mode .os-dock {
+    width: min(calc(100% - 16px), 500px);
+    bottom: calc(8px + env(safe-area-inset-bottom));
+    padding: 5px;
+    gap: 2px;
+  }
+
+  .gwapos-wallet-mode .os-dock > a {
+    min-width: 0;
+    min-height: 50px;
+    flex: 1 1 20%;
+    padding-left: 2px;
+    padding-right: 2px;
+  }
+
+  .gwapos-wallet-mode .os-dock > a > span {
+    line-height: 1;
+  }
+
+  .gwapos-wallet-mode .os-dock > a > small {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 9px;
+  }
+
+  .gwapos-wallet-mode .gwapos-action-fab {
+    bottom: calc(70px + env(safe-area-inset-bottom));
+  }
+
+  .gwapos-wallet-mode .gwapos-action-fab .gwap-metal-button.is-compact {
+    width: 52px;
+    min-width: 52px;
+    height: 52px;
+    min-height: 52px;
+  }
+
+  .gwapos-wallet-mode .gwap-action-overlay {
+    align-items: flex-end;
+    padding-top: calc(12px + env(safe-area-inset-top));
+  }
+
+  .gwapos-wallet-mode .gwap-action-sheet {
+    width: min(100%, 560px);
+    max-height: calc(100dvh - env(safe-area-inset-top) - 12px);
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+
+  .gwapos-wallet-mode .gwap-action-sheet-head button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .gwapos-wallet-mode .gwap-action-group a,
+  .gwapos-wallet-mode .gwap-action-group button {
+    min-height: 52px;
+  }
+
+  .gwapos-wallet-mode .os-sync-banner {
+    margin-left: 10px;
+    margin-right: 10px;
+  }
+}
+
+@media (max-width: 390px) {
+  .gwapos-wallet-mode .gwapos-section-head > p {
+    display: none;
+  }
+
+  .gwapos-wallet-mode .gwapos-wallet-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .gwapos-wallet-mode .gwapos-pulse-row > strong {
+    max-width: 60px;
+    font-size: 9px;
+  }
+
+  .gwapos-wallet-mode .os-dock > a > small {
+    font-size: 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gwapos-wallet-mode *,
+  .gwapos-wallet-mode *::before,
+  .gwapos-wallet-mode *::after {
+    scroll-behavior: auto !important;
+  }
+}
