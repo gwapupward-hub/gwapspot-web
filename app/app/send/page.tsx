@@ -14,7 +14,7 @@ import { useGwapOs } from "../components/os-provider";
 import { recordWalletActivity } from "../lib/wallet-activity";
 import styles from "./send-mode.module.css";
 
-const LAMPORTS_PER_SOL = 1_000_000_000n;
+const LAMPORTS_PER_SOL = BigInt(1_000_000_000);
 
 type ResolvedRecipient = {
   input: string;
@@ -44,7 +44,7 @@ function parseSolToLamports(value: string): bigint | null {
   const [whole, fraction = ""] = trimmed.split(".");
   try {
     const lamports = BigInt(whole) * LAMPORTS_PER_SOL + BigInt(fraction.padEnd(9, "0"));
-    return lamports > 0n ? lamports : null;
+    return lamports > BigInt(0) ? lamports : null;
   } catch {
     return null;
   }
