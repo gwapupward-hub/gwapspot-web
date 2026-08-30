@@ -1,6 +1,7 @@
 export type WalletActivityRecord = {
   id: string;
   kind: "send";
+  sender: string;
   signature: string;
   recipient: string;
   recipientLabel: string;
@@ -10,12 +11,13 @@ export type WalletActivityRecord = {
 
 const WALLET_ACTIVITY_STORAGE_KEY = "gwap-wallet-activity-v1";
 const WALLET_ACTIVITY_EVENT = "gwap-wallet-activity";
-const MAX_RECORDS = 20;
+const MAX_RECORDS = 40;
 
 function normalizeRecord(value: unknown): WalletActivityRecord | null {
   if (!value || typeof value !== "object") return null;
   const candidate = value as Partial<WalletActivityRecord>;
   if (candidate.kind !== "send") return null;
+  if (typeof candidate.sender !== "string" || candidate.sender.length < 32) return null;
   if (typeof candidate.signature !== "string" || candidate.signature.length < 32) return null;
   if (typeof candidate.recipient !== "string" || candidate.recipient.length < 32) return null;
   if (typeof candidate.amountSol !== "string" || !candidate.amountSol) return null;
@@ -24,6 +26,7 @@ function normalizeRecord(value: unknown): WalletActivityRecord | null {
   return {
     id: typeof candidate.id === "string" && candidate.id ? candidate.id.slice(0, 120) : candidate.signature,
     kind: "send",
+    sender: candidate.sender.slice(0, 80),
     signature: candidate.signature.slice(0, 120),
     recipient: candidate.recipient.slice(0, 80),
     recipientLabel:
@@ -35,7 +38,7 @@ function normalizeRecord(value: unknown): WalletActivityRecord | null {
   };
 }
 
-export function readWalletActivity(): WalletActivityRecord[] {
+function readAllWalletActivity(): WalletActivityRecord[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = window.localStorage.getItem(WALLET_ACTIVITY_STORAGE_KEY);
@@ -51,10 +54,14 @@ export function readWalletActivity(): WalletActivityRecord[] {
   }
 }
 
+export function readWalletActivity(sender: string): WalletActivityRecord[] {
+  return readAllWalletActivity().filter((record) => record.sender === sender).slice(0, 20);
+}
+
 export function recordWalletActivity(record: WalletActivityRecord) {
   if (typeof window === "undefined") return;
   try {
-    const next = [record, ...readWalletActivity().filter((item) => item.signature !== record.signature)].slice(
+    const next = [record, ...readAllWalletActivity().filter((item) => item.signature !== record.signature)].slice(
       0,
       MAX_RECORDS,
     );
