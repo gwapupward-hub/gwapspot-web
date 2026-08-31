@@ -467,6 +467,10 @@ export function IdeaLabView() {
             </label>
             {selected.summary ? <p className="idea-lab-project-summary">{selected.summary}</p> : null}
 
+            <div className="idea-lab-hero-actions">
+              <Link href={`/app/ideas/workspace/${selected.id}`} className="idea-lab-build-link">Build in Workspace →</Link>
+            </div>
+
             <div className="idea-lab-stage-rail" aria-label={`Project stage: ${statusLabel(selected.status)}`}>
               {lifecycleStages.map((stage, index) => {
                 const done = currentStageIndex > index || selected.status === "launched";
