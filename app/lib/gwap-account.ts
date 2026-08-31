@@ -5,6 +5,7 @@ import type { WalletIdentity } from "./privy-server";
 import { getPrivateStorageKey, getWorkspaceRedis } from "./redis";
 import {
   isGwapAccountId,
+  isSolanaAddress,
   isTelegramUserId,
   mergeGwapAccountIdentity,
   normalizeGwapAccountRecord,
@@ -113,6 +114,11 @@ export async function getGwapAccountById(accountId: string) {
 export async function getGwapAccountForTelegram(telegramUserId: string) {
   if (!isTelegramUserId(telegramUserId)) return null;
   return readMappedAccount(telegramMapKey(telegramUserId));
+}
+
+export async function getGwapAccountForWallet(wallet: string) {
+  if (!isSolanaAddress(wallet)) return null;
+  return readMappedAccount(walletMapKey(wallet));
 }
 
 export async function getOrCreateGwapAccount(
