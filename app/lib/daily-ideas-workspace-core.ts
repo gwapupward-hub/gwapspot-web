@@ -248,6 +248,29 @@ export function can(role: WorkspaceRole, capability: WorkspaceCapability) {
   return ROLE_CAPABILITIES[role]?.has(capability) ?? false;
 }
 
+export type WorkspaceCapabilityFlags = {
+  canWriteFiles: boolean;
+  canWriteDocs: boolean;
+  canManageTasks: boolean;
+  canRunTerminal: boolean;
+  canManageMembers: boolean;
+  canManageSandbox: boolean;
+  canDestroy: boolean;
+};
+
+/** Serializable capability summary the client uses to gate UI affordances. */
+export function workspaceCapabilities(role: WorkspaceRole): WorkspaceCapabilityFlags {
+  return {
+    canWriteFiles: can(role, "files:write"),
+    canWriteDocs: can(role, "docs:write"),
+    canManageTasks: can(role, "tasks:write"),
+    canRunTerminal: can(role, "terminal:execute"),
+    canManageMembers: can(role, "members:manage"),
+    canManageSandbox: can(role, "sandbox:manage"),
+    canDestroy: can(role, "workspace:destroy"),
+  };
+}
+
 /** True when writing to this path only requires the doc-editing capability. */
 export function isProjectDocPath(relativePath: string) {
   return /^[^/]+\.md$/i.test(relativePath);
@@ -313,7 +336,6 @@ export function normalizeWorkspacePath(raw: unknown): string | null {
     if (segment === "" || segment === ".") continue;
     if (segment === "..") return null;
     if (segment.length > MAX_SEGMENT_LENGTH) return null;
-    // eslint-disable-next-line no-control-regex
     if (/[\u0000-\u001f]/.test(segment)) return null;
     resolved.push(segment);
     if (resolved.length > MAX_PATH_SEGMENTS) return null;

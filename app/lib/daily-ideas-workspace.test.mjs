@@ -3,7 +3,6 @@ import test from "node:test";
 import {
   acceptWorkspaceInvite,
   createWorkspace,
-  getWorkspaceById,
   resolveWorkspaceForAccount,
 } from "./daily-ideas-collab-workspace.ts";
 import {

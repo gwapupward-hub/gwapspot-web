@@ -186,23 +186,23 @@ export class DaytonaSandboxProvider implements WorkspaceSandboxProvider {
       `${this.toolboxPath(input.sandboxId, "/files")}?path=${encodeURIComponent(WORKSPACE_ROOT)}`,
     );
     if (!Array.isArray(entries)) return [];
-    return entries
-      .map((entry) => {
-        const absolute = entry.path ?? (entry.name ? `${WORKSPACE_ROOT}/${entry.name}` : "");
-        const relative = absolute.startsWith(`${WORKSPACE_ROOT}/`)
-          ? absolute.slice(WORKSPACE_ROOT.length + 1)
-          : entry.name ?? "";
-        if (!relative) return null;
-        const isDir = entry.isDir ?? entry.is_dir ?? false;
-        return {
+    return entries.flatMap<SandboxFileEntry>((entry) => {
+      const absolute = entry.path ?? (entry.name ? `${WORKSPACE_ROOT}/${entry.name}` : "");
+      const relative = absolute.startsWith(`${WORKSPACE_ROOT}/`)
+        ? absolute.slice(WORKSPACE_ROOT.length + 1)
+        : entry.name ?? "";
+      if (!relative) return [];
+      const isDir = entry.isDir ?? entry.is_dir ?? false;
+      return [
+        {
           path: relative,
           name: entry.name ?? relative.split("/").pop() ?? relative,
-          kind: isDir ? ("dir" as const) : ("file" as const),
+          kind: isDir ? "dir" : "file",
           size: entry.size,
           updatedAt: entry.modTime,
-        };
-      })
-      .filter((entry): entry is SandboxFileEntry => entry !== null);
+        },
+      ];
+    });
   }
 
   async readFile(input: SandboxFileOpInput): Promise<SandboxFileContent> {
