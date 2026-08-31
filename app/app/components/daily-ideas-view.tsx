@@ -493,7 +493,7 @@ export function DailyIdeasView() {
       {!bootstrapping && activeView === "projects" ? (
         <section className="daily-ideas-section" aria-labelledby="daily-ideas-projects-title">
           <div className="daily-ideas-section-heading"><div><span>PROJECTS</span><h2 id="daily-ideas-projects-title">Move from thought to launch.</h2></div><p>Develop → Validate → Build → Launch stays synchronized with Telegram and the shared backend.</p></div>
-          {projects.length ? <div className="daily-ideas-list">{projects.map((project) => <article key={project.id}><div><span>{project.status.toUpperCase()}</span><h3>{project.title}</h3><p>Last updated {new Date(project.updatedAt).toLocaleDateString()}</p></div><Link href="/app/ideas/lab">Open Idea Lab</Link></article>)}</div> : <div className="daily-ideas-empty"><h2>No active projects.</h2><p>Save an idea, choose Develop, and your execution workspace will start here.</p><button type="button" onClick={() => setActiveView("saved")}>Open saved ideas</button></div>}
+          {projects.length ? <div className="daily-ideas-list">{projects.map((project) => <article key={project.id}><div><span>{project.status.toUpperCase()}</span><h3>{project.title}</h3><p>Last updated {new Date(project.updatedAt).toLocaleDateString()}</p></div><div className="daily-ideas-project-actions"><Link href={`/app/ideas/workspace/${project.id}`}>Open Workspace</Link><Link href="/app/ideas/lab" className="is-quiet">Open Idea Lab</Link></div></article>)}</div> : <div className="daily-ideas-empty"><h2>No active projects.</h2><p>Save an idea, choose Develop, and your execution workspace will start here.</p><button type="button" onClick={() => setActiveView("saved")}>Open saved ideas</button></div>}
         </section>
       ) : null}
 
