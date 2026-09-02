@@ -23,6 +23,12 @@ const typeLabels: Record<string, string> = {
   sandbox_started: "Sandbox",
   sandbox_stopped: "Sandbox",
   invite_created: "Team",
+  deployment_connected: "Deploy",
+  deployment_updated: "Deploy",
+  deployment_removed: "Deploy",
+  publication_published: "Publish",
+  publication_updated: "Publish",
+  publication_unpublished: "Publish",
 };
 
 export function WorkspaceActivityPanel({

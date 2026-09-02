@@ -3,6 +3,13 @@
 import Link from "next/link";
 import { relativeTime, type WorkspaceOverview, type WorkspaceTab } from "./workspace-client";
 
+const publicationLabels: Record<string, string> = {
+  draft: "Draft",
+  public: "Public",
+  unlisted: "Unlisted",
+  suspended: "Suspended",
+};
+
 const sandboxLabels: Record<string, string> = {
   none: "Not started",
   provisioning: "Provisioning",
@@ -32,6 +39,29 @@ export function WorkspaceOverviewPanel({
         <div className="diw-stat"><small>WORKSPACE</small><strong>{workspace.status === "archived" ? "Archived" : "Active"}</strong></div>
         <div className="diw-stat"><small>LAST ACTIVITY</small><strong>{relativeTime(workspace.lastActivityAt)}</strong></div>
       </div>
+
+      <section className="diw-card diw-glass">
+        <span className="os-terminal-label">DEPLOY &amp; PUBLISH</span>
+        <ul className="diw-status-rows">
+          <li>
+            <span>Deployment</span>
+            <strong>{overview.deployment ? `Connected · ${overview.deployment.host}` : "Not connected"}</strong>
+            <button type="button" className="diw-inline-link" onClick={() => onNavigate("deploy")}>Open Deploy →</button>
+          </li>
+          <li>
+            <span>Publication</span>
+            <strong>
+              {overview.publication
+                ? `${publicationLabels[overview.publication.status] ?? overview.publication.status}${overview.publication.address ? ` · ${overview.publication.address}` : ""}`
+                : "Not published"}
+            </strong>
+            <button type="button" className="diw-inline-link" onClick={() => onNavigate("publish")}>Open Publish →</button>
+          </li>
+        </ul>
+        {!overview.gwapBrowser.enabled ? (
+          <p>Gwap Browser is in development on this deployment. Deploy and Publish become active when the server switch is on.</p>
+        ) : null}
+      </section>
 
       <section className="diw-card diw-glass">
         <span className="os-terminal-label">PROJECT READINESS</span>
