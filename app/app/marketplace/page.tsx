@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { PpvDeliverableAnchor } from "../../components/ppv/ppv-deliverable-anchor";
+import "../../components/ppv/ppv.css";
 import { useGwapOs } from "../components/os-provider";
 import type { MarketplaceRole } from "../lib/os-state";
 
@@ -94,6 +96,14 @@ export default function MarketplacePage() {
                 </select>
               </label>
               <p><strong>Ready</strong> means the brief is prepared for the future Marketplace adapter; it does not publish anything yet.</p>
+              <PpvDeliverableAnchor
+                sourceProduct="marketplace"
+                sourceObjectId={selected.id}
+                deliverableId="deliverable"
+                payload={{ intentId: selected.id, milestoneIndex: null, state: "accepted" }}
+                eligible={selected.status === "Ready"}
+                ineligibleReason="Mark the brief Ready before anchoring its deliverable with PPV. Drafts are never anchored."
+              />
               <div>
                 <Link href="/app/ideas/lab">Back to Idea Lab</Link>{" · "}
                 <Link href="/app/identity">Identity</Link>{" · "}

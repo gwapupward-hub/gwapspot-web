@@ -1,3 +1,4 @@
+import Link from "next/link";
 import styles from "./vault-mode.module.css";
 
 const actions = [
@@ -46,6 +47,7 @@ export default function VaultPage() {
           <span className={styles.chip}>Wallet-authorized</span>
           <span className={styles.chip}>Non-custodial</span>
           <span className={styles.chip}>Fail closed</span>
+          <Link className={styles.chip} href="/app/vault/receipts">PPV receipts →</Link>
         </div>
       </section>
 
