@@ -73,6 +73,14 @@ export default function AppsPage() {
       detail: "Relationships",
     },
     {
+      href: "/app/browser",
+      name: "Gwap Browser",
+      note: "Discover and open projects built with GWAP by exact .gwap address or keyword",
+      icon: "⌕",
+      state: "In development",
+      detail: "Resolve · discover",
+    },
+    {
       href: "/app/developer",
       name: "Developer",
       note: "GWAP integration and developer tools",

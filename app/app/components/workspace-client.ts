@@ -12,6 +12,8 @@ export type WorkspaceCapabilityFlags = {
   canManageMembers: boolean;
   canManageSandbox: boolean;
   canDestroy: boolean;
+  canManageDeployment: boolean;
+  canManagePublication: boolean;
 };
 
 export type WorkspaceSandboxStatus =
@@ -100,9 +102,94 @@ export type WorkspaceOverview = {
   };
   activity: { items: WorkspaceActivityView[]; total: number; nextOffset: number | null };
   sandboxExecutionConfigured: boolean;
+  deployment: { status: "connected"; provider: WorkspaceDeploymentProvider; host: string } | null;
+  publication: { status: "draft" | "public" | "unlisted" | "suspended"; address: string | null; version: number | null } | null;
+  gwapBrowser: GwapBrowserFlags;
 };
 
-export type WorkspaceTab = "overview" | "tasks" | "files" | "terminal" | "team" | "activity";
+export type WorkspaceTab = "overview" | "tasks" | "files" | "terminal" | "deploy" | "publish" | "team" | "activity";
+
+// --- Deploy + Publish (Gwap Browser V1) ------------------------------------
+
+export type GwapBrowserFlags = { enabled: boolean; publishEnabled: boolean };
+
+export type WorkspaceDeploymentProvider = "vercel" | "cloudflare" | "netlify" | "other";
+
+export type WorkspaceDeploymentView = {
+  id: string;
+  provider: WorkspaceDeploymentProvider;
+  url: string;
+  host: string;
+  status: "configured";
+  createdAt: string;
+  updatedAt: string;
+  updatedBy: string;
+};
+
+export type PublicationVisibility = "public" | "unlisted" | "private";
+
+export type PublicationDraftView = {
+  stored: boolean;
+  slug: string;
+  title: string;
+  summary: string;
+  category: string;
+  tags: string[];
+  visibility: PublicationVisibility;
+  attestedDeploymentControl: boolean;
+  updatedAt: string;
+};
+
+export type PublicationView = {
+  id: string;
+  address: string;
+  ownerAddress: string;
+  slug: string;
+  title: string;
+  summary: string;
+  category: string;
+  tags: string[];
+  visibility: "public" | "unlisted";
+  status: "published" | "suspended";
+  version: number;
+  deploymentUrl: string;
+  deploymentHash: string;
+  ownershipVerifiedAt: string;
+  publishedAt: string;
+  updatedAt: string;
+};
+
+export type ReadinessState = "pass" | "needs_action" | "unavailable";
+
+export type PublicationPanelData = {
+  draft: PublicationDraftView;
+  draftErrors: Partial<Record<"slug" | "title" | "summary" | "category" | "tags" | "visibility", string>> | null;
+  publication: PublicationView | null;
+  deployment: WorkspaceDeploymentView | null;
+  identity: {
+    gnsName: string | null;
+    ownerAddress: string | null;
+    ownership: "verified" | "mismatch" | "not_found" | "unavailable" | "no_name" | "not_applicable";
+  };
+  previewAddress: string | null;
+  slugTaken: boolean;
+  unpublishedChanges: boolean;
+  readiness: Record<"identity" | "ownership" | "deployment" | "metadata" | "address" | "visibility" | "attestation", ReadinessState>;
+  primaryRoute: { mode: "profile" | "project"; isPrimary: boolean };
+  gwapBrowser: GwapBrowserFlags;
+};
+
+export function browserAddressPath(address: string) {
+  return `/app/browser/${encodeURIComponent(address)}`;
+}
+
+export function hostOf(url: string) {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return url;
+  }
+}
 
 export type AuthedFetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 

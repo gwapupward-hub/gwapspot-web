@@ -20,6 +20,9 @@ import {
   type WorkspaceTask,
 } from "../../../../lib/daily-ideas-workspace-core.ts";
 import { getWorkspaceSandboxProvider, isSandboxExecutionConfigured } from "../../../../lib/workspace-sandbox/index.ts";
+import { getWorkspaceDeployment } from "../../../../lib/daily-ideas-workspace-deployment.ts";
+import { findPublicationByWorkspace, getPublicationDraft, readRegistry } from "../../../../lib/gwap-browser-registry.ts";
+import { gwapBrowserFlags } from "../../../../lib/gwap-browser-server.ts";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -51,11 +54,15 @@ export async function GET(request: Request, context: { params: Promise<{ project
   }
 
   const { redis, workspace, membership } = resolved;
-  const [members, tasks, activity] = await Promise.all([
+  const [members, tasks, activity, deployment, registry, draft] = await Promise.all([
     listWorkspaceMembers(redis, workspace.id),
     listWorkspaceTasks(redis, workspace.id),
     listWorkspaceActivity(redis, workspace.id, { limit: 10 }),
+    getWorkspaceDeployment(redis, workspace.id).catch(() => null),
+    readRegistry(redis).catch(() => null),
+    getPublicationDraft(redis, workspace.id).catch(() => null),
   ]);
+  const publication = registry ? findPublicationByWorkspace(registry, workspace.id) : null;
 
   return workspaceJson({
     workspace: {
@@ -79,6 +86,13 @@ export async function GET(request: Request, context: { params: Promise<{ project
     tasks: taskSummary(tasks),
     activity,
     sandboxExecutionConfigured: isSandboxExecutionConfigured(),
+    deployment: deployment ? { status: "connected", provider: deployment.provider, host: new URL(deployment.url).hostname } : null,
+    publication: publication
+      ? { status: publication.status === "suspended" ? "suspended" : publication.visibility, address: publication.address, version: publication.version }
+      : draft
+        ? { status: "draft", address: null, version: null }
+        : null,
+    gwapBrowser: gwapBrowserFlags(),
   });
 }
 

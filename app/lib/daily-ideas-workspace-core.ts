@@ -103,7 +103,13 @@ export type WorkspaceActivityType =
   | "command_run"
   | "sandbox_started"
   | "sandbox_stopped"
-  | "invite_created";
+  | "invite_created"
+  | "deployment_connected"
+  | "deployment_updated"
+  | "deployment_removed"
+  | "publication_published"
+  | "publication_updated"
+  | "publication_unpublished";
 
 export type WorkspaceActivityEvent = {
   id: string;
@@ -188,7 +194,11 @@ export type WorkspaceCapability =
   | "tasks:write"
   | "terminal:execute"
   | "sandbox:manage"
-  | "activity:read";
+  | "activity:read"
+  | "deployment:read"
+  | "deployment:manage"
+  | "publication:read"
+  | "publication:manage";
 
 const ROLE_CAPABILITIES: Record<WorkspaceRole, Set<WorkspaceCapability>> = {
   owner: new Set<WorkspaceCapability>([
@@ -204,6 +214,10 @@ const ROLE_CAPABILITIES: Record<WorkspaceRole, Set<WorkspaceCapability>> = {
     "terminal:execute",
     "sandbox:manage",
     "activity:read",
+    "deployment:read",
+    "deployment:manage",
+    "publication:read",
+    "publication:manage",
   ]),
   developer: new Set<WorkspaceCapability>([
     "workspace:read",
@@ -215,6 +229,9 @@ const ROLE_CAPABILITIES: Record<WorkspaceRole, Set<WorkspaceCapability>> = {
     "terminal:execute",
     "sandbox:manage",
     "activity:read",
+    "deployment:read",
+    "deployment:manage",
+    "publication:read",
   ]),
   contributor: new Set<WorkspaceCapability>([
     "workspace:read",
@@ -223,12 +240,16 @@ const ROLE_CAPABILITIES: Record<WorkspaceRole, Set<WorkspaceCapability>> = {
     "tasks:read",
     "tasks:write",
     "activity:read",
+    "deployment:read",
+    "publication:read",
   ]),
   viewer: new Set<WorkspaceCapability>([
     "workspace:read",
     "files:read",
     "tasks:read",
     "activity:read",
+    "deployment:read",
+    "publication:read",
   ]),
 };
 
@@ -256,6 +277,8 @@ export type WorkspaceCapabilityFlags = {
   canManageMembers: boolean;
   canManageSandbox: boolean;
   canDestroy: boolean;
+  canManageDeployment: boolean;
+  canManagePublication: boolean;
 };
 
 /** Serializable capability summary the client uses to gate UI affordances. */
@@ -268,6 +291,8 @@ export function workspaceCapabilities(role: WorkspaceRole): WorkspaceCapabilityF
     canManageMembers: can(role, "members:manage"),
     canManageSandbox: can(role, "sandbox:manage"),
     canDestroy: can(role, "workspace:destroy"),
+    canManageDeployment: can(role, "deployment:manage"),
+    canManagePublication: can(role, "publication:manage"),
   };
 }
 

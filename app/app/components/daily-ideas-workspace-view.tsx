@@ -17,6 +17,8 @@ import { WorkspaceOverviewPanel } from "./workspace-overview";
 import { WorkspaceTasksPanel } from "./workspace-tasks";
 import { WorkspaceFilesPanel } from "./workspace-files";
 import { WorkspaceTerminalPanel } from "./workspace-terminal";
+import { WorkspaceDeployPanel } from "./workspace-deploy";
+import { WorkspacePublishPanel } from "./workspace-publish";
 import { WorkspaceTeamPanel } from "./workspace-team";
 import { WorkspaceActivityPanel } from "./workspace-activity";
 
@@ -25,6 +27,8 @@ const tabs: Array<{ id: WorkspaceTab; label: string }> = [
   { id: "tasks", label: "Tasks" },
   { id: "files", label: "Files" },
   { id: "terminal", label: "Terminal" },
+  { id: "deploy", label: "Deploy" },
+  { id: "publish", label: "Publish" },
   { id: "team", label: "Team" },
   { id: "activity", label: "Activity" },
 ];
@@ -239,6 +243,23 @@ export function DailyIdeasWorkspaceView({ projectId }: { projectId: string }) {
             capabilities={capabilities}
             sandboxStatus={workspace.sandbox.status}
             executionConfigured={overview.sandboxExecutionConfigured}
+            onChange={() => void loadOverview()}
+          />
+        ) : null}
+        {activeTab === "deploy" ? (
+          <WorkspaceDeployPanel
+            projectId={projectId}
+            authenticatedFetch={authenticatedFetch}
+            capabilities={capabilities}
+            currentRole={role}
+            onChange={() => void loadOverview()}
+          />
+        ) : null}
+        {activeTab === "publish" ? (
+          <WorkspacePublishPanel
+            projectId={projectId}
+            authenticatedFetch={authenticatedFetch}
+            capabilities={capabilities}
             onChange={() => void loadOverview()}
           />
         ) : null}
