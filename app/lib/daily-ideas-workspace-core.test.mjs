@@ -4,6 +4,7 @@ import {
   buildSeedTasks,
   buildWorkspaceScaffold,
   can,
+  workspaceCapabilities,
   clampTerminalTimeout,
   deriveWorkspaceId,
   fileWriteCapabilityFor,
@@ -226,4 +227,33 @@ test("deriveWorkspaceId is stable + owner-scoped", () => {
   assert.equal(a, b);
   assert.notEqual(a, c);
   assert.match(a, /^wsp_[a-f0-9]{24}$/);
+});
+
+// --- Gwap Browser V1: deployment + publication capabilities ------------------
+
+test("deployment and publication capabilities follow the locked role matrix", () => {
+  assert.equal(can("owner", "deployment:manage"), true);
+  assert.equal(can("owner", "publication:manage"), true);
+  assert.equal(can("developer", "deployment:manage"), true);
+  assert.equal(can("developer", "publication:manage"), false);
+  assert.equal(can("contributor", "deployment:manage"), false);
+  assert.equal(can("contributor", "publication:manage"), false);
+  assert.equal(can("viewer", "deployment:manage"), false);
+  assert.equal(can("viewer", "publication:manage"), false);
+  for (const role of ["owner", "developer", "contributor", "viewer"]) {
+    assert.equal(can(role, "deployment:read"), true, role);
+    assert.equal(can(role, "publication:read"), true, role);
+  }
+  assert.deepEqual(
+    [workspaceCapabilities("owner").canManageDeployment, workspaceCapabilities("owner").canManagePublication],
+    [true, true],
+  );
+  assert.deepEqual(
+    [workspaceCapabilities("developer").canManageDeployment, workspaceCapabilities("developer").canManagePublication],
+    [true, false],
+  );
+  assert.deepEqual(
+    [workspaceCapabilities("viewer").canManageDeployment, workspaceCapabilities("viewer").canManagePublication],
+    [false, false],
+  );
 });
