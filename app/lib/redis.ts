@@ -26,6 +26,8 @@ export type WorkspaceRedis = {
   ping(): Promise<boolean>;
   set<T>(key: string, value: T, options?: SetOptions): Promise<void>;
   setIfAbsent(key: string, value: string, ttlSeconds: number): Promise<boolean>;
+  /** Persistent NX write for immutable records; returns false when the key already exists. */
+  setIfAbsentValue<T>(key: string, value: T): Promise<boolean>;
 };
 
 class RestWorkspaceRedis implements WorkspaceRedis {
@@ -48,6 +50,11 @@ class RestWorkspaceRedis implements WorkspaceRedis {
       ex: ttlSeconds,
       nx: true,
     });
+    return result === "OK";
+  }
+
+  async setIfAbsentValue<T>(key: string, value: T) {
+    const result = await this.client.set(key, value, { nx: true });
     return result === "OK";
   }
 
@@ -166,6 +173,15 @@ class DirectWorkspaceRedis implements WorkspaceRedis {
       String(ttlSeconds),
       "NX",
     ]);
+    return String(result) === "OK";
+  }
+
+  async setIfAbsentValue<T>(key: string, value: T) {
+    const serialized = JSON.stringify(value);
+    if (serialized === undefined) {
+      throw new TypeError("Workspace storage value is not serializable");
+    }
+    const result = await (await this.getClient()).sendCommand(["SET", key, serialized, "NX"]);
     return String(result) === "OK";
   }
 

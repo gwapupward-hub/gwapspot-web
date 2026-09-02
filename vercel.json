@@ -5,6 +5,10 @@
     {
       "path": "/api/gwapscore/snapshots/collect",
       "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/ppv/reconcile",
+      "schedule": "30 4 * * *"
     }
   ]
 }

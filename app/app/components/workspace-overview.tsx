@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { PpvDeliverableAnchor } from "../../components/ppv/ppv-deliverable-anchor";
+import "../../components/ppv/ppv.css";
 import { relativeTime, type WorkspaceOverview, type WorkspaceTab } from "./workspace-client";
 
 const sandboxLabels: Record<string, string> = {
@@ -39,6 +41,17 @@ export function WorkspaceOverviewPanel({
           <i style={{ width: `${readiness}%` }} />
         </div>
         <p>{tasks.byStatus.done}/{tasks.total} seeded build steps complete.</p>
+      </section>
+
+      <section className="diw-card diw-glass">
+        <PpvDeliverableAnchor
+          sourceProduct="daily-ideas"
+          sourceObjectId={workspace.projectId}
+          deliverableId="launch"
+          payload={{ projectId: workspace.projectId, status: workspace.stage }}
+          eligible={workspace.stage === "launched"}
+          ineligibleReason="PPV anchors finalized work only. Move the project to Launched to anchor its deliverable; drafts and generated ideas are never anchored."
+        />
       </section>
 
       {workspace.summary ? (

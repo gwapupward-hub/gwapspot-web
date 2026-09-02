@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import { GwapScoreDisplay } from "../../components/gwap-score-display";
+import { PpvVerifiedActivity } from "../../components/ppv/ppv-verified-activity";
+import "../../components/ppv/ppv.css";
 import type { GwapScoreResult } from "../../lib/gwap-score";
 import { useGwapOs } from "./os-provider";
 import { GnsProfileEditor } from "./gns-profile-editor";
@@ -91,6 +93,10 @@ export function IdentityWalletView() {
             <div className={styles.pipelineRow}><span className={styles.pipelineIcon}>✓</span><div><strong>Proof of ownership</strong><small>The wallet that authenticated this session anchors the identity.</small></div><span className={styles.pipelineState}>{gnsIdentity.verified ? "Verified" : "Pending"}</span></div>
           </div>
         </section>
+      </div>
+
+      <div style={{ marginTop: 14 }}>
+        <PpvVerifiedActivity wallet={account.verifiedWallet} receiptHref={(id) => `/app/vault/receipts/${id}`} />
       </div>
 
       {gnsIdentity.name ? <div className={styles.profileEditor}><GnsProfileEditor name={gnsIdentity.name} /></div> : null}
