@@ -75,6 +75,31 @@ export function GwapOsSplash() {
     );
   }
 
+  // Mobile wallet WebViews commonly pause <video> decoding when
+  // backgrounded, and don't resume it on their own. Without this, a user
+  // who backgrounds mid-playback and returns finds a frozen frame for
+  // however long is left on the absolute deadline above - not deadlocked,
+  // but a dead-looking screen for up to several seconds. Retry playback
+  // immediately on return instead; if the browser refuses to resume, fall
+  // back right away rather than waiting out the rest of that deadline.
+  useEffect(() => {
+    if (playbackFailed || showEnter) return;
+
+    function handleVisibilityChange() {
+      if (document.visibilityState !== "visible") return;
+      const video = videoRef.current;
+      if (!video || !video.paused || video.ended) return;
+
+      const resume = video.play();
+      if (resume) void resume.catch(revealFinalFrame);
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [playbackFailed, revealFinalFrame, showEnter]);
+
   return (
     <main className={styles.shell} aria-label="GWAP OS entrance">
       <div
