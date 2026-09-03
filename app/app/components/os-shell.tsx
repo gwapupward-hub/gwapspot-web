@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 import { useWalletPortfolio } from "../lib/use-wallet-portfolio";
 import { BootSequence } from "./boot-sequence";
 import { CommandPalette } from "./command-palette";
@@ -33,6 +33,8 @@ export function OsShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { account, gnsIdentity, keepAccountState, migrateLocalState, migrationAvailable, retrySync, state, syncStatus } = useGwapOs();
   const [commandOpen, setCommandOpen] = useState(false);
+  const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "error">("idle");
+  const copyResetRef = useRef<number | null>(null);
   const portfolio = useWalletPortfolio();
 
   const handle = useMemo(
@@ -44,6 +46,21 @@ export function OsShell({ children }: { children: ReactNode }) {
     portfolio.status === "ready" && portfolio.payload.sol.amount !== null
       ? `${portfolio.payload.sol.amount.toFixed(2)} SOL`
       : null;
+
+  async function copyWalletAddress() {
+    if (copyResetRef.current) window.clearTimeout(copyResetRef.current);
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
+      await navigator.clipboard.writeText(account.verifiedWallet);
+      setCopyStatus("copied");
+    } catch {
+      setCopyStatus("error");
+    }
+    copyResetRef.current = window.setTimeout(() => {
+      setCopyStatus("idle");
+      copyResetRef.current = null;
+    }, 1800);
+  }
 
   return (
     <main className="gwap-os os-v2">
@@ -60,10 +77,31 @@ export function OsShell({ children }: { children: ReactNode }) {
 
         <div className="os-menubar-status" aria-label="Wallet identity status">
           <span className={`os-runtime-dot state-${gnsIdentity.status}`} />
-          <span className="os-status-item"><small>IDENTITY</small><strong>{handle}</strong></span>
-          <span className="os-status-item"><small>TRUST</small><strong>{gnsIdentity.score ?? "—"}</strong></span>
+          <span className="os-menubar-avatar" aria-hidden="true">
+            {gnsIdentity.avatar ? (
+              <img src={gnsIdentity.avatar} alt="" />
+            ) : (
+              handle.charAt(0).toUpperCase()
+            )}
+          </span>
+          <span className="os-status-item">
+            <small>IDENTITY</small>
+            <span className="os-identity-value">
+              <strong>{handle}</strong>
+              <button
+                type="button"
+                className="os-copy-address"
+                onClick={() => void copyWalletAddress()}
+                aria-label="Copy wallet address"
+                title={account.verifiedWallet}
+              >
+                {copyStatus === "copied" ? "Copied" : copyStatus === "error" ? "Failed" : "Copy"}
+              </button>
+            </span>
+          </span>
+          <span className="os-status-item os-trust"><small>TRUST</small><strong>{gnsIdentity.score ?? "—"}</strong></span>
           <span className="os-status-item os-balance">
-            <small>WALLET</small>
+            <small>{portfolio.status === "error" ? "WALLET" : account.walletProviderLabel.toUpperCase()}</small>
             {portfolio.status === "error" ? (
               <button type="button" className="os-balance-retry" onClick={portfolio.refetch}>
                 Retry

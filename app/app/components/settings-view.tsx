@@ -162,7 +162,7 @@ export function SettingsView() {
 
         <div className="os-panel os-settings-panel">
           <div className="os-panel-heading"><div><span>WALLET & SESSION</span><h2>{account.displayName}</h2></div><small>{syncStatus === "error" ? "Sync paused" : "Verified"}</small></div>
-          <p className="os-settings-note">{account.email} · {account.walletProvider === "embedded" ? "Email-created wallet" : "External wallet"}{` · ${account.verifiedWallet.slice(0, 4)}…${account.verifiedWallet.slice(-4)}`}</p>
+          <p className="os-settings-note">{account.email} · {account.walletProviderLabel}{` · ${account.verifiedWallet.slice(0, 4)}…${account.verifiedWallet.slice(-4)}`}</p>
           <div className="os-account-actions">
             {account.embeddedWallet ? <button type="button" disabled={exporting} onClick={() => void exportEmbeddedWallet()}>{exporting ? "Opening export…" : "Export embedded wallet"}</button> : null}
             <SignOutButton />

@@ -3,6 +3,7 @@ import "server-only";
 import { PrivyClient, type User } from "@privy-io/node";
 import { cookies } from "next/headers";
 import { getPrivateStorageKey, getWorkspaceRedis } from "./redis";
+import { walletProviderLabel } from "./wallet-provider-label";
 
 const IDENTITY_CACHE_SECONDS = 5 * 60;
 
@@ -15,6 +16,11 @@ export type WalletIdentity = {
   embeddedWallet: string | null;
   verifiedWallet: string;
   walletProvider: "embedded" | "external";
+  // A human-readable name for the wallet actually connected (e.g. "Phantom",
+  // "Jupiter", "GWAP Wallet" for an embedded one) - distinct from
+  // walletProvider above, which only says embedded vs. external and doesn't
+  // distinguish which external wallet it is.
+  walletProviderLabel: string;
 };
 
 // "unauthenticated" means the request itself proves nothing: no token, or a
@@ -73,6 +79,7 @@ function identityFromUser(user: User): WalletIdentity | null {
     verifiedWallet: wallet.address,
     walletProvider:
       wallet.connector_type === "embedded" ? "embedded" : "external",
+    walletProviderLabel: walletProviderLabel(wallet),
   };
 }
 
@@ -113,7 +120,15 @@ export async function getAuthenticatedWalletIdentityResult(
     const cacheKey = getPrivateStorageKey("identity", userId);
     const redis = getWorkspaceRedis();
     const cached = await redis.get<WalletIdentity>(cacheKey);
-    if (cached?.userId === userId && cached.verifiedWallet) {
+    // A cached entry written before walletProviderLabel existed would be
+    // missing it - treat that shape as a miss rather than serving a partial
+    // identity that crashes the first thing that reads the field, and let
+    // it re-fetch and re-cache the complete shape below.
+    if (
+      cached?.userId === userId &&
+      cached.verifiedWallet &&
+      typeof cached.walletProviderLabel === "string"
+    ) {
       return { status: "ready", identity: cached };
     }
 
