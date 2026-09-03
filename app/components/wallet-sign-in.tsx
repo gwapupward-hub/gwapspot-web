@@ -1,9 +1,14 @@
 "use client";
 
-import { useLogin, usePrivy } from "@privy-io/react-auth";
+import { useLogin, useModalStatus, usePrivy } from "@privy-io/react-auth";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  resolveWalletSignInDisplay,
+  WALLET_SIGN_IN_LABEL,
+  type WalletSignInPhase,
+} from "../lib/wallet-sign-in-phase";
 import { getWalletAuthErrorMessage } from "../lib/wallet-auth-error";
 
 type WalletSignInVariant = "public" | "app";
@@ -19,10 +24,13 @@ export function WalletSignIn({
 }) {
   const router = useRouter();
   const { authenticated, getAccessToken, ready, user } = usePrivy();
+  const { isOpen: loginModalOpen } = useModalStatus();
   const [error, setError] = useState("");
-  const [redirecting, setRedirecting] = useState(false);
+  const [phase, setPhase] = useState<WalletSignInPhase>("idle");
   const navigationStarted = useRef(false);
   const isAppVariant = variant === "app";
+  const display = resolveWalletSignInDisplay(phase, loginModalOpen);
+  const busy = display !== "idle";
 
   const hasSolanaWallet = user?.linkedAccounts.some(
     (account) => account.type === "wallet" && account.chainType === "solana",
@@ -40,17 +48,18 @@ export function WalletSignIn({
   const navigateWhenSessionReady = useCallback(async () => {
     if (navigationStarted.current) return;
     navigationStarted.current = true;
+    setPhase("establishing_session");
 
     try {
       const token = await waitForAccessToken();
       if (!token) {
         throw new Error("Authenticated wallet session has no access token");
       }
-      setRedirecting(true);
+      setPhase("opening");
       window.location.replace(redirectPath);
     } catch (sessionError) {
       navigationStarted.current = false;
-      setRedirecting(false);
+      setPhase("idle");
       setError(getWalletAuthErrorMessage(sessionError));
     }
   }, [redirectPath, waitForAccessToken]);
@@ -61,7 +70,7 @@ export function WalletSignIn({
     },
     onError: (loginError) => {
       navigationStarted.current = false;
-      setRedirecting(false);
+      setPhase("idle");
       setError(getWalletAuthErrorMessage({ code: loginError }));
     },
   });
@@ -156,27 +165,33 @@ export function WalletSignIn({
         <button
           className="wallet-auth-primary"
           type="button"
-          disabled={redirecting}
+          disabled={busy}
+          aria-busy={busy}
           onClick={openWalletSelector}
         >
-          {redirecting ? "Opening GWAP OS…" : "Connect Solana wallet"}
+          {WALLET_SIGN_IN_LABEL[display]}
         </button>
 
-        <div className="wallet-auth-divider">
-          <span>{isAppVariant ? "NEW TO GWAP?" : "NO WALLET YET?"}</span>
-        </div>
-        <button
-          className="wallet-auth-secondary"
-          type="button"
-          disabled={redirecting}
-          onClick={createWalletWithEmail}
-        >
-          Create a Solana wallet with email
-        </button>
-        <small>
-          Use your existing email address. A self-custodial embedded Solana wallet
-          is created for this account—no password or browser extension required.
-        </small>
+        {isAppVariant ? null : (
+          <>
+            <div className="wallet-auth-divider">
+              <span>NO WALLET YET?</span>
+            </div>
+            <button
+              className="wallet-auth-secondary"
+              type="button"
+              disabled={busy}
+              onClick={createWalletWithEmail}
+            >
+              Create a Solana wallet with email
+            </button>
+            <small>
+              Use your existing email address. A self-custodial embedded Solana
+              wallet is created for this account—no password or browser
+              extension required.
+            </small>
+          </>
+        )}
       </div>
 
       {sessionIssue ? (

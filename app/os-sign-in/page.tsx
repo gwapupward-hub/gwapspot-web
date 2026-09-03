@@ -33,7 +33,7 @@ export default async function GwapOsSignInPage({
     "1";
 
   return (
-    <WalletAuthProvider>
+    <WalletAuthProvider walletOnly>
       <main className={styles.gateway}>
         <div className={styles.ambientOne} aria-hidden="true" />
         <div className={styles.ambientTwo} aria-hidden="true" />
