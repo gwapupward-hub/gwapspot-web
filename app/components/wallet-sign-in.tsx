@@ -11,9 +11,11 @@ type WalletSignInVariant = "public" | "app";
 export function WalletSignIn({
   redirectPath,
   variant = "public",
+  sessionIssue = false,
 }: {
   redirectPath: string;
   variant?: WalletSignInVariant;
+  sessionIssue?: boolean;
 }) {
   const router = useRouter();
   const { authenticated, getAccessToken, ready, user } = usePrivy();
@@ -65,13 +67,20 @@ export function WalletSignIn({
   });
 
   useEffect(() => {
-    if (!ready || !authenticated || !hasSolanaWallet) return;
+    // sessionIssue means the last automatic attempt to reach /app kept
+    // bouncing back here without ever landing. The wallet client may still
+    // believe it is authenticated - that stale belief is exactly what drove
+    // the bounce - so silently retrying the same path here would resume the
+    // loop instead of breaking it. Require the explicit "Connect Solana
+    // wallet" tap, which forces a fresh login rather than reusing state that
+    // was already shown not to work.
+    if (!ready || !authenticated || !hasSolanaWallet || sessionIssue) return;
     const navigationTimer = window.setTimeout(
       () => void navigateWhenSessionReady(),
       0,
     );
     return () => window.clearTimeout(navigationTimer);
-  }, [authenticated, hasSolanaWallet, navigateWhenSessionReady, ready]);
+  }, [authenticated, hasSolanaWallet, navigateWhenSessionReady, ready, sessionIssue]);
 
   function openWalletSelector() {
     setError("");
@@ -170,6 +179,12 @@ export function WalletSignIn({
         </small>
       </div>
 
+      {sessionIssue ? (
+        <p className="wallet-auth-error" role="status">
+          We couldn&rsquo;t finish your last sign-in automatically. Reconnect
+          your wallet to continue.
+        </p>
+      ) : null}
       {authenticated && !hasSolanaWallet ? (
         <p className="wallet-auth-status" role="status">
           Finishing your Solana wallet setup…

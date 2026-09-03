@@ -17,6 +17,21 @@ export type WalletIdentity = {
   walletProvider: "embedded" | "external";
 };
 
+// "unauthenticated" means the request itself proves nothing: no token, or a
+// token that failed verification (expired, malformed, wrong audience). It is
+// safe to send the caller to sign in.
+//
+// "unavailable" means the token verified, but looking up the identity behind
+// it failed (Redis or the Privy user-lookup threw). The wallet may be fully
+// authenticated; treating this the same as "unauthenticated" is what used to
+// bounce a valid session back to sign-in, which bounces right back to /app,
+// which fails the same lookup again — an infinite loop driven by a transient
+// backend hiccup rather than by anything wrong with the session.
+export type WalletIdentityResult =
+  | { status: "ready"; identity: WalletIdentity }
+  | { status: "unauthenticated" }
+  | { status: "unavailable" };
+
 export function getPrivyServerClient() {
   if (privyClient) return privyClient;
 
@@ -75,27 +90,50 @@ async function getAccessToken(request?: Request) {
   return cookieStore.get("privy-token")?.value ?? null;
 }
 
-export async function getAuthenticatedWalletIdentity(request?: Request) {
+export async function getAuthenticatedWalletIdentityResult(
+  request?: Request,
+): Promise<WalletIdentityResult> {
   const accessToken = await getAccessToken(request);
-  if (!accessToken) return null;
+  if (!accessToken) return { status: "unauthenticated" };
+
+  let userId: string;
+  try {
+    const claims = await getPrivyServerClient()
+      .utils()
+      .auth()
+      .verifyAccessToken(accessToken);
+    userId = claims.user_id;
+  } catch {
+    // The token itself is bad (expired, malformed, wrong audience). This is
+    // a real "not signed in", not a backend problem.
+    return { status: "unauthenticated" };
+  }
 
   try {
-    const client = getPrivyServerClient();
-    const claims = await client.utils().auth().verifyAccessToken(accessToken);
-    const cacheKey = getPrivateStorageKey("identity", claims.user_id);
+    const cacheKey = getPrivateStorageKey("identity", userId);
     const redis = getWorkspaceRedis();
     const cached = await redis.get<WalletIdentity>(cacheKey);
-    if (cached?.userId === claims.user_id && cached.verifiedWallet) return cached;
+    if (cached?.userId === userId && cached.verifiedWallet) {
+      return { status: "ready", identity: cached };
+    }
 
-    const user = await client.users()._get(claims.user_id);
+    const user = await getPrivyServerClient().users()._get(userId);
     const identity = identityFromUser(user);
-    if (!identity) return null;
+    if (!identity) return { status: "unauthenticated" };
 
     await redis.set(cacheKey, identity, { ex: IDENTITY_CACHE_SECONDS });
-    return identity;
+    return { status: "ready", identity };
   } catch {
-    return null;
+    // The token was valid; looking up the identity behind it failed. Redis
+    // or the Privy user-lookup is having a moment — the wallet may still be
+    // fully authenticated, so this must not be treated as "sign in again".
+    return { status: "unavailable" };
   }
+}
+
+export async function getAuthenticatedWalletIdentity(request?: Request) {
+  const result = await getAuthenticatedWalletIdentityResult(request);
+  return result.status === "ready" ? result.identity : null;
 }
 
 export async function clearWalletIdentityCache(userId: string) {

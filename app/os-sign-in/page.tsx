@@ -17,7 +17,10 @@ export const dynamic = "force-dynamic";
 export default async function GwapOsSignInPage({
   searchParams,
 }: {
-  searchParams: Promise<{ redirect_url?: string | string[] }>;
+  searchParams: Promise<{
+    redirect_url?: string | string[];
+    session_issue?: string | string[];
+  }>;
 }) {
   if (!isWalletAuthConfigured()) return <AuthSetupRequired />;
 
@@ -25,6 +28,9 @@ export default async function GwapOsSignInPage({
   const redirectPath = getSafeRedirectPath(
     Array.isArray(query.redirect_url) ? query.redirect_url[0] : query.redirect_url,
   );
+  const sessionIssue =
+    (Array.isArray(query.session_issue) ? query.session_issue[0] : query.session_issue) ===
+    "1";
 
   return (
     <WalletAuthProvider>
@@ -66,7 +72,11 @@ export default async function GwapOsSignInPage({
         </section>
 
         <div className={styles.authColumn}>
-          <WalletSignIn redirectPath={redirectPath} variant="app" />
+          <WalletSignIn
+            redirectPath={redirectPath}
+            variant="app"
+            sessionIssue={sessionIssue}
+          />
         </div>
       </main>
     </WalletAuthProvider>

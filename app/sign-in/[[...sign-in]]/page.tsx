@@ -15,7 +15,10 @@ export const dynamic = "force-dynamic";
 export default async function SignInPage({
   searchParams,
 }: {
-  searchParams: Promise<{ redirect_url?: string | string[] }>;
+  searchParams: Promise<{
+    redirect_url?: string | string[];
+    session_issue?: string | string[];
+  }>;
 }) {
   if (!isWalletAuthConfigured()) return <AuthSetupRequired />;
 
@@ -23,6 +26,9 @@ export default async function SignInPage({
   const redirectPath = getSafeRedirectPath(
     Array.isArray(query.redirect_url) ? query.redirect_url[0] : query.redirect_url,
   );
+  const sessionIssue =
+    (Array.isArray(query.session_issue) ? query.session_issue[0] : query.session_issue) ===
+    "1";
 
   return (
     <WalletAuthProvider>
@@ -35,7 +41,7 @@ export default async function SignInPage({
             an embedded Solana wallet with the email address you already use.
           </p>
         </div>
-        <WalletSignIn redirectPath={redirectPath} />
+        <WalletSignIn redirectPath={redirectPath} sessionIssue={sessionIssue} />
       </main>
     </WalletAuthProvider>
   );
