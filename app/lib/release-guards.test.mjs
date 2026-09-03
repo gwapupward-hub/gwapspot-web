@@ -25,8 +25,11 @@ test("Privy remains the single authentication owner", () => {
   assert.doesNotMatch(wallet, /useLoginWithSiws/);
   assert.doesNotMatch(wallet, /useConnectWallet/);
   assert.doesNotMatch(wallet, /useWalletModal/);
-  // The Solana wallet adapter must not auto-connect in parallel with Privy.
-  assert.match(provider, /autoConnect=\{false\}/);
+  // A @solana/wallet-adapter-react stack (ConnectionProvider / WalletProvider
+  // / WalletModalProvider) used to be mounted alongside Privy - it never
+  // connected to anything and must not come back as a second wallet owner.
+  assert.doesNotMatch(provider, /from ["']@solana\/wallet-adapter-react(-ui)?["']/);
+  assert.doesNotMatch(provider, /<(ConnectionProvider|WalletProvider|WalletModalProvider)[\s>]/);
   assert.match(provider, /externalWallets:/);
 });
 
@@ -48,16 +51,15 @@ test("Privy mounts only for supported wallet hosts, not the gateway", () => {
   // The provider is mounted inside the column, only around the ready-state
   // sign-in — so the gateway/detection surfaces never depend on the SDK.
   const readyIndex = column.indexOf('host.status === "ready"');
-  const providerIndex = column.indexOf("<WalletAuthProvider>");
+  const providerIndex = column.indexOf("<WalletAuthProvider");
   assert.ok(readyIndex > 0 && providerIndex > readyIndex);
 });
 
-test("sign-out terminates the session, not only the wallet connection", () => {
+test("sign-out terminates the Privy session, not a dead wallet-adapter connection", () => {
   const signOut = read("../app/components/sign-out-button.tsx");
-  const logoutIndex = signOut.indexOf("await logout()");
-  const disconnectIndex = signOut.indexOf("disconnect()");
-  assert.ok(logoutIndex > 0, "sign-out must call Privy logout");
-  assert.ok(disconnectIndex > 0, "sign-out should also disconnect the adapter");
+  assert.match(signOut, /await logout\(\)/);
+  // The wallet-adapter stack is gone; there is nothing else to disconnect.
+  assert.doesNotMatch(signOut, /from ["']@solana\/wallet-adapter-react(-ui)?["']/);
   // Local workspace state is cleared on sign-out.
   assert.match(signOut, /removeItem\(GWAP_OS_STORAGE_KEY\)/);
 });

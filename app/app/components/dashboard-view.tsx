@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { EcosystemProduct } from "../../lib/ecosystem";
 import { getProfileCompletion } from "../lib/os-state";
-import { fetchSolBalanceLamports, lamportsToSol } from "../lib/rpc-dedupe";
+import { useWalletPortfolio } from "../lib/use-wallet-portfolio";
 import { shortenWalletAddress } from "../lib/wallet-format";
 import { GwapGradientLink } from "./gwap-gradient-button";
 import { useGwapOs } from "./os-provider";
@@ -12,36 +12,17 @@ import { WalletPortfolioCard } from "./wallet-portfolio-card";
 
 export function DashboardView({ products }: { products: EcosystemProduct[] }) {
   const { account, gnsIdentity, state, syncStatus } = useGwapOs();
-  const [solBalance, setSolBalance] = useState<string>("—");
+  const portfolio = useWalletPortfolio();
+  const solBalance =
+    portfolio.status === "ready" && portfolio.payload.sol.amount !== null
+      ? `${portfolio.payload.sol.amount.toFixed(2)} SOL`
+      : "—";
   const profileCompletion = getProfileCompletion(state.profile);
 
   const identity = useMemo(
     () => gnsIdentity.fullName || shortenWalletAddress(account.verifiedWallet),
     [account.verifiedWallet, gnsIdentity.fullName],
   );
-
-  useEffect(() => {
-    const rpc = process.env.NEXT_PUBLIC_SOLANA_RPC_URL;
-    if (!rpc) return;
-    const controller = new AbortController();
-    const timer = window.setTimeout(() => controller.abort(), 3500);
-
-    void fetchSolBalanceLamports(rpc, account.verifiedWallet, {
-      signal: controller.signal,
-    })
-      .then((lamports) => {
-        if (typeof lamports === "number") {
-          setSolBalance(`${lamportsToSol(lamports).toFixed(2)} SOL`);
-        }
-      })
-      .catch(() => undefined)
-      .finally(() => window.clearTimeout(timer));
-
-    return () => {
-      controller.abort();
-      window.clearTimeout(timer);
-    };
-  }, [account.verifiedWallet]);
 
   const nextAction = useMemo(() => {
     if (gnsIdentity.status === "none") {

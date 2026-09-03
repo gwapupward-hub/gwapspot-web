@@ -85,6 +85,7 @@ export async function loadAccountWorkspace(identity: WalletIdentity) {
     embeddedWallet: identity.embeddedWallet,
     verifiedWallet: identity.verifiedWallet,
     walletProvider: identity.walletProvider,
+    walletProviderLabel: identity.walletProviderLabel,
   };
 
   const state = hasCloudState

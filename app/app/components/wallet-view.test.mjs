@@ -31,9 +31,10 @@ test("the OS shell renders wallet identity distinct from public marketing chrome
   assert.doesNotMatch(shell, /Create a Solana wallet with email/);
 });
 
-test("sign-out is distinct from a bare wallet disconnect", () => {
+test("sign-out terminates the Privy session, not a dead wallet-adapter connection", () => {
   const signOut = read("./sign-out-button.tsx");
-  // GwapOS sign-out terminates the Privy session (auth), not only the adapter.
+  // GwapOS sign-out terminates the Privy session (auth); the wallet-adapter
+  // stack it used to also disconnect never connected to anything and is gone.
   assert.match(signOut, /logout\(\)/);
-  assert.match(signOut, /disconnect\(\)/);
+  assert.doesNotMatch(signOut, /from ["']@solana\/wallet-adapter-react(-ui)?["']/);
 });

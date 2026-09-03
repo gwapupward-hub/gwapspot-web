@@ -86,7 +86,15 @@ test("mobile navigation reliability v2 keeps product navigation isolated", () =>
   assert.match(walletProvider, /"jupiter"/);
   assert.match(walletProvider, /detected_solana_wallets/);
   assert.match(walletProvider, /externalWallets:/);
-  assert.match(walletProvider, /autoConnect=\{false\}/);
+  // Privy is the sole wallet connection owner. A @solana/wallet-adapter-react
+  // stack used to be mounted alongside it with zero adapters and autoConnect
+  // off - dead weight that never connected to anything, since removed. Guard
+  // against the actual import and JSX usage coming back (not just prose that
+  // mentions it, which the file's own explanatory comment does) rather than
+  // asserting the autoConnect={false} it used to need, which no longer means
+  // anything once that stack is gone.
+  assert.doesNotMatch(walletProvider, /from ["']@solana\/wallet-adapter-react(-ui)?["']/);
+  assert.doesNotMatch(walletProvider, /<(ConnectionProvider|WalletProvider|WalletModalProvider)[\s>]/);
 
   assert.match(appSplash, /STARTUP_PROGRESS_DEADLINE_MS/);
   assert.match(appSplash, /ABSOLUTE_PLAYBACK_DEADLINE_MS/);

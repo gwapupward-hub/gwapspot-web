@@ -44,4 +44,10 @@ export const gwapOsAppViewport: Viewport = {
   colorScheme: "dark",
   width: "device-width",
   initialScale: 1,
+  // Without this, env(safe-area-inset-*) resolves to 0 everywhere in the
+  // GwapOS shell - the dock and menubar safe-area padding below depend on
+  // it. Set explicitly here rather than relying on inheritance from the
+  // root layout's viewport export, since a nested layout's viewport isn't
+  // guaranteed to merge rather than replace.
+  viewportFit: "cover",
 };

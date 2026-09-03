@@ -498,8 +498,6 @@ a.wallet-auth-primary,
 a.wallet-auth-secondary { display: inline-flex; align-items: center; justify-content: center; text-align: center; text-decoration: none; }
 .wallet-auth-inline-link { border: 0; padding: 0; background: transparent; color: #13dd13; font: inherit; font-weight: 900; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
 .wallet-auth-inline-link:focus-visible { outline: 2px solid #13dd13; outline-offset: 2px; }
-.wallet-adapter-modal-wrapper { border: 1px solid rgba(255,255,255,.14); background: #0a0d0b; }
-.wallet-adapter-button { font-family: inherit; }
 
 @media (max-width: 900px) {
   .auth-page { grid-template-columns: 1fr; justify-items: center; }

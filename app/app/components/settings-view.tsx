@@ -2,10 +2,10 @@
 
 import { usePrivy } from "@privy-io/react-auth";
 import { useExportWallet } from "@privy-io/react-auth/solana";
-import { useWallet } from "@solana/wallet-adapter-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { GWAP_OS_STORAGE_KEY } from "../lib/os-state";
+import { clearWalletPortfolioCache } from "../lib/use-wallet-portfolio";
 import { shortenWalletAddress } from "../lib/wallet-format";
 import { CopyAddressButton } from "./copy-address-button";
 import { useGwapOs } from "./os-provider";
@@ -36,7 +36,6 @@ export function SettingsView() {
   const router = useRouter();
   const { getAccessToken, logout } = usePrivy();
   const { exportWallet } = useExportWallet();
-  const { connected, disconnect } = useWallet();
   const { account, state, syncStatus, updateSettings, resetWorkspace } = useGwapOs();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [accountError, setAccountError] = useState("");
@@ -111,9 +110,9 @@ export function SettingsView() {
         );
       }
 
-      if (connected) await disconnect().catch(() => undefined);
       await logout().catch(() => undefined);
       window.localStorage.removeItem(GWAP_OS_STORAGE_KEY);
+      clearWalletPortfolioCache();
       router.replace("/");
       router.refresh();
     } catch (error) {
@@ -165,7 +164,7 @@ export function SettingsView() {
 
         <div className="os-panel os-settings-panel">
           <div className="os-panel-heading"><div><span>WALLET & SESSION</span><h2>{account.displayName}</h2></div><small>{syncStatus === "error" ? "Sync paused" : "Verified"}</small></div>
-          <p className="os-settings-note">{account.email} · {account.walletProvider === "embedded" ? "Email-created wallet" : "External wallet"}{` · ${shortenWalletAddress(account.verifiedWallet)}`}</p>
+          <p className="os-settings-note">{account.email} · {account.walletProviderLabel}{` · ${shortenWalletAddress(account.verifiedWallet)}`}</p>
           <div className="os-account-actions">
             <CopyAddressButton address={account.verifiedWallet} />
             {account.embeddedWallet ? <button type="button" disabled={exporting} onClick={() => void exportEmbeddedWallet()}>{exporting ? "Opening export…" : "Export embedded wallet"}</button> : null}

@@ -14,7 +14,16 @@ import { WalletSignIn } from "./wallet-sign-in";
 // The Privy wallet provider is mounted ONLY for supported wallet hosts, so the
 // gateway and detection surfaces render independently of the wallet SDK and can
 // never be blocked by provider initialization.
-export function AppAccessColumn({ redirectPath }: { redirectPath: string }) {
+export function AppAccessColumn({
+  redirectPath,
+  sessionIssue = false,
+}: {
+  redirectPath: string;
+  // Set when the proxy detected a redirect loop for this session (see
+  // proxy-routing.ts). Passed through to WalletSignIn, which uses it to
+  // require an explicit reconnect instead of silently retrying.
+  sessionIssue?: boolean;
+}) {
   const host = useWalletHost();
 
   if (host.status === "detecting") {
@@ -29,8 +38,12 @@ export function AppAccessColumn({ redirectPath }: { redirectPath: string }) {
 
   if (host.status === "ready") {
     return (
-      <WalletAuthProvider>
-        <WalletSignIn redirectPath={redirectPath} variant="app" />
+      <WalletAuthProvider walletOnly>
+        <WalletSignIn
+          redirectPath={redirectPath}
+          variant="app"
+          sessionIssue={sessionIssue}
+        />
       </WalletAuthProvider>
     );
   }

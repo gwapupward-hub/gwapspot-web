@@ -630,7 +630,7 @@ export default function SendPage() {
         <section className={styles.success} aria-labelledby="send-success-title">
           <span className={styles.successBadge}>Confirmed</span>
           <h2 id="send-success-title">SOL sent.</h2>
-          <p className={styles.copy}>The transfer is confirmed on Solana and has been added to this device's GwapOS wallet activity for this wallet only.</p>
+          <p className={styles.copy}>The transfer is confirmed on Solana and has been added to this device&apos;s GwapOS wallet activity for this wallet only.</p>
           <div className={styles.successMeta}>
             <div><small>Recipient</small><strong>{review.recipient.label}</strong></div>
             <div><small>Amount</small><strong>{review.amountInput} SOL</strong></div>

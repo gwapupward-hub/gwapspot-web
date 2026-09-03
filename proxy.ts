@@ -1,5 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isWalletAuthConfigured } from "./app/lib/auth-config";
+import {
+  AUTH_LOOP_COOKIE,
+  AUTH_LOOP_WINDOW_SECONDS,
+  parseAuthLoopBounceCount,
+} from "./app/lib/auth-loop-guard";
 import { resolveProxyAction } from "./app/lib/proxy-routing";
 
 export default function proxy(request: NextRequest) {
@@ -13,6 +18,9 @@ export default function proxy(request: NextRequest) {
     walletAuthConfigured: isWalletAuthConfigured(),
     hasPrivyToken: request.cookies.has("privy-token"),
     hasPrivySession: request.cookies.has("privy-session"),
+    authLoopBounceCount: parseAuthLoopBounceCount(
+      request.cookies.get(AUTH_LOOP_COOKIE)?.value,
+    ),
   });
 
   if (action.kind === "next") return NextResponse.next();
@@ -30,7 +38,22 @@ export default function proxy(request: NextRequest) {
   if (action.redirectParam) {
     target.searchParams.set("redirect_url", action.redirectParam);
   }
-  return NextResponse.redirect(target);
+  if (action.sessionIssue) {
+    target.searchParams.set("session_issue", "1");
+  }
+
+  const response = NextResponse.redirect(target);
+  if (action.authLoopCookie?.action === "set") {
+    response.cookies.set(AUTH_LOOP_COOKIE, action.authLoopCookie.value, {
+      maxAge: AUTH_LOOP_WINDOW_SECONDS,
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+    });
+  } else if (action.authLoopCookie?.action === "clear") {
+    response.cookies.delete(AUTH_LOOP_COOKIE);
+  }
+  return response;
 }
 
 export const config = {

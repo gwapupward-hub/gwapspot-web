@@ -230,8 +230,7 @@
   }
 
   body:has(.premium-splash:not(.is-leaving)) .aurora,
-  body:has(.premium-splash:not(.is-leaving)) .light-streak,
-  body:has(.wallet-adapter-modal-wrapper) .os-aurora {
+  body:has(.premium-splash:not(.is-leaving)) .light-streak {
     animation-play-state: paused !important;
   }
 

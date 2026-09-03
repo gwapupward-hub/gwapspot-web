@@ -5,7 +5,6 @@ import {
   useSignMessage,
   useWallets as usePrivySolanaWallets,
 } from "@privy-io/react-auth/solana";
-import { useWallet } from "@solana/wallet-adapter-react";
 import { useRouter } from "next/navigation";
 import {
   useCallback,
@@ -59,7 +58,6 @@ export function GnsProfileEditor({ name }: { name: string }) {
   const router = useRouter();
   const { getAccessToken } = usePrivy();
   const { account, updateGnsIdentity } = useGwapOs();
-  const { publicKey, signMessage: signExternalMessage } = useWallet();
   const { wallets: privySolanaWallets } = usePrivySolanaWallets();
   const { signMessage: signPrivyMessage } = useSignMessage();
   const [profile, setProfile] = useState<GnsPublicProfile | null>(null);
@@ -147,13 +145,6 @@ export function GnsProfileEditor({ name }: { name: string }) {
   }
 
   async function signWithVerifiedWallet(messageBytes: Uint8Array) {
-    if (
-      publicKey?.toBase58() === account.verifiedWallet &&
-      signExternalMessage
-    ) {
-      return signExternalMessage(messageBytes);
-    }
-
     const privyWallet = privySolanaWallets.find(
       (wallet) => wallet.address === account.verifiedWallet,
     );
