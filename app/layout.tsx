@@ -3,7 +3,6 @@ import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { PublicExperienceLayers } from "./components/public-experience-layers";
-import "@solana/wallet-adapter-react-ui/styles.css";
 import "./styles.css";
 
 const siteUrl = "https://www.gwapspot.com";

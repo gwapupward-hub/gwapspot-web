@@ -5,7 +5,6 @@ import {
   useSignAndSendTransaction,
   useWallets as usePrivySolanaWallets,
 } from "@privy-io/react-auth/solana";
-import { useWallet } from "@solana/wallet-adapter-react";
 import { Connection, PublicKey } from "@solana/web3.js";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -135,7 +134,6 @@ export function IdentityView() {
   const router = useRouter();
   const { getAccessToken } = usePrivy();
   const { account, gnsIdentity } = useGwapOs();
-  const { publicKey, sendTransaction } = useWallet();
   const { wallets: privySolanaWallets } = usePrivySolanaWallets();
   const { signAndSendTransaction } = useSignAndSendTransaction();
   const checkRequestRef = useRef(0);
@@ -348,32 +346,25 @@ export function IdentityView() {
         name: registrationName,
       });
 
-      if (publicKey?.equals(owner) && sendTransaction) {
-        submittedSignature = await sendTransaction(transaction, connection, {
-          preflightCommitment: "confirmed",
-          skipPreflight: false,
-        });
-      } else {
-        const privyWallet = privySolanaWallets.find(
-          (wallet) => wallet.address === account.verifiedWallet,
+      const privyWallet = privySolanaWallets.find(
+        (wallet) => wallet.address === account.verifiedWallet,
+      );
+      if (!privyWallet) {
+        throw new Error(
+          "Reconnect the Solana wallet that authenticated this OS session before registering.",
         );
-        if (!privyWallet) {
-          throw new Error(
-            "Reconnect the Solana wallet that authenticated this OS session before registering.",
-          );
-        }
-
-        const result = await signAndSendTransaction({
-          transaction: transaction.serialize({
-            requireAllSignatures: false,
-            verifySignatures: false,
-          }),
-          wallet: privyWallet,
-          chain: getGnsPrivyChain(config.network),
-          options: { optimisticBroadcast: true, skipSimulation: false },
-        });
-        submittedSignature = encodeGnsSignature(result.signature);
       }
+
+      const result = await signAndSendTransaction({
+        transaction: transaction.serialize({
+          requireAllSignatures: false,
+          verifySignatures: false,
+        }),
+        wallet: privyWallet,
+        chain: getGnsPrivyChain(config.network),
+        options: { optimisticBroadcast: true, skipSimulation: false },
+      });
+      submittedSignature = encodeGnsSignature(result.signature);
 
       writePendingRegistration({
         config,

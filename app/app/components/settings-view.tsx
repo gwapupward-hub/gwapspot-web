@@ -2,10 +2,10 @@
 
 import { usePrivy } from "@privy-io/react-auth";
 import { useExportWallet } from "@privy-io/react-auth/solana";
-import { useWallet } from "@solana/wallet-adapter-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { GWAP_OS_STORAGE_KEY } from "../lib/os-state";
+import { clearWalletPortfolioCache } from "../lib/use-wallet-portfolio";
 import { useGwapOs } from "./os-provider";
 import { SignOutButton } from "./sign-out-button";
 
@@ -34,7 +34,6 @@ export function SettingsView() {
   const router = useRouter();
   const { getAccessToken, logout } = usePrivy();
   const { exportWallet } = useExportWallet();
-  const { connected, disconnect } = useWallet();
   const { account, state, syncStatus, updateSettings, resetWorkspace } = useGwapOs();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [accountError, setAccountError] = useState("");
@@ -109,9 +108,9 @@ export function SettingsView() {
         );
       }
 
-      if (connected) await disconnect().catch(() => undefined);
       await logout().catch(() => undefined);
       window.localStorage.removeItem(GWAP_OS_STORAGE_KEY);
+      clearWalletPortfolioCache();
       router.replace("/");
       router.refresh();
     } catch (error) {

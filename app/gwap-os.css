@@ -487,8 +487,6 @@ html[data-gwap-reduce-motion="true"] .gwap-os *::after { scroll-behavior: auto !
 .wallet-auth-card .wallet-auth-error { color: #ff9e9e; }
 .wallet-auth-card .wallet-auth-legal { color: #667068; font-size: 8px; }
 .wallet-auth-legal a { color: #9aa49c; text-decoration: underline; text-underline-offset: 2px; }
-.wallet-adapter-modal-wrapper { border: 1px solid rgba(255,255,255,.14); background: #0a0d0b; }
-.wallet-adapter-button { font-family: inherit; }
 
 @media (max-width: 900px) {
   .auth-page { grid-template-columns: 1fr; justify-items: center; }
