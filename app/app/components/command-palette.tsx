@@ -12,6 +12,7 @@ const commands = [
   { label: "Strengthen my profile", path: "/app/profile", hint: "profile · bio · public identity" },
   { label: "Understand my portfolio", path: "/app", hint: "wallet · balance · tokens · assets · portfolio" },
   { label: "Find an opportunity", path: "/app/ideas", hint: "Daily Ideas · discover · build · launch" },
+  { label: "Discover GWAP projects", path: "/app/browser", hint: "Gwap Browser · .gwap address · resolve · projects · discover · open live project" },
   { label: "Turn trust into work", path: "/app/marketplace", hint: "Marketplace · hire · freelance · client · work" },
   { label: "Prove something privately", path: "/app/vault", hint: "Proof Vault · proof · credential · evidence" },
   { label: "Integrate GWAP", path: "/app/developer", hint: "Developer API · API key · integrate · builders" },

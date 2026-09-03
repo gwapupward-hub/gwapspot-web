@@ -1,62 +1,56 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { AUTH_LOOP_COOKIE, AUTH_LOOP_WINDOW_SECONDS, parseAuthLoopBounceCount } from "./app/lib/auth-loop-guard";
 import { isWalletAuthConfigured } from "./app/lib/auth-config";
-import { decideProxyAction, type ProxyRequestFacts } from "./app/lib/proxy-decision";
+import {
+  AUTH_LOOP_COOKIE,
+  AUTH_LOOP_WINDOW_SECONDS,
+  parseAuthLoopBounceCount,
+} from "./app/lib/auth-loop-guard";
+import { resolveProxyAction } from "./app/lib/proxy-routing";
 
-// This file only ever does two things: read facts off the real request,
-// and translate decideProxyAction's decision into a real response. The
-// actual routing/redirect/auth-loop judgment calls all live in
-// proxy-decision.ts, where they're covered by proxy-decision.test.mjs -
-// this adapter is intentionally too thin to need its own tests.
-
-function readFacts(request: NextRequest): ProxyRequestFacts {
+export default function proxy(request: NextRequest) {
   const forwardedHost = request.headers.get("x-forwarded-host");
-  return {
-    host: forwardedHost ?? request.headers.get("host"),
+  const host = forwardedHost ?? request.headers.get("host");
+
+  const action = resolveProxyAction({
+    host,
     pathname: request.nextUrl.pathname,
     search: request.nextUrl.search,
+    walletAuthConfigured: isWalletAuthConfigured(),
     hasPrivyToken: request.cookies.has("privy-token"),
     hasPrivySession: request.cookies.has("privy-session"),
-    walletAuthConfigured: isWalletAuthConfigured(),
     authLoopBounceCount: parseAuthLoopBounceCount(
       request.cookies.get(AUTH_LOOP_COOKIE)?.value,
     ),
-  };
-}
+  });
 
-export default function proxy(request: NextRequest) {
-  const decision = decideProxyAction(readFacts(request));
+  if (action.kind === "next") return NextResponse.next();
 
-  if (decision.kind === "next") return NextResponse.next();
+  const target = request.nextUrl.clone();
+  target.pathname = action.pathname;
 
-  if (decision.kind === "rewrite") {
-    const target = request.nextUrl.clone();
-    target.pathname = decision.pathname;
+  if (action.kind === "rewrite") {
     return NextResponse.rewrite(target);
   }
 
-  const target = request.nextUrl.clone();
-  target.pathname = decision.pathname;
-  if (decision.query.mode === "replace") {
+  if (!action.preserveSearch) {
     target.search = "";
-    for (const [key, value] of Object.entries(decision.query.params)) {
-      target.searchParams.set(key, value);
-    }
-  } else {
-    for (const [key, value] of Object.entries(decision.query.add)) {
-      target.searchParams.set(key, value);
-    }
+  }
+  if (action.redirectParam) {
+    target.searchParams.set("redirect_url", action.redirectParam);
+  }
+  if (action.sessionIssue) {
+    target.searchParams.set("session_issue", "1");
   }
 
   const response = NextResponse.redirect(target);
-  if (decision.authLoopCookie?.action === "set") {
-    response.cookies.set(AUTH_LOOP_COOKIE, decision.authLoopCookie.value, {
+  if (action.authLoopCookie?.action === "set") {
+    response.cookies.set(AUTH_LOOP_COOKIE, action.authLoopCookie.value, {
       maxAge: AUTH_LOOP_WINDOW_SECONDS,
       httpOnly: true,
       sameSite: "lax",
       path: "/",
     });
-  } else if (decision.authLoopCookie?.action === "clear") {
+  } else if (action.authLoopCookie?.action === "clear") {
     response.cookies.delete(AUTH_LOOP_COOKIE);
   }
   return response;

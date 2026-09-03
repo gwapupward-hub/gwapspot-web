@@ -172,7 +172,12 @@ export function WalletSignIn({
           {WALLET_SIGN_IN_LABEL[display]}
         </button>
 
-        {isAppVariant ? null : (
+        {isAppVariant ? (
+          <small className="wallet-auth-app-hint">
+            GWAP OS is wallet-native. Approve the signature request in your
+            Solana wallet to enter.
+          </small>
+        ) : (
           <>
             <div className="wallet-auth-divider">
               <span>NO WALLET YET?</span>

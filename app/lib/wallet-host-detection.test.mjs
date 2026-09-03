@@ -1,96 +1,174 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
-  classifyRegisteredWallets,
-  hasRequiredSignInFeatures,
-  identifyKnownProvider,
-  isSolanaCapableWallet,
+  classifyWalletHost,
+  isSupportedWalletHost,
+  readWalletHostEnvironment,
 } from "./wallet-host-detection.ts";
 
-function fakeWallet({ name, chains, features }) {
-  return { name, chains, features: Object.fromEntries(features.map((f) => [f, {}])) };
-}
+const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
 
-const phantom = fakeWallet({
-  name: "Phantom",
-  chains: ["solana:mainnet"],
-  features: ["standard:connect", "standard:events", "solana:signMessage"],
+test("classifies an ordinary browser with no providers as missing", () => {
+  const detection = classifyWalletHost({});
+  assert.equal(detection.status, "missing");
+  assert.equal(detection.provider, null);
+  assert.equal(detection.canSignMessage, false);
+  assert.equal(isSupportedWalletHost(detection), false);
 });
 
-const jupiter = fakeWallet({
-  name: "Jupiter Mobile",
-  chains: ["solana:mainnet", "solana:devnet"],
-  features: ["standard:connect", "solana:signMessage", "solana:signTransaction"],
+test("recognizes Phantom through provider capabilities, not user agent", () => {
+  const detection = classifyWalletHost({
+    phantomSolana: { isPhantom: true, signMessage: () => {} },
+  });
+  assert.equal(detection.status, "ready");
+  assert.equal(detection.provider, "phantom");
+  assert.equal(detection.canSignMessage, true);
+  assert.equal(isSupportedWalletHost(detection), true);
 });
 
-const evmOnlyWallet = fakeWallet({
-  name: "MetaMask",
-  chains: ["eip155:1"],
-  features: ["standard:connect", "eip155:signMessage"],
+test("recognizes Jupiter through provider capabilities", () => {
+  const detection = classifyWalletHost({
+    jupiter: { isJupiter: true, signIn: () => {} },
+  });
+  assert.equal(detection.status, "ready");
+  assert.equal(detection.provider, "jupiter");
+  assert.equal(detection.canSignMessage, true);
 });
 
-const solanaWalletMissingSignMessage = fakeWallet({
-  name: "PartialWallet",
-  chains: ["solana:mainnet"],
-  features: ["standard:connect", "solana:signTransaction"],
+test("accepts signMessage OR signIn as a signing capability", () => {
+  assert.equal(
+    classifyWalletHost({ solana: { signMessage: () => {} } }).status,
+    "ready",
+  );
+  assert.equal(
+    classifyWalletHost({ solana: { signIn: () => {} } }).status,
+    "ready",
+  );
 });
 
-const solanaWalletMissingConnect = fakeWallet({
-  name: "NoConnectWallet",
-  chains: ["solana:mainnet"],
-  features: ["solana:signMessage"],
+test("treats a provider without signing capability as unsupported", () => {
+  const detection = classifyWalletHost({
+    solana: { isSolflare: true, connect: () => {} },
+  });
+  assert.equal(detection.status, "unsupported");
+  assert.equal(detection.provider, "solflare");
+  assert.equal(detection.canSignMessage, false);
 });
 
-test("isSolanaCapableWallet checks for a solana: chain, not just presence of any chain", () => {
-  assert.equal(isSolanaCapableWallet(phantom), true);
-  assert.equal(isSolanaCapableWallet(evmOnlyWallet), false);
+test("recognizes a Wallet Standard signer even without a window provider", () => {
+  const detection = classifyWalletHost({ standardSignerCount: 1 });
+  assert.equal(detection.status, "ready");
+  assert.equal(detection.canSignMessage, true);
 });
 
-test("hasRequiredSignInFeatures requires both standard:connect and solana:signMessage", () => {
-  assert.equal(hasRequiredSignInFeatures(phantom), true);
-  assert.equal(hasRequiredSignInFeatures(jupiter), true);
-  assert.equal(hasRequiredSignInFeatures(solanaWalletMissingSignMessage), false);
-  assert.equal(hasRequiredSignInFeatures(solanaWalletMissingConnect), false);
+test("prefers a signing-capable provider over an incapable one", () => {
+  const detection = classifyWalletHost({
+    solana: { connect: () => {} },
+    phantomSolana: { isPhantom: true, signMessage: () => {} },
+  });
+  assert.equal(detection.status, "ready");
+  assert.equal(detection.provider, "phantom");
 });
 
-test("identifyKnownProvider recognizes Phantom and Jupiter by name, case-insensitively", () => {
-  assert.equal(identifyKnownProvider("Phantom"), "phantom");
-  assert.equal(identifyKnownProvider("phantom wallet"), "phantom");
-  assert.equal(identifyKnownProvider("Jupiter Mobile"), "jupiter");
-  assert.equal(identifyKnownProvider("Solflare"), "other");
+test("never returns detecting from the pure snapshot classifier", () => {
+  for (const env of [
+    {},
+    { solana: { connect: () => {} } },
+    { phantomSolana: { isPhantom: true, signMessage: () => {} } },
+  ]) {
+    assert.notEqual(classifyWalletHost(env).status, "detecting");
+  }
 });
 
-test("classifies no registered wallets as missing", () => {
-  assert.deepEqual(classifyRegisteredWallets([]), { status: "missing" });
+test("readWalletHostEnvironment is SSR-safe without a window", () => {
+  const env = readWalletHostEnvironment(undefined);
+  assert.deepEqual(env, {});
 });
 
-test("classifies a non-Solana wallet as missing, not unsupported", () => {
-  assert.deepEqual(classifyRegisteredWallets([evmOnlyWallet]), { status: "missing" });
+test("readWalletHostEnvironment maps window globals to the environment", () => {
+  const fakeWindow = {
+    solana: { isPhantom: true, signMessage: () => {} },
+    phantom: { solana: { isPhantom: true, signMessage: () => {} } },
+    jupiter: { isJupiter: true, signIn: () => {} },
+    navigator: { wallets: { get: () => [] } },
+  };
+  const env = readWalletHostEnvironment(fakeWindow);
+  assert.equal(env.solana?.isPhantom, true);
+  assert.equal(env.phantomSolana?.isPhantom, true);
+  assert.equal(env.jupiter?.isJupiter, true);
+  assert.equal(env.standardSignerCount, 0);
+
+  assert.equal(classifyWalletHost(env).status, "ready");
 });
 
-test("classifies a Solana wallet that can sign in as ready, and identifies it", () => {
-  const result = classifyRegisteredWallets([phantom]);
-  assert.equal(result.status, "ready");
-  assert.deepEqual(result.wallets, [{ name: "Phantom", provider: "phantom" }]);
+test("counts Wallet Standard wallets that advertise a Solana signing feature", () => {
+  const fakeWindow = {
+    navigator: {
+      wallets: {
+        get: () => [
+          { features: { "solana:signMessage": {} } },
+          { features: { "standard:connect": {} } },
+          { features: { "solana:signIn": {} } },
+        ],
+      },
+    },
+  };
+  const env = readWalletHostEnvironment(fakeWindow);
+  assert.equal(env.standardSignerCount, 2);
 });
 
-test("classifies multiple ready wallets and preserves provider identity for each", () => {
-  const result = classifyRegisteredWallets([phantom, jupiter]);
-  assert.equal(result.status, "ready");
-  assert.deepEqual(result.wallets, [
-    { name: "Phantom", provider: "phantom" },
-    { name: "Jupiter Mobile", provider: "jupiter" },
-  ]);
+test("wallet-host hook discovers modern Wallet Standard registrations", () => {
+  const hook = read("../components/use-wallet-host.ts");
+  // Modern Wallet Standard is event-based. The app must consume the callback
+  // carried by register-wallet and announce app-ready so wallets that loaded
+  // first can register synchronously.
+  assert.match(hook, /wallet-standard:register-wallet/);
+  assert.match(hook, /wallet-standard:app-ready/);
+  assert.match(hook, /new CustomEvent\("wallet-standard:app-ready"/);
+  assert.match(hook, /typeof callback === "function"/);
+  assert.match(hook, /callback as \(api: WalletStandardRegisterApi\)/);
+  assert.match(hook, /standardSignerCount = Math\.max/);
 });
 
-test("classifies a Solana wallet that cannot sign in as unsupported, not missing", () => {
-  const result = classifyRegisteredWallets([solanaWalletMissingSignMessage]);
-  assert.equal(result.status, "unsupported");
-  assert.deepEqual(result.wallets, [{ name: "PartialWallet", provider: "other" }]);
+test("app.gwapspot.com renders the wallet-host gateway for ordinary browsers", () => {
+  const column = read("../components/app-access-column.tsx");
+  // Detection gates what the app domain serves.
+  assert.match(column, /useWalletHost/);
+  assert.match(column, /host\.status === "detecting"/);
+  assert.match(column, /host\.status === "ready"/);
+  assert.match(column, /WalletHostGateway/);
+  assert.match(column, /WalletSignIn/);
+
+  const signInPage = read("../os-sign-in/page.tsx");
+  // The app sign-in page must route through the gateway-aware column, never the
+  // raw sign-in component directly.
+  assert.match(signInPage, /AppAccessColumn/);
+  assert.doesNotMatch(signInPage, /<WalletSignIn/);
 });
 
-test("prefers ready over unsupported when both kinds of wallet are present", () => {
-  const result = classifyRegisteredWallets([solanaWalletMissingSignMessage, phantom]);
-  assert.equal(result.status, "ready");
-  assert.deepEqual(result.wallets, [{ name: "Phantom", provider: "phantom" }]);
+test("the app variant of wallet sign-in excludes email-wallet onboarding", () => {
+  const wallet = read("../components/wallet-sign-in.tsx");
+  // Email creation stays available for the public variant...
+  assert.match(wallet, /login\(\{ loginMethods: \["email"\] \}\)/);
+  // ...but the email onboarding UI is gated behind the non-app branch.
+  assert.match(wallet, /\{isAppVariant \? \(/);
+  assert.match(wallet, /wallet-auth-app-hint/);
+  // The "create with email" button must live in the public-only branch.
+  const emailButtonIndex = wallet.indexOf("Create a Solana wallet with email");
+  const nonAppBranchIndex = wallet.indexOf(") : (");
+  assert.ok(emailButtonIndex > 0);
+  assert.ok(
+    nonAppBranchIndex > 0 && nonAppBranchIndex < emailButtonIndex,
+    "email onboarding button must be inside the non-app branch",
+  );
+});
+
+test("the wallet-host gateway keeps the full app unavailable and offers wallet entry", () => {
+  const gateway = read("../components/wallet-host-gateway.tsx");
+  assert.match(gateway, /WALLET REQUIRED/);
+  assert.match(gateway, /phantom\.app\/ul\/browse/);
+  assert.match(gateway, /Re-check for your wallet/);
+  // The gateway must not embed the authenticated GwapOS shell.
+  assert.doesNotMatch(gateway, /OsShell|useGwapOs/);
 });
