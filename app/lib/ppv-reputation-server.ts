@@ -30,6 +30,9 @@ import {
 } from "./ppv-reputation-webhook-core.ts";
 import { signMintAuthorization, type MintAuthorization } from "./ppv-credential-core.ts";
 import { finalizeDeliverableReference, type DeliverableDraft } from "./ppv-deliverable-adapters.ts";
+import { DeliverableRegistrationError, assertCallerIsCreator, assertChainMatchesDraft } from "./ppv-deliverable-authority.ts";
+
+export { DeliverableRegistrationError, assertCallerIsCreator, assertChainMatchesDraft };
 
 /**
  * Server binding for the PPV reputation pipeline:
@@ -300,13 +303,6 @@ export async function reconcilePrograms(options: { maxTransactions?: number } = 
   return report;
 }
 
-export class DeliverableRegistrationError extends Error {
-  constructor(message: string, public readonly status: number) {
-    super(message);
-    this.name = "DeliverableRegistrationError";
-  }
-}
-
 /**
  * Registers a product deliverable against a PPV proof. The proof is re-read
  * from chain: it must exist, belong to the caller, and commit to the claimed
@@ -319,13 +315,10 @@ export async function registerDeliverable(input: {
   proofTransactionSignature?: string | null;
 }) {
   const { draft, callerWallet } = input;
-  if (draft.creatorWallet !== callerWallet) throw new DeliverableRegistrationError("Only the proof authority can anchor a deliverable.", 403);
+  assertCallerIsCreator(draft, callerWallet);
 
   const chain = await getProjection().verifySubject(draft.ppvProofId, "proof", { force: true });
-  if (!chain.exists) throw new DeliverableRegistrationError("That PPV proof does not exist on chain.", 404);
-  if (chain.revoked) throw new DeliverableRegistrationError("That PPV proof has been revoked.", 409);
-  if (chain.authority !== callerWallet) throw new DeliverableRegistrationError("That PPV proof belongs to a different wallet.", 403);
-  if (chain.contentHash !== draft.proofHash) throw new DeliverableRegistrationError("The proof hash does not match the on-chain commitment.", 409);
+  assertChainMatchesDraft(draft, chain, callerWallet);
 
   let created = (await getProjection().listSubjectEvents(draft.ppvProofId)).find((e) => e.eventType === "proof.created") ?? null;
   if (!created && input.proofTransactionSignature) {

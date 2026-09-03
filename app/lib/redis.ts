@@ -31,7 +31,10 @@ export type WorkspaceRedis = {
 };
 
 class RestWorkspaceRedis implements WorkspaceRedis {
-  constructor(private readonly client: UpstashRedis) {}
+  private readonly client: UpstashRedis;
+  constructor(client: UpstashRedis) {
+    this.client = client;
+  }
 
   async get<T>(key: string) {
     return this.client.get<T>(key);
@@ -102,8 +105,11 @@ function getSafeRedisErrorDetails(error: unknown) {
 class DirectWorkspaceRedis implements WorkspaceRedis {
   private client: DirectRedisClient | null = null;
   private connection: Promise<DirectRedisClient> | null = null;
+  private readonly url: string;
 
-  constructor(private readonly url: string) {}
+  constructor(url: string) {
+    this.url = url;
+  }
 
   private getClient() {
     if (this.client?.isReady) return Promise.resolve(this.client);
