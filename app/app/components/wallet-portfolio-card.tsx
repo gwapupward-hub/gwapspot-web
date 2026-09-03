@@ -1,47 +1,7 @@
 "use client";
 
-import { usePrivy } from "@privy-io/react-auth";
-import { useCallback, useEffect, useMemo, useState } from "react";
-
-type PortfolioAsset = {
-  mint: string;
-  kind: "native" | "spl";
-  amount: string;
-  name: string | null;
-  symbol: string | null;
-  usdPrice: number | null;
-  usdValue: number | null;
-  priceChange24h: number | null;
-  pricingStatus: "priced" | "unpriced" | "not_requested";
-};
-
-type PortfolioPayload = {
-  wallet: string;
-  network: "mainnet-beta";
-  status: "available" | "partial" | "unavailable";
-  sol: { lamports: number | null; amount: number | null };
-  tokenAccountCount: number | null;
-  uniqueMintCount: number | null;
-  tokenPrograms: {
-    classic: "available" | "unavailable";
-    token2022: "available" | "unavailable";
-  };
-  portfolio: {
-    status: "available" | "partial" | "not_configured" | "unavailable";
-    currency: "USD";
-    totalUsd: number | null;
-    pricedAssetCount: number;
-    unpricedAssetCount: number;
-    assets: PortfolioAsset[];
-    message: string | null;
-  };
-  generatedAt: string;
-};
-
-type LoadState =
-  | { status: "loading"; payload: null; error: null }
-  | { status: "ready"; payload: PortfolioPayload; error: null }
-  | { status: "error"; payload: null; error: string };
+import { useMemo } from "react";
+import { useWalletPortfolio } from "../lib/use-wallet-portfolio";
 
 const usd = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -63,42 +23,7 @@ function formatTokenAmount(value: string) {
 }
 
 export function WalletPortfolioCard() {
-  const { getAccessToken } = usePrivy();
-  const [state, setState] = useState<LoadState>({
-    status: "loading",
-    payload: null,
-    error: null,
-  });
-
-  const load = useCallback(async () => {
-    setState({ status: "loading", payload: null, error: null });
-    try {
-      const token = await getAccessToken();
-      const response = await fetch("/api/wallet/portfolio", {
-        cache: "no-store",
-        credentials: "same-origin",
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      });
-      const payload = (await response.json().catch(() => null)) as
-        | (PortfolioPayload & { error?: string })
-        | null;
-      if (!response.ok || !payload || !payload.wallet) {
-        throw new Error(payload?.error || "Portfolio could not load.");
-      }
-      setState({ status: "ready", payload, error: null });
-    } catch (error) {
-      setState({
-        status: "error",
-        payload: null,
-        error: error instanceof Error ? error.message : "Portfolio could not load.",
-      });
-    }
-  }, [getAccessToken]);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => void load(), 0);
-    return () => window.clearTimeout(timer);
-  }, [load]);
+  const state = useWalletPortfolio();
 
   const visibleAssets = useMemo(() => {
     if (state.status !== "ready") return [];
@@ -129,7 +54,7 @@ export function WalletPortfolioCard() {
           <span className="os-terminal-label">PORTFOLIO UNAVAILABLE</span>
           <h2>Balance sync paused.</h2>
           <p>{state.error}</p>
-          <button type="button" onClick={() => void load()}>
+          <button type="button" onClick={state.refetch}>
             Retry portfolio sync
           </button>
         </div>
@@ -178,7 +103,7 @@ export function WalletPortfolioCard() {
           </div>
 
           <div className="os-inline-actions">
-            <button type="button" onClick={() => void load()}>
+            <button type="button" onClick={state.refetch}>
               Refresh balances
             </button>
             <span className="os-terminal-label">

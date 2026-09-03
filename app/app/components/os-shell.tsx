@@ -3,7 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
+import { useWalletPortfolio } from "../lib/use-wallet-portfolio";
 import { BootSequence } from "./boot-sequence";
 import { CommandPalette } from "./command-palette";
 import { useGwapOs } from "./os-provider";
@@ -32,38 +33,17 @@ export function OsShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { account, gnsIdentity, keepAccountState, migrateLocalState, migrationAvailable, retrySync, state, syncStatus } = useGwapOs();
   const [commandOpen, setCommandOpen] = useState(false);
-  const [balance, setBalance] = useState<string>("—");
+  const portfolio = useWalletPortfolio();
 
   const handle = useMemo(
     () => gnsIdentity.fullName || compactWallet(account.verifiedWallet),
     [account.verifiedWallet, gnsIdentity.fullName],
   );
 
-  useEffect(() => {
-    const rpc = process.env.NEXT_PUBLIC_SOLANA_RPC_URL;
-    if (!rpc) return;
-    const controller = new AbortController();
-    const timer = window.setTimeout(() => controller.abort(), 3500);
-
-    void fetch(rpc, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getBalance", params: [account.verifiedWallet, { commitment: "confirmed" }] }),
-      signal: controller.signal,
-    })
-      .then((response) => (response.ok ? response.json() : Promise.reject(new Error("RPC failed"))))
-      .then((payload: { result?: { value?: number } }) => {
-        const lamports = payload.result?.value;
-        if (typeof lamports === "number") setBalance(`${(lamports / 1_000_000_000).toFixed(2)} SOL`);
-      })
-      .catch(() => undefined)
-      .finally(() => window.clearTimeout(timer));
-
-    return () => {
-      controller.abort();
-      window.clearTimeout(timer);
-    };
-  }, [account.verifiedWallet]);
+  const balance =
+    portfolio.status === "ready" && portfolio.payload.sol.amount !== null
+      ? `${portfolio.payload.sol.amount.toFixed(2)} SOL`
+      : null;
 
   return (
     <main className="gwap-os os-v2">
@@ -82,7 +62,16 @@ export function OsShell({ children }: { children: ReactNode }) {
           <span className={`os-runtime-dot state-${gnsIdentity.status}`} />
           <span className="os-status-item"><small>IDENTITY</small><strong>{handle}</strong></span>
           <span className="os-status-item"><small>TRUST</small><strong>{gnsIdentity.score ?? "—"}</strong></span>
-          <span className="os-status-item os-balance"><small>WALLET</small><strong>{balance}</strong></span>
+          <span className="os-status-item os-balance">
+            <small>WALLET</small>
+            {portfolio.status === "error" ? (
+              <button type="button" className="os-balance-retry" onClick={portfolio.refetch}>
+                Retry
+              </button>
+            ) : (
+              <strong>{balance ?? "—"}</strong>
+            )}
+          </span>
         </div>
 
         <div className="os-menubar-actions">

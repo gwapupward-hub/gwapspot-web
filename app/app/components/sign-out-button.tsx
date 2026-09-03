@@ -5,6 +5,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { GWAP_OS_STORAGE_KEY } from "../lib/os-state";
+import { clearWalletPortfolioCache } from "../lib/use-wallet-portfolio";
 
 export function SignOutButton({ compact = false }: { compact?: boolean }) {
   const router = useRouter();
@@ -20,6 +21,7 @@ export function SignOutButton({ compact = false }: { compact?: boolean }) {
       if (connected) await disconnect().catch(() => undefined);
       await logout();
       window.localStorage.removeItem(GWAP_OS_STORAGE_KEY);
+      clearWalletPortfolioCache();
       router.replace("/");
       router.refresh();
     } catch {

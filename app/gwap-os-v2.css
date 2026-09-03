@@ -75,6 +75,8 @@
 .os-status-item small { color: #59665c; font-size: 6px; letter-spacing: .16em; }
 .os-status-item strong { max-width: 190px; overflow: hidden; color: #ced8d0; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
 .os-status-item:nth-of-type(3) strong { color: var(--os-green); }
+.os-balance-retry { padding: 0; border: 0; background: none; color: var(--os-amber); font: inherit; font-size: 9px; font-weight: inherit; letter-spacing: inherit; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.os-balance-retry:hover { color: #ffcf85; }
 
 .os-menubar-actions { justify-self: end; display: flex; align-items: center; gap: 8px; }
 .os-menubar-actions > a,
