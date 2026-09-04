@@ -3,6 +3,7 @@ import Link from "next/link";
 
 const PACK_ICON_URL = "https://res.cloudinary.com/dg1u1wpdu/image/upload/v1788521171/gwapmojis/gwapmode33/pack-icon.png";
 const HEADER_URL = "https://res.cloudinary.com/dg1u1wpdu/image/upload/v1788521177/gwapmojis/gwapmode33/header.png";
+const COMPLETE_DOWNLOAD_URL = "https://res.cloudinary.com/dg1u1wpdu/raw/upload/v1788522411/gwapmojis/gwapmode33/GwapMojis_GwapMode33_Complete_Telegram_Pack.zip";
 const STATIC_DOWNLOAD_URL = "https://res.cloudinary.com/dg1u1wpdu/raw/upload/v1788521185/gwapmojis/gwapmode33/GwapMojis_GwapMode33_Telegram_Static_33.zip";
 const ANIMATED_DOWNLOAD_URL = "https://res.cloudinary.com/dg1u1wpdu/raw/upload/v1788522251/gwapmojis/gwapmode33/GwapMojis_GwapMode33_Animated_Full33_WEBM.zip";
 const EMOJI_DOWNLOAD_URL = "https://res.cloudinary.com/dg1u1wpdu/raw/upload/v1788522264/gwapmojis/gwapmode33/GwapMojis_GwapMode33_Core12_Custom_Emoji.zip";
@@ -49,7 +50,11 @@ export function GwapMojisPromo() {
             </div>
 
             <div className="gwapmojis-promo__actions">
-              <a className="gwapmojis-promo__button is-primary" href={STATIC_DOWNLOAD_URL}>
+              <a className="gwapmojis-promo__button is-primary" href={COMPLETE_DOWNLOAD_URL}>
+                Complete Pack
+                <span aria-hidden="true">↓</span>
+              </a>
+              <a className="gwapmojis-promo__button" href={STATIC_DOWNLOAD_URL}>
                 Static 33
                 <span aria-hidden="true">↓</span>
               </a>
