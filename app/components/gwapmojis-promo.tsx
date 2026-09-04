@@ -79,6 +79,7 @@ export function GwapMojisPromo({
   const [previewOpen, setPreviewOpen] = useState(false);
   const isCompact = variant === "compact";
   const titleId = `gwapmojis-title-${surface}`;
+  const surfaceClass = surface === "gwapos_home" ? "is-gwapos-home" : "is-public-home";
 
   useEffect(() => {
     const update = () => setCountdown(getGwapMojisCountdown());
@@ -145,18 +146,25 @@ export function GwapMojisPromo({
     return (
       <section
         ref={rootRef}
-        className="gwapmojis-promo gwapmojis-promo--compact"
+        className={`gwapmojis-promo gwapmojis-promo--compact ${surfaceClass}`}
         aria-labelledby={titleId}
       >
         <div className="gwapmojis-promo__ambient" aria-hidden="true" />
         <div className="gwapmojis-promo__compact-inner">
           <div className="gwapmojis-promo__compact-art" aria-hidden="true">
-            <img src={GWAPMOJIS_CAMPAIGN.packIconUrl} alt="" loading="lazy" decoding="async" />
+            <img
+              src={GWAPMOJIS_CAMPAIGN.packIconUrl}
+              alt=""
+              loading={surface === "public_home" ? "eager" : "lazy"}
+              decoding="async"
+            />
             <span>{GWAPMOJIS_CAMPAIGN.badge}</span>
           </div>
 
           <div className="gwapmojis-promo__compact-copy">
-            <span className="gwapmojis-promo__eyebrow">GWAP ECOSYSTEM DROP</span>
+            <span className="gwapmojis-promo__eyebrow">
+              {surface === "gwapos_home" ? "GWAP ECOSYSTEM DROP" : "FREE COMMUNITY DROP"}
+            </span>
             <h2 id={titleId}>GwapMojis <em>— GwapMode 33</em></h2>
             <p>33 moods. 4 colors. The official free Telegram reaction pack.</p>
             <CampaignCountdown countdown={countdown} compact />
@@ -195,7 +203,7 @@ export function GwapMojisPromo({
     <section
       ref={rootRef}
       id="gwapmojis"
-      className="gwapmojis-promo gwapmojis-promo--feature"
+      className={`gwapmojis-promo gwapmojis-promo--feature ${surfaceClass}`}
       aria-labelledby={titleId}
     >
       <div className="gwapmojis-promo__ambient" aria-hidden="true" />
