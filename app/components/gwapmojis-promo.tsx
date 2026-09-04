@@ -102,16 +102,23 @@ export function GwapMojisPromo({
     const node = rootRef.current;
     if (!node) return;
 
+    const properties = {
+      campaign_id: GWAPMOJIS_CAMPAIGN.id,
+      surface,
+      placement: variant,
+    };
+
+    if (!("IntersectionObserver" in window)) {
+      safeTrack("sticker_campaign_impression", properties);
+      return;
+    }
+
     let tracked = false;
     const observer = new IntersectionObserver(
       (entries) => {
         if (tracked || !entries.some((entry) => entry.isIntersecting && entry.intersectionRatio >= 0.25)) return;
         tracked = true;
-        safeTrack("sticker_campaign_impression", {
-          campaign_id: GWAPMOJIS_CAMPAIGN.id,
-          surface,
-          placement: variant,
-        });
+        safeTrack("sticker_campaign_impression", properties);
         observer.disconnect();
       },
       { threshold: [0.25] },
