@@ -9,8 +9,8 @@ export default function Home() {
     <>
       <UnifiedCinematicFlow />
       <SingleTapGraphBridge />
+      <GwapMojisPromo surface="public_home" variant="compact" />
       <CinematicHome />
-      <GwapMojisPromo />
       <BackToTopButton />
     </>
   );
