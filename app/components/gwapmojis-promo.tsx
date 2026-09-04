@@ -3,7 +3,9 @@ import Link from "next/link";
 
 const PACK_ICON_URL = "https://res.cloudinary.com/dg1u1wpdu/image/upload/v1788521171/gwapmojis/gwapmode33/pack-icon.png";
 const HEADER_URL = "https://res.cloudinary.com/dg1u1wpdu/image/upload/v1788521177/gwapmojis/gwapmode33/header.png";
-const DOWNLOAD_URL = "https://res.cloudinary.com/dg1u1wpdu/raw/upload/v1788521185/gwapmojis/gwapmode33/GwapMojis_GwapMode33_Telegram_Static_33.zip";
+const STATIC_DOWNLOAD_URL = "https://res.cloudinary.com/dg1u1wpdu/raw/upload/v1788521185/gwapmojis/gwapmode33/GwapMojis_GwapMode33_Telegram_Static_33.zip";
+const ANIMATED_DOWNLOAD_URL = "https://res.cloudinary.com/dg1u1wpdu/raw/upload/v1788522251/gwapmojis/gwapmode33/GwapMojis_GwapMode33_Animated_Full33_WEBM.zip";
+const EMOJI_DOWNLOAD_URL = "https://res.cloudinary.com/dg1u1wpdu/raw/upload/v1788522264/gwapmojis/gwapmode33/GwapMojis_GwapMode33_Core12_Custom_Emoji.zip";
 
 export function GwapMojisPromo() {
   const telegramUrl = process.env.NEXT_PUBLIC_GWAPMOJIS_TELEGRAM_URL;
@@ -36,18 +38,27 @@ export function GwapMojisPromo() {
             <h2 id="gwapmojis-title">GwapMojis <em>— GwapMode 33</em></h2>
             <p className="gwapmojis-promo__tagline">33 moods. 4 colors. One GWAP character.</p>
             <p className="gwapmojis-promo__body">
-              Download the official GwapMode 33 reaction collection free. The pack uses the exact approved master artwork and includes all 33 Telegram-ready static reactions.
+              Download the official GwapMode 33 reaction collection free. Every asset derives from the exact approved master artwork: 33 static stickers, 33 Telegram video stickers, and a Core 12 custom emoji set.
             </p>
 
             <div className="gwapmojis-promo__stats" aria-label="GwapMode 33 pack details">
-              <span><strong>33</strong> static reactions</span>
-              <span><strong>4</strong> color modes</span>
+              <span><strong>33</strong> static</span>
+              <span><strong>33</strong> animated</span>
+              <span><strong>12</strong> custom emoji</span>
               <span><strong>100%</strong> free</span>
             </div>
 
             <div className="gwapmojis-promo__actions">
-              <a className="gwapmojis-promo__button is-primary" href={DOWNLOAD_URL}>
-                Download free pack
+              <a className="gwapmojis-promo__button is-primary" href={STATIC_DOWNLOAD_URL}>
+                Static 33
+                <span aria-hidden="true">↓</span>
+              </a>
+              <a className="gwapmojis-promo__button" href={ANIMATED_DOWNLOAD_URL}>
+                Animated 33
+                <span aria-hidden="true">↓</span>
+              </a>
+              <a className="gwapmojis-promo__button" href={EMOJI_DOWNLOAD_URL}>
+                Custom Emoji 12
                 <span aria-hidden="true">↓</span>
               </a>
               {telegramUrl ? (
