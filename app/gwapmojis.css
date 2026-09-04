@@ -57,6 +57,22 @@
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
 }
 
+.gwapmojis-promo__drop-badge {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  z-index: 2;
+  padding: 8px 11px;
+  border: 1px solid rgba(19, 221, 19, 0.45);
+  border-radius: 999px;
+  background: rgba(3, 5, 4, 0.82);
+  color: #13dd13;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  backdrop-filter: blur(14px);
+}
+
 .gwapmojis-promo__copy {
   max-width: 560px;
 }
@@ -109,6 +125,70 @@
   line-height: 1.75;
 }
 
+.gwapmojis-countdown {
+  margin-top: 24px;
+  padding: 16px;
+  border: 1px solid rgba(19, 221, 19, 0.2);
+  border-radius: 18px;
+  background: rgba(19, 221, 19, 0.045);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.gwapmojis-countdown > span:first-child {
+  display: block;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.66rem;
+  font-weight: 850;
+  letter-spacing: 0.14em;
+}
+
+.gwapmojis-countdown__digits {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.gwapmojis-countdown__digits div {
+  min-width: 0;
+  padding: 10px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.22);
+  text-align: center;
+}
+
+.gwapmojis-countdown__digits strong {
+  display: block;
+  color: #fff;
+  font-size: clamp(1.15rem, 2vw, 1.55rem);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+}
+
+.gwapmojis-countdown__digits small {
+  display: block;
+  margin-top: 5px;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.56rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.gwapmojis-countdown.is-expired {
+  border-color: rgba(255, 138, 36, 0.25);
+  background: rgba(255, 138, 36, 0.05);
+}
+
+.gwapmojis-countdown.is-expired > strong {
+  display: block;
+  margin-top: 7px;
+  color: #ff8a24;
+  font-size: 1.05rem;
+  letter-spacing: 0.08em;
+}
+
 .gwapmojis-promo__stats {
   display: flex;
   flex-wrap: wrap;
@@ -139,7 +219,8 @@
   gap: 12px;
 }
 
-.gwapmojis-promo__button {
+.gwapmojis-promo__button,
+.gwapmojis-promo__preview summary {
   display: inline-flex;
   min-height: 50px;
   align-items: center;
@@ -150,19 +231,24 @@
   border-radius: 15px;
   background: rgba(255, 255, 255, 0.045);
   color: #fff;
+  font: inherit;
   font-weight: 760;
   text-decoration: none;
+  cursor: pointer;
   transition: transform 180ms ease, border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
 }
 
 .gwapmojis-promo__button:hover,
-.gwapmojis-promo__button:focus-visible {
+.gwapmojis-promo__button:focus-visible,
+.gwapmojis-promo__preview summary:hover,
+.gwapmojis-promo__preview summary:focus-visible {
   transform: translateY(-2px);
   border-color: rgba(255, 255, 255, 0.26);
   background: rgba(255, 255, 255, 0.075);
 }
 
-.gwapmojis-promo__button:focus-visible {
+.gwapmojis-promo__button:focus-visible,
+.gwapmojis-promo__preview summary:focus-visible {
   outline: 2px solid #fff;
   outline-offset: 3px;
 }
@@ -187,6 +273,199 @@
   font-size: 0.76rem;
 }
 
+.gwapmojis-promo--compact {
+  width: min(1180px, calc(100% - 40px));
+  padding: 16px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 14% 50%, rgba(19, 221, 19, 0.12), transparent 32%),
+    radial-gradient(circle at 90% 20%, rgba(155, 108, 255, 0.1), transparent 30%),
+    linear-gradient(120deg, rgba(19, 221, 19, 0.06), rgba(255, 255, 255, 0.025) 42%, rgba(255, 138, 36, 0.045)),
+    #060807;
+  box-shadow: 0 24px 65px rgba(0, 0, 0, 0.34), 0 0 55px rgba(19, 221, 19, 0.045);
+}
+
+.gwapmojis-promo--compact.is-public-home {
+  z-index: 31;
+  margin: 18px auto 8px;
+}
+
+.gwapmojis-promo--compact.is-gwapos-home {
+  width: 100%;
+  margin: 0 0 24px;
+}
+
+.gwapmojis-promo__compact-inner {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+}
+
+.gwapmojis-promo__compact-art {
+  position: relative;
+}
+
+.gwapmojis-promo__compact-art img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 22px;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.4), 0 0 30px rgba(19, 221, 19, 0.08);
+}
+
+.gwapmojis-promo__compact-art span {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  padding: 5px 7px;
+  border: 1px solid rgba(19, 221, 19, 0.38);
+  border-radius: 999px;
+  background: rgba(2, 8, 3, 0.88);
+  color: #13dd13;
+  font-size: 0.55rem;
+  font-weight: 900;
+  letter-spacing: 0.11em;
+}
+
+.gwapmojis-promo__compact-copy {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.72fr);
+  column-gap: 22px;
+  align-items: center;
+}
+
+.gwapmojis-promo__compact-copy .gwapmojis-promo__eyebrow {
+  grid-column: 1;
+  margin-bottom: 7px;
+  font-size: 0.64rem;
+}
+
+.gwapmojis-promo__compact-copy .gwapmojis-promo__eyebrow::before {
+  width: 18px;
+}
+
+.gwapmojis-promo--compact h2 {
+  grid-column: 1;
+  font-size: clamp(1.45rem, 2.6vw, 2.1rem);
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.gwapmojis-promo--compact h2 em {
+  display: inline;
+  margin: 0;
+}
+
+.gwapmojis-promo__compact-copy > p {
+  grid-column: 1;
+  margin: 7px 0 0;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.gwapmojis-promo--compact .gwapmojis-countdown {
+  grid-column: 2;
+  grid-row: 1 / 4;
+  margin: 0;
+  min-width: 0;
+  padding: 10px;
+}
+
+.gwapmojis-promo--compact .gwapmojis-countdown > span:first-child {
+  font-size: 0.58rem;
+}
+
+.gwapmojis-promo--compact .gwapmojis-countdown__digits {
+  gap: 5px;
+  margin-top: 7px;
+}
+
+.gwapmojis-promo--compact .gwapmojis-countdown__digits div {
+  padding: 8px 5px;
+  border-radius: 9px;
+}
+
+.gwapmojis-promo--compact .gwapmojis-countdown__digits strong {
+  font-size: 1.05rem;
+}
+
+.gwapmojis-promo--compact .gwapmojis-countdown__digits small {
+  font-size: 0.48rem;
+}
+
+.gwapmojis-promo__compact-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-start;
+  margin-top: 14px;
+}
+
+.gwapmojis-promo--compact .gwapmojis-promo__button,
+.gwapmojis-promo--compact .gwapmojis-promo__preview summary {
+  min-height: 44px;
+  padding: 0 17px;
+  font-size: 0.84rem;
+}
+
+.gwapmojis-promo__preview {
+  margin: 0;
+}
+
+.gwapmojis-promo__preview summary {
+  list-style: none;
+}
+
+.gwapmojis-promo__preview summary::-webkit-details-marker {
+  display: none;
+}
+
+.gwapmojis-promo__preview[open] {
+  flex-basis: min(460px, 100%);
+}
+
+.gwapmojis-promo__preview > div {
+  width: min(460px, 100%);
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 17px;
+  background: rgba(2, 4, 3, 0.78);
+}
+
+.gwapmojis-promo__preview img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+}
+
+.gwapmojis-promo__preview p {
+  margin: 8px 4px 2px;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+.gwapmojis-promo .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 @media (max-width: 980px) {
   .gwapmojis-promo__inner {
     grid-template-columns: 1fr;
@@ -199,6 +478,16 @@
   .gwapmojis-promo__icon {
     right: 18px;
     bottom: -32px;
+  }
+
+  .gwapmojis-promo__compact-copy {
+    grid-template-columns: 1fr;
+  }
+
+  .gwapmojis-promo--compact .gwapmojis-countdown {
+    grid-column: 1;
+    grid-row: auto;
+    margin-top: 14px;
   }
 }
 
@@ -233,15 +522,103 @@
   .gwapmojis-promo__button {
     width: 100%;
   }
+
+  .gwapmojis-promo--compact {
+    width: calc(100% - 24px);
+    padding: 14px;
+    border-radius: 20px;
+  }
+
+  .gwapmojis-promo--compact.is-public-home {
+    margin-top: 12px;
+  }
+
+  .gwapmojis-promo--compact.is-gwapos-home {
+    width: 100%;
+    margin-bottom: 18px;
+  }
+
+  .gwapmojis-promo__compact-inner {
+    grid-template-columns: 76px minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+  }
+
+  .gwapmojis-promo__compact-art img {
+    border-radius: 16px;
+  }
+
+  .gwapmojis-promo__compact-art span {
+    left: 5px;
+    bottom: 5px;
+    padding: 4px 5px;
+    font-size: 0.45rem;
+  }
+
+  .gwapmojis-promo__compact-copy {
+    display: block;
+  }
+
+  .gwapmojis-promo__compact-copy .gwapmojis-promo__eyebrow {
+    margin-bottom: 6px;
+    font-size: 0.56rem;
+    letter-spacing: 0.12em;
+  }
+
+  .gwapmojis-promo--compact h2 {
+    font-size: clamp(1.3rem, 7vw, 1.8rem);
+  }
+
+  .gwapmojis-promo--compact h2 em {
+    display: block;
+    margin-top: 3px;
+  }
+
+  .gwapmojis-promo__compact-copy > p {
+    margin-top: 7px;
+    font-size: 0.78rem;
+  }
+
+  .gwapmojis-promo--compact .gwapmojis-countdown {
+    margin-top: 12px;
+    padding: 9px;
+  }
+
+  .gwapmojis-promo--compact .gwapmojis-countdown__digits strong {
+    font-size: 0.96rem;
+  }
+
+  .gwapmojis-promo__compact-actions {
+    grid-column: 1 / -1;
+    flex-direction: column;
+    margin-top: 12px;
+  }
+
+  .gwapmojis-promo--compact .gwapmojis-promo__button,
+  .gwapmojis-promo--compact .gwapmojis-promo__preview,
+  .gwapmojis-promo--compact .gwapmojis-promo__preview summary {
+    width: 100%;
+  }
+
+  .gwapmojis-promo__preview[open] {
+    flex-basis: 100%;
+  }
+
+  .gwapmojis-promo__preview > div {
+    width: 100%;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .gwapmojis-promo__button {
+  .gwapmojis-promo__button,
+  .gwapmojis-promo__preview summary {
     transition: none;
   }
 
   .gwapmojis-promo__button:hover,
-  .gwapmojis-promo__button:focus-visible {
+  .gwapmojis-promo__button:focus-visible,
+  .gwapmojis-promo__preview summary:hover,
+  .gwapmojis-promo__preview summary:focus-visible {
     transform: none;
   }
 }
