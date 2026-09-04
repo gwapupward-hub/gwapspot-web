@@ -7,10 +7,9 @@ const COMPLETE_DOWNLOAD_URL = "https://res.cloudinary.com/dg1u1wpdu/raw/upload/v
 const STATIC_DOWNLOAD_URL = "https://res.cloudinary.com/dg1u1wpdu/raw/upload/v1788521185/gwapmojis/gwapmode33/GwapMojis_GwapMode33_Telegram_Static_33.zip";
 const ANIMATED_DOWNLOAD_URL = "https://res.cloudinary.com/dg1u1wpdu/raw/upload/v1788522251/gwapmojis/gwapmode33/GwapMojis_GwapMode33_Animated_Full33_WEBM.zip";
 const EMOJI_DOWNLOAD_URL = "https://res.cloudinary.com/dg1u1wpdu/raw/upload/v1788522264/gwapmojis/gwapmode33/GwapMojis_GwapMode33_Core12_Custom_Emoji.zip";
+const TELEGRAM_STICKER_PACK_URL = "https://t.me/addstickers/GwapMode33";
 
 export function GwapMojisPromo() {
-  const telegramUrl = process.env.NEXT_PUBLIC_GWAPMOJIS_TELEGRAM_URL;
-
   return (
     <>
       <section id="gwapmojis" className="gwapmojis-promo" aria-labelledby="gwapmojis-title">
@@ -50,7 +49,11 @@ export function GwapMojisPromo() {
             </div>
 
             <div className="gwapmojis-promo__actions">
-              <a className="gwapmojis-promo__button is-primary" href={COMPLETE_DOWNLOAD_URL}>
+              <a className="gwapmojis-promo__button is-primary" href={TELEGRAM_STICKER_PACK_URL} target="_blank" rel="noreferrer">
+                Add on Telegram
+                <span aria-hidden="true">↗</span>
+              </a>
+              <a className="gwapmojis-promo__button" href={COMPLETE_DOWNLOAD_URL}>
                 Complete Pack
                 <span aria-hidden="true">↓</span>
               </a>
@@ -66,12 +69,6 @@ export function GwapMojisPromo() {
                 Custom Emoji 12
                 <span aria-hidden="true">↓</span>
               </a>
-              {telegramUrl ? (
-                <a className="gwapmojis-promo__button" href={telegramUrl} target="_blank" rel="noreferrer">
-                  Add on Telegram
-                  <span aria-hidden="true">↗</span>
-                </a>
-              ) : null}
             </div>
 
             <small className="gwapmojis-promo__note">Free to download. No wallet connection or signup required.</small>
