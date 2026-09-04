@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
+import { GwapMojisPromo } from "../../components/gwapmojis-promo";
 import type { EcosystemProduct } from "../../lib/ecosystem";
 import { getProfileCompletion } from "../lib/os-state";
 import { useWalletPortfolio } from "../lib/use-wallet-portfolio";
@@ -170,6 +171,8 @@ export function DashboardView({ products }: { products: EcosystemProduct[] }) {
           </button>
         </div>
       </section>
+
+      <GwapMojisPromo surface="gwapos_home" variant="compact" />
 
       <div className="gwapos-home-grid">
         <div>
