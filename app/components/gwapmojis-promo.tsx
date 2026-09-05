@@ -1,7 +1,7 @@
 "use client";
 
 import { track } from "@vercel/analytics";
-import { useEffect, useRef, useState, type SyntheticEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   GWAPMOJIS_CAMPAIGN,
   getGwapMojisCountdown,
@@ -22,14 +22,14 @@ function safeTrack(name: string, properties: AnalyticsProperties) {
   try {
     track(name, properties);
   } catch {
-    // The campaign must remain usable if analytics is unavailable.
+    // Campaign analytics must never interfere with the product experience.
   }
 }
 
-function CampaignCountdown({ countdown, compact = false }: { countdown: GwapMojisCountdown | null; compact?: boolean }) {
+function CampaignCountdown({ countdown }: { countdown: GwapMojisCountdown | null }) {
   if (countdown?.expired) {
     return (
-      <div className={`gwapmojis-countdown${compact ? " is-compact" : ""} is-expired`}>
+      <div className="gwapmojis-countdown is-expired">
         <span>LIMITED-TIME DOWNLOAD WINDOW</span>
         <strong>DROP ENDED</strong>
       </div>
@@ -51,7 +51,7 @@ function CampaignCountdown({ countdown, compact = false }: { countdown: GwapMoji
       ];
 
   return (
-    <div className={`gwapmojis-countdown${compact ? " is-compact" : ""}`}>
+    <div className="gwapmojis-countdown">
       <span>FREE DOWNLOAD ENDS IN</span>
       <div className="gwapmojis-countdown__digits" aria-hidden="true">
         {values.map(([value, label]) => (
@@ -70,16 +70,22 @@ function CampaignCountdown({ countdown, compact = false }: { countdown: GwapMoji
 
 export function GwapMojisPromo({
   surface = "public_home",
-  variant = "feature",
 }: GwapMojisPromoProps) {
-  const rootRef = useRef<HTMLElement | null>(null);
+  const launcherRef = useRef<HTMLButtonElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
   const expiredTrackedRef = useRef(false);
   const previewTrackedRef = useRef(false);
+  const impressionTrackedRef = useRef(false);
   const [countdown, setCountdown] = useState<GwapMojisCountdown | null>(null);
+  const [open, setOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
-  const isCompact = variant === "compact";
   const titleId = `gwapmojis-title-${surface}`;
-  const surfaceClass = surface === "gwapos_home" ? "is-gwapos-home" : "is-public-home";
+
+  const analyticsProperties = {
+    campaign_id: GWAPMOJIS_CAMPAIGN.id,
+    surface,
+    placement: "floating_launcher",
+  } as const;
 
   useEffect(() => {
     const update = () => setCountdown(getGwapMojisCountdown());
@@ -89,96 +95,142 @@ export function GwapMojisPromo({
   }, []);
 
   useEffect(() => {
-    if (!countdown?.expired || expiredTrackedRef.current) return;
-    expiredTrackedRef.current = true;
-    safeTrack("sticker_campaign_expired", {
-      campaign_id: GWAPMOJIS_CAMPAIGN.id,
-      surface,
-      placement: variant,
-    });
-  }, [countdown?.expired, surface, variant]);
+    if (impressionTrackedRef.current) return;
+    impressionTrackedRef.current = true;
+    safeTrack("sticker_campaign_impression", analyticsProperties);
+  }, [surface]);
 
   useEffect(() => {
-    const node = rootRef.current;
-    if (!node) return;
+    if (!countdown?.expired || expiredTrackedRef.current) return;
+    expiredTrackedRef.current = true;
+    safeTrack("sticker_campaign_expired", analyticsProperties);
+  }, [countdown?.expired, surface]);
 
-    const properties = {
-      campaign_id: GWAPMOJIS_CAMPAIGN.id,
-      surface,
-      placement: variant,
+  useEffect(() => {
+    if (!open) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setOpen(false);
+      setPreviewOpen(false);
     };
 
-    if (!("IntersectionObserver" in window)) {
-      safeTrack("sticker_campaign_impression", properties);
-      return;
-    }
+    window.addEventListener("keydown", onKeyDown);
+    const frame = window.requestAnimationFrame(() => panelRef.current?.focus());
 
-    let tracked = false;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (tracked || !entries.some((entry) => entry.isIntersecting && entry.intersectionRatio >= 0.25)) return;
-        tracked = true;
-        safeTrack("sticker_campaign_impression", properties);
-        observer.disconnect();
-      },
-      { threshold: [0.25] },
-    );
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = previousOverflow;
+      launcherRef.current?.focus();
+    };
+  }, [open]);
 
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [surface, variant]);
+  const openCampaign = () => {
+    setOpen(true);
+    safeTrack("sticker_campaign_launcher_open", analyticsProperties);
+  };
+
+  const closeCampaign = () => {
+    setOpen(false);
+    setPreviewOpen(false);
+    safeTrack("sticker_campaign_dismissed", analyticsProperties);
+  };
 
   const trackCta = (asset: string) => {
     safeTrack("sticker_campaign_cta_click", {
-      campaign_id: GWAPMOJIS_CAMPAIGN.id,
-      surface,
-      placement: variant,
+      ...analyticsProperties,
       asset,
     });
   };
 
-  const handlePreviewToggle = (event: SyntheticEvent<HTMLDetailsElement>) => {
-    const open = event.currentTarget.open;
-    setPreviewOpen(open);
-    if (!open || previewTrackedRef.current) return;
-    previewTrackedRef.current = true;
-    safeTrack("sticker_campaign_preview_open", {
-      campaign_id: GWAPMOJIS_CAMPAIGN.id,
-      surface,
-      placement: variant,
+  const togglePreview = () => {
+    setPreviewOpen((current) => {
+      const next = !current;
+      if (next && !previewTrackedRef.current) {
+        previewTrackedRef.current = true;
+        safeTrack("sticker_campaign_preview_open", analyticsProperties);
+      }
+      return next;
     });
   };
 
-  if (isCompact) {
-    return (
-      <section
-        ref={rootRef}
-        className={`gwapmojis-promo gwapmojis-promo--compact ${surfaceClass}`}
-        aria-labelledby={titleId}
+  return (
+    <div className={`gwapmojis-float is-${surface}`}>
+      <button
+        ref={launcherRef}
+        className="gwapmojis-launcher"
+        type="button"
+        aria-label="Open free GwapMojis GwapMode 33 sticker pack"
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        onClick={openCampaign}
       >
-        <div className="gwapmojis-promo__ambient" aria-hidden="true" />
-        <div className="gwapmojis-promo__compact-inner">
-          <div className="gwapmojis-promo__compact-art" aria-hidden="true">
-            <img
-              src={GWAPMOJIS_CAMPAIGN.packIconUrl}
-              alt=""
-              loading={surface === "public_home" ? "eager" : "lazy"}
-              decoding="async"
-            />
-            <span>{GWAPMOJIS_CAMPAIGN.badge}</span>
-          </div>
+        <img
+          src={GWAPMOJIS_CAMPAIGN.packIconUrl}
+          alt=""
+          width="72"
+          height="72"
+          loading={surface === "public_home" ? "eager" : "lazy"}
+          decoding="async"
+        />
+        <span className="gwapmojis-launcher__badge">FREE</span>
+        <span className="gwapmojis-launcher__hint">GwapMojis</span>
+      </button>
 
-          <div className="gwapmojis-promo__compact-copy">
-            <span className="gwapmojis-promo__eyebrow">
-              {surface === "gwapos_home" ? "GWAP ECOSYSTEM DROP" : "FREE COMMUNITY DROP"}
-            </span>
-            <h2 id={titleId}>GwapMojis <em>— GwapMode 33</em></h2>
-            <p>33 moods. 4 colors. The official free Telegram reaction pack.</p>
-            <CampaignCountdown countdown={countdown} compact />
+      {open ? (
+        <div
+          className="gwapmojis-overlay"
+          role="presentation"
+          onPointerDown={(event) => {
+            if (event.target === event.currentTarget) closeCampaign();
+          }}
+        >
+          <div
+            ref={panelRef}
+            className="gwapmojis-sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
+            tabIndex={-1}
+          >
+            <button
+              className="gwapmojis-sheet__close"
+              type="button"
+              aria-label="Close GwapMojis promotion"
+              onClick={closeCampaign}
+            >
+              ×
+            </button>
 
-            <div className="gwapmojis-promo__compact-actions">
+            <div className="gwapmojis-sheet__topline">
+              <span>GWAP ECOSYSTEM DROP</span>
+              <b>{countdown?.expired ? "ARCHIVE" : "FREE UNTIL OCT 12"}</b>
+            </div>
+
+            <div className="gwapmojis-sheet__hero">
+              <img
+                src={GWAPMOJIS_CAMPAIGN.packIconUrl}
+                alt="GwapMojis GwapMode 33 sticker pack icon"
+                width="92"
+                height="92"
+                loading="lazy"
+                decoding="async"
+              />
+              <div>
+                <h2 id={titleId}>GwapMojis <em>— GwapMode 33</em></h2>
+                <p>33 moods. 4 colors. The official free Telegram reaction pack.</p>
+              </div>
+            </div>
+
+            <CampaignCountdown countdown={countdown} />
+
+            <div className="gwapmojis-sheet__actions">
               <a
-                className="gwapmojis-promo__button is-primary"
+                className="gwapmojis-action is-primary"
                 href={GWAPMOJIS_CAMPAIGN.telegramUrl}
                 target="_blank"
                 rel="noreferrer"
@@ -187,106 +239,43 @@ export function GwapMojisPromo({
                 {countdown?.expired ? "View on Telegram" : "Get Free Pack"}
                 <span aria-hidden="true">↗</span>
               </a>
-              <details className="gwapmojis-promo__preview" onToggle={handlePreviewToggle}>
-                <summary>{previewOpen ? "Close preview" : "Preview pack"}</summary>
-                <div>
-                  <img
-                    src={GWAPMOJIS_CAMPAIGN.headerUrl}
-                    alt="GwapMojis GwapMode 33 featuring the official orange, green, red, and purple GWAP reaction characters"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                  <p>33 static stickers · 33 animated stickers · Core 12 custom emoji</p>
-                </div>
-              </details>
+              <button className="gwapmojis-action" type="button" onClick={togglePreview}>
+                {previewOpen ? "Hide Preview" : "Preview Pack"}
+              </button>
             </div>
-          </div>
-        </div>
-      </section>
-    );
-  }
 
-  return (
-    <section
-      ref={rootRef}
-      id="gwapmojis"
-      className={`gwapmojis-promo gwapmojis-promo--feature ${surfaceClass}`}
-      aria-labelledby={titleId}
-    >
-      <div className="gwapmojis-promo__ambient" aria-hidden="true" />
-      <div className="gwapmojis-promo__inner">
-        <div className="gwapmojis-promo__visual">
-          <img
-            className="gwapmojis-promo__header"
-            src={GWAPMOJIS_CAMPAIGN.headerUrl}
-            alt="GwapMojis GwapMode 33 featuring the official orange, green, red, and purple GWAP reaction characters"
-            loading="eager"
-            decoding="async"
-          />
-          <img
-            className="gwapmojis-promo__icon"
-            src={GWAPMOJIS_CAMPAIGN.packIconUrl}
-            alt=""
-            loading="lazy"
-            decoding="async"
-            aria-hidden="true"
-          />
-          <span className="gwapmojis-promo__drop-badge">{GWAPMOJIS_CAMPAIGN.badge}</span>
-        </div>
-
-        <div className="gwapmojis-promo__copy">
-          <span className="gwapmojis-promo__eyebrow">FREE COMMUNITY DROP · UNTIL OCT 12</span>
-          <h2 id={titleId}>GwapMojis <em>— GwapMode 33</em></h2>
-          <p className="gwapmojis-promo__tagline">33 moods. 4 colors. One GWAP character.</p>
-          <p className="gwapmojis-promo__body">
-            Meet the official GwapMode 33 reaction collection. Grab the free Telegram pack while the drop is open, or download the original sticker and emoji files directly.
-          </p>
-
-          <CampaignCountdown countdown={countdown} />
-
-          <div className="gwapmojis-promo__stats" aria-label="GwapMode 33 pack details">
-            <span><strong>33</strong> static</span>
-            <span><strong>33</strong> animated</span>
-            <span><strong>12</strong> custom emoji</span>
-            <span><strong>100%</strong> free</span>
-          </div>
-
-          <div className="gwapmojis-promo__actions">
-            <a
-              className="gwapmojis-promo__button is-primary"
-              href={GWAPMOJIS_CAMPAIGN.telegramUrl}
-              target="_blank"
-              rel="noreferrer"
-              onClick={() => trackCta("telegram")}
-            >
-              {countdown?.expired ? "View on Telegram" : "Get the Free Pack"}
-              <span aria-hidden="true">↗</span>
-            </a>
-            {!countdown?.expired ? (
-              <>
-                <a className="gwapmojis-promo__button" href={GWAPMOJIS_CAMPAIGN.completeDownloadUrl} onClick={() => trackCta("complete_zip")}>
-                  Complete Pack <span aria-hidden="true">↓</span>
-                </a>
-                <a className="gwapmojis-promo__button" href={GWAPMOJIS_CAMPAIGN.staticDownloadUrl} onClick={() => trackCta("static_zip")}>
-                  Static 33 <span aria-hidden="true">↓</span>
-                </a>
-                <a className="gwapmojis-promo__button" href={GWAPMOJIS_CAMPAIGN.animatedDownloadUrl} onClick={() => trackCta("animated_zip")}>
-                  Animated 33 <span aria-hidden="true">↓</span>
-                </a>
-                <a className="gwapmojis-promo__button" href={GWAPMOJIS_CAMPAIGN.emojiDownloadUrl} onClick={() => trackCta("emoji_zip")}>
-                  Custom Emoji 12 <span aria-hidden="true">↓</span>
-                </a>
-              </>
+            {previewOpen ? (
+              <div className="gwapmojis-sheet__preview">
+                <img
+                  src={GWAPMOJIS_CAMPAIGN.headerUrl}
+                  alt="GwapMojis GwapMode 33 featuring the official orange, green, red, and purple GWAP reaction characters"
+                  loading="lazy"
+                  decoding="async"
+                />
+                <p>33 static stickers · 33 animated stickers · Core 12 custom emoji</p>
+              </div>
             ) : null}
-          </div>
 
-          <small className="gwapmojis-promo__note">
-            {countdown?.expired
-              ? "The limited-time direct download window has ended."
-              : `Free to download through ${GWAPMOJIS_CAMPAIGN.deadlineLabel}. No wallet connection or signup required.`}
-          </small>
+            {!countdown?.expired ? (
+              <div className="gwapmojis-sheet__downloads" aria-label="Direct GwapMojis downloads">
+                <span>DIRECT DOWNLOADS</span>
+                <div>
+                  <a href={GWAPMOJIS_CAMPAIGN.completeDownloadUrl} onClick={() => trackCta("complete_zip")}>Complete</a>
+                  <a href={GWAPMOJIS_CAMPAIGN.staticDownloadUrl} onClick={() => trackCta("static_zip")}>Static 33</a>
+                  <a href={GWAPMOJIS_CAMPAIGN.animatedDownloadUrl} onClick={() => trackCta("animated_zip")}>Animated 33</a>
+                  <a href={GWAPMOJIS_CAMPAIGN.emojiDownloadUrl} onClick={() => trackCta("emoji_zip")}>Emoji 12</a>
+                </div>
+              </div>
+            ) : null}
+
+            <small className="gwapmojis-sheet__note">
+              {countdown?.expired
+                ? "The limited-time direct download window has ended."
+                : `Free through ${GWAPMOJIS_CAMPAIGN.deadlineLabel}. No wallet connection or signup required.`}
+            </small>
+          </div>
         </div>
-      </div>
-    </section>
+      ) : null}
+    </div>
   );
 }
