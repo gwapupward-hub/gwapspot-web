@@ -26,6 +26,14 @@ function safeTrack(name: string, properties: AnalyticsProperties) {
   }
 }
 
+function campaignProperties(surface: GwapMojisSurface) {
+  return {
+    campaign_id: GWAPMOJIS_CAMPAIGN.id,
+    surface,
+    placement: "floating_launcher",
+  } as const;
+}
+
 function CampaignCountdown({ countdown }: { countdown: GwapMojisCountdown | null }) {
   if (countdown?.expired) {
     return (
@@ -81,12 +89,6 @@ export function GwapMojisPromo({
   const [previewOpen, setPreviewOpen] = useState(false);
   const titleId = `gwapmojis-title-${surface}`;
 
-  const analyticsProperties = {
-    campaign_id: GWAPMOJIS_CAMPAIGN.id,
-    surface,
-    placement: "floating_launcher",
-  } as const;
-
   useEffect(() => {
     const update = () => setCountdown(getGwapMojisCountdown());
     update();
@@ -97,13 +99,13 @@ export function GwapMojisPromo({
   useEffect(() => {
     if (impressionTrackedRef.current) return;
     impressionTrackedRef.current = true;
-    safeTrack("sticker_campaign_impression", analyticsProperties);
+    safeTrack("sticker_campaign_impression", campaignProperties(surface));
   }, [surface]);
 
   useEffect(() => {
     if (!countdown?.expired || expiredTrackedRef.current) return;
     expiredTrackedRef.current = true;
-    safeTrack("sticker_campaign_expired", analyticsProperties);
+    safeTrack("sticker_campaign_expired", campaignProperties(surface));
   }, [countdown?.expired, surface]);
 
   useEffect(() => {
@@ -113,9 +115,39 @@ export function GwapMojisPromo({
     document.body.style.overflow = "hidden";
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      setOpen(false);
-      setPreviewOpen(false);
+      if (event.key === "Escape") {
+        setOpen(false);
+        setPreviewOpen(false);
+        return;
+      }
+
+      if (event.key !== "Tab") return;
+
+      const panel = panelRef.current;
+      if (!panel) return;
+      const focusable = Array.from(
+        panel.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((element) => element.getAttribute("aria-hidden") !== "true");
+
+      if (focusable.length === 0) {
+        event.preventDefault();
+        panel.focus();
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+
+      if (event.shiftKey && (active === first || !panel.contains(active))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
 
     window.addEventListener("keydown", onKeyDown);
@@ -131,18 +163,18 @@ export function GwapMojisPromo({
 
   const openCampaign = () => {
     setOpen(true);
-    safeTrack("sticker_campaign_launcher_open", analyticsProperties);
+    safeTrack("sticker_campaign_launcher_open", campaignProperties(surface));
   };
 
   const closeCampaign = () => {
     setOpen(false);
     setPreviewOpen(false);
-    safeTrack("sticker_campaign_dismissed", analyticsProperties);
+    safeTrack("sticker_campaign_dismissed", campaignProperties(surface));
   };
 
   const trackCta = (asset: string) => {
     safeTrack("sticker_campaign_cta_click", {
-      ...analyticsProperties,
+      ...campaignProperties(surface),
       asset,
     });
   };
@@ -152,7 +184,7 @@ export function GwapMojisPromo({
       const next = !current;
       if (next && !previewTrackedRef.current) {
         previewTrackedRef.current = true;
-        safeTrack("sticker_campaign_preview_open", analyticsProperties);
+        safeTrack("sticker_campaign_preview_open", campaignProperties(surface));
       }
       return next;
     });
