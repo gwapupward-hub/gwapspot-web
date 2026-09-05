@@ -1,159 +1,277 @@
-.gwapmojis-promo {
-  position: relative;
-  overflow: hidden;
-  padding: clamp(72px, 9vw, 132px) clamp(20px, 5vw, 72px);
-  background:
-    radial-gradient(circle at 20% 20%, rgba(19, 221, 19, 0.08), transparent 34%),
-    radial-gradient(circle at 78% 22%, rgba(138, 43, 226, 0.09), transparent 30%),
-    radial-gradient(circle at 64% 78%, rgba(255, 122, 0, 0.08), transparent 34%),
-    #030504;
-  color: #fff;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.gwapmojis-promo__ambient {
-  position: absolute;
-  inset: -20%;
+.gwapmojis-float {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 92px);
+  right: clamp(14px, 2.2vw, 28px);
+  z-index: 82;
   pointer-events: none;
-  background:
-    linear-gradient(115deg, transparent 35%, rgba(19, 221, 19, 0.045) 50%, transparent 65%),
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 72px);
-  mask-image: linear-gradient(to bottom, transparent, #000 18%, #000 82%, transparent);
+  color: #fff;
 }
 
-.gwapmojis-promo__inner {
+.gwapmojis-float.is-gwapos_home {
+  top: calc(env(safe-area-inset-top, 0px) + 82px);
+}
+
+.gwapmojis-launcher {
   position: relative;
-  z-index: 1;
-  width: min(1380px, 100%);
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(340px, 0.85fr);
-  align-items: center;
-  gap: clamp(38px, 6vw, 90px);
+  width: 68px;
+  height: 68px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 21px;
+  background: rgba(4, 7, 5, 0.9);
+  box-shadow:
+    0 16px 38px rgba(0, 0, 0, 0.42),
+    0 0 28px rgba(19, 221, 19, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  pointer-events: auto;
+  isolation: isolate;
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.gwapmojis-promo__visual {
-  position: relative;
-  min-width: 0;
+.gwapmojis-launcher::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border: 1px solid rgba(19, 221, 19, 0.62);
+  border-radius: inherit;
+  animation: gwapmojis-launch-ping 1.9s ease-out 2;
 }
 
-.gwapmojis-promo__header {
+.gwapmojis-launcher:hover,
+.gwapmojis-launcher:focus-visible {
+  transform: translateY(-2px) scale(1.035);
+  border-color: rgba(19, 221, 19, 0.62);
+  box-shadow:
+    0 20px 44px rgba(0, 0, 0, 0.46),
+    0 0 36px rgba(19, 221, 19, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.gwapmojis-launcher:focus-visible {
+  outline: 2px solid #13dd13;
+  outline-offset: 4px;
+}
+
+.gwapmojis-launcher img {
   display: block;
   width: 100%;
-  height: auto;
-  border-radius: 28px;
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  box-shadow: 0 35px 90px rgba(0, 0, 0, 0.45), 0 0 70px rgba(19, 221, 19, 0.06);
+  height: 100%;
+  object-fit: cover;
+  border-radius: 20px;
 }
 
-.gwapmojis-promo__icon {
+.gwapmojis-launcher__badge {
   position: absolute;
-  right: -34px;
-  bottom: -46px;
-  width: clamp(112px, 14vw, 190px);
-  height: auto;
-  border-radius: 28px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
-}
-
-.gwapmojis-promo__drop-badge {
-  position: absolute;
-  top: 18px;
-  left: 18px;
-  z-index: 2;
-  padding: 8px 11px;
-  border: 1px solid rgba(19, 221, 19, 0.45);
+  top: -7px;
+  right: -7px;
+  min-width: 33px;
+  padding: 5px 7px;
+  border: 1px solid rgba(19, 221, 19, 0.72);
   border-radius: 999px;
-  background: rgba(3, 5, 4, 0.82);
+  background: #051006;
   color: #13dd13;
-  font-size: 0.68rem;
-  font-weight: 900;
-  letter-spacing: 0.14em;
-  backdrop-filter: blur(14px);
+  box-shadow: 0 7px 18px rgba(0, 0, 0, 0.36);
+  font-size: 0.52rem;
+  font-weight: 950;
+  line-height: 1;
+  letter-spacing: 0.08em;
 }
 
-.gwapmojis-promo__copy {
-  max-width: 560px;
-}
-
-.gwapmojis-promo__eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 20px;
-  color: #13dd13;
-  font-size: 0.78rem;
+.gwapmojis-launcher__hint {
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 10px);
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  background: rgba(4, 7, 5, 0.94);
+  color: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.36);
+  font-size: 0.66rem;
   font-weight: 800;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate(6px, -50%);
+  pointer-events: none;
+  transition: opacity 150ms ease, transform 150ms ease;
 }
 
-.gwapmojis-promo__eyebrow::before {
-  content: "";
-  width: 28px;
-  height: 1px;
-  background: currentColor;
+.gwapmojis-launcher:hover .gwapmojis-launcher__hint,
+.gwapmojis-launcher:focus-visible .gwapmojis-launcher__hint {
+  opacity: 1;
+  transform: translate(0, -50%);
 }
 
-.gwapmojis-promo h2 {
-  margin: 0;
-  font-size: clamp(2.4rem, 5vw, 5.2rem);
-  line-height: 0.95;
-  letter-spacing: -0.055em;
-  text-wrap: balance;
+.gwapmojis-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: grid;
+  place-items: start end;
+  padding:
+    calc(env(safe-area-inset-top, 0px) + 78px)
+    clamp(14px, 2.2vw, 28px)
+    calc(env(safe-area-inset-bottom, 0px) + 18px);
+  background: rgba(0, 0, 0, 0.38);
+  backdrop-filter: blur(8px);
+  pointer-events: auto;
+  animation: gwapmojis-overlay-in 150ms ease-out both;
 }
 
-.gwapmojis-promo h2 em {
+.gwapmojis-sheet {
+  position: relative;
+  width: min(420px, 100%);
+  max-height: calc(100dvh - 106px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at 14% 8%, rgba(19, 221, 19, 0.13), transparent 30%),
+    radial-gradient(circle at 92% 18%, rgba(137, 72, 255, 0.12), transparent 28%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.015)),
+    #050706;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.58), 0 0 70px rgba(19, 221, 19, 0.06);
+  color: #fff;
+  outline: none;
+  animation: gwapmojis-sheet-in 190ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+}
+
+.gwapmojis-sheet:focus-visible {
+  outline: 2px solid rgba(19, 221, 19, 0.7);
+  outline-offset: 3px;
+}
+
+.gwapmojis-sheet__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.045);
+  color: #fff;
+  font: inherit;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.gwapmojis-sheet__close:hover,
+.gwapmojis-sheet__close:focus-visible {
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.gwapmojis-sheet__close:focus-visible,
+.gwapmojis-action:focus-visible,
+.gwapmojis-sheet__downloads a:focus-visible {
+  outline: 2px solid #13dd13;
+  outline-offset: 3px;
+}
+
+.gwapmojis-sheet__topline {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-right: 44px;
+}
+
+.gwapmojis-sheet__topline span,
+.gwapmojis-sheet__topline b {
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.gwapmojis-sheet__topline span {
+  color: #13dd13;
+}
+
+.gwapmojis-sheet__topline b {
+  padding: 5px 7px;
+  border: 1px solid rgba(255, 138, 36, 0.28);
+  border-radius: 999px;
+  color: #ff9a45;
+  background: rgba(255, 138, 36, 0.06);
+}
+
+.gwapmojis-sheet__hero {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  margin-top: 18px;
+}
+
+.gwapmojis-sheet__hero > img {
   display: block;
-  margin-top: 10px;
+  width: 76px;
+  height: 76px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 19px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.42), 0 0 26px rgba(19, 221, 19, 0.08);
+}
+
+.gwapmojis-sheet h2 {
+  margin: 0;
+  font-size: clamp(1.45rem, 5vw, 2.05rem);
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+}
+
+.gwapmojis-sheet h2 em {
+  display: block;
+  margin-top: 4px;
   color: #13dd13;
   font-style: normal;
 }
 
-.gwapmojis-promo__tagline {
-  margin: 26px 0 12px;
-  color: #fff;
-  font-size: clamp(1.15rem, 2vw, 1.55rem);
-  font-weight: 700;
-}
-
-.gwapmojis-promo__body {
-  margin: 0;
-  color: rgba(255, 255, 255, 0.68);
-  font-size: 1rem;
-  line-height: 1.75;
+.gwapmojis-sheet__hero p {
+  margin: 8px 0 0;
+  color: rgba(255, 255, 255, 0.63);
+  font-size: 0.82rem;
+  line-height: 1.45;
 }
 
 .gwapmojis-countdown {
-  margin-top: 24px;
-  padding: 16px;
-  border: 1px solid rgba(19, 221, 19, 0.2);
-  border-radius: 18px;
-  background: rgba(19, 221, 19, 0.045);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  margin-top: 18px;
+  padding: 12px;
+  border: 1px solid rgba(19, 221, 19, 0.18);
+  border-radius: 16px;
+  background: rgba(19, 221, 19, 0.04);
 }
 
 .gwapmojis-countdown > span:first-child {
   display: block;
-  color: rgba(255, 255, 255, 0.55);
-  font-size: 0.66rem;
-  font-weight: 850;
-  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
 }
 
 .gwapmojis-countdown__digits {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
-  margin-top: 10px;
+  gap: 6px;
+  margin-top: 8px;
 }
 
 .gwapmojis-countdown__digits div {
   min-width: 0;
-  padding: 10px 8px;
+  padding: 9px 5px;
   border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 12px;
+  border-radius: 10px;
   background: rgba(0, 0, 0, 0.22);
   text-align: center;
 }
@@ -161,7 +279,7 @@
 .gwapmojis-countdown__digits strong {
   display: block;
   color: #fff;
-  font-size: clamp(1.15rem, 2vw, 1.55rem);
+  font-size: 1.08rem;
   line-height: 1;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.03em;
@@ -170,291 +288,139 @@
 .gwapmojis-countdown__digits small {
   display: block;
   margin-top: 5px;
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 0.56rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.38);
+  font-size: 0.47rem;
+  font-weight: 850;
+  letter-spacing: 0.1em;
 }
 
 .gwapmojis-countdown.is-expired {
-  border-color: rgba(255, 138, 36, 0.25);
+  border-color: rgba(255, 138, 36, 0.26);
   background: rgba(255, 138, 36, 0.05);
 }
 
 .gwapmojis-countdown.is-expired > strong {
   display: block;
   margin-top: 7px;
-  color: #ff8a24;
-  font-size: 1.05rem;
+  color: #ff9a45;
+  font-size: 0.95rem;
   letter-spacing: 0.08em;
 }
 
-.gwapmojis-promo__stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin: 28px 0;
+.gwapmojis-sheet__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+  margin-top: 14px;
 }
 
-.gwapmojis-promo__stats span {
+.gwapmojis-action {
+  min-height: 46px;
   display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
-  padding: 9px 13px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.035);
-  color: rgba(255, 255, 255, 0.68);
-  font-size: 0.8rem;
-}
-
-.gwapmojis-promo__stats strong {
-  color: #fff;
-  font-size: 0.92rem;
-}
-
-.gwapmojis-promo__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.gwapmojis-promo__button,
-.gwapmojis-promo__preview summary {
-  display: inline-flex;
-  min-height: 50px;
   align-items: center;
   justify-content: center;
-  gap: 14px;
-  padding: 0 20px;
-  border: 1px solid rgba(255, 255, 255, 0.13);
-  border-radius: 15px;
+  gap: 9px;
+  padding: 0 15px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 13px;
   background: rgba(255, 255, 255, 0.045);
   color: #fff;
   font: inherit;
-  font-weight: 760;
+  font-size: 0.8rem;
+  font-weight: 820;
   text-decoration: none;
   cursor: pointer;
-  transition: transform 180ms ease, border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
 }
 
-.gwapmojis-promo__button:hover,
-.gwapmojis-promo__button:focus-visible,
-.gwapmojis-promo__preview summary:hover,
-.gwapmojis-promo__preview summary:focus-visible {
-  transform: translateY(-2px);
-  border-color: rgba(255, 255, 255, 0.26);
+.gwapmojis-action:hover,
+.gwapmojis-action:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.28);
   background: rgba(255, 255, 255, 0.075);
 }
 
-.gwapmojis-promo__button:focus-visible,
-.gwapmojis-promo__preview summary:focus-visible {
-  outline: 2px solid #fff;
-  outline-offset: 3px;
+.gwapmojis-action.is-primary {
+  border-color: rgba(19, 221, 19, 0.72);
+  background: linear-gradient(135deg, #13dd13, #0ca30c);
+  color: #031403;
+  box-shadow: 0 12px 28px rgba(19, 221, 19, 0.13);
 }
 
-.gwapmojis-promo__button.is-primary {
-  border-color: rgba(19, 221, 19, 0.7);
-  background: linear-gradient(135deg, #13dd13 0%, #0da80d 100%);
-  color: #021602;
-  box-shadow: 0 15px 38px rgba(19, 221, 19, 0.14);
+.gwapmojis-action.is-primary:hover,
+.gwapmojis-action.is-primary:focus-visible {
+  background: linear-gradient(135deg, #2aef2a, #13b913);
 }
 
-.gwapmojis-promo__button.is-primary:hover,
-.gwapmojis-promo__button.is-primary:focus-visible {
-  border-color: #13dd13;
-  background: linear-gradient(135deg, #28ef28 0%, #13bd13 100%);
+.gwapmojis-sheet__preview {
+  margin-top: 12px;
+  padding: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 15px;
+  background: rgba(0, 0, 0, 0.2);
 }
 
-.gwapmojis-promo__note {
-  display: block;
-  margin-top: 16px;
-  color: rgba(255, 255, 255, 0.44);
-  font-size: 0.76rem;
-}
-
-.gwapmojis-promo--compact {
-  width: min(1180px, calc(100% - 40px));
-  padding: 16px 18px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 24px;
-  background:
-    radial-gradient(circle at 14% 50%, rgba(19, 221, 19, 0.12), transparent 32%),
-    radial-gradient(circle at 90% 20%, rgba(155, 108, 255, 0.1), transparent 30%),
-    linear-gradient(120deg, rgba(19, 221, 19, 0.06), rgba(255, 255, 255, 0.025) 42%, rgba(255, 138, 36, 0.045)),
-    #060807;
-  box-shadow: 0 24px 65px rgba(0, 0, 0, 0.34), 0 0 55px rgba(19, 221, 19, 0.045);
-}
-
-.gwapmojis-promo--compact.is-public-home {
-  z-index: 31;
-  margin: 18px auto 8px;
-}
-
-.gwapmojis-promo--compact.is-gwapos-home {
-  width: 100%;
-  margin: 0 0 24px;
-}
-
-.gwapmojis-promo__compact-inner {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  grid-template-columns: 112px minmax(0, 1fr);
-  gap: 18px;
-  align-items: center;
-}
-
-.gwapmojis-promo__compact-art {
-  position: relative;
-}
-
-.gwapmojis-promo__compact-art img {
+.gwapmojis-sheet__preview img {
   display: block;
   width: 100%;
   height: auto;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 22px;
-  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.4), 0 0 30px rgba(19, 221, 19, 0.08);
+  border-radius: 11px;
 }
 
-.gwapmojis-promo__compact-art span {
-  position: absolute;
-  left: 8px;
-  bottom: 8px;
-  padding: 5px 7px;
-  border: 1px solid rgba(19, 221, 19, 0.38);
-  border-radius: 999px;
-  background: rgba(2, 8, 3, 0.88);
-  color: #13dd13;
+.gwapmojis-sheet__preview p {
+  margin: 8px 3px 1px;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.69rem;
+  line-height: 1.4;
+}
+
+.gwapmojis-sheet__downloads {
+  margin-top: 13px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.gwapmojis-sheet__downloads > span {
+  display: block;
+  margin-bottom: 8px;
+  color: rgba(255, 255, 255, 0.4);
   font-size: 0.55rem;
   font-weight: 900;
   letter-spacing: 0.11em;
 }
 
-.gwapmojis-promo__compact-copy {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.72fr);
-  column-gap: 22px;
-  align-items: center;
-}
-
-.gwapmojis-promo__compact-copy .gwapmojis-promo__eyebrow {
-  grid-column: 1;
-  margin-bottom: 7px;
-  font-size: 0.64rem;
-}
-
-.gwapmojis-promo__compact-copy .gwapmojis-promo__eyebrow::before {
-  width: 18px;
-}
-
-.gwapmojis-promo--compact h2 {
-  grid-column: 1;
-  font-size: clamp(1.45rem, 2.6vw, 2.1rem);
-  line-height: 1;
-  letter-spacing: -0.04em;
-}
-
-.gwapmojis-promo--compact h2 em {
-  display: inline;
-  margin: 0;
-}
-
-.gwapmojis-promo__compact-copy > p {
-  grid-column: 1;
-  margin: 7px 0 0;
-  color: rgba(255, 255, 255, 0.65);
-  font-size: 0.85rem;
-  line-height: 1.5;
-}
-
-.gwapmojis-promo--compact .gwapmojis-countdown {
-  grid-column: 2;
-  grid-row: 1 / 4;
-  margin: 0;
-  min-width: 0;
-  padding: 10px;
-}
-
-.gwapmojis-promo--compact .gwapmojis-countdown > span:first-child {
-  font-size: 0.58rem;
-}
-
-.gwapmojis-promo--compact .gwapmojis-countdown__digits {
-  gap: 5px;
-  margin-top: 7px;
-}
-
-.gwapmojis-promo--compact .gwapmojis-countdown__digits div {
-  padding: 8px 5px;
-  border-radius: 9px;
-}
-
-.gwapmojis-promo--compact .gwapmojis-countdown__digits strong {
-  font-size: 1.05rem;
-}
-
-.gwapmojis-promo--compact .gwapmojis-countdown__digits small {
-  font-size: 0.48rem;
-}
-
-.gwapmojis-promo__compact-actions {
-  grid-column: 1 / -1;
+.gwapmojis-sheet__downloads > div {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  align-items: flex-start;
-  margin-top: 14px;
+  gap: 7px;
 }
 
-.gwapmojis-promo--compact .gwapmojis-promo__button,
-.gwapmojis-promo--compact .gwapmojis-promo__preview summary {
-  min-height: 44px;
-  padding: 0 17px;
-  font-size: 0.84rem;
-}
-
-.gwapmojis-promo__preview {
-  margin: 0;
-}
-
-.gwapmojis-promo__preview summary {
-  list-style: none;
-}
-
-.gwapmojis-promo__preview summary::-webkit-details-marker {
-  display: none;
-}
-
-.gwapmojis-promo__preview[open] {
-  flex-basis: min(460px, 100%);
-}
-
-.gwapmojis-promo__preview > div {
-  width: min(460px, 100%);
-  margin-top: 10px;
-  padding: 10px;
+.gwapmojis-sheet__downloads a {
+  padding: 7px 9px;
   border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 17px;
-  background: rgba(2, 4, 3, 0.78);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.66rem;
+  font-weight: 730;
+  text-decoration: none;
 }
 
-.gwapmojis-promo__preview img {
+.gwapmojis-sheet__downloads a:hover,
+.gwapmojis-sheet__downloads a:focus-visible {
+  color: #fff;
+  border-color: rgba(19, 221, 19, 0.4);
+}
+
+.gwapmojis-sheet__note {
   display: block;
-  width: 100%;
-  height: auto;
-  border-radius: 12px;
-}
-
-.gwapmojis-promo__preview p {
-  margin: 8px 4px 2px;
-  color: rgba(255, 255, 255, 0.58);
-  font-size: 0.72rem;
+  margin-top: 12px;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.65rem;
   line-height: 1.45;
 }
 
-.gwapmojis-promo .sr-only {
+.gwapmojis-float .sr-only {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -466,159 +432,132 @@
   border: 0;
 }
 
-@media (max-width: 980px) {
-  .gwapmojis-promo__inner {
-    grid-template-columns: 1fr;
+@keyframes gwapmojis-launch-ping {
+  0% {
+    opacity: 0.68;
+    transform: scale(1);
   }
-
-  .gwapmojis-promo__copy {
-    max-width: 760px;
-  }
-
-  .gwapmojis-promo__icon {
-    right: 18px;
-    bottom: -32px;
-  }
-
-  .gwapmojis-promo__compact-copy {
-    grid-template-columns: 1fr;
-  }
-
-  .gwapmojis-promo--compact .gwapmojis-countdown {
-    grid-column: 1;
-    grid-row: auto;
-    margin-top: 14px;
+  100% {
+    opacity: 0;
+    transform: scale(1.28);
   }
 }
 
-@media (max-width: 640px) {
-  .gwapmojis-promo {
-    padding: 64px 18px 72px;
+@keyframes gwapmojis-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes gwapmojis-sheet-in {
+  from {
+    opacity: 0;
+    transform: translate3d(12px, -8px, 0) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@media (max-width: 700px) {
+  .gwapmojis-float,
+  .gwapmojis-float.is-gwapos_home {
+    top: calc(env(safe-area-inset-top, 0px) + 78px);
+    right: 13px;
   }
 
-  .gwapmojis-promo__header {
-    border-radius: 20px;
+  .gwapmojis-launcher {
+    width: 58px;
+    height: 58px;
+    border-radius: 18px;
   }
 
-  .gwapmojis-promo__icon {
-    width: 104px;
-    right: 10px;
-    bottom: -24px;
-    border-radius: 20px;
+  .gwapmojis-launcher img {
+    border-radius: 17px;
   }
 
-  .gwapmojis-promo__copy {
-    padding-top: 8px;
+  .gwapmojis-launcher__hint {
+    display: none;
   }
 
-  .gwapmojis-promo h2 {
-    font-size: clamp(2.2rem, 14vw, 4rem);
+  .gwapmojis-launcher__badge {
+    top: -6px;
+    right: -6px;
+    min-width: 30px;
+    padding: 4px 6px;
+    font-size: 0.47rem;
   }
 
-  .gwapmojis-promo__actions {
-    flex-direction: column;
+  .gwapmojis-overlay {
+    place-items: end stretch;
+    padding: 72px 0 0;
+    background: rgba(0, 0, 0, 0.48);
+    backdrop-filter: blur(7px);
   }
 
-  .gwapmojis-promo__button {
+  .gwapmojis-sheet {
     width: 100%;
+    max-height: min(82dvh, 720px);
+    padding: 18px 16px calc(env(safe-area-inset-bottom, 0px) + 18px);
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 24px 24px 0 0;
+    animation-name: gwapmojis-sheet-up;
   }
 
-  .gwapmojis-promo--compact {
-    width: calc(100% - 24px);
-    padding: 14px;
-    border-radius: 20px;
-  }
-
-  .gwapmojis-promo--compact.is-public-home {
-    margin-top: 12px;
-  }
-
-  .gwapmojis-promo--compact.is-gwapos-home {
-    width: 100%;
-    margin-bottom: 18px;
-  }
-
-  .gwapmojis-promo__compact-inner {
-    grid-template-columns: 76px minmax(0, 1fr);
+  .gwapmojis-sheet__hero {
+    grid-template-columns: 66px minmax(0, 1fr);
     gap: 12px;
-    align-items: start;
   }
 
-  .gwapmojis-promo__compact-art img {
-    border-radius: 16px;
+  .gwapmojis-sheet__hero > img {
+    width: 66px;
+    height: 66px;
+    border-radius: 17px;
   }
 
-  .gwapmojis-promo__compact-art span {
-    left: 5px;
-    bottom: 5px;
-    padding: 4px 5px;
-    font-size: 0.45rem;
+  .gwapmojis-sheet h2 {
+    font-size: clamp(1.35rem, 7vw, 1.75rem);
   }
 
-  .gwapmojis-promo__compact-copy {
-    display: block;
+  .gwapmojis-sheet__actions {
+    grid-template-columns: 1fr;
   }
 
-  .gwapmojis-promo__compact-copy .gwapmojis-promo__eyebrow {
-    margin-bottom: 6px;
-    font-size: 0.56rem;
-    letter-spacing: 0.12em;
-  }
-
-  .gwapmojis-promo--compact h2 {
-    font-size: clamp(1.3rem, 7vw, 1.8rem);
-  }
-
-  .gwapmojis-promo--compact h2 em {
-    display: block;
-    margin-top: 3px;
-  }
-
-  .gwapmojis-promo__compact-copy > p {
-    margin-top: 7px;
-    font-size: 0.78rem;
-  }
-
-  .gwapmojis-promo--compact .gwapmojis-countdown {
-    margin-top: 12px;
-    padding: 9px;
-  }
-
-  .gwapmojis-promo--compact .gwapmojis-countdown__digits strong {
-    font-size: 0.96rem;
-  }
-
-  .gwapmojis-promo__compact-actions {
-    grid-column: 1 / -1;
-    flex-direction: column;
-    margin-top: 12px;
-  }
-
-  .gwapmojis-promo--compact .gwapmojis-promo__button,
-  .gwapmojis-promo--compact .gwapmojis-promo__preview,
-  .gwapmojis-promo--compact .gwapmojis-promo__preview summary {
+  .gwapmojis-action {
     width: 100%;
   }
+}
 
-  .gwapmojis-promo__preview[open] {
-    flex-basis: 100%;
+@keyframes gwapmojis-sheet-up {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 26px, 0);
   }
-
-  .gwapmojis-promo__preview > div {
-    width: 100%;
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .gwapmojis-promo__button,
-  .gwapmojis-promo__preview summary {
+  .gwapmojis-launcher::before,
+  .gwapmojis-overlay,
+  .gwapmojis-sheet {
+    animation: none;
+  }
+
+  .gwapmojis-launcher,
+  .gwapmojis-launcher__hint,
+  .gwapmojis-action {
     transition: none;
   }
 
-  .gwapmojis-promo__button:hover,
-  .gwapmojis-promo__button:focus-visible,
-  .gwapmojis-promo__preview summary:hover,
-  .gwapmojis-promo__preview summary:focus-visible {
+  .gwapmojis-launcher:hover,
+  .gwapmojis-launcher:focus-visible,
+  .gwapmojis-action:hover,
+  .gwapmojis-action:focus-visible {
     transform: none;
   }
 }
