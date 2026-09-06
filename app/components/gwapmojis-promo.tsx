@@ -195,12 +195,27 @@ export function GwapMojisPromo({ surface = "public_home" }: GwapMojisPromoProps)
       ref={detailsRef}
       className={`gwapmojis-float is-${surface}`}
       onToggle={handleToggle}
+      style={{ width: 68, height: 68, display: "block", overflow: "visible" }}
     >
       <style>{`
-        .gwapmojis-launcher { list-style: none; }
-        .gwapmojis-launcher::-webkit-details-marker { display: none; }
+        details.gwapmojis-float { width: 68px !important; height: 68px !important; display: block !important; overflow: visible !important; }
+        details.gwapmojis-float > summary.gwapmojis-launcher {
+          display: block !important;
+          width: 68px !important;
+          height: 68px !important;
+          box-sizing: border-box !important;
+          list-style: none !important;
+          -webkit-appearance: none !important;
+          appearance: none !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+        }
+        details.gwapmojis-float > summary.gwapmojis-launcher::-webkit-details-marker { display: none !important; }
+        details.gwapmojis-float > summary.gwapmojis-launcher::marker { content: ""; display: none; }
         .gwapmojis-float:not([open]) > .gwapmojis-overlay { display: none; }
         @media (max-width: 760px) {
+          details.gwapmojis-float { width: 58px !important; height: 58px !important; }
+          details.gwapmojis-float > summary.gwapmojis-launcher { width: 58px !important; height: 58px !important; }
           .gwapmojis-overlay { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; background: rgba(0,0,0,.48); }
           .gwapmojis-sheet { box-shadow: 0 -18px 42px rgba(0,0,0,.42) !important; }
         }
