@@ -1,7 +1,7 @@
 "use client";
 
 import { track } from "@vercel/analytics";
-import { useEffect, useRef, useState, type SyntheticEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   GWAPMOJIS_CAMPAIGN,
   getGwapMojisCountdown,
@@ -76,9 +76,10 @@ function CampaignCountdown({ countdown }: { countdown: GwapMojisCountdown | null
   );
 }
 
-export function GwapMojisPromo({ surface = "public_home" }: GwapMojisPromoProps) {
-  const detailsRef = useRef<HTMLDetailsElement | null>(null);
-  const launcherRef = useRef<HTMLElement | null>(null);
+export function GwapMojisPromo({
+  surface = "public_home",
+}: GwapMojisPromoProps) {
+  const launcherRef = useRef<HTMLButtonElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const expiredTrackedRef = useRef(false);
   const previewTrackedRef = useRef(false);
@@ -91,7 +92,6 @@ export function GwapMojisPromo({ surface = "public_home" }: GwapMojisPromoProps)
   useEffect(() => {
     const update = () => setCountdown(getGwapMojisCountdown());
     update();
-    setOpen(Boolean(detailsRef.current?.open));
     const interval = window.setInterval(update, 1_000);
     return () => window.clearInterval(interval);
   }, []);
@@ -116,7 +116,7 @@ export function GwapMojisPromo({ surface = "public_home" }: GwapMojisPromoProps)
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        if (detailsRef.current) detailsRef.current.open = false;
+        setOpen(false);
         setPreviewOpen(false);
         return;
       }
@@ -131,7 +131,12 @@ export function GwapMojisPromo({ surface = "public_home" }: GwapMojisPromoProps)
         ),
       ).filter((element) => element.getAttribute("aria-hidden") !== "true");
 
-      if (focusable.length === 0) return;
+      if (focusable.length === 0) {
+        event.preventDefault();
+        panel.focus();
+        return;
+      }
+
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
       const active = document.activeElement;
@@ -146,30 +151,25 @@ export function GwapMojisPromo({ surface = "public_home" }: GwapMojisPromoProps)
     };
 
     window.addEventListener("keydown", onKeyDown);
-    const frame = window.requestAnimationFrame(() => panelRef.current?.focus({ preventScroll: true }));
+    const frame = window.requestAnimationFrame(() => panelRef.current?.focus());
 
     return () => {
       window.cancelAnimationFrame(frame);
       window.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = previousOverflow;
+      launcherRef.current?.focus();
     };
   }, [open]);
 
-  const handleToggle = (event: SyntheticEvent<HTMLDetailsElement>) => {
-    const nextOpen = event.currentTarget.open;
-    setOpen(nextOpen);
-    if (nextOpen) {
-      safeTrack("sticker_campaign_launcher_open", campaignProperties(surface));
-    } else {
-      setPreviewOpen(false);
-      safeTrack("sticker_campaign_dismissed", campaignProperties(surface));
-    }
+  const openCampaign = () => {
+    setOpen(true);
+    safeTrack("sticker_campaign_launcher_open", campaignProperties(surface));
   };
 
   const closeCampaign = () => {
-    if (detailsRef.current) detailsRef.current.open = false;
+    setOpen(false);
     setPreviewOpen(false);
-    launcherRef.current?.focus({ preventScroll: true });
+    safeTrack("sticker_campaign_dismissed", campaignProperties(surface));
   };
 
   const trackCta = (asset: string) => {
@@ -191,25 +191,15 @@ export function GwapMojisPromo({ surface = "public_home" }: GwapMojisPromoProps)
   };
 
   return (
-    <details
-      ref={detailsRef}
-      className={`gwapmojis-float is-${surface}`}
-      onToggle={handleToggle}
-    >
-      <style>{`
-        .gwapmojis-launcher { list-style: none; }
-        .gwapmojis-launcher::-webkit-details-marker { display: none; }
-        .gwapmojis-float:not([open]) > .gwapmojis-overlay { display: none; }
-        @media (max-width: 760px) {
-          .gwapmojis-overlay { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; background: rgba(0,0,0,.48); }
-          .gwapmojis-sheet { box-shadow: 0 -18px 42px rgba(0,0,0,.42) !important; }
-        }
-      `}</style>
-
-      <summary
+    <div className={`gwapmojis-float is-${surface}`}>
+      <button
         ref={launcherRef}
         className="gwapmojis-launcher"
+        type="button"
         aria-label="Open free GwapMojis GwapMode 33 sticker pack"
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        onClick={openCampaign}
       >
         <img
           src={GWAPMOJIS_CAMPAIGN.packIconUrl}
@@ -221,101 +211,103 @@ export function GwapMojisPromo({ surface = "public_home" }: GwapMojisPromoProps)
         />
         <span className="gwapmojis-launcher__badge">FREE</span>
         <span className="gwapmojis-launcher__hint">GwapMojis</span>
-      </summary>
+      </button>
 
-      <div
-        className="gwapmojis-overlay"
-        role="presentation"
-        onPointerDown={(event) => {
-          if (event.target === event.currentTarget) closeCampaign();
-        }}
-      >
+      {open ? (
         <div
-          ref={panelRef}
-          className="gwapmojis-sheet"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby={titleId}
-          tabIndex={-1}
+          className="gwapmojis-overlay"
+          role="presentation"
+          onPointerDown={(event) => {
+            if (event.target === event.currentTarget) closeCampaign();
+          }}
         >
-          <button
-            className="gwapmojis-sheet__close"
-            type="button"
-            aria-label="Close GwapMojis promotion"
-            onClick={closeCampaign}
+          <div
+            ref={panelRef}
+            className="gwapmojis-sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
+            tabIndex={-1}
           >
-            ×
-          </button>
-
-          <div className="gwapmojis-sheet__topline">
-            <span>GWAP ECOSYSTEM DROP</span>
-            <b>{countdown?.expired ? "ARCHIVE" : "FREE UNTIL OCT 12"}</b>
-          </div>
-
-          <div className="gwapmojis-sheet__hero">
-            <img
-              src={GWAPMOJIS_CAMPAIGN.packIconUrl}
-              alt="GwapMojis GwapMode 33 sticker pack icon"
-              width="92"
-              height="92"
-              loading="eager"
-              decoding="async"
-            />
-            <div>
-              <h2 id={titleId}>GwapMojis <em>— GwapMode 33</em></h2>
-              <p>33 moods. 4 colors. The official free Telegram reaction pack.</p>
-            </div>
-          </div>
-
-          <CampaignCountdown countdown={countdown} />
-
-          <div className="gwapmojis-sheet__actions">
-            <a
-              className="gwapmojis-action is-primary"
-              href={GWAPMOJIS_CAMPAIGN.telegramUrl}
-              target="_blank"
-              rel="noreferrer"
-              onClick={() => trackCta("telegram")}
+            <button
+              className="gwapmojis-sheet__close"
+              type="button"
+              aria-label="Close GwapMojis promotion"
+              onClick={closeCampaign}
             >
-              {countdown?.expired ? "View on Telegram" : "Get Free Pack"}
-              <span aria-hidden="true">↗</span>
-            </a>
-            <button className="gwapmojis-action" type="button" onClick={togglePreview}>
-              {previewOpen ? "Hide Preview" : "Preview Pack"}
+              ×
             </button>
-          </div>
 
-          {previewOpen ? (
-            <div className="gwapmojis-sheet__preview">
+            <div className="gwapmojis-sheet__topline">
+              <span>GWAP ECOSYSTEM DROP</span>
+              <b>{countdown?.expired ? "ARCHIVE" : "FREE UNTIL OCT 12"}</b>
+            </div>
+
+            <div className="gwapmojis-sheet__hero">
               <img
-                src={GWAPMOJIS_CAMPAIGN.headerUrl}
-                alt="GwapMojis GwapMode 33 featuring the official orange, green, red, and purple GWAP reaction characters"
+                src={GWAPMOJIS_CAMPAIGN.packIconUrl}
+                alt="GwapMojis GwapMode 33 sticker pack icon"
+                width="92"
+                height="92"
                 loading="lazy"
                 decoding="async"
               />
-              <p>33 static stickers · 33 animated stickers · Core 12 custom emoji</p>
-            </div>
-          ) : null}
-
-          {!countdown?.expired ? (
-            <div className="gwapmojis-sheet__downloads" aria-label="Direct GwapMojis downloads">
-              <span>DIRECT DOWNLOADS</span>
               <div>
-                <a href={GWAPMOJIS_CAMPAIGN.completeDownloadUrl} onClick={() => trackCta("complete_zip")}>Complete</a>
-                <a href={GWAPMOJIS_CAMPAIGN.staticDownloadUrl} onClick={() => trackCta("static_zip")}>Static 33</a>
-                <a href={GWAPMOJIS_CAMPAIGN.animatedDownloadUrl} onClick={() => trackCta("animated_zip")}>Animated 33</a>
-                <a href={GWAPMOJIS_CAMPAIGN.emojiDownloadUrl} onClick={() => trackCta("emoji_zip")}>Emoji 12</a>
+                <h2 id={titleId}>GwapMojis <em>— GwapMode 33</em></h2>
+                <p>33 moods. 4 colors. The official free Telegram reaction pack.</p>
               </div>
             </div>
-          ) : null}
 
-          <small className="gwapmojis-sheet__note">
-            {countdown?.expired
-              ? "The limited-time direct download window has ended."
-              : `Free through ${GWAPMOJIS_CAMPAIGN.deadlineLabel}. No wallet connection or signup required.`}
-          </small>
+            <CampaignCountdown countdown={countdown} />
+
+            <div className="gwapmojis-sheet__actions">
+              <a
+                className="gwapmojis-action is-primary"
+                href={GWAPMOJIS_CAMPAIGN.telegramUrl}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => trackCta("telegram")}
+              >
+                {countdown?.expired ? "View on Telegram" : "Get Free Pack"}
+                <span aria-hidden="true">↗</span>
+              </a>
+              <button className="gwapmojis-action" type="button" onClick={togglePreview}>
+                {previewOpen ? "Hide Preview" : "Preview Pack"}
+              </button>
+            </div>
+
+            {previewOpen ? (
+              <div className="gwapmojis-sheet__preview">
+                <img
+                  src={GWAPMOJIS_CAMPAIGN.headerUrl}
+                  alt="GwapMojis GwapMode 33 featuring the official orange, green, red, and purple GWAP reaction characters"
+                  loading="lazy"
+                  decoding="async"
+                />
+                <p>33 static stickers · 33 animated stickers · Core 12 custom emoji</p>
+              </div>
+            ) : null}
+
+            {!countdown?.expired ? (
+              <div className="gwapmojis-sheet__downloads" aria-label="Direct GwapMojis downloads">
+                <span>DIRECT DOWNLOADS</span>
+                <div>
+                  <a href={GWAPMOJIS_CAMPAIGN.completeDownloadUrl} onClick={() => trackCta("complete_zip")}>Complete</a>
+                  <a href={GWAPMOJIS_CAMPAIGN.staticDownloadUrl} onClick={() => trackCta("static_zip")}>Static 33</a>
+                  <a href={GWAPMOJIS_CAMPAIGN.animatedDownloadUrl} onClick={() => trackCta("animated_zip")}>Animated 33</a>
+                  <a href={GWAPMOJIS_CAMPAIGN.emojiDownloadUrl} onClick={() => trackCta("emoji_zip")}>Emoji 12</a>
+                </div>
+              </div>
+            ) : null}
+
+            <small className="gwapmojis-sheet__note">
+              {countdown?.expired
+                ? "The limited-time direct download window has ended."
+                : `Free through ${GWAPMOJIS_CAMPAIGN.deadlineLabel}. No wallet connection or signup required.`}
+            </small>
+          </div>
         </div>
-      </div>
-    </details>
+      ) : null}
+    </div>
   );
 }
