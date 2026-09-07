@@ -10,6 +10,7 @@ import {
 
 type GwapMojisSurface = "public_home" | "gwapos_home";
 type GwapMojisVariant = "feature" | "compact";
+type ClaimAsset = "telegram" | "complete_zip" | "static_zip" | "animated_zip" | "emoji_zip";
 
 type GwapMojisPromoProps = {
   surface?: GwapMojisSurface;
@@ -17,6 +18,10 @@ type GwapMojisPromoProps = {
 };
 
 type AnalyticsProperties = Record<string, string | number | boolean>;
+type ClaimCountResponse = {
+  available?: boolean;
+  total?: number;
+};
 
 function safeTrack(name: string, properties: AnalyticsProperties) {
   try {
@@ -87,6 +92,7 @@ export function GwapMojisPromo({
   const [countdown, setCountdown] = useState<GwapMojisCountdown | null>(null);
   const [open, setOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [claimCount, setClaimCount] = useState<number | null>(null);
   const titleId = `gwapmojis-title-${surface}`;
 
   useEffect(() => {
@@ -107,6 +113,34 @@ export function GwapMojisPromo({
     expiredTrackedRef.current = true;
     safeTrack("sticker_campaign_expired", campaignProperties(surface));
   }, [countdown?.expired, surface]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    let cancelled = false;
+    const refreshClaims = async () => {
+      try {
+        const response = await fetch("/api/gwapmojis/claims", {
+          cache: "no-store",
+          headers: { Accept: "application/json" },
+        });
+        if (!response.ok) return;
+        const payload = (await response.json()) as ClaimCountResponse;
+        if (!cancelled && payload.available && typeof payload.total === "number") {
+          setClaimCount(payload.total);
+        }
+      } catch {
+        // Claim count is supplemental and must never block the campaign UI.
+      }
+    };
+
+    void refreshClaims();
+    const interval = window.setInterval(refreshClaims, 5_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -172,11 +206,29 @@ export function GwapMojisPromo({
     safeTrack("sticker_campaign_dismissed", campaignProperties(surface));
   };
 
-  const trackCta = (asset: string) => {
+  const trackCta = (asset: ClaimAsset) => {
     safeTrack("sticker_campaign_cta_click", {
       ...campaignProperties(surface),
       asset,
     });
+
+    setClaimCount((current) => (current === null ? current : current + 1));
+    void fetch("/api/gwapmojis/claims", {
+      method: "POST",
+      keepalive: true,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ asset }),
+    })
+      .then(async (response) => {
+        if (!response.ok) return;
+        const payload = (await response.json()) as ClaimCountResponse;
+        if (payload.available && typeof payload.total === "number") {
+          setClaimCount(payload.total);
+        }
+      })
+      .catch(() => {
+        // Vercel analytics still records the CTA even if the durable counter is unavailable.
+      });
   };
 
   const togglePreview = () => {
@@ -241,6 +293,9 @@ export function GwapMojisPromo({
             <div className="gwapmojis-sheet__topline">
               <span>GWAP ECOSYSTEM DROP</span>
               <b>{countdown?.expired ? "ARCHIVE" : "FREE UNTIL OCT 12"}</b>
+              <span aria-live="polite">
+                {claimCount === null ? "LIVE CLAIM COUNT" : `${claimCount.toLocaleString()} PACK CLAIMS`}
+              </span>
             </div>
 
             <div className="gwapmojis-sheet__hero">
@@ -303,7 +358,7 @@ export function GwapMojisPromo({
             <small className="gwapmojis-sheet__note">
               {countdown?.expired
                 ? "The limited-time direct download window has ended."
-                : `Free through ${GWAPMOJIS_CAMPAIGN.deadlineLabel}. No wallet connection or signup required.`}
+                : `Free through ${GWAPMOJIS_CAMPAIGN.deadlineLabel}. Pack claims count CTA/download actions; Telegram does not expose confirmed install events.`}
             </small>
           </div>
         </div>
