@@ -26,6 +26,7 @@
   cursor: pointer;
   pointer-events: auto;
   isolation: isolate;
+  touch-action: manipulation;
   transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
   -webkit-tap-highlight-color: transparent;
 }
@@ -38,9 +39,9 @@
   border: 1px solid rgba(19, 221, 19, 0.62);
   border-radius: inherit;
   animation: gwapmojis-launch-ping 1.9s ease-out 2;
+  pointer-events: none;
 }
 
-.gwapmojis-launcher:hover,
 .gwapmojis-launcher:focus-visible {
   transform: translateY(-2px) scale(1.035);
   border-color: rgba(19, 221, 19, 0.62);
@@ -61,6 +62,7 @@
   height: 100%;
   object-fit: cover;
   border-radius: 20px;
+  pointer-events: none;
 }
 
 .gwapmojis-launcher__badge {
@@ -78,6 +80,7 @@
   font-weight: 950;
   line-height: 1;
   letter-spacing: 0.08em;
+  pointer-events: none;
 }
 
 .gwapmojis-launcher__hint {
@@ -100,7 +103,6 @@
   transition: opacity 150ms ease, transform 150ms ease;
 }
 
-.gwapmojis-launcher:hover .gwapmojis-launcher__hint,
 .gwapmojis-launcher:focus-visible .gwapmojis-launcher__hint {
   opacity: 1;
   transform: translate(0, -50%);
@@ -163,9 +165,9 @@
   font-size: 1.35rem;
   line-height: 1;
   cursor: pointer;
+  touch-action: manipulation;
 }
 
-.gwapmojis-sheet__close:hover,
 .gwapmojis-sheet__close:focus-visible {
   border-color: rgba(255, 255, 255, 0.28);
   background: rgba(255, 255, 255, 0.08);
@@ -330,10 +332,10 @@
   font-weight: 820;
   text-decoration: none;
   cursor: pointer;
+  touch-action: manipulation;
   transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
 }
 
-.gwapmojis-action:hover,
 .gwapmojis-action:focus-visible {
   transform: translateY(-1px);
   border-color: rgba(255, 255, 255, 0.28);
@@ -347,7 +349,6 @@
   box-shadow: 0 12px 28px rgba(19, 221, 19, 0.13);
 }
 
-.gwapmojis-action.is-primary:hover,
 .gwapmojis-action.is-primary:focus-visible {
   background: linear-gradient(135deg, #2aef2a, #13b913);
 }
@@ -396,6 +397,9 @@
 }
 
 .gwapmojis-sheet__downloads a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   padding: 7px 9px;
   border: 1px solid rgba(255, 255, 255, 0.09);
   border-radius: 9px;
@@ -404,12 +408,66 @@
   font-size: 0.66rem;
   font-weight: 730;
   text-decoration: none;
+  touch-action: manipulation;
 }
 
-.gwapmojis-sheet__downloads a:hover,
 .gwapmojis-sheet__downloads a:focus-visible {
   color: #fff;
   border-color: rgba(19, 221, 19, 0.4);
+}
+
+.gwapmojis-sheet__downloads a[aria-disabled="true"] {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.gwapmojis-sheet__download-status {
+  margin: 10px 0 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.gwapmojis-sheet__download-status:empty {
+  display: none;
+}
+
+/* Hover effects belong to devices with a real hover pointer. Revealing or
+   moving controls on touch can consume Safari's first synthesized click. */
+@media (hover: hover) and (pointer: fine) {
+  .gwapmojis-launcher:hover {
+    transform: translateY(-2px) scale(1.035);
+    border-color: rgba(19, 221, 19, 0.62);
+    box-shadow:
+      0 20px 44px rgba(0, 0, 0, 0.46),
+      0 0 36px rgba(19, 221, 19, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+
+  .gwapmojis-launcher:hover .gwapmojis-launcher__hint {
+    opacity: 1;
+    transform: translate(0, -50%);
+  }
+
+  .gwapmojis-sheet__close:hover {
+    border-color: rgba(255, 255, 255, 0.28);
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .gwapmojis-action:hover {
+    transform: translateY(-1px);
+    border-color: rgba(255, 255, 255, 0.28);
+    background: rgba(255, 255, 255, 0.075);
+  }
+
+  .gwapmojis-action.is-primary:hover {
+    background: linear-gradient(135deg, #2aef2a, #13b913);
+  }
+
+  .gwapmojis-sheet__downloads a:hover {
+    color: #fff;
+    border-color: rgba(19, 221, 19, 0.4);
+  }
 }
 
 .gwapmojis-sheet__note {
@@ -420,7 +478,8 @@
   line-height: 1.45;
 }
 
-.gwapmojis-float .sr-only {
+.gwapmojis-float .sr-only,
+.gwapmojis-overlay .sr-only {
   position: absolute;
   width: 1px;
   height: 1px;

@@ -1,16 +1,19 @@
 "use client";
 
 import { track } from "@vercel/analytics";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
+import { createPortal } from "react-dom";
 import {
   GWAPMOJIS_CAMPAIGN,
   getGwapMojisCountdown,
   type GwapMojisCountdown,
 } from "../lib/gwapmojis-campaign";
+import { GWAPMOJIS_DOWNLOADS, type GwapMojisDownload } from "../lib/gwapmojis-downloads";
+import { createGwapMojisLauncher } from "../lib/gwapmojis-launcher";
 
 type GwapMojisSurface = "public_home" | "gwapos_home";
 type GwapMojisVariant = "feature" | "compact";
-type ClaimAsset = "telegram" | "complete_zip" | "static_zip" | "animated_zip" | "emoji_zip";
+type ClaimAsset = "telegram" | GwapMojisDownload["asset"];
 
 type GwapMojisPromoProps = {
   surface?: GwapMojisSurface;
@@ -93,7 +96,12 @@ export function GwapMojisPromo({
   const [open, setOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [claimCount, setClaimCount] = useState<number | null>(null);
+  const [launcher] = useState(createGwapMojisLauncher);
+  const downloadRequestRef = useRef<AbortController | null>(null);
+  const [pendingDownload, setPendingDownload] = useState<string | null>(null);
+  const [downloadMessage, setDownloadMessage] = useState("");
   const titleId = `gwapmojis-title-${surface}`;
+  const panelId = `gwapmojis-panel-${surface}`;
 
   useEffect(() => {
     const update = () => setCountdown(getGwapMojisCountdown());
@@ -146,10 +154,12 @@ export function GwapMojisPromo({
     if (!open) return;
 
     const previousOverflow = document.body.style.overflow;
+    const launcherElement = launcherRef.current;
     document.body.style.overflow = "hidden";
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        launcher.close();
         setOpen(false);
         setPreviewOpen(false);
         return;
@@ -185,22 +195,27 @@ export function GwapMojisPromo({
     };
 
     window.addEventListener("keydown", onKeyDown);
-    const frame = window.requestAnimationFrame(() => panelRef.current?.focus());
+    const frame = window.requestAnimationFrame(() => panelRef.current?.focus({ preventScroll: true }));
 
     return () => {
       window.cancelAnimationFrame(frame);
       window.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = previousOverflow;
-      launcherRef.current?.focus();
+      downloadRequestRef.current?.abort();
+      downloadRequestRef.current = null;
+      launcherElement?.focus({ preventScroll: true });
     };
-  }, [open]);
+  }, [open, launcher]);
 
   const openCampaign = () => {
+    setPendingDownload(null);
+    setDownloadMessage("");
     setOpen(true);
     safeTrack("sticker_campaign_launcher_open", campaignProperties(surface));
   };
 
   const closeCampaign = () => {
+    launcher.close();
     setOpen(false);
     setPreviewOpen(false);
     safeTrack("sticker_campaign_dismissed", campaignProperties(surface));
@@ -242,6 +257,43 @@ export function GwapMojisPromo({
     });
   };
 
+  const startDownload = async (event: MouseEvent<HTMLAnchorElement>, download: GwapMojisDownload) => {
+    // Preserve native new-tab and assistive link behavior. The endpoint also
+    // provides a readable error page when reached without this enhancement.
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    if (downloadRequestRef.current) return;
+
+    const controller = new AbortController();
+    downloadRequestRef.current = controller;
+    setPendingDownload(download.key);
+    setDownloadMessage(`Checking ${download.label}…`);
+    const timeout = window.setTimeout(() => controller.abort(), 12_000);
+    try {
+      const response = await fetch(download.href, { method: "HEAD", cache: "no-store", signal: controller.signal });
+      if (downloadRequestRef.current !== controller) return;
+      if (!response.ok) {
+        setDownloadMessage(response.status === 410
+          ? "The direct download window has ended. You can still view the pack on Telegram."
+          : `${download.label} is temporarily unavailable. Try again or use Get Free Pack.`);
+        return;
+      }
+      window.location.assign(download.href);
+      trackCta(download.asset);
+      setDownloadMessage(`Starting your ${download.label} download…`);
+    } catch {
+      if (downloadRequestRef.current === controller) {
+        setDownloadMessage(`Could not start ${download.label}. Try again or use Get Free Pack.`);
+      }
+    } finally {
+      window.clearTimeout(timeout);
+      if (downloadRequestRef.current === controller) {
+        downloadRequestRef.current = null;
+        setPendingDownload(null);
+      }
+    }
+  };
+
   return (
     <div className={`gwapmojis-float is-${surface}`}>
       <button
@@ -251,7 +303,20 @@ export function GwapMojisPromo({
         aria-label="Open free GwapMojis GwapMode 33 sticker pack"
         aria-haspopup="dialog"
         aria-expanded={open}
-        onClick={openCampaign}
+        aria-controls={open ? panelId : undefined}
+        onPointerDown={(event) => launcher.pointerDown(event)}
+        onPointerMove={(event) => launcher.pointerMove(event)}
+        onPointerCancel={() => launcher.pointerCancel()}
+        onPointerLeave={() => launcher.pointerCancel()}
+        onPointerUp={(event) => {
+          if (launcher.pointerUp(event)) {
+            event.preventDefault();
+            openCampaign();
+          }
+        }}
+        onClick={(event) => {
+          if (launcher.click(event.detail)) openCampaign();
+        }}
       >
         <img
           src={GWAPMOJIS_CAMPAIGN.packIconUrl}
@@ -260,12 +325,13 @@ export function GwapMojisPromo({
           height="72"
           loading={surface === "public_home" ? "eager" : "lazy"}
           decoding="async"
+          draggable={false}
         />
         <span className="gwapmojis-launcher__badge">FREE</span>
         <span className="gwapmojis-launcher__hint">GwapMojis</span>
       </button>
 
-      {open ? (
+      {open ? createPortal(
         <div
           className="gwapmojis-overlay"
           role="presentation"
@@ -275,6 +341,7 @@ export function GwapMojisPromo({
         >
           <div
             ref={panelRef}
+            id={panelId}
             className="gwapmojis-sheet"
             role="dialog"
             aria-modal="true"
@@ -347,11 +414,18 @@ export function GwapMojisPromo({
               <div className="gwapmojis-sheet__downloads" aria-label="Direct GwapMojis downloads">
                 <span>DIRECT DOWNLOADS</span>
                 <div>
-                  <a href={GWAPMOJIS_CAMPAIGN.completeDownloadUrl} onClick={() => trackCta("complete_zip")}>Complete</a>
-                  <a href={GWAPMOJIS_CAMPAIGN.staticDownloadUrl} onClick={() => trackCta("static_zip")}>Static 33</a>
-                  <a href={GWAPMOJIS_CAMPAIGN.animatedDownloadUrl} onClick={() => trackCta("animated_zip")}>Animated 33</a>
-                  <a href={GWAPMOJIS_CAMPAIGN.emojiDownloadUrl} onClick={() => trackCta("emoji_zip")}>Emoji 12</a>
+                  {GWAPMOJIS_DOWNLOADS.map((download) => (
+                    <a
+                      key={download.key}
+                      href={download.href}
+                      aria-disabled={pendingDownload !== null}
+                      onClick={(event) => void startDownload(event, download)}
+                    >
+                      {pendingDownload === download.key ? "Checking…" : download.label}
+                    </a>
+                  ))}
                 </div>
+                <p className="gwapmojis-sheet__download-status" role="status">{downloadMessage}</p>
               </div>
             ) : null}
 
@@ -361,7 +435,8 @@ export function GwapMojisPromo({
                 : `Free through ${GWAPMOJIS_CAMPAIGN.deadlineLabel}. Pack claims count CTA/download actions; Telegram does not expose confirmed install events.`}
             </small>
           </div>
-        </div>
+        </div>,
+        document.body,
       ) : null}
     </div>
   );
