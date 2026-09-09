@@ -89,6 +89,8 @@ export function GwapMojisPromo({
   const expiredTrackedRef = useRef(false);
   const previewTrackedRef = useRef(false);
   const impressionTrackedRef = useRef(false);
+  const launcherOpenTrackedRef = useRef(false);
+  const ignoreLauncherClickBeforeRef = useRef(0);
   const [countdown, setCountdown] = useState<GwapMojisCountdown | null>(null);
   const [open, setOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -150,6 +152,7 @@ export function GwapMojisPromo({
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        launcherOpenTrackedRef.current = false;
         setOpen(false);
         setPreviewOpen(false);
         return;
@@ -197,10 +200,13 @@ export function GwapMojisPromo({
 
   const openCampaign = () => {
     setOpen(true);
+    if (launcherOpenTrackedRef.current) return;
+    launcherOpenTrackedRef.current = true;
     safeTrack("sticker_campaign_launcher_open", campaignProperties(surface));
   };
 
   const closeCampaign = () => {
+    launcherOpenTrackedRef.current = false;
     setOpen(false);
     setPreviewOpen(false);
     safeTrack("sticker_campaign_dismissed", campaignProperties(surface));
@@ -251,7 +257,17 @@ export function GwapMojisPromo({
         aria-label="Open free GwapMojis GwapMode 33 sticker pack"
         aria-haspopup="dialog"
         aria-expanded={open}
-        onClick={openCampaign}
+        style={{ touchAction: "manipulation" }}
+        onPointerDown={(event) => {
+          if (event.pointerType !== "touch" && event.pointerType !== "pen") return;
+          event.preventDefault();
+          ignoreLauncherClickBeforeRef.current = Date.now() + 1_000;
+          openCampaign();
+        }}
+        onClick={() => {
+          if (Date.now() < ignoreLauncherClickBeforeRef.current) return;
+          openCampaign();
+        }}
       >
         <img
           src={GWAPMOJIS_CAMPAIGN.packIconUrl}
@@ -323,10 +339,26 @@ export function GwapMojisPromo({
                 rel="noreferrer"
                 onClick={() => trackCta("telegram")}
               >
-                {countdown?.expired ? "View on Telegram" : "Get Free Pack"}
+                {countdown?.expired ? "View on Telegram" : "Add to Telegram"}
                 <span aria-hidden="true">↗</span>
               </a>
-              <button className="gwapmojis-action" type="button" onClick={togglePreview}>
+              {!countdown?.expired ? (
+                <a
+                  className="gwapmojis-action"
+                  href={GWAPMOJIS_CAMPAIGN.completeDownloadUrl}
+                  download
+                  onClick={() => trackCta("complete_zip")}
+                >
+                  Download ZIP
+                  <span aria-hidden="true">↓</span>
+                </a>
+              ) : null}
+              <button
+                className="gwapmojis-action"
+                type="button"
+                style={{ gridColumn: "1 / -1" }}
+                onClick={togglePreview}
+              >
                 {previewOpen ? "Hide Preview" : "Preview Pack"}
               </button>
             </div>
@@ -345,12 +377,11 @@ export function GwapMojisPromo({
 
             {!countdown?.expired ? (
               <div className="gwapmojis-sheet__downloads" aria-label="Direct GwapMojis downloads">
-                <span>DIRECT DOWNLOADS</span>
+                <span>PACK OPTIONS</span>
                 <div>
-                  <a href={GWAPMOJIS_CAMPAIGN.completeDownloadUrl} onClick={() => trackCta("complete_zip")}>Complete</a>
-                  <a href={GWAPMOJIS_CAMPAIGN.staticDownloadUrl} onClick={() => trackCta("static_zip")}>Static 33</a>
-                  <a href={GWAPMOJIS_CAMPAIGN.animatedDownloadUrl} onClick={() => trackCta("animated_zip")}>Animated 33</a>
-                  <a href={GWAPMOJIS_CAMPAIGN.emojiDownloadUrl} onClick={() => trackCta("emoji_zip")}>Emoji 12</a>
+                  <a href={GWAPMOJIS_CAMPAIGN.staticDownloadUrl} download onClick={() => trackCta("static_zip")}>Static 33</a>
+                  <a href={GWAPMOJIS_CAMPAIGN.animatedDownloadUrl} download onClick={() => trackCta("animated_zip")}>Animated 33</a>
+                  <a href={GWAPMOJIS_CAMPAIGN.emojiDownloadUrl} download onClick={() => trackCta("emoji_zip")}>Emoji 12</a>
                 </div>
               </div>
             ) : null}
