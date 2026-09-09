@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prebuild": "node scripts/generate-splash.mjs",
+    "prebuild": "node scripts/generate-splash.mjs && node scripts/vendor-gwapmojis-downloads.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
