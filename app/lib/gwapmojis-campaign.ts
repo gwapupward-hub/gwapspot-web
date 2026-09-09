@@ -12,13 +12,13 @@ export const GWAPMOJIS_CAMPAIGN = {
   headerUrl:
     "https://res.cloudinary.com/dg1u1wpdu/image/upload/v1788521177/gwapmojis/gwapmode33/header.png",
   completeDownloadUrl:
-    "https://res.cloudinary.com/dg1u1wpdu/raw/upload/v1788522411/gwapmojis/gwapmode33/GwapMojis_GwapMode33_Complete_Telegram_Pack.zip",
+    "/downloads/gwapmode33/GwapMojis_GwapMode33_Complete_Telegram_Pack.zip",
   staticDownloadUrl:
-    "https://res.cloudinary.com/dg1u1wpdu/raw/upload/v1788521185/gwapmojis/gwapmode33/GwapMojis_GwapMode33_Telegram_Static_33.zip",
+    "/downloads/gwapmode33/GwapMojis_GwapMode33_Telegram_Static_33.zip",
   animatedDownloadUrl:
-    "https://res.cloudinary.com/dg1u1wpdu/raw/upload/v1788522251/gwapmojis/gwapmode33/GwapMojis_GwapMode33_Animated_Full33_WEBM.zip",
+    "/downloads/gwapmode33/GwapMojis_GwapMode33_Animated_Full33_WEBM.zip",
   emojiDownloadUrl:
-    "https://res.cloudinary.com/dg1u1wpdu/raw/upload/v1788522264/gwapmojis/gwapmode33/GwapMojis_GwapMode33_Core12_Custom_Emoji.zip",
+    "/downloads/gwapmode33/GwapMojis_GwapMode33_Core12_Custom_Emoji.zip",
   telegramUrl: "https://t.me/addstickers/GwapMode33",
 } as const;
 
