@@ -44,3 +44,24 @@ test("clamps the countdown to zero at and after expiration", () => {
     });
   }
 });
+
+test("serves every GwapMojis archive from the same-origin Vercel public path", () => {
+  const downloads = [
+    GWAPMOJIS_CAMPAIGN.completeDownloadUrl,
+    GWAPMOJIS_CAMPAIGN.staticDownloadUrl,
+    GWAPMOJIS_CAMPAIGN.animatedDownloadUrl,
+    GWAPMOJIS_CAMPAIGN.emojiDownloadUrl,
+  ];
+
+  assert.deepEqual(downloads, [
+    "/downloads/gwapmode33/GwapMojis_GwapMode33_Complete_Telegram_Pack.zip",
+    "/downloads/gwapmode33/GwapMojis_GwapMode33_Telegram_Static_33.zip",
+    "/downloads/gwapmode33/GwapMojis_GwapMode33_Animated_Full33_WEBM.zip",
+    "/downloads/gwapmode33/GwapMojis_GwapMode33_Core12_Custom_Emoji.zip",
+  ]);
+
+  for (const url of downloads) {
+    assert.match(url, /^\/downloads\/gwapmode33\/.+\.zip$/);
+    assert.equal(url.includes("cloudinary.com"), false);
+  }
+});
