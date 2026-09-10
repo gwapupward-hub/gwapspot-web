@@ -3,7 +3,6 @@
 
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { execFileSync } from "node:child_process";
 import { readFileSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
@@ -35,12 +34,39 @@ test("the committed archive matches the canonical pack byte for byte", () => {
   assert.deepEqual([...bytes.subarray(0, 4)], [0x50, 0x4b, 0x03, 0x04]);
 });
 
-test("the archive is a valid ZIP holding exactly the 33 declared stickers", () => {
-  const listing = execFileSync("unzip", ["-Z1", packPath], { encoding: "utf8" })
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
+/**
+ * Walk the ZIP central directory. Reading the archive's own index (rather than
+ * shelling out to `unzip`) keeps this test portable and proves the file really
+ * is a well-formed archive.
+ */
+function listZipEntries(bytes) {
+  let end = -1;
+  for (let offset = bytes.length - 22; offset >= 0; offset -= 1) {
+    if (bytes.readUInt32LE(offset) === 0x06054b50) {
+      end = offset;
+      break;
+    }
+  }
+  assert.notEqual(end, -1, "no end-of-central-directory record");
 
+  const total = bytes.readUInt16LE(end + 10);
+  let cursor = bytes.readUInt32LE(end + 16);
+  const names = [];
+
+  for (let index = 0; index < total; index += 1) {
+    assert.equal(bytes.readUInt32LE(cursor), 0x02014b50, `bad central directory entry ${index}`);
+    const nameLength = bytes.readUInt16LE(cursor + 28);
+    const extraLength = bytes.readUInt16LE(cursor + 30);
+    const commentLength = bytes.readUInt16LE(cursor + 32);
+    names.push(bytes.toString("utf8", cursor + 46, cursor + 46 + nameLength));
+    cursor += 46 + nameLength + extraLength + commentLength;
+  }
+
+  return names;
+}
+
+test("the archive is a valid ZIP holding exactly the 33 declared stickers", () => {
+  const listing = listZipEntries(readFileSync(packPath));
   const stickerEntries = listing.filter((entry) => entry.endsWith(".webp")).sort();
   const expected = GWAPMOJIS_STICKERS
     .map((sticker) => `GwapMojis_GwapMode33_Telegram_Static_33/stickers/${sticker.file}`)
