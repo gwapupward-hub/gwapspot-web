@@ -1,0 +1,343 @@
+/* /gwapmojis — canonical GwapMojis distribution page. */
+
+.gwapmojis-page {
+  position: relative;
+  z-index: 1;
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+}
+
+.gwapmojis-page .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.gwapmojis-page-hero {
+  padding: 76px 0 48px;
+  text-align: center;
+}
+
+.gwapmojis-page-eyebrow {
+  margin: 0 0 18px;
+  color: var(--green);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  letter-spacing: 0.24em;
+}
+
+.gwapmojis-page-hero h1 {
+  margin: 0;
+  line-height: 0.92;
+  letter-spacing: -0.05em;
+}
+
+.gwapmojis-page-hero h1 span {
+  display: block;
+  font-size: clamp(46px, 12vw, 104px);
+}
+
+.gwapmojis-page-hero h1 em {
+  display: block;
+  margin-top: 10px;
+  color: var(--green);
+  font-size: clamp(20px, 5vw, 40px);
+  font-style: normal;
+  letter-spacing: 0.02em;
+}
+
+.gwapmojis-page-tagline {
+  margin: 26px auto 0;
+  max-width: 22ch;
+  color: var(--text);
+  font-size: clamp(15px, 3.4vw, 22px);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.gwapmojis-page-cta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 34px;
+}
+
+.gwapmojis-page-download,
+.gwapmojis-page-secondary,
+.gwapmojis-page-retry {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 56px;
+  padding: 0 30px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.gwapmojis-page-download,
+.gwapmojis-page-retry {
+  background: var(--green);
+  color: #041104;
+  box-shadow: 0 14px 45px rgba(19, 221, 19, 0.18);
+}
+
+.gwapmojis-page-secondary {
+  border: 1px solid var(--line-strong);
+  background: rgba(255, 255, 255, 0.035);
+  color: white;
+}
+
+.gwapmojis-page-download:focus-visible,
+.gwapmojis-page-secondary:focus-visible,
+.gwapmojis-page-retry:focus-visible,
+.gwapmojis-page-plain:focus-visible,
+.gwapmojis-page-tile a:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 3px;
+}
+
+.gwapmojis-page-facts {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 18px;
+  margin: 30px 0 0;
+  padding: 0;
+  color: var(--text);
+  font-size: 15px;
+}
+
+.gwapmojis-page-platforms {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  letter-spacing: 0.06em;
+}
+
+.gwapmojis-page-confirm {
+  max-width: 620px;
+  margin: 34px auto 0;
+  padding: 22px;
+  border: 1px solid rgba(19, 221, 19, 0.34);
+  border-radius: 20px;
+  background: rgba(19, 221, 19, 0.06);
+  text-align: left;
+}
+
+.gwapmojis-page-confirm.is-failed {
+  border-color: rgba(255, 138, 36, 0.42);
+  background: rgba(255, 138, 36, 0.07);
+}
+
+.gwapmojis-page-confirm:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 3px;
+}
+
+.gwapmojis-page-confirm strong {
+  display: block;
+  font-size: 18px;
+}
+
+.gwapmojis-page-confirm p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.gwapmojis-page-confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.gwapmojis-page-plain {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 6px;
+  border: 0;
+  background: none;
+  color: var(--green);
+  font: inherit;
+  font-size: 14px;
+  text-decoration: underline;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.gwapmojis-page-help {
+  margin: 18px 0 0;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.gwapmojis-page-help strong {
+  display: inline;
+  color: var(--text);
+  font-size: inherit;
+}
+
+.gwapmojis-page-gallery {
+  padding: 34px 0 20px;
+  border-top: 1px solid var(--line);
+}
+
+.gwapmojis-page-gallery h2 {
+  margin: 0;
+  font-size: clamp(22px, 5vw, 34px);
+  letter-spacing: -0.03em;
+}
+
+.gwapmojis-page-gallery-note {
+  margin: 10px 0 26px;
+  max-width: 56ch;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.gwapmojis-page-grid {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+}
+
+.gwapmojis-page-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 12px 12px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--panel);
+}
+
+.gwapmojis-page-tile img {
+  width: 100%;
+  max-width: 128px;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+}
+
+.gwapmojis-page-tile-name {
+  margin: 0;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.gwapmojis-page-tile-actions {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.gwapmojis-page-tile-actions a {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.gwapmojis-page-outro {
+  padding: 42px 0 76px;
+  border-top: 1px solid var(--line);
+}
+
+.gwapmojis-page-outro h2 {
+  margin: 0;
+  font-size: clamp(20px, 4.4vw, 30px);
+  letter-spacing: -0.03em;
+}
+
+.gwapmojis-page-outro p {
+  margin: 12px 0 0;
+  max-width: 60ch;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.gwapmojis-page-outro-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.gwapmojis-page-outro-links .secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .gwapmojis-page-tile-actions a:hover,
+  .gwapmojis-page-secondary:hover {
+    border-color: rgba(19, 221, 19, 0.5);
+  }
+}
+
+@media (max-width: 720px) {
+  .gwapmojis-page {
+    width: min(1180px, calc(100% - 28px));
+  }
+
+  .gwapmojis-page-hero {
+    padding: 52px 0 40px;
+  }
+
+  .gwapmojis-page-download,
+  .gwapmojis-page-retry {
+    width: 100%;
+    padding: 0 20px;
+  }
+
+  .gwapmojis-page-secondary {
+    width: 100%;
+  }
+
+  .gwapmojis-page-grid {
+    grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  }
+}
+
+@media (max-width: 380px) {
+  .gwapmojis-page-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

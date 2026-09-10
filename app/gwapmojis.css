@@ -13,6 +13,7 @@
 
 .gwapmojis-launcher {
   position: relative;
+  display: block;
   width: 68px;
   height: 68px;
   padding: 0;
@@ -108,332 +109,6 @@
   transform: translate(0, -50%);
 }
 
-.gwapmojis-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 2000;
-  display: grid;
-  place-items: start end;
-  padding:
-    calc(env(safe-area-inset-top, 0px) + 78px)
-    clamp(14px, 2.2vw, 28px)
-    calc(env(safe-area-inset-bottom, 0px) + 18px);
-  background: rgba(0, 0, 0, 0.38);
-  backdrop-filter: blur(8px);
-  pointer-events: auto;
-  animation: gwapmojis-overlay-in 150ms ease-out both;
-}
-
-.gwapmojis-sheet {
-  position: relative;
-  width: min(420px, 100%);
-  max-height: calc(100dvh - 106px);
-  overflow: auto;
-  overscroll-behavior: contain;
-  padding: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 26px;
-  background:
-    radial-gradient(circle at 14% 8%, rgba(19, 221, 19, 0.13), transparent 30%),
-    radial-gradient(circle at 92% 18%, rgba(137, 72, 255, 0.12), transparent 28%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.015)),
-    #050706;
-  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.58), 0 0 70px rgba(19, 221, 19, 0.06);
-  color: #fff;
-  outline: none;
-  animation: gwapmojis-sheet-in 190ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
-}
-
-.gwapmojis-sheet:focus-visible {
-  outline: 2px solid rgba(19, 221, 19, 0.7);
-  outline-offset: 3px;
-}
-
-.gwapmojis-sheet__close {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 36px;
-  height: 36px;
-  display: grid;
-  place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.11);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.045);
-  color: #fff;
-  font: inherit;
-  font-size: 1.35rem;
-  line-height: 1;
-  cursor: pointer;
-  touch-action: manipulation;
-}
-
-.gwapmojis-sheet__close:focus-visible {
-  border-color: rgba(255, 255, 255, 0.28);
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.gwapmojis-sheet__close:focus-visible,
-.gwapmojis-action:focus-visible,
-.gwapmojis-sheet__downloads a:focus-visible {
-  outline: 2px solid #13dd13;
-  outline-offset: 3px;
-}
-
-.gwapmojis-sheet__topline {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding-right: 44px;
-}
-
-.gwapmojis-sheet__topline span,
-.gwapmojis-sheet__topline b {
-  font-size: 0.58rem;
-  font-weight: 900;
-  letter-spacing: 0.12em;
-}
-
-.gwapmojis-sheet__topline span {
-  color: #13dd13;
-}
-
-.gwapmojis-sheet__topline b {
-  padding: 5px 7px;
-  border: 1px solid rgba(255, 138, 36, 0.28);
-  border-radius: 999px;
-  color: #ff9a45;
-  background: rgba(255, 138, 36, 0.06);
-}
-
-.gwapmojis-sheet__hero {
-  display: grid;
-  grid-template-columns: 76px minmax(0, 1fr);
-  gap: 14px;
-  align-items: center;
-  margin-top: 18px;
-}
-
-.gwapmojis-sheet__hero > img {
-  display: block;
-  width: 76px;
-  height: 76px;
-  object-fit: cover;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 19px;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.42), 0 0 26px rgba(19, 221, 19, 0.08);
-}
-
-.gwapmojis-sheet h2 {
-  margin: 0;
-  font-size: clamp(1.45rem, 5vw, 2.05rem);
-  line-height: 0.98;
-  letter-spacing: -0.045em;
-}
-
-.gwapmojis-sheet h2 em {
-  display: block;
-  margin-top: 4px;
-  color: #13dd13;
-  font-style: normal;
-}
-
-.gwapmojis-sheet__hero p {
-  margin: 8px 0 0;
-  color: rgba(255, 255, 255, 0.63);
-  font-size: 0.82rem;
-  line-height: 1.45;
-}
-
-.gwapmojis-countdown {
-  margin-top: 18px;
-  padding: 12px;
-  border: 1px solid rgba(19, 221, 19, 0.18);
-  border-radius: 16px;
-  background: rgba(19, 221, 19, 0.04);
-}
-
-.gwapmojis-countdown > span:first-child {
-  display: block;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.58rem;
-  font-weight: 900;
-  letter-spacing: 0.12em;
-}
-
-.gwapmojis-countdown__digits {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 6px;
-  margin-top: 8px;
-}
-
-.gwapmojis-countdown__digits div {
-  min-width: 0;
-  padding: 9px 5px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 10px;
-  background: rgba(0, 0, 0, 0.22);
-  text-align: center;
-}
-
-.gwapmojis-countdown__digits strong {
-  display: block;
-  color: #fff;
-  font-size: 1.08rem;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.03em;
-}
-
-.gwapmojis-countdown__digits small {
-  display: block;
-  margin-top: 5px;
-  color: rgba(255, 255, 255, 0.38);
-  font-size: 0.47rem;
-  font-weight: 850;
-  letter-spacing: 0.1em;
-}
-
-.gwapmojis-countdown.is-expired {
-  border-color: rgba(255, 138, 36, 0.26);
-  background: rgba(255, 138, 36, 0.05);
-}
-
-.gwapmojis-countdown.is-expired > strong {
-  display: block;
-  margin-top: 7px;
-  color: #ff9a45;
-  font-size: 0.95rem;
-  letter-spacing: 0.08em;
-}
-
-.gwapmojis-sheet__actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 9px;
-  margin-top: 14px;
-}
-
-.gwapmojis-action {
-  min-height: 46px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
-  padding: 0 15px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 13px;
-  background: rgba(255, 255, 255, 0.045);
-  color: #fff;
-  font: inherit;
-  font-size: 0.8rem;
-  font-weight: 820;
-  text-decoration: none;
-  cursor: pointer;
-  touch-action: manipulation;
-  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
-}
-
-.gwapmojis-action:focus-visible {
-  transform: translateY(-1px);
-  border-color: rgba(255, 255, 255, 0.28);
-  background: rgba(255, 255, 255, 0.075);
-}
-
-.gwapmojis-action.is-primary {
-  border-color: rgba(19, 221, 19, 0.72);
-  background: linear-gradient(135deg, #13dd13, #0ca30c);
-  color: #031403;
-  box-shadow: 0 12px 28px rgba(19, 221, 19, 0.13);
-}
-
-.gwapmojis-action.is-primary:focus-visible {
-  background: linear-gradient(135deg, #2aef2a, #13b913);
-}
-
-.gwapmojis-sheet__preview {
-  margin-top: 12px;
-  padding: 9px;
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 15px;
-  background: rgba(0, 0, 0, 0.2);
-}
-
-.gwapmojis-sheet__preview img {
-  display: block;
-  width: 100%;
-  height: auto;
-  border-radius: 11px;
-}
-
-.gwapmojis-sheet__preview p {
-  margin: 8px 3px 1px;
-  color: rgba(255, 255, 255, 0.55);
-  font-size: 0.69rem;
-  line-height: 1.4;
-}
-
-.gwapmojis-sheet__downloads {
-  margin-top: 13px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
-}
-
-.gwapmojis-sheet__downloads > span {
-  display: block;
-  margin-bottom: 8px;
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 0.55rem;
-  font-weight: 900;
-  letter-spacing: 0.11em;
-}
-
-.gwapmojis-sheet__downloads > div {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-}
-
-.gwapmojis-sheet__downloads a {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  padding: 7px 9px;
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 9px;
-  background: rgba(255, 255, 255, 0.03);
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 0.66rem;
-  font-weight: 730;
-  text-decoration: none;
-  touch-action: manipulation;
-}
-
-.gwapmojis-sheet__downloads a:focus-visible {
-  color: #fff;
-  border-color: rgba(19, 221, 19, 0.4);
-}
-
-.gwapmojis-sheet__downloads a[aria-disabled="true"] {
-  opacity: 0.6;
-  cursor: progress;
-}
-
-.gwapmojis-sheet__download-status {
-  margin: 10px 0 0;
-  color: rgba(255, 255, 255, 0.82);
-  font-size: 0.75rem;
-  line-height: 1.5;
-}
-
-.gwapmojis-sheet__download-status:empty {
-  display: none;
-}
-
-/* Hover effects belong to devices with a real hover pointer. Revealing or
-   moving controls on touch can consume Safari's first synthesized click. */
 @media (hover: hover) and (pointer: fine) {
   .gwapmojis-launcher:hover {
     transform: translateY(-2px) scale(1.035);
@@ -449,37 +124,9 @@
     transform: translate(0, -50%);
   }
 
-  .gwapmojis-sheet__close:hover {
-    border-color: rgba(255, 255, 255, 0.28);
-    background: rgba(255, 255, 255, 0.08);
-  }
-
-  .gwapmojis-action:hover {
-    transform: translateY(-1px);
-    border-color: rgba(255, 255, 255, 0.28);
-    background: rgba(255, 255, 255, 0.075);
-  }
-
-  .gwapmojis-action.is-primary:hover {
-    background: linear-gradient(135deg, #2aef2a, #13b913);
-  }
-
-  .gwapmojis-sheet__downloads a:hover {
-    color: #fff;
-    border-color: rgba(19, 221, 19, 0.4);
-  }
 }
 
-.gwapmojis-sheet__note {
-  display: block;
-  margin-top: 12px;
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 0.65rem;
-  line-height: 1.45;
-}
-
-.gwapmojis-float .sr-only,
-.gwapmojis-overlay .sr-only {
+.gwapmojis-float .sr-only {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -499,22 +146,6 @@
   100% {
     opacity: 0;
     transform: scale(1.28);
-  }
-}
-
-@keyframes gwapmojis-overlay-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes gwapmojis-sheet-in {
-  from {
-    opacity: 0;
-    transform: translate3d(12px, -8px, 0) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
   }
 }
 
@@ -547,76 +178,16 @@
     font-size: 0.47rem;
   }
 
-  .gwapmojis-overlay {
-    place-items: end stretch;
-    padding: 72px 0 0;
-    background: rgba(0, 0, 0, 0.48);
-    backdrop-filter: blur(7px);
-  }
-
-  .gwapmojis-sheet {
-    width: 100%;
-    max-height: min(82dvh, 720px);
-    padding: 18px 16px calc(env(safe-area-inset-bottom, 0px) + 18px);
-    border-right: 0;
-    border-bottom: 0;
-    border-left: 0;
-    border-radius: 24px 24px 0 0;
-    animation-name: gwapmojis-sheet-up;
-  }
-
-  .gwapmojis-sheet__hero {
-    grid-template-columns: 66px minmax(0, 1fr);
-    gap: 12px;
-  }
-
-  .gwapmojis-sheet__hero > img {
-    width: 66px;
-    height: 66px;
-    border-radius: 17px;
-  }
-
-  .gwapmojis-sheet h2 {
-    font-size: clamp(1.35rem, 7vw, 1.75rem);
-  }
-
-  .gwapmojis-sheet__actions {
-    grid-template-columns: 1fr;
-  }
-
-  .gwapmojis-action {
-    width: 100%;
-  }
-}
-
-@keyframes gwapmojis-sheet-up {
-  from {
-    opacity: 0;
-    transform: translate3d(0, 26px, 0);
-  }
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .gwapmojis-launcher::before,
-  .gwapmojis-overlay,
-  .gwapmojis-sheet {
+  .gwapmojis-launcher::before {
     animation: none;
   }
 
   .gwapmojis-launcher,
-  .gwapmojis-launcher__hint,
-  .gwapmojis-action {
+  .gwapmojis-launcher__hint {
     transition: none;
   }
 
-  .gwapmojis-launcher:hover,
-  .gwapmojis-launcher:focus-visible,
-  .gwapmojis-action:hover,
-  .gwapmojis-action:focus-visible {
-    transform: none;
-  }
 }

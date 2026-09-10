@@ -59,6 +59,26 @@ const nextConfig: NextConfig = {
           { key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" },
         ],
       },
+      {
+        source: "/gwapmojis/stickers/:path*",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=604800, stale-while-revalidate=2592000" },
+        ],
+      },
+      {
+        // The pack is a public marketing asset served straight from `public/`.
+        // Content-Disposition keeps Safari and Chrome saving a stable filename
+        // even when the anchor's download attribute is not honoured.
+        source: "/downloads/GwapMojis-GwapMode-33.zip",
+        headers: [
+          { key: "Content-Type", value: "application/zip" },
+          {
+            key: "Content-Disposition",
+            value: 'attachment; filename="GwapMojis-GwapMode-33.zip"',
+          },
+          { key: "Cache-Control", value: "public, max-age=3600, stale-while-revalidate=86400" },
+        ],
+      },
     ];
   },
 };
