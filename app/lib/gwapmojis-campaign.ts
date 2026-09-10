@@ -3,6 +3,13 @@
 // archive. The Cloudinary-hosted ZIPs this campaign used to point at were
 // undeliverable (HTTP 401, "Untrusted File Access") and have been replaced by
 // the committed static archive; do not reintroduce them.
+/**
+ * The official, verified GwapMojis — GwapMode 33 Telegram sticker pack. This is
+ * the one canonical Telegram destination: never duplicate the literal string in
+ * a component, and never substitute another pack URL.
+ */
+export const GWAPMOJIS_TELEGRAM_PACK_URL = "https://t.me/addstickers/GwapMode33";
+
 export const GWAPMOJIS_CAMPAIGN = {
   id: "gwapmojis-gwapmode-33",
   title: "GwapMojis",
@@ -12,7 +19,7 @@ export const GWAPMOJIS_CAMPAIGN = {
   expiresAt: "2026-10-12T23:59:59-04:00",
   timezone: "America/New_York",
   deadlineLabel: "October 12, 2026 at 11:59 PM ET",
-  telegramUrl: "https://t.me/addstickers/GwapMode33",
+  telegramUrl: GWAPMOJIS_TELEGRAM_PACK_URL,
 } as const;
 
 export type GwapMojisCountdown = {

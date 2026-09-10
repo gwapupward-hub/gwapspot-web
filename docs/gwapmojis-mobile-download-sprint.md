@@ -114,3 +114,59 @@ route back to the gallery. There is no modal, no focus trap and no retry loop.
 
 Emulated Safari is not a physical iPhone. Verify the download and Files →
 Downloads flow on a real device before announcing the campaign.
+
+---
+
+## How to Use / messaging integration (follow-up sprint)
+
+The download sprint above is unchanged: homepage/GwapOS -> `/gwapmojis` -> the
+static ZIP, first tap, no splash in the way. This sits on top of it.
+
+### HOW TO USE GWAPMOJIS
+
+`/gwapmojis` now carries a three-card accordion — iPhone/iMessage,
+Android/Google Messages, Telegram — with one card open at a time. The detected
+device only reorders the cards and picks the download-success shortcut; every
+guide renders on every device and none is gated. Content lives in
+`app/lib/gwapmojis-howto.ts` as data, so the copy is testable.
+
+Nothing claims the site installs a sticker into an OS or a messaging app,
+because it cannot. Conditional platform features say so: Apple's Add Sticker
+"appears only when iOS can lift the subject", Photomoji is "on supported
+versions of Google Messages", and Telegram Premium is Telegram's call.
+
+### Telegram
+
+`GWAPMOJIS_TELEGRAM_PACK_URL` in `gwapmojis-campaign.ts` is the single source
+for `https://t.me/addstickers/GwapMode33`; no component hard-codes it. Every
+Telegram CTA is a plain anchor, so iOS/Android hand it to the app natively and
+the web page is the fallback — no deep-link interception, no JavaScript
+requirement. The Telegram card leads with the official pack; rebuilding a set
+by hand with @Stickers is the noted alternative, not the recommendation.
+
+Premium context sits next to the Telegram CTAs, never on the ZIP CTA, which
+stays free with no account, wallet or payment.
+
+### PNG share copies
+
+`public/gwapmojis/share/*.png` holds lossless PNG copies of the same 33
+stickers. The gallery still renders the optimized WebP; only the per-sticker
+Save action serves PNG.
+
+Why: the pack ships canonical Telegram-format WebP, and iOS Photos does not
+import WebP — which breaks the documented Files -> Photos -> Add Sticker path
+at the first step. PNG is the format Photos and Android gallery apps accept.
+
+The artwork is unchanged. Each PNG was decoded from its WebP source to raw
+RGBA and re-encoded with no quantisation; every one verified byte-identical on
+re-decode, 512x512, 8-bit RGBA (colour type 6), no palette, no metadata.
+`gwapmojis-pack.test.mjs` re-checks dimensions, depth, colour type and size
+from the committed files on every run.
+
+### Analytics
+
+Added `gwapmojis_howto_opened` (platform, and `via` for the success shortcut).
+`gwapmojis_individual_download` became `gwapmojis_sticker_save_started` when
+Save started serving PNG — one event per click rather than two names for the
+same interaction.
+

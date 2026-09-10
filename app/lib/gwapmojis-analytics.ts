@@ -6,8 +6,12 @@ export const GWAPMOJIS_EVENTS = {
   packDownloadStarted: "gwapmojis_pack_download_started",
   packDownloadRetry: "gwapmojis_pack_download_retry",
   stickerOpened: "gwapmojis_sticker_opened",
-  individualDownload: "gwapmojis_individual_download",
+  // One event per Save click. This replaced `gwapmojis_individual_download`
+  // when the Save action started serving the PNG share copy; emitting both
+  // would double-count the same interaction.
+  stickerSaveStarted: "gwapmojis_sticker_save_started",
   telegramClicked: "gwapmojis_telegram_clicked",
+  howToOpened: "gwapmojis_howto_opened",
 } as const;
 
 export type GwapMojisSource = "homepage" | "gwapos" | "direct";

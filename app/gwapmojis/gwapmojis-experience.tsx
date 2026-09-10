@@ -16,9 +16,19 @@ import {
   GWAPMOJIS_PACK_FILENAME,
   GWAPMOJIS_STICKERS,
   gwapMojisStickerAlt,
+  gwapMojisStickerShareUrl,
   gwapMojisStickerUrl,
   type GwapMojisSticker,
 } from "../lib/gwapmojis-pack";
+import {
+  GWAPMOJIS_GUIDES,
+  gwapMojisGuideDomId,
+  gwapMojisHowToCtaLabel,
+  gwapMojisLeadPlatform,
+  orderGwapMojisGuides,
+  type GwapMojisGuide,
+  type GwapMojisPlatform,
+} from "../lib/gwapmojis-howto";
 
 type AnalyticsProperties = Record<string, string | number | boolean>;
 
@@ -45,6 +55,20 @@ export function GwapMojisExperience({ packUrl, telegramUrl }: GwapMojisExperienc
   const [phase, setPhase] = useState<DownloadPhase>("idle");
   const [instructions, setInstructions] = useState<GwapMojisDownloadInstructions | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
+  // Device-derived presentation, resolved once on mount. Kept in state (not
+  // read from a ref during render) so the server and first client render match.
+  const [presentation, setPresentation] = useState<{
+    device: GwapMojisDeviceType;
+    guides: readonly GwapMojisGuide[];
+  }>({ device: "desktop", guides: GWAPMOJIS_GUIDES });
+  const { device: presentedDevice, guides } = presentation;
+  const [openGuide, setOpenGuide] = useState<GwapMojisPlatform | null>(null);
+  // Marks the guide the download-success shortcut jumped to. Programmatic focus
+  // does not trigger :focus-visible, so without this the visitor gets no
+  // indication of where they landed.
+  const [jumpedGuide, setJumpedGuide] = useState<GwapMojisPlatform | null>(null);
+  const howToRef = useRef<HTMLElement | null>(null);
+  const guideRefs = useRef(new Map<GwapMojisPlatform, HTMLButtonElement | null>());
   const contextRef = useRef<VisitContext | null>(null);
   const downloadCountRef = useRef(0);
   const viewTrackedRef = useRef(false);
@@ -77,6 +101,9 @@ export function GwapMojisExperience({ packUrl, telegramUrl }: GwapMojisExperienc
     viewTrackedRef.current = true;
     const { source, device } = readContext();
     safeTrack(GWAPMOJIS_EVENTS.viewed, { source, device });
+    // Presentation only: the detected device reorders the guides, it never
+    // gates them. All three render on every device, in every order.
+    setPresentation({ device, guides: orderGwapMojisGuides(device) });
   }, [readContext]);
 
   useEffect(() => () => probeRef.current?.abort(), []);
@@ -161,9 +188,36 @@ export function GwapMojisExperience({ packUrl, telegramUrl }: GwapMojisExperienc
     confirmationRef.current?.focus({ preventScroll: true });
   }, [phase]);
 
-  const trackSticker = (event: string, sticker: GwapMojisSticker) => {
+  const trackSticker = (event: string, sticker: GwapMojisSticker, extra: AnalyticsProperties = {}) => {
     const { source, device } = readContext();
-    safeTrack(event, { source, device, sticker: sticker.id, sticker_order: sticker.order });
+    safeTrack(event, { source, device, sticker: sticker.id, sticker_order: sticker.order, ...extra });
+  };
+
+  /** Accordion: one guide open at a time, and never gated by device. */
+  const toggleGuide = (platform: GwapMojisPlatform) => {
+    setJumpedGuide(null);
+    setOpenGuide((current) => {
+      if (current === platform) return null;
+      const { source, device } = readContext();
+      safeTrack(GWAPMOJIS_EVENTS.howToOpened, { source, device, platform });
+      return platform;
+    });
+  };
+
+  /**
+   * The download-success shortcut. Opens the guide that matches the device and
+   * moves focus to its control, so keyboard and screen-reader users land in the
+   * same place a scroll would put everyone else.
+   */
+  const jumpToGuide = (platform: GwapMojisPlatform) => {
+    setOpenGuide(platform);
+    setJumpedGuide(platform);
+    const { source, device } = readContext();
+    safeTrack(GWAPMOJIS_EVENTS.howToOpened, { source, device, platform, via: "download_success" });
+    window.requestAnimationFrame(() => {
+      howToRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      guideRefs.current.get(platform)?.focus({ preventScroll: true });
+    });
   };
 
   return (
@@ -202,6 +256,12 @@ export function GwapMojisExperience({ packUrl, telegramUrl }: GwapMojisExperienc
             </a>
           ) : null}
         </div>
+        {telegramUrl ? (
+          <p className="gwapmojis-page-telegram-note">
+            Official GwapMode 33 pack on Telegram · Telegram Premium. The download above is free
+            either way — no account, no wallet, no payment.
+          </p>
+        ) : null}
 
         <ul className="gwapmojis-page-facts">
           <li>33 original GWAP reactions.</li>
@@ -233,6 +293,35 @@ export function GwapMojisExperience({ packUrl, telegramUrl }: GwapMojisExperienc
                 </p>
               </>
             )}
+
+            <div className="gwapmojis-page-confirm-primary">
+              <button
+                className="gwapmojis-page-howto-cta"
+                type="button"
+                onClick={() => jumpToGuide(gwapMojisLeadPlatform(presentedDevice))}
+              >
+                {gwapMojisHowToCtaLabel(presentedDevice)}
+              </button>
+              {telegramUrl ? (
+                <a
+                  className="gwapmojis-page-telegram-shortcut"
+                  href={telegramUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={() => {
+                    const { source, device } = readContext();
+                    safeTrack(GWAPMOJIS_EVENTS.telegramClicked, {
+                      source,
+                      device,
+                      placement: "download_success",
+                    });
+                    recordClaim("telegram");
+                  }}
+                >
+                  ADD FULL PACK TO TELEGRAM
+                </a>
+              ) : null}
+            </div>
 
             <div className="gwapmojis-page-confirm-actions">
               <a
@@ -282,6 +371,93 @@ export function GwapMojisExperience({ packUrl, telegramUrl }: GwapMojisExperienc
       </section>
 
       <section
+        className="gwapmojis-page-howto"
+        id="gwapmojis-howto"
+        ref={howToRef}
+        aria-labelledby="gwapmojis-howto-title"
+      >
+        <h2 id="gwapmojis-howto-title">HOW TO USE GWAPMOJIS</h2>
+        <p className="gwapmojis-page-howto-lead">
+          YOUR REACTIONS ARE READY. NOW PUT &rsquo;EM TO WORK.
+        </p>
+
+        <div className="gwapmojis-page-accordion">
+          {guides.map((guide) => {
+            const open = openGuide === guide.id;
+            const panelId = `${gwapMojisGuideDomId(guide.id)}-panel`;
+            return (
+              <div className="gwapmojis-page-guide" key={guide.id} id={gwapMojisGuideDomId(guide.id)}>
+                <h3>
+                  <button
+                    type="button"
+                    className="gwapmojis-page-guide-toggle"
+                    aria-expanded={open}
+                    aria-controls={panelId}
+                    ref={(node) => {
+                      guideRefs.current.set(guide.id, node);
+                    }}
+                    data-jumped={jumpedGuide === guide.id ? "true" : undefined}
+                    onBlur={() => setJumpedGuide((current) => (current === guide.id ? null : current))}
+                    onClick={() => toggleGuide(guide.id)}
+                  >
+                    <span className="gwapmojis-page-guide-label">{guide.label}</span>
+                    <span className="gwapmojis-page-guide-mark" aria-hidden="true">
+                      {open ? "−" : "+"}
+                    </span>
+                  </button>
+                </h3>
+
+                <div className="gwapmojis-page-guide-panel" id={panelId} hidden={!open}>
+                  <p className="gwapmojis-page-guide-headline">{guide.headline}</p>
+                  <p className="gwapmojis-page-guide-summary">{guide.summary}</p>
+
+                  {guide.cta ? (
+                    <a
+                      className="gwapmojis-page-guide-cta"
+                      href={guide.cta.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={() => {
+                        const { source, device } = readContext();
+                        safeTrack(GWAPMOJIS_EVENTS.telegramClicked, {
+                          source,
+                          device,
+                          placement: "howto_guide",
+                        });
+                        recordClaim("telegram");
+                      }}
+                    >
+                      {guide.cta.label}
+                    </a>
+                  ) : null}
+                  {guide.cta ? (
+                    <p className="gwapmojis-page-guide-cta-note">{guide.cta.note}</p>
+                  ) : null}
+
+                  {guide.sections.map((section) => (
+                    <div className="gwapmojis-page-guide-section" key={section.heading}>
+                      <h4>{section.heading}</h4>
+                      {/* A lone statement is prose, not a one-item numbered list. */}
+                      {section.steps.length === 1 ? (
+                        <p className="gwapmojis-page-guide-line">{section.steps[0]}</p>
+                      ) : (
+                        <ol>
+                          {section.steps.map((step) => (
+                            <li key={step}>{step}</li>
+                          ))}
+                        </ol>
+                      )}
+                      {section.note ? <p className="gwapmojis-page-guide-note">{section.note}</p> : null}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <section
         className="gwapmojis-page-gallery"
         id="gwapmojis-gallery"
         aria-labelledby="gwapmojis-gallery-title"
@@ -314,15 +490,18 @@ export function GwapMojisExperience({ packUrl, telegramUrl }: GwapMojisExperienc
                   rel="noreferrer"
                   onClick={() => trackSticker(GWAPMOJIS_EVENTS.stickerOpened, sticker)}
                 >
-                  Open<span className="sr-only"> {sticker.name} at full resolution</span>
+                  View<span className="sr-only"> {sticker.name} at full resolution</span>
                 </a>
+                {/* Saves the PNG copy: Photos and gallery apps accept PNG, WebP not always. */}
                 <a
-                  href={gwapMojisStickerUrl(sticker)}
-                  download={sticker.file}
+                  href={gwapMojisStickerShareUrl(sticker)}
+                  download={sticker.shareFile}
                   data-native-nav
-                  onClick={() => trackSticker(GWAPMOJIS_EVENTS.individualDownload, sticker)}
+                  onClick={() =>
+                    trackSticker(GWAPMOJIS_EVENTS.stickerSaveStarted, sticker, { format: "png" })
+                  }
                 >
-                  Save<span className="sr-only"> {sticker.name}</span>
+                  Save<span className="sr-only"> sticker: {sticker.name}, as a PNG</span>
                 </a>
               </div>
             </li>
