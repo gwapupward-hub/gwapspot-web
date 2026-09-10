@@ -8,6 +8,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const primaryRoutes = [
     "",
     "/launch",
+    "/gwapmojis",
     "/about",
     "/ecosystem",
     "/developers",
@@ -21,7 +22,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${baseUrl}${route}`,
       lastModified,
       changeFrequency: "weekly" as const,
-      priority: index === 0 ? 1 : route === "/launch" ? 0.9 : 0.8,
+      priority: index === 0 ? 1 : route === "/launch" || route === "/gwapmojis" ? 0.9 : 0.8,
     })),
     ...ecosystemProducts.map((product) => ({
       url: `${baseUrl}/ecosystem/${product.slug}`,

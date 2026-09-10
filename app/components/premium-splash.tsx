@@ -18,7 +18,17 @@ const SPLASH_SRC = "/gwap-splash.webp";
 
 type OverlayMode = "intro" | "route" | null;
 
-export default function PremiumSplash() {
+type PremiumSplashProps = {
+  /**
+   * Campaign landing routes reached by cold external traffic skip the intro
+   * overlay entirely: it locks the body and covers the page until the visitor
+   * taps Enter, which would swallow the first tap on the page's own CTA.
+   * Route transitions still run normally.
+   */
+  skipIntro?: boolean;
+};
+
+export default function PremiumSplash({ skipIntro = false }: PremiumSplashProps) {
   const pathname = usePathname();
   const previousPathname = useRef(pathname);
   const routePending = useRef(false);
@@ -26,7 +36,7 @@ export default function PremiumSplash() {
   const introExitStarted = useRef(false);
   const timers = useRef<number[]>([]);
   const previousBodyOverflow = useRef<string | null>(null);
-  const [mode, setMode] = useState<OverlayMode>("intro");
+  const [mode, setMode] = useState<OverlayMode>(skipIntro ? null : "intro");
   const [ready, setReady] = useState(false);
   const [leaving, setLeaving] = useState(false);
 
@@ -78,7 +88,7 @@ export default function PremiumSplash() {
       hasSeenIntro = false;
     }
 
-    if (hasSeenIntro || reducedMotion) {
+    if (skipIntro || hasSeenIntro || reducedMotion) {
       const frame = window.requestAnimationFrame(() => {
         setMode(null);
         setReady(false);
@@ -101,7 +111,7 @@ export default function PremiumSplash() {
       clearTimers();
       unlockBody();
     };
-  }, [clearTimers, unlockBody]);
+  }, [clearTimers, skipIntro, unlockBody]);
 
   useEffect(() => {
     const handleInternalNavigation = (event: MouseEvent) => {

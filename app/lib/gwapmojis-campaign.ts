@@ -1,24 +1,17 @@
+// Campaign identity and timing. The pack file, its artwork and every download
+// path live in `gwapmojis-pack.ts` — the single source of truth for the
+// archive. The Cloudinary-hosted ZIPs this campaign used to point at were
+// undeliverable (HTTP 401, "Untrusted File Access") and have been replaced by
+// the committed static archive; do not reintroduce them.
 export const GWAPMOJIS_CAMPAIGN = {
   id: "gwapmojis-gwapmode-33",
   title: "GwapMojis",
   subtitle: "GwapMode 33",
   badge: "NEW DROP",
-  offer: "FREE FOR A LIMITED TIME",
+  offer: "FREE",
   expiresAt: "2026-10-12T23:59:59-04:00",
   timezone: "America/New_York",
   deadlineLabel: "October 12, 2026 at 11:59 PM ET",
-  packIconUrl:
-    "https://res.cloudinary.com/dg1u1wpdu/image/upload/v1788521171/gwapmojis/gwapmode33/pack-icon.png",
-  headerUrl:
-    "https://res.cloudinary.com/dg1u1wpdu/image/upload/v1788521177/gwapmojis/gwapmode33/header.png",
-  completeDownloadUrl:
-    "https://res.cloudinary.com/dg1u1wpdu/raw/upload/v1788522411/gwapmojis/gwapmode33/GwapMojis_GwapMode33_Complete_Telegram_Pack.zip",
-  staticDownloadUrl:
-    "https://res.cloudinary.com/dg1u1wpdu/raw/upload/v1788521185/gwapmojis/gwapmode33/GwapMojis_GwapMode33_Telegram_Static_33.zip",
-  animatedDownloadUrl:
-    "https://res.cloudinary.com/dg1u1wpdu/raw/upload/v1788522251/gwapmojis/gwapmode33/GwapMojis_GwapMode33_Animated_Full33_WEBM.zip",
-  emojiDownloadUrl:
-    "https://res.cloudinary.com/dg1u1wpdu/raw/upload/v1788522264/gwapmojis/gwapmode33/GwapMojis_GwapMode33_Core12_Custom_Emoji.zip",
   telegramUrl: "https://t.me/addstickers/GwapMode33",
 } as const;
 
