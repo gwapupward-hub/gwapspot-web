@@ -258,6 +258,7 @@
 
 .gwapmojis-page-tile-actions a {
   flex: 1;
+  white-space: nowrap;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -339,5 +340,255 @@
 @media (max-width: 380px) {
   .gwapmojis-page-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* HOW TO USE GWAPMOJIS — platform accordion. */
+
+.gwapmojis-page-howto {
+  padding: 34px 0 20px;
+  border-top: 1px solid var(--line);
+  scroll-margin-top: 90px;
+}
+
+.gwapmojis-page-howto h2 {
+  margin: 0;
+  font-size: clamp(22px, 5vw, 34px);
+  letter-spacing: -0.03em;
+}
+
+.gwapmojis-page-howto-lead {
+  margin: 10px 0 26px;
+  max-width: 44ch;
+  color: var(--green);
+  font-size: clamp(13px, 3vw, 15px);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.gwapmojis-page-accordion {
+  display: grid;
+  gap: 12px;
+}
+
+.gwapmojis-page-guide {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--panel);
+  overflow: hidden;
+}
+
+.gwapmojis-page-guide h3 {
+  margin: 0;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.gwapmojis-page-guide-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  min-height: 60px;
+  padding: 14px 18px;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.gwapmojis-page-guide-toggle:focus-visible,
+/* Focus moved here programmatically by the download-success shortcut, which
+   does not satisfy :focus-visible — show the ring anyway. */
+.gwapmojis-page-guide-toggle[data-jumped="true"] {
+  outline: 2px solid var(--green);
+  outline-offset: -3px;
+}
+
+.gwapmojis-page-guide-label {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.gwapmojis-page-guide-mark {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  color: var(--green);
+  font-size: 17px;
+  line-height: 1;
+}
+
+.gwapmojis-page-guide-panel {
+  padding: 0 18px 20px;
+}
+
+.gwapmojis-page-guide-headline {
+  margin: 0;
+  color: var(--green);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+}
+
+.gwapmojis-page-guide-summary {
+  margin: 10px 0 0;
+  max-width: 60ch;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.gwapmojis-page-guide-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  margin-top: 16px;
+  padding: 0 24px;
+  border-radius: 999px;
+  background: var(--green);
+  color: #041104;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  touch-action: manipulation;
+}
+
+.gwapmojis-page-guide-cta:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 3px;
+}
+
+.gwapmojis-page-guide-cta-note {
+  margin: 10px 0 0;
+  max-width: 56ch;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.gwapmojis-page-guide-section {
+  margin-top: 22px;
+}
+
+.gwapmojis-page-guide-section h4 {
+  margin: 0;
+  font-size: 14px;
+  letter-spacing: 0.01em;
+}
+
+.gwapmojis-page-guide-section ol {
+  /* Tailwind preflight strips list markers; numbered steps need them back. */
+  list-style: decimal;
+  margin: 10px 0 0;
+  padding-left: 22px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.gwapmojis-page-guide-line {
+  margin: 10px 0 0;
+  max-width: 60ch;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.gwapmojis-page-guide-section ol::marker {
+  color: var(--green);
+}
+
+.gwapmojis-page-guide-note {
+  margin: 10px 0 0;
+  max-width: 60ch;
+  padding: 10px 12px;
+  border-left: 2px solid var(--line-strong);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* Download-success shortcuts into the guides. */
+
+.gwapmojis-page-confirm-primary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.gwapmojis-page-howto-cta,
+.gwapmojis-page-telegram-shortcut {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 20px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.gwapmojis-page-howto-cta {
+  border-color: rgba(19, 221, 19, 0.5);
+  color: var(--green);
+}
+
+.gwapmojis-page-howto-cta:focus-visible,
+.gwapmojis-page-telegram-shortcut:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 3px;
+}
+
+.gwapmojis-page-telegram-note {
+  margin: 14px auto 0;
+  max-width: 52ch;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .gwapmojis-page-guide-toggle:hover .gwapmojis-page-guide-mark,
+  .gwapmojis-page-howto-cta:hover,
+  .gwapmojis-page-telegram-shortcut:hover {
+    border-color: rgba(19, 221, 19, 0.6);
+  }
+}
+
+@media (max-width: 720px) {
+  .gwapmojis-page-howto-cta,
+  .gwapmojis-page-telegram-shortcut,
+  .gwapmojis-page-guide-cta {
+    width: 100%;
+    padding: 0 14px;
+  }
+
+  .gwapmojis-page-guide-toggle {
+    padding: 12px 14px;
+  }
+
+  .gwapmojis-page-guide-panel {
+    padding: 0 14px 18px;
   }
 }

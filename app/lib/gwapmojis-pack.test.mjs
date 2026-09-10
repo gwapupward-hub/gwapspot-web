@@ -7,6 +7,7 @@ import { readFileSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import {
+  GWAPMOJIS_SHARE_BASE_PATH,
   GWAPMOJIS_PACK_BYTES,
   GWAPMOJIS_PACK_FILENAME,
   GWAPMOJIS_PACK_SHA256,
@@ -14,6 +15,7 @@ import {
   GWAPMOJIS_STICKERS,
   GWAPMOJIS_STICKER_BASE_PATH,
   gwapMojisStickerAlt,
+  gwapMojisStickerShareUrl,
   gwapMojisStickerUrl,
   resolveGwapMojisPackUrl,
 } from "./gwapmojis-pack.ts";
@@ -111,4 +113,57 @@ test("a configured https or same-origin override is used verbatim", () => {
     "https://cdn.example.com/GwapMojis-GwapMode-33.zip",
   );
   assert.equal(resolveGwapMojisPackUrl("/static/pack.zip"), "/static/pack.zip");
+});
+
+/** Read a PNG's IHDR without an image library, the way the ZIP index is read. */
+function readPngHeader(bytes) {
+  assert.equal(
+    bytes.subarray(0, 8).toString("hex"),
+    "89504e470d0a1a0a",
+    "not a PNG signature",
+  );
+  assert.equal(bytes.toString("ascii", 12, 16), "IHDR", "IHDR must be the first chunk");
+  return {
+    width: bytes.readUInt32BE(16),
+    height: bytes.readUInt32BE(20),
+    bitDepth: bytes[24],
+    colorType: bytes[25],
+    interlace: bytes[28],
+  };
+}
+
+test("every sticker has a lossless PNG share copy on disk", () => {
+  assert.equal(GWAPMOJIS_SHARE_BASE_PATH, "/gwapmojis/share");
+  for (const sticker of GWAPMOJIS_STICKERS) {
+    assert.equal(sticker.shareFile, sticker.file.replace(/\.webp$/, ".png"), sticker.id);
+    const path = publicPath(`${GWAPMOJIS_SHARE_BASE_PATH}/${sticker.shareFile}`);
+    assert.equal(statSync(path).size, sticker.shareBytes, sticker.shareFile);
+    assert.equal(gwapMojisStickerShareUrl(sticker), `/gwapmojis/share/${sticker.shareFile}`);
+  }
+});
+
+test("the share PNGs keep the artwork's dimensions, depth and transparency", () => {
+  for (const sticker of GWAPMOJIS_STICKERS) {
+    const header = readPngHeader(
+      readFileSync(publicPath(`${GWAPMOJIS_SHARE_BASE_PATH}/${sticker.shareFile}`)),
+    );
+    assert.equal(header.width, sticker.width, sticker.shareFile);
+    assert.equal(header.height, sticker.height, sticker.shareFile);
+    assert.equal(header.bitDepth, 8, sticker.shareFile);
+    // Colour type 6 is truecolour with an alpha channel — never a palette,
+    // which would mean the artwork had been quantised.
+    assert.equal(header.colorType, 6, `${sticker.shareFile} must stay RGBA, not palettised`);
+    assert.equal(header.interlace, 0, sticker.shareFile);
+  }
+});
+
+test("the WebP gallery artwork is untouched and still the rendered source", () => {
+  for (const sticker of GWAPMOJIS_STICKERS) {
+    // The optimized WebP set remains exactly as the pack shipped it.
+    const path = publicPath(`${GWAPMOJIS_STICKER_BASE_PATH}/${sticker.file}`);
+    assert.equal(statSync(path).size, sticker.bytes, sticker.file);
+    assert.equal(gwapMojisStickerUrl(sticker), `/gwapmojis/stickers/${sticker.file}`);
+    // PNG is an addition, never a replacement.
+    assert.notEqual(sticker.shareFile, sticker.file, sticker.id);
+  }
 });

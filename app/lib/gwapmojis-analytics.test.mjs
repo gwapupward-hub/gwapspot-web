@@ -14,8 +14,9 @@ test("the campaign emits exactly the agreed event names", () => {
     packDownloadStarted: "gwapmojis_pack_download_started",
     packDownloadRetry: "gwapmojis_pack_download_retry",
     stickerOpened: "gwapmojis_sticker_opened",
-    individualDownload: "gwapmojis_individual_download",
+    stickerSaveStarted: "gwapmojis_sticker_save_started",
     telegramClicked: "gwapmojis_telegram_clicked",
+    howToOpened: "gwapmojis_howto_opened",
   });
 });
 
