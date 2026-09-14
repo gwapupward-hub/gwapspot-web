@@ -47,24 +47,37 @@ const nextConfig: NextConfig = {
       { source: "/:path((?!telegram(?:/|$)).*)", headers: websiteFrameProtection },
       { source: "/telegram", headers: telegramFrameProtection },
       { source: "/telegram/:path*", headers: telegramFrameProtection },
-      {
-        source: "/logos/:path*",
+      // Brand artwork lives at unversioned paths, so it must stay revalidatable
+      // rather than `immutable`. A 30 day fresh window with a one year
+      // stale-while-revalidate serves repeat views from cache immediately while
+      // still letting an updated asset roll out on the next background fetch.
+      ...[
+        "/logos/:path*",
+        "/brand/:path*",
+        "/gwap-splash.webp",
+        "/logo.png",
+        "/icon-192.png",
+        "/icon-512.png",
+        "/apple-touch-icon.png",
+      ].map((source) => ({
+        source,
         headers: [
-          { key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" },
+          { key: "Cache-Control", value: "public, max-age=2592000, stale-while-revalidate=31536000" },
         ],
-      },
-      {
-        source: "/gwap-splash.webp",
+      })),
+      // The GwapMojis pack is a frozen published release and the GwapOS icons
+      // sit behind a versioned `/v1/` path segment, so both are safe to mark
+      // immutable: a change ships under a new filename or version segment.
+      ...[
+        "/gwapmojis/stickers/:path*",
+        "/gwapmojis/share/:path*",
+        "/gwapos/icons/v1/:path*",
+      ].map((source) => ({
+        source,
         headers: [
-          { key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" },
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
         ],
-      },
-      {
-        source: "/gwapmojis/stickers/:path*",
-        headers: [
-          { key: "Cache-Control", value: "public, max-age=604800, stale-while-revalidate=2592000" },
-        ],
-      },
+      })),
       {
         // The pack is a public marketing asset served straight from `public/`.
         // Content-Disposition keeps Safari and Chrome saving a stable filename

@@ -5,6 +5,7 @@ import { resolveGwapMojisTelegramUrl } from "../lib/gwapmojis-analytics";
 import { GWAPMOJIS_STICKERS, resolveGwapMojisPackUrl } from "../lib/gwapmojis-pack";
 import { createPageMetadata } from "../lib/metadata";
 import { GwapMojisExperience } from "./gwapmojis-experience";
+import "../gwapmojis-page.css";
 
 export const metadata = createPageMetadata({
   title: "GwapMojis — GwapMode 33",

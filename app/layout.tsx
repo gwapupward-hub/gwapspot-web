@@ -3,6 +3,7 @@ import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { PublicExperienceLayers } from "./components/public-experience-layers";
+import { StructuredData } from "./components/structured-data";
 import "./styles.css";
 
 const siteUrl = "https://www.gwapspot.com";
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <Script id="gwap-intro-state" strategy="beforeInteractive">
           {'try{const root=document.documentElement;if(location.hostname.toLowerCase()==="app.gwapspot.com")root.dataset.gwapAppHost="true";if(sessionStorage.getItem("gwap-premium-intro-seen-v2")==="true")root.dataset.gwapIntroSeen="true"}catch(e){}'}
         </Script>
+        <StructuredData />
         <PublicExperienceLayers />
         {children}
         <Analytics />

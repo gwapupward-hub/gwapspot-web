@@ -1,0 +1,17 @@
+/* GWAP OS route-scoped stylesheet.
+ *
+ * These sheets style only the authenticated /app surface (the OS shell, Idea
+ * Lab, and the Daily Ideas workspace). They used to be imported from the
+ * global `app/styles.css` chain, which meant every public marketing route
+ * downloaded them in its render-blocking stylesheet without using a rule.
+ *
+ * The import order below mirrors their original order in `app/styles.css` so
+ * the cascade inside /app is unchanged.
+ */
+@import "../gwap-os-v2.css";
+@import "../gwap-idea-lab.css";
+@import "../gwap-idea-lab-focus.css";
+@import "../gwap-idea-lab-pass2.css";
+@import "../gwap-idea-lab-mobile-scroll-fix.css";
+@import "../gwap-daily-ideas-workspace.css";
+@import "./os-mobile-parity.css";
