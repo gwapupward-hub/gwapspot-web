@@ -3,6 +3,7 @@ import { ArrowIcon, PageHero, PageShell, SparkIcon } from "../components/site-sh
 import { ecosystemProducts } from "../lib/ecosystem";
 import { createPageMetadata } from "../lib/metadata";
 import Launchpad from "./launchpad";
+import "../launch.css";
 
 export const metadata = createPageMetadata({
   title: "Launchpad",

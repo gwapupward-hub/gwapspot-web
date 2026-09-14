@@ -45,7 +45,7 @@ export default function Launchpad({ products }: { products: EcosystemProduct[] }
           />
         </label>
 
-        <div className="launch-filters" aria-label="Filter products by status">
+        <div className="launch-filters" role="group" aria-label="Filter products by status">
           {filters.map((item) => (
             <button
               key={item}

@@ -54,9 +54,18 @@ export function CountUp({
   }, [value]);
 
   return (
-    <span ref={ref} aria-label={`${value}${suffix}`}>
-      {display}
-      {suffix}
+    <span ref={ref}>
+      {/* `aria-label` is ignored on an element with no role, so the counter used
+          to be announced one intermediate frame at a time. Hide the animating
+          digits and expose the settled value once instead. */}
+      <span aria-hidden="true">
+        {display}
+        {suffix}
+      </span>
+      <span className="sr-only">
+        {value}
+        {suffix}
+      </span>
     </span>
   );
 }
