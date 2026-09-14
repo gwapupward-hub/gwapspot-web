@@ -5,8 +5,6 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
-const INTRO_SESSION_KEY = "gwap-premium-intro-seen-v2";
-const INTRO_AUTO_DISMISS_MS = 1800;
 const INTRO_EXIT_MS = 500;
 const ROUTE_HOLD_MS = 250;
 const ROUTE_EXIT_MS = 350;
@@ -21,7 +19,8 @@ type OverlayMode = "intro" | "route" | null;
 type PremiumSplashProps = {
   /**
    * Campaign landing routes reached by cold external traffic skip the intro
-   * overlay entirely. Route transitions still run normally.
+   * overlay entirely. When the intro is shown, entry is always manual:
+   * splash -> explicit button press -> destination screen.
    */
   skipIntro?: boolean;
 };
@@ -59,26 +58,11 @@ export default function PremiumSplash({ skipIntro = false }: PremiumSplashProps)
   }, [clearTimers]);
 
   const dismissIntro = useCallback(() => {
-    try {
-      window.sessionStorage.setItem(INTRO_SESSION_KEY, "true");
-    } catch {
-      // The experience still works when storage is unavailable.
-    }
-
     beginIntroExit();
   }, [beginIntroExit]);
 
   useEffect(() => {
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let hasSeenIntro = false;
-
-    try {
-      hasSeenIntro = window.sessionStorage.getItem(INTRO_SESSION_KEY) === "true";
-    } catch {
-      hasSeenIntro = false;
-    }
-
-    if (skipIntro || hasSeenIntro || reducedMotion) {
+    if (skipIntro) {
       const frame = window.requestAnimationFrame(() => {
         setMode(null);
         setReady(false);
@@ -87,17 +71,12 @@ export default function PremiumSplash({ skipIntro = false }: PremiumSplashProps)
       return () => window.cancelAnimationFrame(frame);
     }
 
+    // Entry policy is intentionally manual. No timeout, prior-session flag,
+    // or reduced-motion preference is allowed to dismiss the intro.
     introExitStarted.current = false;
     setReady(true);
-
-    const autoDismissTimer = window.setTimeout(
-      dismissIntro,
-      INTRO_AUTO_DISMISS_MS,
-    );
-    timers.current.push(autoDismissTimer);
-
     return clearTimers;
-  }, [clearTimers, dismissIntro, skipIntro]);
+  }, [clearTimers, skipIntro]);
 
   useEffect(() => {
     const handleInternalNavigation = (event: MouseEvent) => {
