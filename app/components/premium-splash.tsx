@@ -6,14 +6,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
 const INTRO_SESSION_KEY = "gwap-premium-intro-seen-v2";
-const INTRO_ENTER_DELAY_MS = 2750;
-const INTRO_EXIT_MS = 1750;
-const ROUTE_HOLD_MS = 900;
-const ROUTE_EXIT_MS = 900;
-const ROUTE_FALLBACK_MS = 2600;
-const ROUTE_REDUCED_HOLD_MS = 80;
-const ROUTE_REDUCED_EXIT_MS = 120;
-const ROUTE_REDUCED_FALLBACK_MS = 700;
+const INTRO_AUTO_DISMISS_MS = 1800;
+const INTRO_EXIT_MS = 500;
+const ROUTE_HOLD_MS = 250;
+const ROUTE_EXIT_MS = 350;
+const ROUTE_FALLBACK_MS = 1400;
+const ROUTE_REDUCED_HOLD_MS = 0;
+const ROUTE_REDUCED_EXIT_MS = 100;
+const ROUTE_REDUCED_FALLBACK_MS = 350;
 const SPLASH_SRC = "/gwap-splash.webp";
 
 type OverlayMode = "intro" | "route" | null;
@@ -21,9 +21,7 @@ type OverlayMode = "intro" | "route" | null;
 type PremiumSplashProps = {
   /**
    * Campaign landing routes reached by cold external traffic skip the intro
-   * overlay entirely: it locks the body and covers the page until the visitor
-   * taps Enter, which would swallow the first tap on the page's own CTA.
-   * Route transitions still run normally.
+   * overlay entirely. Route transitions still run normally.
    */
   skipIntro?: boolean;
 };
@@ -35,7 +33,6 @@ export default function PremiumSplash({ skipIntro = false }: PremiumSplashProps)
   const skipNextRouteTransition = useRef(false);
   const introExitStarted = useRef(false);
   const timers = useRef<number[]>([]);
-  const previousBodyOverflow = useRef<string | null>(null);
   const [mode, setMode] = useState<OverlayMode>(skipIntro ? null : "intro");
   const [ready, setReady] = useState(false);
   const [leaving, setLeaving] = useState(false);
@@ -43,12 +40,6 @@ export default function PremiumSplash({ skipIntro = false }: PremiumSplashProps)
   const clearTimers = useCallback(() => {
     timers.current.forEach((timer) => window.clearTimeout(timer));
     timers.current = [];
-  }, []);
-
-  const unlockBody = useCallback(() => {
-    if (previousBodyOverflow.current === null) return;
-    document.body.style.overflow = previousBodyOverflow.current;
-    previousBodyOverflow.current = null;
   }, []);
 
   const beginIntroExit = useCallback(() => {
@@ -62,11 +53,10 @@ export default function PremiumSplash({ skipIntro = false }: PremiumSplashProps)
       setMode(null);
       setReady(false);
       setLeaving(false);
-      unlockBody();
     }, INTRO_EXIT_MS);
 
     timers.current.push(hideTimer);
-  }, [clearTimers, unlockBody]);
+  }, [clearTimers]);
 
   const dismissIntro = useCallback(() => {
     try {
@@ -98,20 +88,16 @@ export default function PremiumSplash({ skipIntro = false }: PremiumSplashProps)
     }
 
     introExitStarted.current = false;
-    previousBodyOverflow.current = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    setReady(true);
 
-    const enterTimer = window.setTimeout(
-      () => setReady(true),
-      INTRO_ENTER_DELAY_MS,
+    const autoDismissTimer = window.setTimeout(
+      dismissIntro,
+      INTRO_AUTO_DISMISS_MS,
     );
-    timers.current.push(enterTimer);
+    timers.current.push(autoDismissTimer);
 
-    return () => {
-      clearTimers();
-      unlockBody();
-    };
-  }, [clearTimers, skipIntro, unlockBody]);
+    return clearTimers;
+  }, [clearTimers, dismissIntro, skipIntro]);
 
   useEffect(() => {
     const handleInternalNavigation = (event: MouseEvent) => {
@@ -231,8 +217,8 @@ export default function PremiumSplash({ skipIntro = false }: PremiumSplashProps)
       className={`premium-splash premium-splash--${mode}${ready ? " is-ready" : ""}${leaving ? " is-leaving" : ""}`}
       role="status"
       aria-live="polite"
-      aria-busy={mode === "intro" && !ready}
-      aria-label={mode === "intro" ? "Preparing the GWAP ecosystem" : "Loading the next page"}
+      aria-busy={false}
+      aria-label={mode === "intro" ? "GWAP ecosystem introduction" : "Loading the next page"}
     >
       <div className="premium-splash__art" aria-hidden="true">
         <Image
@@ -250,14 +236,12 @@ export default function PremiumSplash({ skipIntro = false }: PremiumSplashProps)
 
       {mode === "intro" ? (
         <>
-          {ready ? (
-            <button className="premium-splash__skip" type="button" onClick={dismissIntro}>
-              Enter Tha GwapSpot
-            </button>
-          ) : null}
+          <button className="premium-splash__skip" type="button" onClick={dismissIntro}>
+            Enter Tha GwapSpot
+          </button>
           <div className="premium-splash__intro-copy">
             <span>GWAP ECOSYSTEM</span>
-            <strong>{ready ? "Ready with purpose." : "Built with purpose."}</strong>
+            <strong>Ready with purpose.</strong>
           </div>
           <div className="premium-splash__progress" aria-hidden="true">
             <i />
