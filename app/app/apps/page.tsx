@@ -41,12 +41,12 @@ export default function AppsPage() {
       detail: gnsIdentity.scoreTier || "Score context",
     },
     {
-      href: "/app/vault",
+      href: "/app/ppv",
       name: "Private Proof Vault",
-      note: "Proof timestamps and exact-version agreement foundation",
+      note: "Proofs, exact-version agreements, test escrow and verified activity",
       icon: "◇",
-      state: "Foundation",
-      detail: "Writes gated",
+      state: "Staged",
+      detail: "Devnet · fail closed",
     },
     {
       href: "/app/ideas",

@@ -118,12 +118,12 @@ export default function VaultPage() {
       </section>
 
       <aside className={styles.notice}>
-        <strong>Writes remain locked until deployment identity is authoritative.</strong>
+        <strong>The native PPV workspace now owns deployment readiness.</strong>
         <p>
-          The PPV repository still uses build-only placeholder program IDs. GwapOS will not
-          submit proof or agreement transactions until controlled program identities are deployed
-          and recorded. Invoices, transfers, escrow, disputes, and any instruction that holds user
-          funds remain outside this foundation by design.
+          Canonical program IDs are established, but public devnet is not yet compatible with
+          the full workspace: Commerce is absent at its configured ID and Escrow still reflects
+          the older pre-RR13-001 deployment. Writes fail closed until exact artifact evidence
+          passes. <Link href="/app/ppv">Open PPV workspace →</Link>
         </p>
       </aside>
     </div>
