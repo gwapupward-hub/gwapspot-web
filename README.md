@@ -1,27 +1,29 @@
 # GWAPSpot Web
 
-One Next.js codebase currently serves two intentionally separate product surfaces:
+One Next.js codebase serves two production surfaces with separate Vercel projects:
 
-- **https://www.gwapspot.com** — public GWAP website, discovery, ecosystem pages, docs, launch pages, community, public proof surfaces, and downloadable assets.
+- **https://www.gwapspot.com** — public GWAP website and discovery layer.
 - **https://app.gwapspot.com** — authenticated GWAP OS application surface.
 
 ## Architecture
 
-The split is host-based.
+The split is host-based and deployment-separated.
 
-- `www.gwapspot.com` owns public/marketing routes.
-- `app.gwapspot.com` owns `/`, `/os-entry`, `/os-sign-in`, `/refresh`, and `/app/**`.
-- Requests for public marketing routes on `app.gwapspot.com` are redirected back to the app entry.
-- The authenticated OS remains non-indexable.
+- `gwapspot-web` owns `gwapspot.com` and `www.gwapspot.com`.
+- `gwapspot-app` owns `app.gwapspot.com`.
+- Public requests for GWAP OS routes are permanently redirected to `app.gwapspot.com`.
+- Public marketing routes requested on `app.gwapspot.com` are normalized back to the app entry.
+- `/app/**` remains authenticated and non-indexable.
 - Shared API routes and shared assets still live in this repository for now.
 
 The routing contract is implemented in:
 
+- `next.config.ts`
 - `app/lib/app-domain-routing.ts`
 - `app/lib/proxy-routing.ts`
 - `proxy.ts`
 
-Do not add new app-host routes without updating the allowlist and its tests.
+Do not add a new app-owned browser route without updating both the app-host allowlist and the public-host canonical redirects.
 
 ## Local development
 
@@ -52,23 +54,19 @@ npm run build
 | GWAP OS entry | `app.gwapspot.com` | App-only |
 | Sign-in / session refresh | `app.gwapspot.com` | App-only |
 | `/app/**` | `app.gwapspot.com` | Authenticated, noindex |
-| API routes | Shared project for now | Treat as backend/shared infrastructure |
+| API routes | Shared repository | Treat as backend/shared infrastructure |
 
 ## Vercel
 
-The repository currently deploys through the Vercel project `gwapspot-web`.
+Production is intentionally split across two Vercel projects connected to this repository:
 
-For the cleanest operational separation, use **two Vercel projects connected to this repository**:
-
-1. **gwapspot-web** → `www.gwapspot.com`
+1. **gwapspot-web** → `gwapspot.com`, `www.gwapspot.com`
 2. **gwapspot-app** → `app.gwapspot.com`
 
-Keep the same Git source initially, but configure each project with its own production domain and environment variables. This gives each surface independent deployments, logs, rollback history, and ownership without forcing an immediate source-code split.
-
-Until the second Vercel project exists, the host-routing layer in this repo keeps the two surfaces logically isolated inside the current deployment.
+This gives the public gateway and GWAP OS independent production deployments, runtime logs, and rollback history while preserving shared source code.
 
 ## Repository hygiene
 
 Keep durable product documentation under `docs/`. Temporary audit notes, one-off acceptance notes, generated output, and agent scratch files should not live at the repository root.
 
-Current durable references include authentication, GWAP OS architecture, browser behavior, developer billing, reputation snapshots, PPV receipts, and production operations.
+Current durable references include authentication, GWAP OS architecture, browser behavior, developer billing, reputation snapshots, PPV receipts, domain separation, and production operations.
