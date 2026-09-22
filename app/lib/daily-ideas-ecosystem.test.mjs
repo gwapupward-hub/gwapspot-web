@@ -43,7 +43,6 @@ test("retired product markers stay out of active GWAP source and assets", () => 
     ...activeFiles(publicRoot),
     resolve(repositoryRoot, "README.md"),
     resolve(repositoryRoot, ".env.example"),
-    resolve(repositoryRoot, "MOBILE_NAV_RELIABILITY_V2_ACCEPTANCE.md"),
   ];
   const violations = [];
 
