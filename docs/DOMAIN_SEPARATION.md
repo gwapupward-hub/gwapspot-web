@@ -2,7 +2,7 @@
 
 ## Goal
 
-Make the public website and GWAP OS behave like separate products even while they share source code.
+Keep the public GWAP website and GWAP OS operationally separate while they continue sharing one source repository.
 
 ## Canonical ownership
 
@@ -29,34 +29,50 @@ Expected content:
 
 Private application host.
 
-Allowed browser routes:
+App-owned browser routes:
 
 - `/`
 - `/os-entry`
 - `/os-sign-in`
 - `/refresh`
-- `/sign-in` only as a normalization path
+- `/sign-in`
 - `/app`
 - `/app/**`
 
-Unknown or marketing routes on this host must redirect to `/`.
+Unknown or marketing routes on this host must normalize to the app entry.
 
 ## Deployment model
 
-Preferred production model:
-
 | Vercel project | Production domain | Responsibility |
 | --- | --- | --- |
-| `gwapspot-web` | `www.gwapspot.com` | Public website |
+| `gwapspot-web` | `gwapspot.com`, `www.gwapspot.com` | Public website |
 | `gwapspot-app` | `app.gwapspot.com` | GWAP OS |
 
-Both projects may point to the same Git repository at first. This is safer than immediately splitting repositories because shared components, API code, authentication, and assets can continue to evolve together while deployment and observability are separated.
+Both projects point to this repository. That preserves shared components and APIs while giving each production surface independent deployments, logs, and rollback history.
+
+## Canonical redirect contract
+
+Public hosts must never remain the canonical location for app-owned routes.
+
+Requests for these paths on `gwapspot.com` or `www.gwapspot.com` permanently redirect to the same path on `app.gwapspot.com`:
+
+- `/app`
+- `/app/**`
+- `/sign-in`
+- `/sign-in/**`
+- `/refresh`
+- `/os-entry`
+- `/os-entry/**`
+- `/os-sign-in`
+- `/os-sign-in/**`
+
+All other requests to bare `gwapspot.com` canonicalize to `www.gwapspot.com`.
 
 ## Environment boundaries
 
-Public-web project should only receive variables required by public pages and shared public APIs.
+The public-web project should only receive variables required by public pages and shared public APIs.
 
-App project should receive authentication, workspace storage, wallet, GNS, PPV/devnet, billing, and other OS-only secrets/config.
+The app project should receive authentication, workspace storage, wallet, GNS, PPV/devnet, billing, and other OS-only configuration.
 
 Never expose a server secret as a `NEXT_PUBLIC_*` variable.
 
@@ -64,9 +80,9 @@ Never expose a server secret as a `NEXT_PUBLIC_*` variable.
 
 Public host:
 
-- `https://www.gwapspot.com/` loads public homepage.
+- `https://www.gwapspot.com/` loads the public homepage.
 - Public SEO metadata points to `www.gwapspot.com`.
-- `/app` should direct users into the canonical app host once the dual-project deployment is active.
+- `/app` and app-owned deep links 308 to `app.gwapspot.com`.
 
 App host:
 
@@ -79,17 +95,10 @@ App host:
 Operational:
 
 - Each Vercel project has independent production deployment history.
-- Each project has only its required env variables.
-- Production aliases point to exactly one project each.
-- Preview deployments can be verified independently.
+- Production custom domains resolve to their intended project.
+- Runtime errors can be inspected independently.
+- Preview deployments are verified per project.
 
-## Migration order
+## Future separation
 
-1. Keep current host-routing behavior intact.
-2. Create `gwapspot-app` Vercel project from this repo.
-3. Copy only app-required environment variables.
-4. Attach `app.gwapspot.com` to the app project.
-5. Keep `www.gwapspot.com` on `gwapspot-web`.
-6. Verify both production hosts.
-7. Add cross-host canonical redirects where required.
-8. Only after stable operation consider physically extracting app/public code into separate packages or repositories.
+Do not split the Git repository merely because the Vercel projects are separate. Consider a source-level monorepo or repository split only when public and app code ownership, dependencies, or release cadence become materially independent.
