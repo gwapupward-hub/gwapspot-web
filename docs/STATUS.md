@@ -6,32 +6,36 @@ Last reviewed: 2026-09-22
 
 | Surface | Status | Deployment ownership | Notes |
 | --- | --- | --- | --- |
-| `www.gwapspot.com` | Active | `gwapspot-web` | Public website and discovery layer |
-| `app.gwapspot.com` | Logically separated in code | Still shares `gwapspot-web` deployment | Dedicated Vercel project still recommended |
-| `/app/**` | Active | Shared project | Authenticated GWAP OS |
-| Shared APIs | Active | Shared project | Backend/shared infrastructure |
+| `gwapspot.com` / `www.gwapspot.com` | Active | `gwapspot-web` | Public website and discovery layer |
+| `app.gwapspot.com` | Active | `gwapspot-app` | Dedicated GWAP OS deployment |
+| `/app/**` | Active | `gwapspot-app` canonical host | Authenticated GWAP OS |
+| Shared APIs | Active | Shared source repository | Backend/shared infrastructure |
 
-## What is working
+## Verified working
 
-- Next.js host detection recognizes `app.gwapspot.com`.
-- App-host `/` rewrites to the OS entry surface.
-- Unknown/marketing routes on the app host redirect to the app entry.
-- `/app/**` remains session-gated.
-- GWAP OS metadata is `noindex`.
-- Public metadata remains canonical to `www.gwapspot.com`.
-- Vercel production deployment for `gwapspot-web` is currently READY.
-- Preview deployment for PR #191 is READY.
+- Vercel has separate `gwapspot-web` and `gwapspot-app` projects.
+- `app.gwapspot.com` resolves to the `gwapspot-app` production deployment.
+- `www.gwapspot.com` resolves to the `gwapspot-web` production deployment.
+- `app.gwapspot.com/` resolves to the OS entry surface.
+- `app.gwapspot.com/app` resolves to GWAP OS and remains `noindex`.
+- Marketing routes requested on the app host normalize to the app entry.
+- Bare `gwapspot.com` permanently redirects to `www.gwapspot.com`.
+- No GWAP app runtime error groups were present during the 2026-09-22 verification window.
 
-## What is still mixed
+## Canonicalization being locked in
 
-- Public website and GWAP OS deploy from the same Vercel project.
-- Production logs and rollback history are shared.
-- Environment variables are project-wide instead of surface-specific.
-- API routes are shared by both surfaces.
-- A failure in one deployment can still affect both public and app hosts.
+This branch permanently redirects app-owned routes requested on either public host to `app.gwapspot.com`.
 
-## Next operational move
+That removes the remaining ambiguity where `www.gwapspot.com/app` could still render an OS sign-in route from the public project.
 
-Create a second Vercel project named `gwapspot-app`, connect it to this repository, and assign `app.gwapspot.com` to it.
+## Still shared by design
 
-Do not split the Git repository yet. First separate deployment ownership and environment configuration, verify both hosts, then decide whether a source-level monorepo split is worth the added complexity.
+- Git repository
+- shared components
+- shared API code
+- static assets
+- some environment configuration until it is fully narrowed per Vercel project
+
+## Current operational caution
+
+Because both Vercel projects are connected to the same Git repository, feature branches can generate previews in both projects. This is expected with the current Git integration, but it can create duplicate preview noise. Treat preview-build filtering as a separate optimization after the canonical domain routing is stable.
