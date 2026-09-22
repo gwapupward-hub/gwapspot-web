@@ -49,6 +49,12 @@ test("mobile navigation reliability v2 keeps product navigation isolated", () =>
   assert.match(shell, /<Link href="\/" data-native-nav>Home<\/Link>/);
   assert.match(shell, /<Link href="\/ecosystem" data-native-nav>Ecosystem<\/Link>/);
   assert.match(shell, /<Link href="\/app" data-native-nav>GWAP OS<\/Link>/);
+  assert.match(shell, /<Link href="\/launch" data-native-nav>Launch<\/Link>/);
+  assert.match(shell, /<Link href="\/developers" data-native-nav>Developers<\/Link>/);
+  assert.match(shell, /<Link href="\/about" data-native-nav>About<\/Link>/);
+  assert.match(shell, /<Link href="\/roadmap" data-native-nav>Roadmap<\/Link>/);
+  assert.match(shell, /<Link href="\/community" data-native-nav>Community<\/Link>/);
+  assert.match(shell, /<Link href="\/contact" data-native-nav>Contact<\/Link>/);
   assert.match(shell, /data-native-product-link/);
   assert.match(shell, /prefetch=\{false\}/);
 
@@ -104,6 +110,8 @@ test("mobile navigation reliability v2 keeps product navigation isolated", () =>
   assert.match(appSplash, /revealFinalFrame/);
 
   assert.match(reliabilityCss, /touch-action: manipulation/);
+  assert.match(reliabilityCss, /\.mobile-quick-nav a\[href="\/app"\]/);
+  assert.match(reliabilityCss, /overflow-x: auto/);
   assert.match(reliabilityCss, /\.premium-product-card > \*/);
   assert.match(reliabilityCss, /-webkit-touch-callout: none/);
   assert.match(

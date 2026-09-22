@@ -29,6 +29,48 @@
   display: none;
 }
 
+@media (max-width: 980px) {
+  .site-header .desktop-nav,
+  .site-header .header-cta,
+  .site-header .brand-copy {
+    display: none;
+  }
+
+  .site-header .mobile-quick-nav {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .site-header .mobile-quick-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .site-header .mobile-quick-nav a {
+    flex: 0 0 auto;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 12px;
+    border: 1px solid rgba(255,255,255,.09);
+    border-radius: 11px;
+    color: rgba(244,246,244,.82);
+    font-size: 12px;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+  .site-header .mobile-quick-nav a[href="/app"] {
+    border-color: rgba(19,221,19,.26);
+    color: #7df77d;
+  }
+}
+
 .product-route-nav {
   display: flex;
   align-items: center;
@@ -113,29 +155,38 @@
 
   .mobile-quick-nav {
     min-width: 0;
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    display: flex;
     gap: 5px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    mask-image: linear-gradient(90deg, #000 calc(100% - 22px), transparent);
+  }
+
+  .mobile-quick-nav::-webkit-scrollbar {
+    display: none;
   }
 
   .mobile-quick-nav a {
+    flex: 0 0 auto;
     min-width: 0;
     min-height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0 8px;
+    padding: 0 12px;
     border: 1px solid rgba(255,255,255,.09);
     border-radius: 11px;
     background: rgba(255,255,255,.028);
     color: rgba(244,246,244,.78);
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 850;
-    letter-spacing: .035em;
+    letter-spacing: .02em;
     white-space: nowrap;
   }
 
-  .mobile-quick-nav a:last-child {
+  .mobile-quick-nav a[href="/app"] {
     border-color: rgba(19,221,19,.26);
     background: rgba(19,221,19,.07);
     color: #7df77d;
