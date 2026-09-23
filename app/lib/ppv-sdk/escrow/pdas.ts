@@ -1,5 +1,5 @@
-// VENDORED FROM gwapupward-hub/ppv@f89572fd69e0be26860d1ddc37a91b6b1e1475bc (sdk/src/escrow/pdas.ts).
-// Keep synchronized with the canonical PPV SDK; do not edit locally without resyncing the closure.
+// VENDORED FROM gwapupward-hub/ppv@7c4ea67a9b6d69ab85a20f497eb0c2a31b48cfd2 (sdk/src/escrow/pdas.ts).
+// Local compatibility adaptation only: preserve PPV wire behavior while compiling under GwapSpot's ES2017 TypeScript target.
 import { createHash } from "node:crypto";
 
 import { decodeBase58, encodeBase58 } from "../reputation/base58.js";
@@ -96,7 +96,7 @@ export function findProgramAddress(
 /** `agreement_id` is a u64 encoded little-endian, as the program seeds it. */
 export function agreementIdSeed(agreementId: bigint | number): Uint8Array {
   const value = BigInt(agreementId);
-  if (value < 0n || value > 0xffff_ffff_ffff_ffffn) throw new PdaError("agreement id out of u64 range");
+  if (value < BigInt("0") || value > 0xffff_ffff_ffff_ffffn) throw new PdaError("agreement id out of u64 range");
   const out = new Uint8Array(8);
   new DataView(out.buffer).setBigUint64(0, value, true);
   return out;
