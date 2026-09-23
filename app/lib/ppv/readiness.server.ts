@@ -7,10 +7,12 @@ import {
   PPV_KNOWN_DEVNET_REFERENCE,
   PPV_SOURCE_PINS,
 } from "./deployment-manifest";
-import { getPpvServerConfig } from "./config.server";
+import { getPpvObservationConfig, getPpvServerConfig, type PpvServerConfig } from "./config.server";
 import {
   PPV_PROGRAM_IDS,
   UPGRADEABLE_LOADER,
+  PpvPolicyError,
+  assertMutationReady,
   type PpvEnvironmentObservation,
   type PpvLayer,
   type PpvProgramObservation,
@@ -181,9 +183,10 @@ async function observeProgram(
   };
 }
 
-async function observeEnvironment(): Promise<PpvEnvironmentObservation> {
-  const config = getPpvServerConfig();
-  if (!config.rpcUrl || !config.rpcEndpointSha256) throw new Error("PPV_DISABLED");
+async function observeEnvironment(
+  config = getPpvObservationConfig(),
+): Promise<PpvEnvironmentObservation> {
+  if (!config.rpcUrl || !config.rpcEndpointSha256) throw new Error("PPV_RPC_REQUIRED");
 
   const cacheKey = [
     config.policy.cluster,
