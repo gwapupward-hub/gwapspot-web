@@ -68,6 +68,12 @@ export function SiteHeader() {
         <Link href="/ecosystem" data-native-nav>Ecosystem</Link>
         <Link href="/docs" data-native-nav>Docs</Link>
         <Link href="/app" data-native-nav>GWAP OS</Link>
+        <Link href="/launch" data-native-nav>Launch</Link>
+        <Link href="/developers" data-native-nav>Developers</Link>
+        <Link href="/about" data-native-nav>About</Link>
+        <Link href="/roadmap" data-native-nav>Roadmap</Link>
+        <Link href="/community" data-native-nav>Community</Link>
+        <Link href="/contact" data-native-nav>Contact</Link>
       </nav>
 
       <Link className="header-cta" href="/app">

@@ -264,6 +264,14 @@ export function DashboardView({ products }: { products: EcosystemProduct[] }) {
                 </div>
                 <strong>View</strong>
               </Link>
+              <Link className="gwapos-pulse-row" href="/app/settings">
+                <span aria-hidden="true">⚙</span>
+                <div>
+                  <p>Account settings</p>
+                  <small>Preferences, linked accounts, and sign-out</small>
+                </div>
+                <strong>Open</strong>
+              </Link>
             </div>
           </section>
         </div>
