@@ -1,6 +1,6 @@
 // VENDORED FROM gwapupward-hub/ppv@7c4ea67a9b6d69ab85a20f497eb0c2a31b48cfd2 (sdk/src/instructions.ts).
 // Local compatibility adaptation only: preserve PPV wire behavior while compiling under GwapSpot's ES2017 TypeScript target.
-import { decodeBase58 } from "./reputation/base58.js";
+import { decodeBase58 } from "./reputation/base58.ts";
 import {
   coreProofId,
   deriveAgreement as deriveEscrowAgreement,
@@ -11,8 +11,8 @@ import {
   deriveVaultAuthority,
   findProgramAddress,
   type Address,
-} from "./escrow/pdas.js";
-import { anchorDiscriminator } from "./reputation/hashing.js";
+} from "./escrow/pdas.ts";
+import { anchorDiscriminator } from "./reputation/hashing.ts";
 
 export const SYSTEM_PROGRAM_ID = "11111111111111111111111111111111";
 export const CLASSIC_TOKEN_PROGRAM_ID = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
