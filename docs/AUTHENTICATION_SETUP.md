@@ -11,6 +11,22 @@ both wallet authentication and workspace storage are configured.
 
 ## Privy setup
 
+Use two Privy applications: one production application for `gwapspot.com` and one development application for localhost and Vercel previews. Do not mix an app ID, app secret, or client ID from different Privy applications.
+
+### Production contract
+
+The production Privy application must have:
+
+- Solana wallet login enabled.
+- `gwapspot.com` configured and verified as the production cookie domain.
+- `https://app.gwapspot.com` and `https://www.gwapspot.com` registered as allowed origins where the Privy dashboard exposes origin controls.
+- HttpOnly cookie authentication enabled for the production web client.
+- The Vercel Production values for `NEXT_PUBLIC_PRIVY_APP_ID`, `PRIVY_APP_SECRET`, and, when used, `NEXT_PUBLIC_PRIVY_CLIENT_ID` all taken from this same production application/client.
+
+A green `/api/health` only proves that required environment variables are present. It cannot prove that the app ID, secret, and optional client ID belong to the same Privy application, or that the Privy domain/client settings are correct.
+
+
+
 1. Create separate Privy apps for local/preview and production.
 2. Enable both **Email** and **Solana wallet** authentication in the Privy
    Dashboard. Confirm the public app configuration reports
