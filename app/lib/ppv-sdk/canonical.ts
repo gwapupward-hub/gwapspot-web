@@ -1,5 +1,5 @@
-// GENERATED FROM gwapupward-hub/ppv@f89572fd69e0be26860d1ddc37a91b6b1e1475bc (sdk/src/canonical.ts).
-// Do not edit by hand; update the PPV SDK source and resync this dependency closure.
+// VENDORED FROM gwapupward-hub/ppv@7c4ea67a9b6d69ab85a20f497eb0c2a31b48cfd2 (sdk/src/canonical.ts).
+// Local compatibility adaptation only: preserve PPV wire behavior while compiling under GwapSpot's ES2017 TypeScript target.
 export const PPV_CANONICALIZATION_VERSION = "1" as const;
 
 export type CanonicalScalar = string | boolean;
@@ -203,7 +203,9 @@ export function canonicalizeBytesV1(document: unknown): Uint8Array {
 
 /** Browser-safe SHA-256. This module intentionally has no Node Buffer dependency. */
 export async function sha256(bytes: Uint8Array): Promise<Uint8Array> {
-  const digest = await globalThis.crypto.subtle.digest("SHA-256", bytes);
+  const input = new Uint8Array(bytes.byteLength);
+  input.set(bytes);
+  const digest = await globalThis.crypto.subtle.digest("SHA-256", input.buffer);
   return new Uint8Array(digest);
 }
 
