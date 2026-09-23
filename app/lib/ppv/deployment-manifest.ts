@@ -5,8 +5,8 @@ import {
 } from "./policy";
 
 export const PPV_SOURCE_PINS = Object.freeze({
-  appBaseline: "2d56a099641adb64c527cf7ff79e33fe3f92f15c",
-  ppvPackage: "de7703214d9e724f6b19a18a52b5e9cb6d7b392d",
+  appBaseline: "9d16924e5f637907d41efe4f141d32fef37c9666",
+  ppvPackage: "7c4ea67a9b6d69ab85a20f497eb0c2a31b48cfd2",
   securityTarget: "e574c69570979081e34e0358673c62f87ba9220d",
 });
 
