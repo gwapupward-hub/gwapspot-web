@@ -1,5 +1,6 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
-import { getPpvWorkspaceReadiness, type PpvCapability } from "../../lib/ppv/readiness.server";
+import { getPpvWorkspaceReadiness, type PpvCapability, type PublicPpvReadiness } from "../../lib/ppv/readiness.server";
 import styles from "./ppv.module.css";
 
 type SectionPageProps = {
@@ -8,6 +9,8 @@ type SectionPageProps = {
   title: string;
   description: string;
   actions: readonly { key: string; label: string; detail: string }[];
+  readiness?: PublicPpvReadiness;
+  children?: ReactNode;
 };
 
 const stateCopy: Record<PpvCapability["state"], string> = {
@@ -23,10 +26,15 @@ export async function PpvSectionPage({
   title,
   description,
   actions,
+  readiness: providedReadiness,
+  children,
 }: SectionPageProps) {
-  const readiness = await getPpvWorkspaceReadiness();
+  const readiness = providedReadiness ?? await getPpvWorkspaceReadiness();
   const program = readiness.programs[layer];
   const layerState = readiness.layers[layer];
+  const hasReadyAction = actions.some(
+    (action) => readiness.actions[action.key]?.state === "ready",
+  );
 
   return (
     <div className={styles.page}>
@@ -75,8 +83,14 @@ export async function PpvSectionPage({
         })}
       </section>
 
+      {children}
+
       <aside className={styles.notice}>
-        <strong>No wallet prompt is generated from this screen while readiness is blocked.</strong>
+        <strong>
+          {hasReadyAction
+            ? "Wallet prompts are limited to server-approved devnet actions."
+            : "No wallet prompt is generated from this screen while readiness is blocked."}
+        </strong>
         <p>
           PPV mutations require fresh server-side network, deployment, artifact and actor checks.
           Client state cannot override those gates.
