@@ -21,11 +21,33 @@ const telegramFrameProtection = [
   },
 ];
 
+const gwapAppOrigin = "https://app.gwapspot.com";
+const gwapPublicHosts = ["gwapspot.com", "www.gwapspot.com"];
+const gwapAppOwnedRoutes = [
+  { source: "/app", destination: "/app" },
+  { source: "/app/:path*", destination: "/app/:path*" },
+  { source: "/sign-in", destination: "/sign-in" },
+  { source: "/sign-in/:path*", destination: "/sign-in/:path*" },
+  { source: "/refresh", destination: "/refresh" },
+  { source: "/os-entry", destination: "/os-entry" },
+  { source: "/os-entry/:path*", destination: "/os-entry/:path*" },
+  { source: "/os-sign-in", destination: "/os-sign-in" },
+  { source: "/os-sign-in/:path*", destination: "/os-sign-in/:path*" },
+];
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   async redirects() {
     return [
+      ...gwapPublicHosts.flatMap((host) =>
+        gwapAppOwnedRoutes.map(({ source, destination }) => ({
+          source,
+          has: [{ type: "host" as const, value: host }],
+          destination: `${gwapAppOrigin}${destination}`,
+          permanent: true,
+        })),
+      ),
       {
         source: "/:path*",
         has: [{ type: "host", value: "gwapspot.com" }],

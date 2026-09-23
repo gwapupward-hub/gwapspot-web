@@ -9,7 +9,10 @@ import {
   WALLET_SIGN_IN_LABEL,
   type WalletSignInPhase,
 } from "../lib/wallet-sign-in-phase";
-import { getWalletAuthErrorMessage } from "../lib/wallet-auth-error";
+import {
+  getWalletAuthErrorCode,
+  getWalletAuthErrorMessage,
+} from "../lib/wallet-auth-error";
 
 type WalletSignInVariant = "public" | "app";
 
@@ -26,11 +29,42 @@ export function WalletSignIn({
   const { authenticated, getAccessToken, ready, user } = usePrivy();
   const { isOpen: loginModalOpen } = useModalStatus();
   const [error, setError] = useState("");
+  const [errorCode, setErrorCode] = useState<string | null>(null);
   const [phase, setPhase] = useState<WalletSignInPhase>("idle");
   const navigationStarted = useRef(false);
   const isAppVariant = variant === "app";
   const display = resolveWalletSignInDisplay(phase, loginModalOpen);
   const busy = display !== "idle";
+
+  const reportAuthEvent = useCallback(
+    (event: string, code?: string | null) => {
+      const payload = JSON.stringify({
+        event,
+        code: code ?? null,
+        phase,
+        host: window.location.hostname,
+        userAgentClass: /iPhone|iPad|iPod/i.test(navigator.userAgent)
+          ? "ios"
+          : /Android/i.test(navigator.userAgent)
+            ? "android"
+            : "desktop",
+      });
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon(
+          "/api/auth/diagnostics",
+          new Blob([payload], { type: "application/json" }),
+        );
+        return;
+      }
+      void fetch("/api/auth/diagnostics", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: payload,
+        keepalive: true,
+      });
+    },
+    [phase],
+  );
 
   const hasSolanaWallet = user?.linkedAccounts.some(
     (account) => account.type === "wallet" && account.chainType === "solana",
@@ -53,25 +87,34 @@ export function WalletSignIn({
     try {
       const token = await waitForAccessToken();
       if (!token) {
+        reportAuthEvent("session_token_missing", "session_token_missing");
         throw new Error("Authenticated wallet session has no access token");
       }
+      reportAuthEvent("session_ready");
       setPhase("opening");
       window.location.replace(redirectPath);
     } catch (sessionError) {
       navigationStarted.current = false;
       setPhase("idle");
+      setErrorCode(getWalletAuthErrorCode(sessionError));
       setError(getWalletAuthErrorMessage(sessionError));
     }
-  }, [redirectPath, waitForAccessToken]);
+  }, [redirectPath, reportAuthEvent, waitForAccessToken]);
 
   const { login } = useLogin({
     onComplete: () => {
+      reportAuthEvent("login_completed");
+      setError("");
+      setErrorCode(null);
       void navigateWhenSessionReady();
     },
     onError: (loginError) => {
+      const code = getWalletAuthErrorCode(loginError);
+      reportAuthEvent("login_failed", code);
       navigationStarted.current = false;
       setPhase("idle");
-      setError(getWalletAuthErrorMessage({ code: loginError }));
+      setErrorCode(code);
+      setError(getWalletAuthErrorMessage(loginError));
     },
   });
 
@@ -92,7 +135,11 @@ export function WalletSignIn({
   }, [authenticated, hasSolanaWallet, navigateWhenSessionReady, ready, sessionIssue]);
 
   function openWalletSelector() {
+    navigationStarted.current = false;
+    setPhase("idle");
     setError("");
+    setErrorCode(null);
+    reportAuthEvent("login_started");
     login({ loginMethods: ["wallet"] });
   }
 
@@ -211,9 +258,10 @@ export function WalletSignIn({
         </p>
       ) : null}
       {error ? (
-        <p className="wallet-auth-error" role="alert">
-          {error}
-        </p>
+        <div className="wallet-auth-error" role="alert">
+          <p>{error}</p>
+          {errorCode ? <small>Reference: {errorCode}</small> : null}
+        </div>
       ) : null}
       {isAppVariant ? (
         <p className="wallet-auth-legal">
