@@ -605,14 +605,102 @@
   }
 }
 
-@media (max-width: 720px) {
-  .gwapos-wallet-mode .os-menubar-status .os-status-item:not(:first-of-type),
-  .gwapos-wallet-mode .os-menubar-actions > a {
-    display: none;
+@media (max-width: 1100px) {
+  .gwapos-wallet-mode .os-menubar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "brand actions" "status status";
+    align-items: center;
+    row-gap: 8px;
   }
 
+  .gwapos-wallet-mode .os-menubar-brand {
+    grid-area: brand;
+    min-width: 0;
+  }
+
+  .gwapos-wallet-mode .os-menubar-brand small {
+    max-width: 46vw;
+    overflow: hidden;
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .gwapos-wallet-mode .os-menubar-actions {
+    grid-area: actions;
+  }
+
+  .gwapos-wallet-mode .os-menubar-actions > .os-sign-out-control {
+    display: inline-grid;
+  }
+
+  .gwapos-wallet-mode .os-menubar-actions > a,
+  .gwapos-wallet-mode .os-sign-out.is-compact {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .gwapos-wallet-mode .os-sign-out.is-compact {
+    padding: 0 12px;
+    font-size: 12px;
+  }
+
+  .gwapos-wallet-mode .os-sign-out-control > span[role="alert"] {
+    font-size: 11px;
+    white-space: normal;
+  }
+
+  .gwapos-wallet-mode .os-menubar-status {
+    display: flex;
+    flex-wrap: wrap;
+    grid-area: status;
+    min-width: 0;
+    gap: 10px;
+    padding: 8px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .gwapos-wallet-mode .os-status-item {
+    min-width: 0;
+    flex: 1 1 0;
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .gwapos-wallet-mode .os-status-item + .os-status-item {
+    padding-left: 10px;
+    border-left: 1px solid rgba(255, 255, 255, 0.07);
+  }
+
+  .gwapos-wallet-mode .os-status-item small {
+    font-size: 10px;
+    letter-spacing: 0.08em;
+  }
+
+  .gwapos-wallet-mode .os-status-item strong {
+    max-width: 100%;
+    font-size: 13px;
+  }
+
+  .gwapos-wallet-mode .os-copy-address {
+    min-height: 44px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.04);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+  }
+}
+
+@media (max-width: 720px) {
   .gwapos-wallet-mode .os-menubar {
-    padding-inline: 12px;
+    padding-inline: max(12px, env(safe-area-inset-right));
+    padding-left: max(12px, env(safe-area-inset-left));
   }
 
   .gwapos-next-action {

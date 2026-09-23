@@ -31,6 +31,22 @@ test("the OS shell renders wallet identity distinct from public marketing chrome
   assert.doesNotMatch(shell, /Create a Solana wallet with email/);
 });
 
+test("narrow screens keep wallet identity and settings in the shell", () => {
+  const shell = read("./os-shell.tsx");
+  const walletCss = read("../gwapos-wallet.css");
+  const actions = read("./gwap-action-sheet.tsx");
+  const home = read("./dashboard-view.tsx");
+
+  assert.match(shell, /aria-label="Wallet identity status"/);
+  assert.match(shell, /href="\/app\/settings"/);
+  assert.doesNotMatch(shell, /gwapos-mobile-signout/);
+  assert.match(walletCss, /\.gwapos-wallet-mode \.os-menubar-status \{[^}]*display:\s*flex;/);
+  assert.match(walletCss, /\.os-menubar-actions > \.os-sign-out-control \{\s*display:\s*inline-grid;/);
+  assert.doesNotMatch(walletCss, /\.os-menubar-actions > a \{\s*display:\s*none/);
+  assert.match(actions, /href: "\/app\/settings"/);
+  assert.match(home, /href="\/app\/settings"/);
+});
+
 test("sign-out terminates the Privy session, not a dead wallet-adapter connection", () => {
   const signOut = read("./sign-out-button.tsx");
   // GwapOS sign-out terminates the Privy session (auth); the wallet-adapter

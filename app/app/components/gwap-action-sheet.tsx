@@ -35,6 +35,13 @@ const groups = [
       { href: "/app/score", label: "Verify Reputation", note: "Review GwapScore and trust signals", enabled: true },
     ],
   },
+  {
+    label: "Account",
+    actions: [
+      { href: "/app/settings", label: "Settings", note: "Preferences, linked accounts, and account controls", enabled: true },
+      { href: "/app/apps", label: "All apps", note: "Identity, reputation, ideas, marketplace, and developer tools", enabled: true },
+    ],
+  },
 ] as const;
 
 export function GwapActionSheet({ open, onClose, hasGnsIdentity }: GwapActionSheetProps) {
