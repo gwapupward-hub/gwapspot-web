@@ -2,8 +2,8 @@
 // Local compatibility adaptation only: preserve PPV wire behavior while compiling under GwapSpot's ES2017 TypeScript target.
 import { createHash } from "node:crypto";
 
-import { decodeBase58, encodeBase58 } from "../reputation/base58.js";
-import { isOnCurve } from "./curve.js";
+import { decodeBase58, encodeBase58 } from "../reputation/base58.ts";
+import { isOnCurve } from "./curve.ts";
 
 /**
  * Deterministic PPV addresses.
