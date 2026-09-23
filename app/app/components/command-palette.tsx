@@ -14,7 +14,7 @@ const commands = [
   { label: "Find an opportunity", path: "/app/ideas", hint: "Daily Ideas · discover · build · launch" },
   { label: "Discover GWAP projects", path: "/app/browser", hint: "Gwap Browser · .gwap address · resolve · projects · discover · open live project" },
   { label: "Turn trust into work", path: "/app/marketplace", hint: "Marketplace · hire · freelance · client · work" },
-  { label: "Prove something privately", path: "/app/vault", hint: "Proof Vault · proof · credential · evidence" },
+  { label: "Open PPV workspace", path: "/app/ppv", hint: "Private Proof Vault · Core · Commerce · Escrow · proof · agreement · evidence · receipts" },
   { label: "Integrate GWAP", path: "/app/developer", hint: "Developer API · API key · integrate · builders" },
   { label: "Open GWAP OS home", path: "/app", hint: "home · dashboard · overview" },
   { label: "Open settings", path: "/app/settings", hint: "settings · preferences · account" },
