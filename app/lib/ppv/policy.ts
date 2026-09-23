@@ -232,8 +232,8 @@ export function assertMutationReady(input: {
 }) {
   const { config, manifest, observation, layers, nowMs } = input;
   assertEnvironment(config, manifest, observation);
-  requireCondition(Array.isArray(layers) && layers.length > 0, "NO_PROGRAM_DEPENDENCIES");
-  for (const layer of new Set(layers)) {
+  requireCondition(layers.length > 0, "NO_PROGRAM_DEPENDENCIES");
+  for (const layer of new Set<PpvLayer>(layers)) {
     assertProgramReady(config, layer, manifest.programs[layer], observation.programs[layer], nowMs);
   }
 }
