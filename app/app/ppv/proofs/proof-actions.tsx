@@ -223,15 +223,18 @@ export function PpvProofActions({
   );
 
   useEffect(() => {
-    const pending = loadPending(account.verifiedWallet);
-    if (!pending) return;
-    setProofIdHex(pending.proofIdHex);
-    setProofAddress(pending.proofAddress);
-    setSignature(pending.signature);
-    setState("sync-required");
-    setMessage(
-      "A PPV transaction was already broadcast from this wallet. Verify it before signing another one.",
-    );
+    const timer = window.setTimeout(() => {
+      const pending = loadPending(account.verifiedWallet);
+      if (!pending) return;
+      setProofIdHex(pending.proofIdHex);
+      setProofAddress(pending.proofAddress);
+      setSignature(pending.signature);
+      setState("sync-required");
+      setMessage(
+        "A PPV transaction was already broadcast from this wallet. Verify it before signing another one.",
+      );
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [account.verifiedWallet]);
 
   async function prepareAndSend(
