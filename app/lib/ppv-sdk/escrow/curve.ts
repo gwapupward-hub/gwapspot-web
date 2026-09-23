@@ -1,5 +1,5 @@
-// VENDORED FROM gwapupward-hub/ppv@f89572fd69e0be26860d1ddc37a91b6b1e1475bc (sdk/src/escrow/curve.ts).
-// Keep synchronized with the canonical PPV SDK; do not edit locally without resyncing the closure.
+// VENDORED FROM gwapupward-hub/ppv@7c4ea67a9b6d69ab85a20f497eb0c2a31b48cfd2 (sdk/src/escrow/curve.ts).
+// Local compatibility adaptation only: preserve PPV wire behavior while compiling under GwapSpot's ES2017 TypeScript target.
 /**
  * Ed25519 point decompression, used only to answer one question: is a candidate
  * 32-byte address on the curve?
@@ -15,56 +15,56 @@
  * rejected. Dependency-free on purpose — the SDK ships no runtime dependencies.
  */
 
-const P = (1n << 255n) - 19n;
+const P = (BigInt("1") << BigInt("255")) - BigInt("19");
 // d = -121665 / 121666 (mod p)
-const D = 37095705934669439343138083508754565189542113879843219016388785533085940283555n;
+const D = BigInt("37095705934669439343138083508754565189542113879843219016388785533085940283555");
 
 function mod(value: bigint): bigint {
   const result = value % P;
-  return result < 0n ? result + P : result;
+  return result < BigInt("0") ? result + P : result;
 }
 
 function modPow(base: bigint, exponent: bigint): bigint {
-  let result = 1n;
+  let result = BigInt("1");
   let acc = mod(base);
   let e = exponent;
-  while (e > 0n) {
-    if (e & 1n) result = (result * acc) % P;
+  while (e > BigInt("0")) {
+    if (e & BigInt("1")) result = (result * acc) % P;
     acc = (acc * acc) % P;
-    e >>= 1n;
+    e >>= BigInt("1");
   }
   return result;
 }
 
 function inverse(value: bigint): bigint {
-  return modPow(value, P - 2n);
+  return modPow(value, P - BigInt("2"));
 }
 
 /** Whether `w` is a quadratic residue mod p. Zero counts: sqrt(0) = 0. */
 function isSquare(w: bigint): boolean {
-  if (w === 0n) return true;
-  return modPow(w, (P - 1n) / 2n) === 1n;
+  if (w === BigInt("0")) return true;
+  return modPow(w, (P - BigInt("1")) / BigInt("2")) === BigInt("1");
 }
 
 export function isOnCurve(bytes: Uint8Array): boolean {
   if (bytes.length !== 32) return false;
 
-  let y = 0n;
+  let y = BigInt("0");
   for (let i = 31; i >= 0; i -= 1) {
-    y = (y << 8n) | BigInt(bytes[i] as number);
+    y = (y << BigInt("8")) | BigInt(bytes[i] as number);
   }
-  const signBit = (y >> 255n) & 1n;
-  y = mod(y & ((1n << 255n) - 1n));
+  const signBit = (y >> BigInt("255")) & BigInt("1");
+  y = mod(y & ((BigInt("1") << BigInt("255")) - BigInt("1")));
 
   const ySquared = (y * y) % P;
-  const u = mod(ySquared - 1n);
-  const v = mod(D * ySquared + 1n);
-  if (v === 0n) return false;
+  const u = mod(ySquared - BigInt("1"));
+  const v = mod(D * ySquared + BigInt("1"));
+  if (v === BigInt("0")) return false;
 
   const w = (u * inverse(v)) % P;
   if (!isSquare(w)) return false;
   // x == 0 with the sign bit set is the one square that still fails to
   // decompress, because there is no negative zero to encode.
-  if (w === 0n && signBit === 1n) return false;
+  if (w === BigInt("0") && signBit === BigInt("1")) return false;
   return true;
 }
