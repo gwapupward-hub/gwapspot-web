@@ -173,9 +173,14 @@ export function assertProgramReady(
     "PROGRAM_NOT_APPROVED",
   );
 
-  for (const field of ["binarySha256", "idlSha256"] as const) {
-    requireCondition(SHA256.test(expected[field] ?? ""), "ARTIFACT_NOT_PINNED");
-    requireCondition(observed?.[field] === expected[field], "ARTIFACT_MISMATCH");
+  requireCondition(SHA256.test(expected.binarySha256 ?? ""), "ARTIFACT_NOT_PINNED");
+  requireCondition(observed?.binarySha256 === expected.binarySha256, "ARTIFACT_MISMATCH");
+  // The deployed programs do not publish an on-chain IDL account. The reviewed
+  // manifest therefore pins the IDL artifact hash, while a live observation
+  // only compares it when an independent observer supplied one.
+  requireCondition(SHA256.test(expected.idlSha256 ?? ""), "ARTIFACT_NOT_PINNED");
+  if (observed?.idlSha256 !== undefined) {
+    requireCondition(observed.idlSha256 === expected.idlSha256, "ARTIFACT_MISMATCH");
   }
 
   requireCondition(
