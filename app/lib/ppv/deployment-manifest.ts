@@ -2,7 +2,7 @@ import {
   DEVNET_GENESIS,
   PPV_PROGRAM_IDS,
   type PpvDeploymentManifest,
-} from "./policy";
+} from "./policy.ts";
 
 export const PPV_SOURCE_PINS = Object.freeze({
   appBaseline: "c25f61c76d18cbd057e6ca68bd42291cc3ae5de7",
