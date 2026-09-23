@@ -9,7 +9,10 @@ import {
   WALLET_SIGN_IN_LABEL,
   type WalletSignInPhase,
 } from "../lib/wallet-sign-in-phase";
-import { getWalletAuthErrorMessage } from "../lib/wallet-auth-error";
+import {
+  getWalletAuthErrorCode,
+  getWalletAuthErrorMessage,
+} from "../lib/wallet-auth-error";
 
 type WalletSignInVariant = "public" | "app";
 
@@ -26,6 +29,7 @@ export function WalletSignIn({
   const { authenticated, getAccessToken, ready, user } = usePrivy();
   const { isOpen: loginModalOpen } = useModalStatus();
   const [error, setError] = useState("");
+  const [errorCode, setErrorCode] = useState<string | null>(null);
   const [phase, setPhase] = useState<WalletSignInPhase>("idle");
   const navigationStarted = useRef(false);
   const isAppVariant = variant === "app";
@@ -60,18 +64,22 @@ export function WalletSignIn({
     } catch (sessionError) {
       navigationStarted.current = false;
       setPhase("idle");
+      setErrorCode(getWalletAuthErrorCode(sessionError));
       setError(getWalletAuthErrorMessage(sessionError));
     }
   }, [redirectPath, waitForAccessToken]);
 
   const { login } = useLogin({
     onComplete: () => {
+      setError("");
+      setErrorCode(null);
       void navigateWhenSessionReady();
     },
     onError: (loginError) => {
       navigationStarted.current = false;
       setPhase("idle");
-      setError(getWalletAuthErrorMessage({ code: loginError }));
+      setErrorCode(getWalletAuthErrorCode(loginError));
+      setError(getWalletAuthErrorMessage(loginError));
     },
   });
 
@@ -92,7 +100,10 @@ export function WalletSignIn({
   }, [authenticated, hasSolanaWallet, navigateWhenSessionReady, ready, sessionIssue]);
 
   function openWalletSelector() {
+    navigationStarted.current = false;
+    setPhase("idle");
     setError("");
+    setErrorCode(null);
     login({ loginMethods: ["wallet"] });
   }
 
@@ -211,9 +222,10 @@ export function WalletSignIn({
         </p>
       ) : null}
       {error ? (
-        <p className="wallet-auth-error" role="alert">
-          {error}
-        </p>
+        <div className="wallet-auth-error" role="alert">
+          <p>{error}</p>
+          {errorCode ? <small>Reference: {errorCode}</small> : null}
+        </div>
       ) : null}
       {isAppVariant ? (
         <p className="wallet-auth-legal">
