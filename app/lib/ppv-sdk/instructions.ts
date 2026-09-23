@@ -1,5 +1,5 @@
-// GENERATED FROM gwapupward-hub/ppv@f89572fd69e0be26860d1ddc37a91b6b1e1475bc (sdk/src/instructions.ts).
-// Do not edit by hand; update the PPV SDK source and resync this dependency closure.
+// VENDORED FROM gwapupward-hub/ppv@7c4ea67a9b6d69ab85a20f497eb0c2a31b48cfd2 (sdk/src/instructions.ts).
+// Local compatibility adaptation only: preserve PPV wire behavior while compiling under GwapSpot's ES2017 TypeScript target.
 import { decodeBase58 } from "./reputation/base58.js";
 import {
   coreProofId,
@@ -78,7 +78,7 @@ function exactInteger(value: bigint | string, label: string): bigint {
 
 function u64(value: bigint | string, label = "u64"): Uint8Array {
   const parsed = exactInteger(value, label);
-  if (parsed < 0n || parsed > MAX_U64) throw new RangeError(`${label} is out of u64 range`);
+  if (parsed < BigInt("0") || parsed > MAX_U64) throw new RangeError(`${label} is out of u64 range`);
   const out = new Uint8Array(8);
   new DataView(out.buffer).setBigUint64(0, parsed, true);
   return out;
@@ -86,7 +86,7 @@ function u64(value: bigint | string, label = "u64"): Uint8Array {
 
 function positiveU64(value: bigint | string, label: string): Uint8Array {
   const encoded = u64(value, label);
-  if (exactInteger(value, label) === 0n) throw new RangeError(`${label} must be greater than zero`);
+  if (exactInteger(value, label) === BigInt("0")) throw new RangeError(`${label} must be greater than zero`);
   return encoded;
 }
 
