@@ -195,7 +195,15 @@ test("binary hash must be pinned", () => {
   );
 });
 
-test("idl mismatch rejects writes", () => {
+test("reviewed IDL pin is sufficient when live chain has no IDL account", () => {
+  const observed = { ...observation().programs.core };
+  delete observed.idlSha256;
+  assert.doesNotThrow(
+    () => assertProgramReady(config(), "core", manifest().programs.core, observed, NOW),
+  );
+});
+
+test("idl mismatch rejects writes when independent IDL evidence is supplied", () => {
   const observed = { ...observation().programs.core, idlSha256: "d".repeat(64) };
   assert.throws(
     () => assertProgramReady(config(), "core", manifest().programs.core, observed, NOW),
