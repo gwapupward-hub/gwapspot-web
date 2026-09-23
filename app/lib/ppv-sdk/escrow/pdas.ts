@@ -96,7 +96,7 @@ export function findProgramAddress(
 /** `agreement_id` is a u64 encoded little-endian, as the program seeds it. */
 export function agreementIdSeed(agreementId: bigint | number): Uint8Array {
   const value = BigInt(agreementId);
-  if (value < BigInt("0") || value > 0xffff_ffff_ffff_ffffn) throw new PdaError("agreement id out of u64 range");
+  if (value < BigInt("0") || value > BigInt("18446744073709551615")) throw new PdaError("agreement id out of u64 range");
   const out = new Uint8Array(8);
   new DataView(out.buffer).setBigUint64(0, value, true);
   return out;
