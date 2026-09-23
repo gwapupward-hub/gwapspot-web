@@ -4,6 +4,7 @@ import {
   confirmCoreProofTransaction,
 } from "../../../../lib/ppv/core.server";
 import { PpvPolicyError } from "../../../../lib/ppv/policy";
+import { isGwapAppHostname } from "../../../../lib/app-domain-routing";
 import { getAuthenticatedWalletIdentityResult } from "../../../../lib/privy-server";
 import {
   auditAuthEvent,
@@ -27,6 +28,10 @@ function json(payload: unknown, status = 200, headers?: HeadersInit) {
 }
 
 export async function POST(request: Request) {
+  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+  if (!isGwapAppHostname(host)) {
+    return json({ error: "PPV signed writes are available only on app.gwapspot.com." }, 403);
+  }
   const identityResult = await getAuthenticatedWalletIdentityResult(request);
   if (identityResult.status === "unauthenticated") {
     return json({ error: "Unauthorized" }, 401);
