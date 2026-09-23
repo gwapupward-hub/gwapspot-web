@@ -36,6 +36,36 @@ export function WalletSignIn({
   const display = resolveWalletSignInDisplay(phase, loginModalOpen);
   const busy = display !== "idle";
 
+  const reportAuthEvent = useCallback(
+    (event: string, code?: string | null) => {
+      const payload = JSON.stringify({
+        event,
+        code: code ?? null,
+        phase,
+        host: window.location.hostname,
+        userAgentClass: /iPhone|iPad|iPod/i.test(navigator.userAgent)
+          ? "ios"
+          : /Android/i.test(navigator.userAgent)
+            ? "android"
+            : "desktop",
+      });
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon(
+          "/api/auth/diagnostics",
+          new Blob([payload], { type: "application/json" }),
+        );
+        return;
+      }
+      void fetch("/api/auth/diagnostics", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: payload,
+        keepalive: true,
+      });
+    },
+    [phase],
+  );
+
   const hasSolanaWallet = user?.linkedAccounts.some(
     (account) => account.type === "wallet" && account.chainType === "solana",
   );
@@ -57,8 +87,10 @@ export function WalletSignIn({
     try {
       const token = await waitForAccessToken();
       if (!token) {
+        reportAuthEvent("session_token_missing", "session_token_missing");
         throw new Error("Authenticated wallet session has no access token");
       }
+      reportAuthEvent("session_ready");
       setPhase("opening");
       window.location.replace(redirectPath);
     } catch (sessionError) {
@@ -67,18 +99,21 @@ export function WalletSignIn({
       setErrorCode(getWalletAuthErrorCode(sessionError));
       setError(getWalletAuthErrorMessage(sessionError));
     }
-  }, [redirectPath, waitForAccessToken]);
+  }, [redirectPath, reportAuthEvent, waitForAccessToken]);
 
   const { login } = useLogin({
     onComplete: () => {
+      reportAuthEvent("login_completed");
       setError("");
       setErrorCode(null);
       void navigateWhenSessionReady();
     },
     onError: (loginError) => {
+      const code = getWalletAuthErrorCode(loginError);
+      reportAuthEvent("login_failed", code);
       navigationStarted.current = false;
       setPhase("idle");
-      setErrorCode(getWalletAuthErrorCode(loginError));
+      setErrorCode(code);
       setError(getWalletAuthErrorMessage(loginError));
     },
   });
@@ -104,6 +139,7 @@ export function WalletSignIn({
     setPhase("idle");
     setError("");
     setErrorCode(null);
+    reportAuthEvent("login_started");
     login({ loginMethods: ["wallet"] });
   }
 
