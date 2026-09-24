@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState, type ChangeEvent, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
-import { formatBuildLogDate, latestBuildLogEntry } from "../lib/changelog";
+import { formatBuildLogDate, latestBuildLogEntry, type BuildLogSnapshot } from "../lib/changelog";
 import { ecosystemProductGroups, ecosystemProductIndexBySlug, ecosystemProducts, getProductDestination, isExternalProductDestination, socialLinks } from "../lib/ecosystem";
 import { CountUp } from "./count-up";
 import { GwapEcosystemGraph } from "./gwap-ecosystem-graph";
@@ -42,9 +42,43 @@ export function CinematicHome() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [latestBuild, setLatestBuild] = useState(latestBuildLogEntry);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchButtonRef = useRef<HTMLButtonElement>(null);
   const searchDialogRef = useRef<HTMLDivElement>(null);
+
+
+  useEffect(() => {
+    let cancelled = false;
+    let timer: number | null = null;
+
+    const refreshLatestBuild = async () => {
+      if (cancelled || document.visibilityState !== "visible") {
+        timer = window.setTimeout(refreshLatestBuild, 15_000);
+        return;
+      }
+      try {
+        const response = await fetch("/api/changelog/live", {
+          cache: "no-store",
+          headers: { Accept: "application/json" },
+        });
+        if (!response.ok) throw new Error("BUILD_LOG_SYNC_FAILED");
+        const snapshot = (await response.json()) as BuildLogSnapshot;
+        const entry = snapshot.entries[0];
+        if (!cancelled && entry) setLatestBuild(entry);
+      } catch {
+        // The committed fallback remains visible if live synchronization is unavailable.
+      } finally {
+        if (!cancelled) timer = window.setTimeout(refreshLatestBuild, 15_000);
+      }
+    };
+
+    timer = window.setTimeout(refreshLatestBuild, 0);
+    return () => {
+      cancelled = true;
+      if (timer !== null) window.clearTimeout(timer);
+    };
+  }, []);
 
   useEffect(() => {
     if (!searchOpen) return;
@@ -277,12 +311,12 @@ export function CinematicHome() {
           <article className="phase-card current"><span>PHASE 02</span><div className="phase-orb"><i /></div><h3>Expansion</h3><p>Premium discovery, product surfaces, community, and partner-ready storytelling.</p><small>Current</small></article>
           <article className="phase-card started"><span>PHASE 03</span><div className="phase-orb"><i /></div><h3>Integration</h3><p>Wallet authentication and the GWAP OS identity runtime are live; shared profiles and cross-product data continue rolling out.</p><small>Underway</small></article>
         </div>
-        <Link className="latest-build-card" href={`/changelog#${latestBuildLogEntry.slug}`}>
+        <Link className="latest-build-card" href={`/changelog#${latestBuild.slug}`}>
           <span className="latest-build-signal" aria-hidden="true"><i /></span>
           <span className="latest-build-copy">
-            <small>Latest build · {formatBuildLogDate(latestBuildLogEntry.releasedAt)}</small>
-            <strong>{latestBuildLogEntry.title}</strong>
-            <p>{latestBuildLogEntry.summary}</p>
+            <small>Latest build · {formatBuildLogDate(latestBuild.releasedAt)}</small>
+            <strong>{latestBuild.title}</strong>
+            <p>{latestBuild.summary}</p>
           </span>
           <span className="latest-build-action">View build log <Icon name="arrow" /></span>
         </Link>

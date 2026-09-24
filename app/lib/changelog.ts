@@ -21,29 +21,64 @@ export type BuildLogEntry = {
   readonly links: readonly BuildLogLink[];
 };
 
+export type BuildLogSnapshot = {
+  readonly entries: readonly BuildLogEntry[];
+  readonly deployedRevision: string | null;
+  readonly checkedAt: string;
+  readonly source: "github-production-revision" | "static-fallback";
+};
+
 export const PUBLIC_SITE_URL = "https://www.gwapspot.com";
 
 export const latestBuildLogEntry: BuildLogEntry = {
-  slug: "ecosystem-layers-and-shareable-lookups",
-  releasedAt: "2026-08-09T21:18:04Z",
-  kind: "Product",
+  slug: "harden-core-finalization-recovery",
+  releasedAt: "2026-09-24T05:50:59Z",
+  kind: "Infrastructure",
   status: "Live",
-  title: "Ecosystem layers and shareable lookups",
+  title: "harden Core finalization recovery",
   summary:
-    "GWAP Infrastructure and GWAP Experiences now read as two connected layers, while successful wallet and .gwap lookups can travel as reusable links.",
+    "PPV Core devnet recovery was hardened after live Phantom testing exposed a transaction-finalization gap.",
   highlights: [
-    "Organized all eight products without changing their routes or status.",
-    "Added native sharing, clipboard fallback, and deep-link replay.",
-    "Applied the same ecosystem model to the homepage and full directory.",
+    "Stopped optimistic PPV broadcasts so proof submission waits for a durable network send.",
+    "Added proof-account recovery, transaction-expiry detection, and duplicate-submission protection.",
   ],
-  links: [
-    { label: "Explore ecosystem", href: "/ecosystem" },
-    { label: "Try a lookup", href: "/#top" },
-  ],
+  links: [{ label: "Explore PPV", href: "/ppv" }],
 };
 
 export const buildLogEntries: readonly BuildLogEntry[] = [
   latestBuildLogEntry,
+  {
+    slug: "activate-gated-core-devnet-proof-actions",
+    releasedAt: "2026-09-24T03:09:36Z",
+    kind: "Infrastructure",
+    status: "Live",
+    title: "activate gated Core devnet proof actions",
+    summary:
+      "GWAP OS now has a server-gated, wallet-signed PPV Core proof path on Solana devnet while Commerce, Escrow, mainnet, and real-value custody stay disabled.",
+    highlights: [
+      "Added authenticated prepare and finalized-confirm services for proof create and revoke.",
+      "Hashes evidence locally before signing so raw evidence bytes do not leave the browser.",
+    ],
+    links: [{ label: "Explore PPV", href: "/ppv" }],
+  },
+  {
+    slug: "ecosystem-layers-and-shareable-lookups",
+    releasedAt: "2026-08-09T21:18:04Z",
+    kind: "Product",
+    status: "Live",
+    title: "Ecosystem layers and shareable lookups",
+    summary:
+      "GWAP Infrastructure and GWAP Experiences now read as two connected layers, while successful wallet and .gwap lookups can travel as reusable links.",
+    highlights: [
+      "Organized all eight products without changing their routes or status.",
+      "Added native sharing, clipboard fallback, and deep-link replay.",
+      "Applied the same ecosystem model to the homepage and full directory.",
+    ],
+    links: [
+      { label: "Explore ecosystem", href: "/ecosystem" },
+      { label: "Try a lookup", href: "/#top" },
+    ],
+  },
   {
     slug: "homepage-wallet-and-name-utility",
     releasedAt: "2026-08-09T20:27:09Z",
