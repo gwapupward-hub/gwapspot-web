@@ -237,7 +237,15 @@ export async function confirmCoreProofTransaction(input: {
     return { status: "pending" as const, signature, proofAddress: proof };
   }
   if (transaction.meta?.err) {
-    throw new PpvCoreRequestError("TRANSACTION_FAILED", 409);
+    console.warn("ppv_core_transaction_failed", {
+      action: input.action,
+      error: JSON.stringify(transaction.meta.err).slice(0, 240),
+    });
+    throw new PpvCoreRequestError(
+      "TRANSACTION_FAILED",
+      409,
+      "The devnet transaction was finalized as failed.",
+    );
   }
 
   const accountKeys = transaction.transaction.message.accountKeys;
