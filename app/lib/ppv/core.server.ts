@@ -192,6 +192,7 @@ export async function confirmCoreProofTransaction(input: {
   authority: string;
   proofIdHex: string;
   signature: string;
+  lastValidBlockHeight?: number;
 }) {
   const authority = authorityKey(input.authority);
   const proofId = fixedHexToBytes(input.proofIdHex, 16, "proofId");
@@ -204,6 +205,35 @@ export async function confirmCoreProofTransaction(input: {
     maxSupportedTransactionVersion: 0,
   });
   if (!transaction) {
+    // Transaction-history RPCs can lag even after the program state is visible.
+    // Recover from the canonical proof PDA first; the program itself requires
+    // the authority signer for both create and revoke.
+    const proofAccount = await connection.getAccountInfo(new PublicKey(proof), "finalized");
+    if (proofAccount?.owner.equals(new PublicKey(PPV_PROGRAM_IDS.core))) {
+      const state = proofState(proofAccount.data, authority, proofId);
+      if (
+        (input.action === "create" && state === "active") ||
+        (input.action === "revoke" && state === "revoked")
+      ) {
+        return {
+          status: "finalized" as const,
+          signature,
+          proofAddress: proof,
+          proofState: state,
+          verification: "program_state" as const,
+        };
+      }
+    }
+
+    if (
+      Number.isSafeInteger(input.lastValidBlockHeight) &&
+      (input.lastValidBlockHeight as number) > 0
+    ) {
+      const currentBlockHeight = await connection.getBlockHeight("finalized");
+      if (currentBlockHeight > (input.lastValidBlockHeight as number)) {
+        throw new PpvCoreRequestError("TRANSACTION_EXPIRED", 409);
+      }
+    }
     return { status: "pending" as const, signature, proofAddress: proof };
   }
   if (transaction.meta?.err) {
@@ -241,5 +271,6 @@ export async function confirmCoreProofTransaction(input: {
     signature,
     proofAddress: proof,
     proofState: state,
+    verification: "transaction_and_program_state" as const,
   };
 }

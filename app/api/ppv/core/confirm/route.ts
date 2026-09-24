@@ -69,7 +69,11 @@ export async function POST(request: Request) {
     if (
       (payload.action !== "create" && payload.action !== "revoke") ||
       typeof payload.proofIdHex !== "string" ||
-      typeof payload.signature !== "string"
+      typeof payload.signature !== "string" ||
+      (payload.lastValidBlockHeight !== undefined &&
+        (typeof payload.lastValidBlockHeight !== "number" ||
+          !Number.isSafeInteger(payload.lastValidBlockHeight) ||
+          payload.lastValidBlockHeight <= 0))
     ) {
       throw new PpvCoreRequestError("INVALID_CONFIRMATION_REQUEST", 400);
     }
@@ -79,6 +83,10 @@ export async function POST(request: Request) {
       authority: identity.verifiedWallet,
       proofIdHex: payload.proofIdHex,
       signature: payload.signature,
+      lastValidBlockHeight:
+        typeof payload.lastValidBlockHeight === "number"
+          ? payload.lastValidBlockHeight
+          : undefined,
     });
     auditAuthEvent(
       "ppv.core.confirm",
