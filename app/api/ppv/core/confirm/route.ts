@@ -71,8 +71,9 @@ export async function POST(request: Request) {
       typeof payload.proofIdHex !== "string" ||
       typeof payload.signature !== "string" ||
       (payload.lastValidBlockHeight !== undefined &&
-        (!Number.isSafeInteger(payload.lastValidBlockHeight) ||
-          (payload.lastValidBlockHeight as number) <= 0))
+        (typeof payload.lastValidBlockHeight !== "number" ||
+          !Number.isSafeInteger(payload.lastValidBlockHeight) ||
+          payload.lastValidBlockHeight <= 0))
     ) {
       throw new PpvCoreRequestError("INVALID_CONFIRMATION_REQUEST", 400);
     }
