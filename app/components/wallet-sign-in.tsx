@@ -125,9 +125,9 @@ export function WalletSignIn({
     // bouncing back here without ever landing. The wallet client may still
     // believe it is authenticated - that stale belief is exactly what drove
     // the bounce - so silently retrying the same path here would resume the
-    // loop instead of breaking it. Require the explicit "Connect Solana
-    // wallet" tap, which forces a fresh login rather than reusing state that
-    // was already shown not to work.
+    // loop instead of breaking it. Require an explicit wallet or email login,
+    // which forces a fresh authentication attempt rather than reusing state
+    // that was already shown not to work.
     const explicitRecovery = explicitLoginCompleted.current;
     if (
       !ready ||
