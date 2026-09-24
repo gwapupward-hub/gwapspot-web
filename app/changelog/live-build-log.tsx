@@ -8,8 +8,8 @@ import {
   formatBuildLogDay,
   formatBuildLogTime,
   type BuildLogEntry,
+  type BuildLogSnapshot,
 } from "../lib/changelog";
-import type { BuildLogSnapshot } from "../lib/changelog-live.server";
 
 const POLL_MS = 15_000;
 
