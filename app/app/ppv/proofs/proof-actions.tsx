@@ -335,7 +335,12 @@ export function PpvProofActions({
   }
 
   async function createProof() {
-    if (!writesReady || !evidence.trim() || inFlight.current) return;
+    if (
+      !writesReady ||
+      !evidence.trim() ||
+      inFlight.current ||
+      state === "sync-required"
+    ) return;
     try {
       const nextProofId = randomProofId();
       const [contentHashHex, contextHashHex] = await Promise.all([
@@ -360,7 +365,12 @@ export function PpvProofActions({
 
   async function revokeProof() {
     const normalized = proofIdHex.trim().toLowerCase();
-    if (!revokeReady || !proofIdValid(normalized) || inFlight.current) return;
+    if (
+      !revokeReady ||
+      !proofIdValid(normalized) ||
+      inFlight.current ||
+      state === "sync-required"
+    ) return;
     await prepareAndSend("revoke", { proofIdHex: normalized }, normalized);
   }
 
