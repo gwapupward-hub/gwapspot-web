@@ -127,8 +127,9 @@ function combineEntries(live: readonly BuildLogEntry[]) {
   const seen = new Set<string>();
   return entries
     .filter((entry) => {
-      if (seen.has(entry.slug)) return false;
-      seen.add(entry.slug);
+      const key = entry.title.trim().toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
       return true;
     })
     .sort(
