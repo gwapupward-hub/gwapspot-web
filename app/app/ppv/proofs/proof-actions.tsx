@@ -62,10 +62,12 @@ type UiState =
   | "confirming"
   | "finalized"
   | "sync-required"
+  | "expired"
   | "error";
 
 const PENDING_KEY = "gwap-ppv-core-pending-v1";
 const ZERO_HASH = "00".repeat(32);
+const LEGACY_PENDING_EXPIRY_MS = 10 * 60 * 1_000;
 
 function readApiError(body: unknown, fallback: string) {
   if (!body || typeof body !== "object") return fallback;
@@ -127,6 +129,12 @@ function loadPending(owner: string): PendingCoreAction | null {
   } catch {
     return null;
   }
+}
+
+function isLegacyPendingExpired(value: PendingCoreAction) {
+  if (typeof value.lastValidBlockHeight === "number") return false;
+  const submittedAt = Date.parse(value.submittedAt);
+  return Number.isFinite(submittedAt) && Date.now() - submittedAt > LEGACY_PENDING_EXPIRY_MS;
 }
 
 function savePending(value: PendingCoreAction) {
@@ -381,8 +389,17 @@ export function PpvProofActions({
     try {
       setState("confirming");
       setMessage("Checking finalized PPV state…");
-      const result = await confirm(pending);
+      const legacyExpired = isLegacyPendingExpired(pending);
+      const result = await confirm(pending, legacyExpired ? 1 : 14);
       if (!result || result.status !== "finalized") {
+        if (legacyExpired) {
+          clearPending(account.verifiedWallet);
+          setState("expired");
+          setMessage(
+            "The older devnet transaction did not land and its signing window has expired. No proof account was found, so it is safe to create a fresh proof.",
+          );
+          return;
+        }
         setState("sync-required");
         setMessage("Still waiting for finalized Solana state. No new signature is needed.");
         return;
@@ -397,8 +414,17 @@ export function PpvProofActions({
           : "Revocation finalized on devnet.",
       );
     } catch (error) {
-      setState("sync-required");
-      setMessage(actionError(error));
+      const message = error instanceof Error ? error.message : "";
+      if (/TRANSACTION_EXPIRED/.test(message)) {
+        clearPending(account.verifiedWallet);
+        setState("expired");
+        setMessage(
+          "The devnet transaction expired before it finalized. No proof account was confirmed, so it is safe to create a fresh proof.",
+        );
+      } else {
+        setState("sync-required");
+        setMessage(actionError(error));
+      }
     } finally {
       inFlight.current = false;
     }
