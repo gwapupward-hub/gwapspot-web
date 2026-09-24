@@ -1,3 +1,5 @@
+export const PPV_CORE_PROOF_ACCOUNT_BYTES = 204;
+
 export const PPV_CORE_PROOF_KINDS = [
   "creation",
   "document",
