@@ -1,12 +1,17 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  PPV_CORE_PROOF_ACCOUNT_BYTES,
   PPV_CORE_PROOF_KINDS,
   bytesToLowerHex,
   fixedHexToBytes,
   isPpvCoreProofKind,
 } from "./core.ts";
 import { PPV_DEPLOYMENT_MANIFEST } from "./deployment-manifest.ts";
+
+test("Core proof account size stays pinned to the deployed Anchor schema", () => {
+  assert.equal(PPV_CORE_PROOF_ACCOUNT_BYTES, 204);
+});
 
 test("Core proof kinds are explicit and stable", () => {
   assert.deepEqual(PPV_CORE_PROOF_KINDS, [
