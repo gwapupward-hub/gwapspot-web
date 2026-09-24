@@ -7,10 +7,12 @@ import {
   PPV_KNOWN_DEVNET_REFERENCE,
   PPV_SOURCE_PINS,
 } from "./deployment-manifest";
-import { getPpvServerConfig } from "./config.server";
+import { getPpvObservationConfig, getPpvServerConfig, type PpvServerConfig } from "./config.server";
 import {
   PPV_PROGRAM_IDS,
   UPGRADEABLE_LOADER,
+  PpvPolicyError,
+  assertMutationReady,
   type PpvEnvironmentObservation,
   type PpvLayer,
   type PpvProgramObservation,
@@ -181,9 +183,10 @@ async function observeProgram(
   };
 }
 
-async function observeEnvironment(): Promise<PpvEnvironmentObservation> {
-  const config = getPpvServerConfig();
-  if (!config.rpcUrl || !config.rpcEndpointSha256) throw new Error("PPV_DISABLED");
+async function observeEnvironment(
+  config: PpvServerConfig = getPpvObservationConfig(),
+): Promise<PpvEnvironmentObservation> {
+  if (!config.rpcUrl || !config.rpcEndpointSha256) throw new Error("PPV_RPC_REQUIRED");
 
   const cacheKey = [
     config.policy.cluster,
@@ -214,26 +217,57 @@ async function observeEnvironment(): Promise<PpvEnvironmentObservation> {
   return observation;
 }
 
-function layerCapability(
+function mutationCapability(
   layer: PpvLayer,
-  enabled: boolean,
-  observed: PpvProgramObservation | undefined,
+  server: PpvServerConfig,
+  observation: PpvEnvironmentObservation,
 ): PpvCapability {
-  if (!enabled) return { state: "disabled", reasonCode: "FEATURE_DISABLED" };
+  if (!server.policy.enabled || !server.policy[layer]) {
+    return { state: "disabled", reasonCode: "FEATURE_DISABLED" };
+  }
+  try {
+    assertMutationReady({
+      config: server.policy,
+      manifest: PPV_DEPLOYMENT_MANIFEST,
+      observation,
+      layers: [layer],
+      nowMs: Date.now(),
+    });
+    return { state: "ready", reasonCode: null };
+  } catch (error) {
+    return {
+      state: "unavailable",
+      reasonCode: error instanceof PpvPolicyError ? error.code : "PPV_READINESS_UNAVAILABLE",
+    };
+  }
+}
+
+function layerCapability(
+  observed: PpvProgramObservation | undefined,
+  mutation: PpvCapability,
+): PpvCapability {
   if (!observed?.exists) return { state: "unavailable", reasonCode: "PROGRAM_NOT_DEPLOYED" };
   if (observed.owner !== UPGRADEABLE_LOADER || observed.executable !== true) {
     return { state: "unavailable", reasonCode: "WRONG_PROGRAM" };
   }
-  return { state: "read_only", reasonCode: "ARTIFACT_COMPATIBILITY_NOT_APPROVED" };
+  if (mutation.state === "ready") return mutation;
+  return { state: "read_only", reasonCode: mutation.reasonCode ?? "READ_ONLY" };
 }
 
-function actionCapability(
-  enabled: boolean,
-  blocker: string,
-): PpvCapability {
-  return enabled
-    ? { state: "unavailable", reasonCode: blocker }
-    : { state: "disabled", reasonCode: "FEATURE_DISABLED" };
+export async function requirePpvMutationReadiness(layers: readonly PpvLayer[]) {
+  const server = getPpvServerConfig();
+  if (!server.rpcUrl || !server.rpcEndpointSha256) {
+    throw new PpvPolicyError("PPV_RPC_REQUIRED");
+  }
+  const observation = await observeEnvironment(server);
+  assertMutationReady({
+    config: server.policy,
+    manifest: PPV_DEPLOYMENT_MANIFEST,
+    observation,
+    layers,
+    nowMs: Date.now(),
+  });
+  return { server, observation };
 }
 
 function programStatus(layer: PpvLayer, observed: PpvProgramObservation | undefined) {
@@ -254,75 +288,61 @@ export async function getPpvWorkspaceReadiness(): Promise<PublicPpvReadiness> {
   const checkedAt = new Date().toISOString();
 
   try {
-    const server = getPpvServerConfig();
-    const base: Omit<PublicPpvReadiness, "layers" | "actions" | "programs" | "errorCode"> = {
+    const observationConfig = getPpvObservationConfig();
+    const observation = await observeEnvironment(observationConfig);
+    let server: PpvServerConfig | null = null;
+    let serverErrorCode: string | null = null;
+    try {
+      server = getPpvServerConfig();
+    } catch (error) {
+      serverErrorCode =
+        error instanceof PpvPolicyError ? error.code : "PPV_READINESS_UNAVAILABLE";
+    }
+
+    const policy = observationConfig.policy;
+    const mutationFor = (layer: PpvLayer): PpvCapability => {
+      if (!policy.enabled || !policy[layer]) {
+        return { state: "disabled", reasonCode: "FEATURE_DISABLED" };
+      }
+      if (!server) {
+        return { state: "unavailable", reasonCode: serverErrorCode ?? "PPV_RPC_REQUIRED" };
+      }
+      return mutationCapability(layer, server, observation);
+    };
+
+    const mutations = {
+      core: mutationFor("core"),
+      commerce: mutationFor("commerce"),
+      escrow: mutationFor("escrow"),
+    };
+    const escrowStatus = programStatus("escrow", observation.programs.escrow);
+    const layers = {
+      core: layerCapability(observation.programs.core, mutations.core),
+      commerce: layerCapability(observation.programs.commerce, mutations.commerce),
+      escrow: layerCapability(observation.programs.escrow, mutations.escrow),
+    };
+
+    return {
       schemaVersion: 1,
       checkedAt,
-      cluster: server.policy.cluster,
+      cluster: policy.cluster,
       mainnet: false,
       realValue: false,
-      enabled: server.policy.enabled,
+      enabled: policy.enabled,
       manifest: {
         reviewStatus: PPV_DEPLOYMENT_MANIFEST.reviewStatus,
         sdkSourceCommit: PPV_DEPLOYMENT_MANIFEST.sdkSourceCommit,
         securityTargetCommit: PPV_DEPLOYMENT_MANIFEST.securityTargetCommit,
       },
-    };
-
-    if (!server.policy.enabled) {
-      const disabled: PpvCapability = { state: "disabled", reasonCode: "FEATURE_DISABLED" };
-      return {
-        ...base,
-        layers: { core: disabled, commerce: disabled, escrow: disabled },
-        actions: {
-          "proof.create": disabled,
-          "proof.revoke": disabled,
-          "agreement.create": disabled,
-          "agreement.sign": disabled,
-          "escrow.open": disabled,
-          "escrow.fund": disabled,
-          "escrow.settle": disabled,
-        },
-        programs: {
-          core: { programId: PPV_PROGRAM_IDS.core, exists: null, executable: null, deploymentSlot: null, status: "not_checked" },
-          commerce: { programId: PPV_PROGRAM_IDS.commerce, exists: null, executable: null, deploymentSlot: null, status: "not_checked" },
-          escrow: { programId: PPV_PROGRAM_IDS.escrow, exists: null, executable: null, deploymentSlot: null, status: "not_checked" },
-        },
-        errorCode: null,
-      };
-    }
-
-    const observation = await observeEnvironment();
-    const escrowStatus = programStatus("escrow", observation.programs.escrow);
-    const layers = {
-      core: layerCapability("core", server.policy.core, observation.programs.core),
-      commerce: layerCapability("commerce", server.policy.commerce, observation.programs.commerce),
-      escrow: layerCapability("escrow", server.policy.escrow, observation.programs.escrow),
-    };
-    const coreBlocker = observation.programs.core.exists
-      ? "ARTIFACT_COMPATIBILITY_NOT_APPROVED"
-      : "PROGRAM_NOT_DEPLOYED";
-    const commerceBlocker = observation.programs.commerce.exists
-      ? "ARTIFACT_COMPATIBILITY_NOT_APPROVED"
-      : "PROGRAM_NOT_DEPLOYED";
-    const escrowBlocker =
-      escrowStatus === "pre_rr13_001_binary"
-        ? "RR13_BINARY_NOT_VERIFIED"
-        : observation.programs.escrow.exists
-          ? "ARTIFACT_COMPATIBILITY_NOT_APPROVED"
-          : "PROGRAM_NOT_DEPLOYED";
-
-    return {
-      ...base,
       layers,
       actions: {
-        "proof.create": actionCapability(server.policy.core, coreBlocker),
-        "proof.revoke": actionCapability(server.policy.core, coreBlocker),
-        "agreement.create": actionCapability(server.policy.commerce, commerceBlocker),
-        "agreement.sign": actionCapability(server.policy.commerce, commerceBlocker),
-        "escrow.open": actionCapability(server.policy.escrow, escrowBlocker),
-        "escrow.fund": actionCapability(server.policy.escrow, escrowBlocker),
-        "escrow.settle": actionCapability(server.policy.escrow, escrowBlocker),
+        "proof.create": mutations.core,
+        "proof.revoke": mutations.core,
+        "agreement.create": mutations.commerce,
+        "agreement.sign": mutations.commerce,
+        "escrow.open": mutations.escrow,
+        "escrow.fund": mutations.escrow,
+        "escrow.settle": mutations.escrow,
       },
       programs: {
         core: {
@@ -347,7 +367,7 @@ export async function getPpvWorkspaceReadiness(): Promise<PublicPpvReadiness> {
           status: escrowStatus,
         },
       },
-      errorCode: null,
+      errorCode: serverErrorCode,
     };
   } catch (error) {
     const code =

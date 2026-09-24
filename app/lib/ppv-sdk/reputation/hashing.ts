@@ -1,7 +1,7 @@
 // VENDORED FROM gwapupward-hub/ppv@f89572fd69e0be26860d1ddc37a91b6b1e1475bc (sdk/src/reputation/hashing.ts).
 // Keep synchronized with the canonical PPV SDK; do not edit locally without resyncing the closure.
 import { createHash } from "node:crypto";
-import type { ReputationEventType, SourceProduct } from "./contracts.js";
+import type { ReputationEventType, SourceProduct } from "./contracts.ts";
 
 /**
  * Deterministic identifiers. Every id is a pure function of the chain
