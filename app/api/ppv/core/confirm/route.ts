@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
-import {
-  PpvCoreRequestError,
-  confirmCoreProofTransaction,
-} from "../../../../lib/ppv/core.server";
+import { PpvCoreRequestError } from "../../../../lib/ppv/core.server";
+import { confirmCoreOperation } from "../../../../lib/ppv/core-operation.server";
 import { PpvPolicyError } from "../../../../lib/ppv/policy";
 import { isGwapAppHostname } from "../../../../lib/app-domain-routing";
 import { getAuthenticatedWalletIdentityResult } from "../../../../lib/privy-server";
@@ -70,6 +68,7 @@ export async function POST(request: Request) {
       (payload.action !== "create" && payload.action !== "revoke") ||
       typeof payload.proofIdHex !== "string" ||
       typeof payload.signature !== "string" ||
+      (payload.operationId !== undefined && typeof payload.operationId !== "string") ||
       (payload.lastValidBlockHeight !== undefined &&
         (typeof payload.lastValidBlockHeight !== "number" ||
           !Number.isSafeInteger(payload.lastValidBlockHeight) ||
@@ -78,7 +77,11 @@ export async function POST(request: Request) {
       throw new PpvCoreRequestError("INVALID_CONFIRMATION_REQUEST", 400);
     }
 
-    const result = await confirmCoreProofTransaction({
+    const result = await confirmCoreOperation({
+      operationId:
+        typeof payload.operationId === "string" && payload.operationId.trim()
+          ? payload.operationId.trim()
+          : undefined,
       action: payload.action,
       authority: identity.verifiedWallet,
       proofIdHex: payload.proofIdHex,
