@@ -6,6 +6,7 @@ import { getPrivateStorageKey, getWorkspaceRedis } from "./redis";
 import { walletProviderLabel } from "./wallet-provider-label";
 
 const IDENTITY_CACHE_SECONDS = 5 * 60;
+const WALLET_PROVISION_RETRY_DELAYS_MS = [0, 200, 500, 900] as const;
 
 let privyClient: PrivyClient | null = null;
 
@@ -83,6 +84,24 @@ function identityFromUser(user: User): WalletIdentity | null {
   };
 }
 
+async function identityFromPrivyWithProvisioningRetry(
+  userId: string,
+): Promise<WalletIdentity | null> {
+  for (let attempt = 0; attempt < WALLET_PROVISION_RETRY_DELAYS_MS.length; attempt += 1) {
+    const delayMs = WALLET_PROVISION_RETRY_DELAYS_MS[attempt] ?? 0;
+    if (delayMs > 0) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+
+    const user = await getPrivyServerClient().users()._get(userId);
+    const identity = identityFromUser(user);
+    if (identity) return identity;
+  }
+
+  return null;
+}
+
+
 function getBearerToken(request?: Request) {
   const authorization = request?.headers.get("authorization");
   if (!authorization?.startsWith("Bearer ")) return null;
@@ -132,9 +151,12 @@ export async function getAuthenticatedWalletIdentityResult(
       return { status: "ready", identity: cached };
     }
 
-    const user = await getPrivyServerClient().users()._get(userId);
-    const identity = identityFromUser(user);
-    if (!identity) return { status: "unauthenticated" };
+    const identity = await identityFromPrivyWithProvisioningRetry(userId);
+    // The access token already verified. A temporarily missing Solana wallet is
+    // most commonly an email OTP user whose embedded wallet is still being
+    // provisioned. Do not misclassify that valid session as signed out and
+    // bounce it back through the login flow.
+    if (!identity) return { status: "unavailable" };
 
     await redis.set(cacheKey, identity, { ex: IDENTITY_CACHE_SECONDS });
     return { status: "ready", identity };
