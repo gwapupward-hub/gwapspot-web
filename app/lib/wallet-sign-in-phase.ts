@@ -37,3 +37,16 @@ export const WALLET_SIGN_IN_LABEL: Record<WalletSignInDisplayStatus, string> = {
   establishing_session: "Finishing sign-in…",
   opening: "Opening GWAP OS…",
 };
+
+
+export function canContinueAuthenticatedSession(input: {
+  ready: boolean;
+  authenticated: boolean;
+  hasSolanaWallet: boolean;
+  sessionIssue: boolean;
+  explicitLoginCompleted: boolean;
+}) {
+  if (!input.ready || !input.authenticated || !input.hasSolanaWallet) return false;
+  if (input.sessionIssue && !input.explicitLoginCompleted) return false;
+  return true;
+}
