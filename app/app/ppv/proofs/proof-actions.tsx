@@ -21,6 +21,7 @@ type Capability = {
 };
 
 type PreparedTransaction = {
+  operationId: string;
   action: "create" | "revoke";
   chain: "solana:devnet";
   proofAddress: string;
@@ -45,6 +46,7 @@ type Confirmation =
     };
 
 type PendingCoreAction = {
+  operationId?: string;
   owner: string;
   action: "create" | "revoke";
   proofIdHex: string;
@@ -219,6 +221,7 @@ export function PpvProofActions({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
+            operationId: pending.operationId,
             action: pending.action,
             proofIdHex: pending.proofIdHex,
             signature: pending.signature,
@@ -259,7 +262,6 @@ export function PpvProofActions({
   async function prepareAndSend(
     action: "create" | "revoke",
     payload: Record<string, unknown>,
-    selectedProofId: string,
   ) {
     if (inFlight.current) return;
     if (!wallet) {
@@ -303,9 +305,10 @@ export function PpvProofActions({
       });
       const submittedSignature = bs58.encode(result.signature);
       submitted = {
+        operationId: prepared.operationId,
         owner: account.verifiedWallet,
         action,
-        proofIdHex: selectedProofId,
+        proofIdHex: prepared.proofIdHex,
         proofAddress: prepared.proofAddress,
         signature: submittedSignature,
         submittedAt: new Date().toISOString(),
@@ -373,16 +376,12 @@ export function PpvProofActions({
         hashText(evidence),
         context.trim() ? hashText(context) : Promise.resolve(ZERO_HASH),
       ]);
-      await prepareAndSend(
-        "create",
-        {
-          proofIdHex: nextProofId,
-          contentHashHex,
-          contextHashHex,
-          kind,
-        },
-        nextProofId,
-      );
+      await prepareAndSend("create", {
+        proofIdHex: nextProofId,
+        contentHashHex,
+        contextHashHex,
+        kind,
+      });
     } catch (error) {
       setState("error");
       setMessage(actionError(error));
@@ -397,7 +396,7 @@ export function PpvProofActions({
       inFlight.current ||
       state === "sync-required"
     ) return;
-    await prepareAndSend("revoke", { proofIdHex: normalized }, normalized);
+    await prepareAndSend("revoke", { proofIdHex: normalized });
   }
 
   async function retryVerification() {

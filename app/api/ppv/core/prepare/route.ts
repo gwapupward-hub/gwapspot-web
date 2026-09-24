@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
-import {
-  PpvCoreRequestError,
-  prepareCoreProofTransaction,
-} from "../../../../lib/ppv/core.server";
+import { PpvCoreRequestError } from "../../../../lib/ppv/core.server";
+import { prepareCoreOperation } from "../../../../lib/ppv/core-operation.server";
 import { isPpvCoreProofKind } from "../../../../lib/ppv/core";
 import { PpvPolicyError } from "../../../../lib/ppv/policy";
 import { isGwapAppHostname } from "../../../../lib/app-domain-routing";
@@ -103,7 +101,7 @@ export async function POST(request: Request) {
       ) {
         throw new PpvCoreRequestError("INVALID_CREATE_PROOF_REQUEST", 400);
       }
-      const prepared = await prepareCoreProofTransaction({
+      const prepared = await prepareCoreOperation({
         action,
         authority: identity.verifiedWallet,
         proofIdHex: payload.proofIdHex,
@@ -119,7 +117,7 @@ export async function POST(request: Request) {
       if (typeof payload.proofIdHex !== "string") {
         throw new PpvCoreRequestError("INVALID_REVOKE_PROOF_REQUEST", 400);
       }
-      const prepared = await prepareCoreProofTransaction({
+      const prepared = await prepareCoreOperation({
         action,
         authority: identity.verifiedWallet,
         proofIdHex: payload.proofIdHex,
