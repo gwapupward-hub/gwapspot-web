@@ -59,9 +59,14 @@ function normalizeTitle(value: string) {
     .trim();
 }
 
-function sentence(value: string) {
+function displayTitle(value: string) {
   const normalized = normalizeTitle(value);
   if (!normalized) return "Production update";
+  return `${normalized.charAt(0).toUpperCase()}${normalized.slice(1)}`;
+}
+
+function sentence(value: string) {
+  const normalized = displayTitle(value);
   return /[.!?]$/.test(normalized) ? normalized : `${normalized}.`;
 }
 
@@ -97,12 +102,18 @@ function destinationFor(title: string, branch: string) {
 function shouldPublish(pr: GitHubPull) {
   const text = `${pr.title} ${pr.head.ref}`.toLowerCase();
   if (pr.base.ref !== "main" || !pr.merged_at || !pr.merge_commit_sha) return false;
-  if (/dependabot|chore\(deps\)|^chore: bump|^ci\(|^test\(/.test(text)) return false;
+  if (
+    /dependabot|chore\(deps\)|^chore: bump|^ci\(|^test\(|temporary .*signer|release signer|shelling out to unzip/.test(
+      text,
+    )
+  ) {
+    return false;
+  }
   return true;
 }
 
 function entryFromPull(pr: GitHubPull): BuildLogEntry {
-  const title = normalizeTitle(pr.title);
+  const title = displayTitle(pr.title);
   const releasedAt = pr.merged_at ?? new Date(0).toISOString();
   const sha = pr.merge_commit_sha ?? "";
   const kind = inferKind(pr.title, pr.head.ref);
@@ -113,10 +124,10 @@ function entryFromPull(pr: GitHubPull): BuildLogEntry {
     kind,
     status: "Live",
     title,
-    summary: `${sentence(pr.title)} This production entry was synchronized automatically after the merged revision reached the live GWAPSpot deployment.`,
+    summary: `${sentence(pr.title)} Now live on GWAPSpot and synchronized automatically from the deployed production revision.`,
     highlights: [
-      `PR #${pr.number} merged into main and is included in production revision ${sha.slice(0, 7)}.`,
-      "The build log now surfaces this release automatically without a manual changelog edit.",
+      `Merged through PR #${pr.number} and verified in production revision ${sha.slice(0, 7)}.`,
+      "Automatically surfaced after deployment without a manual Build Log edit.",
     ],
     links: [{ label: "Open affected product", href: destinationFor(pr.title, pr.head.ref) }],
   };
