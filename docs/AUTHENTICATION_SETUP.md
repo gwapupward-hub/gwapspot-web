@@ -1,9 +1,9 @@
 # Sprint 5 wallet authentication activation
 
-GWAP OS is wallet-first. External Solana wallets are detected through Privy's
-Wallet Standard connectors and authenticate by signing a Sign-In with Solana
-message. People who do not have a wallet can verify an existing email address;
-Privy then creates an embedded Solana wallet for that account. GWAPSpot does not
+GWAP OS supports wallet and email sign-in as equal entry paths. External Solana
+wallets authenticate through Privy's Wallet Standard connectors by signing a
+Sign-In with Solana message. Email users verify a one-time code; Privy then
+creates or reuses an embedded Solana wallet for that account. GWAPSpot does not
 offer a separate username/password identity.
 
 The codebase is safe to merge before credentials exist. `/app` stays locked until
@@ -121,9 +121,13 @@ fallback and can be rate limited.
   GWAP OS, sign out, and reconnect.
 - Solflare, Backpack, and a desktop Wallet Standard wallet complete the same
   flow.
+- Ordinary Safari/Chrome users can choose email directly on app.gwapspot.com;
+  injected-wallet detection must never hide the email path.
 - Rejecting a signature leaves the user signed out and shows a safe error.
-- Email OTP login creates a Solana embedded wallet and enters GWAP OS without a
-  browser extension.
+- Email OTP login creates or reuses a Solana embedded wallet and enters GWAP OS
+  without a browser extension. Navigation waits until the embedded wallet is
+  visible to the client, and the server retries briefly while Privy finishes
+  provisioning before treating the identity as temporarily unavailable.
 - Expired access tokens refresh through `/refresh`; invalid sessions return to
   the correct sign-in host without an open redirect.
 - API writes reject cross-origin requests, oversized payloads, invalid tokens,
