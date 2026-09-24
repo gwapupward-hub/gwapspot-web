@@ -262,7 +262,6 @@ export function PpvProofActions({
   async function prepareAndSend(
     action: "create" | "revoke",
     payload: Record<string, unknown>,
-    selectedProofId: string,
   ) {
     if (inFlight.current) return;
     if (!wallet) {
@@ -377,16 +376,12 @@ export function PpvProofActions({
         hashText(evidence),
         context.trim() ? hashText(context) : Promise.resolve(ZERO_HASH),
       ]);
-      await prepareAndSend(
-        "create",
-        {
-          proofIdHex: nextProofId,
-          contentHashHex,
-          contextHashHex,
-          kind,
-        },
-        nextProofId,
-      );
+      await prepareAndSend("create", {
+        proofIdHex: nextProofId,
+        contentHashHex,
+        contextHashHex,
+        kind,
+      });
     } catch (error) {
       setState("error");
       setMessage(actionError(error));
@@ -401,7 +396,7 @@ export function PpvProofActions({
       inFlight.current ||
       state === "sync-required"
     ) return;
-    await prepareAndSend("revoke", { proofIdHex: normalized }, normalized);
+    await prepareAndSend("revoke", { proofIdHex: normalized });
   }
 
   async function retryVerification() {
