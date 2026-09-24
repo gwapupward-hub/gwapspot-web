@@ -131,37 +131,28 @@ test("wallet-host hook discovers modern Wallet Standard registrations", () => {
   assert.match(hook, /standardSignerCount = Math\.max/);
 });
 
-test("app.gwapspot.com renders the wallet-host gateway for ordinary browsers", () => {
+test("app.gwapspot.com lets ordinary browsers reach wallet-or-email sign-in", () => {
   const column = read("../components/app-access-column.tsx");
-  // Detection gates what the app domain serves.
-  assert.match(column, /useWalletHost/);
-  assert.match(column, /host\.status === "detecting"/);
-  assert.match(column, /host\.status === "ready"/);
-  assert.match(column, /WalletHostGateway/);
+  assert.match(column, /WalletAuthProvider/);
   assert.match(column, /WalletSignIn/);
+  assert.doesNotMatch(column, /useWalletHost/);
+  assert.doesNotMatch(column, /WalletHostGateway/);
 
   const signInPage = read("../os-sign-in/page.tsx");
-  // The app sign-in page must route through the gateway-aware column, never the
-  // raw sign-in component directly.
   assert.match(signInPage, /AppAccessColumn/);
   assert.doesNotMatch(signInPage, /<WalletSignIn/);
 });
 
-test("the app variant of wallet sign-in excludes email-wallet onboarding", () => {
+test("the app variant exposes email OTP and embedded Solana onboarding", () => {
   const wallet = read("../components/wallet-sign-in.tsx");
-  // Email creation stays available for the public variant...
+  const provider = read("../components/wallet-auth-provider.tsx");
+
   assert.match(wallet, /login\(\{ loginMethods: \["email"\] \}\)/);
-  // ...but the email onboarding UI is gated behind the non-app branch.
-  assert.match(wallet, /\{isAppVariant \? \(/);
-  assert.match(wallet, /wallet-auth-app-hint/);
-  // The "create with email" button must live in the public-only branch.
-  const emailButtonIndex = wallet.indexOf("Create a Solana wallet with email");
-  const nonAppBranchIndex = wallet.indexOf(") : (");
-  assert.ok(emailButtonIndex > 0);
-  assert.ok(
-    nonAppBranchIndex > 0 && nonAppBranchIndex < emailButtonIndex,
-    "email onboarding button must be inside the non-app branch",
-  );
+  assert.match(wallet, /Continue with email/);
+  assert.match(wallet, /embedded Solana wallet/);
+  assert.match(provider, /loginMethods: \["wallet", "email"\]/);
+  assert.match(provider, /solana: \{ createOnLogin: "users-without-wallets" \}/);
+  assert.match(provider, /ethereum: \{ createOnLogin: "off" \}/);
 });
 
 test("the wallet-host gateway keeps the full app unavailable and offers wallet entry", () => {
