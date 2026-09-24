@@ -1,7 +1,6 @@
-// Phase 7 aggregate regression guards. These source-level invariants fail loudly
-// if a future change reintroduces a second auth owner, drops the duplicate-callback
-// guard, leaks the full app to ordinary browsers, or exposes email onboarding on
-// the app domain.
+// Aggregate authentication regression guards. These source-level invariants fail
+// loudly if a future change reintroduces a second auth owner, drops the
+// duplicate-callback guard, or removes the app-domain wallet/email entry paths.
 
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -33,26 +32,27 @@ test("Privy remains the single authentication owner", () => {
   assert.match(provider, /externalWallets:/);
 });
 
-test("the app domain gates the full client behind wallet-host detection", () => {
+test("the app domain routes through the unified wallet-or-email access column", () => {
   const column = read("../components/app-access-column.tsx");
   const page = read("../os-sign-in/page.tsx");
-  assert.match(column, /useWalletHost/);
-  assert.match(column, /WalletHostGateway/);
-  // Ordinary browsers never get the raw sign-in without detection first.
+
   assert.match(page, /AppAccessColumn/);
   assert.doesNotMatch(page, /<WalletSignIn/);
+  assert.match(column, /WalletAuthProvider/);
+  assert.match(column, /WalletSignIn/);
+  assert.doesNotMatch(column, /useWalletHost/);
+  assert.doesNotMatch(column, /WalletHostGateway/);
 });
 
-test("Privy mounts only for supported wallet hosts, not the gateway", () => {
+test("Privy mounts on the app sign-in surface for ordinary browsers too", () => {
   const column = read("../components/app-access-column.tsx");
   const page = read("../os-sign-in/page.tsx");
-  // The sign-in page no longer wraps everything in the wallet provider.
+
+  // The server page stays provider-free; the client access column owns Privy.
   assert.doesNotMatch(page, /WalletAuthProvider/);
-  // The provider is mounted inside the column, only around the ready-state
-  // sign-in — so the gateway/detection surfaces never depend on the SDK.
-  const readyIndex = column.indexOf('host.status === "ready"');
   const providerIndex = column.indexOf("<WalletAuthProvider");
-  assert.ok(readyIndex > 0 && providerIndex > readyIndex);
+  const signInIndex = column.indexOf("<WalletSignIn");
+  assert.ok(providerIndex > 0 && signInIndex > providerIndex);
 });
 
 test("sign-out terminates the Privy session, not a dead wallet-adapter connection", () => {

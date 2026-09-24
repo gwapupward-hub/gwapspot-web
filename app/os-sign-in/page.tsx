@@ -12,7 +12,7 @@ import styles from "./gateway.module.css";
 export const metadata: Metadata = {
   ...gwapOsAppMetadata,
   title: "Enter GWAP OS",
-  description: "Secure wallet access to GWAP OS.",
+  description: "Secure wallet or email access to GWAP OS.",
   robots: { index: false, follow: false },
 };
 
@@ -63,14 +63,15 @@ export default async function GwapOsSignInPage({
         <span className={styles.kicker}>IDENTITY GATEWAY</span>
         <h1 id="gwap-os-gateway-title">Enter your GWAP workspace.</h1>
         <p>
-          One wallet unlocks your identity, applications, activity, and GWAP
-          workspace. Authentication uses a signed Solana message—not a transaction.
+          Use your existing Solana wallet or verify your email to enter your
+          identity, applications, activity, and GWAP workspace. Email users receive
+          an embedded Solana wallet when needed.
         </p>
 
         <div className={styles.securityLine} aria-label="Authentication details">
-          <span>SIGNATURE ONLY</span>
+          <span>WALLET OR EMAIL</span>
           <i aria-hidden="true" />
-          <span>NO TRANSACTION</span>
+          <span>OTP / SIGNATURE</span>
           <i aria-hidden="true" />
           <span>NO SOL FEE</span>
         </div>
