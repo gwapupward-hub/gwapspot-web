@@ -21,6 +21,13 @@ export type BuildLogEntry = {
   readonly links: readonly BuildLogLink[];
 };
 
+export type BuildLogSnapshot = {
+  readonly entries: readonly BuildLogEntry[];
+  readonly deployedRevision: string | null;
+  readonly checkedAt: string;
+  readonly source: "github-production-revision" | "static-fallback";
+};
+
 export const PUBLIC_SITE_URL = "https://www.gwapspot.com";
 
 export const latestBuildLogEntry: BuildLogEntry = {
