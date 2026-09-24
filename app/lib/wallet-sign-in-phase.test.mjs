@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   WALLET_SIGN_IN_LABEL,
+  canContinueAuthenticatedSession,
   resolveWalletSignInDisplay,
 } from "./wallet-sign-in-phase.ts";
 
@@ -35,4 +36,51 @@ test("only the idle label reads as an actionable prompt rather than progress", (
   assert.notEqual(WALLET_SIGN_IN_LABEL.connecting, WALLET_SIGN_IN_LABEL.idle);
   assert.notEqual(WALLET_SIGN_IN_LABEL.establishing_session, WALLET_SIGN_IN_LABEL.idle);
   assert.notEqual(WALLET_SIGN_IN_LABEL.opening, WALLET_SIGN_IN_LABEL.idle);
+});
+
+
+test("email login waits for the embedded Solana wallet before opening GWAP OS", () => {
+  assert.equal(
+    canContinueAuthenticatedSession({
+      ready: true,
+      authenticated: true,
+      hasSolanaWallet: false,
+      sessionIssue: false,
+      explicitLoginCompleted: true,
+    }),
+    false,
+  );
+  assert.equal(
+    canContinueAuthenticatedSession({
+      ready: true,
+      authenticated: true,
+      hasSolanaWallet: true,
+      sessionIssue: false,
+      explicitLoginCompleted: true,
+    }),
+    true,
+  );
+});
+
+test("a prior session loop requires a fresh explicit wallet or email login", () => {
+  assert.equal(
+    canContinueAuthenticatedSession({
+      ready: true,
+      authenticated: true,
+      hasSolanaWallet: true,
+      sessionIssue: true,
+      explicitLoginCompleted: false,
+    }),
+    false,
+  );
+  assert.equal(
+    canContinueAuthenticatedSession({
+      ready: true,
+      authenticated: true,
+      hasSolanaWallet: true,
+      sessionIssue: true,
+      explicitLoginCompleted: true,
+    }),
+    true,
+  );
 });
