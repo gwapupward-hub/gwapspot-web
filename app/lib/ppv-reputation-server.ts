@@ -3,6 +3,7 @@ import "server-only";
 import { Connection, PublicKey, clusterApiUrl } from "@solana/web3.js";
 import { getGnsApiBase } from "../app/lib/gns";
 import { getPrivateStorageKey, getWorkspaceRedis } from "./redis";
+import { classifyPpvSignatureFinality } from "./ppv/finality.ts";
 import { decodeAgreement, decodeProofRecord } from "./ppv-reputation-accounts.ts";
 import {
   GNS_RECORD_SNAPSHOT_SCHEMA_VERSION,
@@ -89,7 +90,7 @@ function rpcUrl() {
 
 let connection: Connection | null = null;
 function getConnection() {
-  if (!connection) connection = new Connection(rpcUrl(), { commitment: "confirmed" });
+  if (!connection) connection = new Connection(rpcUrl(), { commitment: "finalized" });
   return connection;
 }
 
@@ -104,7 +105,7 @@ const storage: ProjectionStorage = {
 
 export async function readChainVerification(subjectId: string, kind: "proof" | "agreement"): Promise<ChainVerification> {
   const checkedAt = new Date().toISOString();
-  const info = await getConnection().getAccountInfo(new PublicKey(subjectId), "confirmed");
+  const info = await getConnection().getAccountInfo(new PublicKey(subjectId), "finalized");
   if (!info) return { exists: false, revoked: false, authority: null, contentHash: null, checkedAt };
   const ids = getPpvProgramIds();
   const owner = info.owner.toBase58();
@@ -197,7 +198,7 @@ export type IngestSummary = {
   stored: number;
   receipts: number;
   malformed: number;
-  skipped: "failed" | "duplicate" | null;
+  skipped: "failed" | "duplicate" | "not_finalized" | null;
 };
 
 async function ingestEnvelope(envelope: ChainEventEnvelope) {
@@ -229,13 +230,38 @@ export async function ingestParsedTransaction(parsed: ParsedTransaction, options
 
 export async function ingestWebhookPayload(payload: unknown) {
   const { transactions, skipped } = parseHeliusWebhookPayload(payload, getPpvProgramIds());
+  if (!transactions.length) return { results: [], skippedItems: skipped };
+
+  const signatures = transactions.map((transaction) => transaction.signature);
+  const statuses = await getConnection().getSignatureStatuses(signatures, {
+    searchTransactionHistory: true,
+  });
+
   const results: IngestSummary[] = [];
-  for (const transaction of transactions) results.push(await ingestParsedTransaction(transaction));
+  for (let index = 0; index < transactions.length; index += 1) {
+    const transaction = transactions[index];
+    const finality = classifyPpvSignatureFinality(statuses.value[index]);
+
+    if (finality !== "finalized") {
+      results.push({
+        signature: transaction.signature,
+        events: transaction.envelopes.length,
+        stored: 0,
+        receipts: 0,
+        malformed: transaction.malformed,
+        skipped: finality === "failed" ? "failed" : "not_finalized",
+      });
+      continue;
+    }
+
+    results.push(await ingestParsedTransaction(transaction));
+  }
+
   return { results, skippedItems: skipped };
 }
 
 export async function fetchParsedTransaction(signature: string): Promise<ParsedTransaction | null> {
-  const response = await getConnection().getTransaction(signature, { commitment: "confirmed", maxSupportedTransactionVersion: 0 });
+  const response = await getConnection().getTransaction(signature, { commitment: "finalized", maxSupportedTransactionVersion: 0 });
   if (!response) return null;
   const message = response.transaction.message;
   const accountKeys = message.getAccountKeys({
@@ -277,7 +303,7 @@ export async function reconcilePrograms(options: { maxTransactions?: number } = 
     let before: string | undefined;
     let remaining = budget;
     while (remaining > 0) {
-      const page = await getConnection().getSignaturesForAddress(new PublicKey(programId), { before, limit: Math.min(RECONCILE_PAGE, remaining) }, "confirmed");
+      const page = await getConnection().getSignaturesForAddress(new PublicKey(programId), { before, limit: Math.min(RECONCILE_PAGE, remaining) }, "finalized");
       if (!page.length) break;
       for (const entry of page) {
         remaining -= 1;
