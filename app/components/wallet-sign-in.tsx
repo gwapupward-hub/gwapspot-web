@@ -33,7 +33,7 @@ export function WalletSignIn({
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [phase, setPhase] = useState<WalletSignInPhase>("idle");
   const navigationStarted = useRef(false);
-  const explicitLoginCompleted = useRef(false);
+  const [explicitLoginCompleted, setExplicitLoginCompleted] = useState(false);
   const isAppVariant = variant === "app";
   const display = resolveWalletSignInDisplay(phase, loginModalOpen);
   const busy = display !== "idle";
@@ -105,14 +105,14 @@ export function WalletSignIn({
 
   const { login } = useLogin({
     onComplete: () => {
-      explicitLoginCompleted.current = true;
+      setExplicitLoginCompleted(true);
       reportAuthEvent("login_completed");
       setError("");
       setErrorCode(null);
       setPhase("establishing_session");
     },
     onError: (loginError) => {
-      explicitLoginCompleted.current = false;
+      setExplicitLoginCompleted(false);
       const code = getWalletAuthErrorCode(loginError);
       reportAuthEvent("login_failed", code);
       navigationStarted.current = false;
@@ -136,7 +136,7 @@ export function WalletSignIn({
         authenticated,
         hasSolanaWallet: Boolean(hasSolanaWallet),
         sessionIssue,
-        explicitLoginCompleted: explicitLoginCompleted.current,
+        explicitLoginCompleted,
       })
     ) return;
     const navigationTimer = window.setTimeout(
@@ -148,14 +148,14 @@ export function WalletSignIn({
     authenticated,
     hasSolanaWallet,
     navigateWhenSessionReady,
-    phase,
+    explicitLoginCompleted,
     ready,
     sessionIssue,
   ]);
 
   function openWalletSelector() {
     navigationStarted.current = false;
-    explicitLoginCompleted.current = false;
+    setExplicitLoginCompleted(false);
     setPhase("idle");
     setError("");
     setErrorCode(null);
@@ -174,7 +174,7 @@ export function WalletSignIn({
 
   function createWalletWithEmail() {
     navigationStarted.current = false;
-    explicitLoginCompleted.current = false;
+    setExplicitLoginCompleted(false);
     setPhase("idle");
     setError("");
     setErrorCode(null);
