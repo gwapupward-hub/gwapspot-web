@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  canContinueAuthenticatedSession,
   resolveWalletSignInDisplay,
   WALLET_SIGN_IN_LABEL,
   type WalletSignInPhase,
@@ -129,12 +130,14 @@ export function WalletSignIn({
     // loop instead of breaking it. Require an explicit wallet or email login,
     // which forces a fresh authentication attempt rather than reusing state
     // that was already shown not to work.
-    const explicitRecovery = explicitLoginCompleted.current;
     if (
-      !ready ||
-      !authenticated ||
-      !hasSolanaWallet ||
-      (sessionIssue && !explicitRecovery)
+      !canContinueAuthenticatedSession({
+        ready,
+        authenticated,
+        hasSolanaWallet: Boolean(hasSolanaWallet),
+        sessionIssue,
+        explicitLoginCompleted: explicitLoginCompleted.current,
+      })
     ) return;
     const navigationTimer = window.setTimeout(
       () => void navigateWhenSessionReady(),
