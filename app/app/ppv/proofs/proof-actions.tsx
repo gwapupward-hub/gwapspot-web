@@ -51,6 +51,8 @@ type PendingCoreAction = {
   proofAddress: string;
   signature: string;
   submittedAt: string;
+  blockhash?: string;
+  lastValidBlockHeight?: number;
 };
 
 type UiState =
@@ -205,6 +207,8 @@ export function PpvProofActions({
             action: pending.action,
             proofIdHex: pending.proofIdHex,
             signature: pending.signature,
+            blockhash: pending.blockhash,
+            lastValidBlockHeight: pending.lastValidBlockHeight,
           }),
         });
         const body = (await response.json().catch(() => ({}))) as unknown;
@@ -280,7 +284,7 @@ export function PpvProofActions({
         transaction: base64Bytes(prepared.transactionBase64),
         wallet,
         chain: prepared.chain,
-        options: { optimisticBroadcast: true, skipSimulation: false },
+        options: { skipSimulation: false },
       });
       const submittedSignature = bs58.encode(result.signature);
       submitted = {
@@ -290,6 +294,8 @@ export function PpvProofActions({
         proofAddress: prepared.proofAddress,
         signature: submittedSignature,
         submittedAt: new Date().toISOString(),
+        blockhash: prepared.blockhash,
+        lastValidBlockHeight: prepared.lastValidBlockHeight,
       };
       savePending(submitted);
       setSignature(submittedSignature);
