@@ -21,6 +21,7 @@ type Capability = {
 };
 
 type PreparedTransaction = {
+  operationId: string;
   action: "create" | "revoke";
   chain: "solana:devnet";
   proofAddress: string;
@@ -45,6 +46,7 @@ type Confirmation =
     };
 
 type PendingCoreAction = {
+  operationId?: string;
   owner: string;
   action: "create" | "revoke";
   proofIdHex: string;
@@ -219,6 +221,7 @@ export function PpvProofActions({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
+            operationId: pending.operationId,
             action: pending.action,
             proofIdHex: pending.proofIdHex,
             signature: pending.signature,
@@ -303,9 +306,10 @@ export function PpvProofActions({
       });
       const submittedSignature = bs58.encode(result.signature);
       submitted = {
+        operationId: prepared.operationId,
         owner: account.verifiedWallet,
         action,
-        proofIdHex: selectedProofId,
+        proofIdHex: prepared.proofIdHex,
         proofAddress: prepared.proofAddress,
         signature: submittedSignature,
         submittedAt: new Date().toISOString(),
