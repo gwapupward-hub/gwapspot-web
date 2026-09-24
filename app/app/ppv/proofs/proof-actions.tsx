@@ -396,6 +396,7 @@ export function PpvProofActions({
 
   const busy =
     state === "preparing" || state === "signing" || state === "confirming";
+  const recoveryPending = state === "sync-required";
 
   return (
     <section className={styles.proofWorkbench} aria-labelledby="ppv-proof-workbench">
@@ -418,7 +419,7 @@ export function PpvProofActions({
               onChange={(event) => setEvidence(event.target.value)}
               rows={7}
               maxLength={20_000}
-              disabled={busy || !writesReady}
+              disabled={busy || recoveryPending || !writesReady}
               placeholder="Paste the exact text you want to commit. It is hashed locally and is never sent to GWAP or Solana."
             />
           </label>
@@ -429,7 +430,7 @@ export function PpvProofActions({
               onChange={(event) => setContext(event.target.value)}
               rows={3}
               maxLength={8_000}
-              disabled={busy || !writesReady}
+              disabled={busy || recoveryPending || !writesReady}
               placeholder="Optional context to hash separately. Leave blank for no context commitment."
             />
           </label>
@@ -437,7 +438,7 @@ export function PpvProofActions({
             <span>Proof kind</span>
             <select
               value={kind}
-              disabled={busy || !writesReady}
+              disabled={busy || recoveryPending || !writesReady}
               onChange={(event) => setKind(event.target.value as PpvCoreProofKind)}
             >
               {PPV_CORE_PROOF_KINDS.map((value) => (
@@ -448,7 +449,7 @@ export function PpvProofActions({
           <button
             type="button"
             className={styles.primaryAction}
-            disabled={busy || !writesReady || !evidence.trim()}
+            disabled={busy || recoveryPending || !writesReady || !evidence.trim()}
             onClick={() => void createProof()}
           >
             {state === "preparing"
