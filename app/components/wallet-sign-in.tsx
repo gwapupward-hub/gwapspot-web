@@ -111,6 +111,7 @@ export function WalletSignIn({
       setPhase("establishing_session");
     },
     onError: (loginError) => {
+      explicitLoginCompleted.current = false;
       const code = getWalletAuthErrorCode(loginError);
       reportAuthEvent("login_failed", code);
       navigationStarted.current = false;
@@ -140,7 +141,14 @@ export function WalletSignIn({
       0,
     );
     return () => window.clearTimeout(navigationTimer);
-  }, [authenticated, hasSolanaWallet, navigateWhenSessionReady, ready, sessionIssue]);
+  }, [
+    authenticated,
+    hasSolanaWallet,
+    navigateWhenSessionReady,
+    phase,
+    ready,
+    sessionIssue,
+  ]);
 
   function openWalletSelector() {
     navigationStarted.current = false;
