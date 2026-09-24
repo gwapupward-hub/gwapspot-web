@@ -4,6 +4,7 @@ import {
   buildLogEntries,
   type BuildLogEntry,
   type BuildLogKind,
+  type BuildLogSnapshot,
 } from "./changelog";
 
 const GITHUB_REPO = "gwapupward-hub/gwapspot-web";
@@ -28,13 +29,6 @@ type GitHubPull = {
   head: { ref: string };
   base: { ref: string };
   user?: { login?: string };
-};
-
-export type BuildLogSnapshot = {
-  entries: readonly BuildLogEntry[];
-  deployedRevision: string | null;
-  checkedAt: string;
-  source: "github-production-revision" | "static-fallback";
 };
 
 function githubHeaders() {
