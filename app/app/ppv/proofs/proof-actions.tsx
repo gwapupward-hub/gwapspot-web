@@ -154,6 +154,13 @@ function clearPending(owner: string) {
   }
 }
 
+function terminalConfirmationCode(error: unknown) {
+  const message = error instanceof Error ? error.message : "";
+  if (/TRANSACTION_EXPIRED/.test(message)) return "TRANSACTION_EXPIRED";
+  if (/TRANSACTION_FAILED/.test(message)) return "TRANSACTION_FAILED";
+  return null;
+}
+
 function actionError(error: unknown) {
   const message = error instanceof Error ? error.message : "PPV Core action failed.";
   if (/reject|declin|cancel/i.test(message)) {
@@ -329,10 +336,21 @@ export function PpvProofActions({
       );
     } catch (error) {
       if (submitted) {
-        setState("sync-required");
-        setMessage(
-          "The transaction may have been broadcast. Retry verification before attempting another signature.",
-        );
+        const terminalCode = terminalConfirmationCode(error);
+        if (terminalCode) {
+          clearPending(account.verifiedWallet);
+          setState(terminalCode === "TRANSACTION_EXPIRED" ? "expired" : "error");
+          setMessage(
+            terminalCode === "TRANSACTION_EXPIRED"
+              ? "The devnet transaction expired before finalization. No proof was confirmed, so it is safe to create a fresh proof."
+              : "The devnet transaction reached the chain but failed. No proof was confirmed, so it is safe to create a fresh proof.",
+          );
+        } else {
+          setState("sync-required");
+          setMessage(
+            "The transaction may have been broadcast. Retry verification before attempting another signature.",
+          );
+        }
       } else {
         setState("error");
         setMessage(actionError(error));
@@ -414,12 +432,14 @@ export function PpvProofActions({
           : "Revocation finalized on devnet.",
       );
     } catch (error) {
-      const message = error instanceof Error ? error.message : "";
-      if (/TRANSACTION_EXPIRED/.test(message)) {
+      const terminalCode = terminalConfirmationCode(error);
+      if (terminalCode) {
         clearPending(account.verifiedWallet);
-        setState("expired");
+        setState(terminalCode === "TRANSACTION_EXPIRED" ? "expired" : "error");
         setMessage(
-          "The devnet transaction expired before it finalized. No proof account was confirmed, so it is safe to create a fresh proof.",
+          terminalCode === "TRANSACTION_EXPIRED"
+            ? "The devnet transaction expired before it finalized. No proof account was confirmed, so it is safe to create a fresh proof."
+            : "The devnet transaction was finalized as failed. No proof account was created, so it is safe to create a fresh proof.",
         );
       } else {
         setState("sync-required");
