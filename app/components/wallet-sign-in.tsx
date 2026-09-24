@@ -32,6 +32,7 @@ export function WalletSignIn({
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [phase, setPhase] = useState<WalletSignInPhase>("idle");
   const navigationStarted = useRef(false);
+  const explicitLoginCompleted = useRef(false);
   const isAppVariant = variant === "app";
   const display = resolveWalletSignInDisplay(phase, loginModalOpen);
   const busy = display !== "idle";
@@ -103,10 +104,11 @@ export function WalletSignIn({
 
   const { login } = useLogin({
     onComplete: () => {
+      explicitLoginCompleted.current = true;
       reportAuthEvent("login_completed");
       setError("");
       setErrorCode(null);
-      void navigateWhenSessionReady();
+      setPhase("establishing_session");
     },
     onError: (loginError) => {
       const code = getWalletAuthErrorCode(loginError);
@@ -126,7 +128,13 @@ export function WalletSignIn({
     // loop instead of breaking it. Require the explicit "Connect Solana
     // wallet" tap, which forces a fresh login rather than reusing state that
     // was already shown not to work.
-    if (!ready || !authenticated || !hasSolanaWallet || sessionIssue) return;
+    const explicitRecovery = explicitLoginCompleted.current;
+    if (
+      !ready ||
+      !authenticated ||
+      !hasSolanaWallet ||
+      (sessionIssue && !explicitRecovery)
+    ) return;
     const navigationTimer = window.setTimeout(
       () => void navigateWhenSessionReady(),
       0,
@@ -136,10 +144,11 @@ export function WalletSignIn({
 
   function openWalletSelector() {
     navigationStarted.current = false;
+    explicitLoginCompleted.current = false;
     setPhase("idle");
     setError("");
     setErrorCode(null);
-    reportAuthEvent("login_started");
+    reportAuthEvent("wallet_login_started");
     login({ loginMethods: ["wallet"] });
   }
 
@@ -153,7 +162,12 @@ export function WalletSignIn({
   }
 
   function createWalletWithEmail() {
+    navigationStarted.current = false;
+    explicitLoginCompleted.current = false;
+    setPhase("idle");
     setError("");
+    setErrorCode(null);
+    reportAuthEvent("email_login_started");
     login({ loginMethods: ["email"] });
   }
 
@@ -197,14 +211,14 @@ export function WalletSignIn({
       )}
 
       <span className="wallet-auth-eyebrow">
-        {isAppVariant ? "SOLANA IDENTITY" : "SOLANA WALLET AUTHENTICATION"}
+        {isAppVariant ? "GWAP IDENTITY" : "SOLANA WALLET AUTHENTICATION"}
       </span>
       <h2>
-        {isAppVariant ? "Authenticate with your wallet." : "Your wallet is your GWAP sign-in."}
+        {isAppVariant ? "Sign in with wallet or email." : "Your wallet is your GWAP sign-in."}
       </h2>
       <p>
         {isAppVariant
-          ? "Connect your Solana wallet, then approve one ownership message to enter GWAP OS. No transaction. No SOL fee."
+          ? "Use an existing Solana wallet, or verify your email to create or reopen your GWAP embedded Solana wallet."
           : "Connect a Solana wallet, then approve one message to prove ownership. This does not submit a transaction or cost SOL."}
       </p>
 
@@ -220,10 +234,27 @@ export function WalletSignIn({
         </button>
 
         {isAppVariant ? (
-          <small className="wallet-auth-app-hint">
-            GWAP OS is wallet-native. Approve the signature request in your
-            Solana wallet to enter.
-          </small>
+          <>
+            <small className="wallet-auth-app-hint">
+              Existing wallet: approve one ownership signature. No transaction
+              and no SOL fee.
+            </small>
+            <div className="wallet-auth-divider">
+              <span>OR</span>
+            </div>
+            <button
+              className="wallet-auth-secondary"
+              type="button"
+              disabled={busy}
+              onClick={createWalletWithEmail}
+            >
+              Continue with email
+            </button>
+            <small className="wallet-auth-app-hint">
+              Email uses a one-time code. If you do not already have a wallet,
+              GWAP creates a Privy embedded Solana wallet for your account.
+            </small>
+          </>
         ) : (
           <>
             <div className="wallet-auth-divider">
@@ -254,7 +285,7 @@ export function WalletSignIn({
       ) : null}
       {authenticated && !hasSolanaWallet ? (
         <p className="wallet-auth-status" role="status">
-          Finishing your Solana wallet setup…
+          Finishing your embedded Solana wallet setup…
         </p>
       ) : null}
       {error ? (
