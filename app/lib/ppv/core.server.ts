@@ -15,6 +15,7 @@ import {
   type InstructionSpec,
 } from "../ppv-sdk/instructions";
 import {
+  PPV_CORE_PROOF_ACCOUNT_BYTES,
   fixedHexToBytes,
   isPpvCoreProofKind,
   type PpvCoreProofKind,
@@ -173,6 +174,32 @@ export async function prepareCoreProofTransaction(input: PrepareCoreProofInput) 
     recentBlockhash: blockhash.blockhash,
   }).add(web3Instruction(spec));
 
+  const [balanceLamports, fee, rentLamports] = await Promise.all([
+    connection.getBalance(authority, "finalized"),
+    connection.getFeeForMessage(transaction.compileMessage(), "finalized"),
+    input.action === "create"
+      ? connection.getMinimumBalanceForRentExemption(
+          PPV_CORE_PROOF_ACCOUNT_BYTES,
+          "finalized",
+        )
+      : Promise.resolve(0),
+  ]);
+  if (fee.value === null) {
+    throw new PpvCoreRequestError(
+      "TRANSACTION_FEE_UNAVAILABLE",
+      503,
+      "PPV could not estimate the devnet transaction fee.",
+    );
+  }
+  const requiredLamports = fee.value + rentLamports;
+  if (balanceLamports < requiredLamports) {
+    throw new PpvCoreRequestError(
+      "INSUFFICIENT_DEVNET_SOL",
+      409,
+      `This wallet needs at least ${requiredLamports} devnet lamports for this PPV action and currently has ${balanceLamports}.`,
+    );
+  }
+
   return {
     action: input.action,
     chain: "solana:devnet" as const,
@@ -239,7 +266,12 @@ export async function confirmCoreProofTransaction(input: {
   if (transaction.meta?.err) {
     console.warn("ppv_core_transaction_failed", {
       action: input.action,
+      signature,
+      proofAddress: proof,
       error: JSON.stringify(transaction.meta.err).slice(0, 240),
+      logs: (transaction.meta.logMessages ?? [])
+        .slice(-8)
+        .map((line) => line.slice(0, 240)),
     });
     throw new PpvCoreRequestError(
       "TRANSACTION_FAILED",
