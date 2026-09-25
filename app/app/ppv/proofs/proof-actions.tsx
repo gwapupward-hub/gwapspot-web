@@ -310,6 +310,14 @@ export function PpvProofActions({
     return () => window.clearTimeout(timer);
   }, [account.verifiedWallet]);
 
+  useEffect(() => {
+    setVerificationState("idle");
+    setVerifiedRecord(null);
+    setVerificationMessage(
+      "Paste the original evidence and verify it against the finalized on-chain commitment. Evidence stays in this browser.",
+    );
+  }, [context, evidence, proofIdHex]);
+
   async function prepareAndSend(
     action: "create" | "revoke",
     payload: Record<string, unknown>,
