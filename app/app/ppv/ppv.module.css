@@ -413,6 +413,28 @@
   font-weight: 900;
 }
 
+.networkNotice {
+  margin-top: 18px;
+  padding: 14px 16px;
+  border: 1px solid rgba(19, 221, 19, 0.35);
+  border-radius: 16px;
+  background: rgba(19, 221, 19, 0.07);
+}
+
+.networkNotice strong {
+  display: block;
+  color: #13dd13;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+}
+
+.networkNotice p {
+  margin: 7px 0 0;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
 .proofGrid {
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(280px, .85fr);
