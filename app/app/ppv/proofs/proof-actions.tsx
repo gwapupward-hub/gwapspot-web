@@ -163,6 +163,35 @@ function terminalConfirmationCode(error: unknown) {
   return null;
 }
 
+function ppvClientErrorCode(error: unknown) {
+  const message = error instanceof Error ? error.message : "";
+  if (/reject|declin|cancel/i.test(message)) return "WALLET_REJECTED";
+  if (/insufficient|lamports|funds/i.test(message)) return "INSUFFICIENT_FUNDS";
+  if (/simulation/i.test(message)) return "SIMULATION_FAILED";
+  if (/blockhash|expired/i.test(message)) return "BLOCKHASH_ERROR";
+  if (/network|rpc|fetch|timeout/i.test(message)) return "NETWORK_ERROR";
+  return "UNKNOWN_CLIENT_ERROR";
+}
+
+function reportPpvClientEvent(
+  event: "sign_started" | "sign_failed" | "broadcast_returned" | "confirm_started",
+  action: "create" | "revoke",
+  code?: string,
+) {
+  void fetch("/api/ppv/core/diagnostics", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
+    keepalive: true,
+    body: JSON.stringify({
+      event,
+      action,
+      code,
+      walletType: "privy-solana",
+    }),
+  }).catch(() => undefined);
+}
+
 function actionError(error: unknown) {
   const message = error instanceof Error ? error.message : "PPV Core action failed.";
   if (/reject|declin|cancel/i.test(message)) {
@@ -297,12 +326,23 @@ export function PpvProofActions({
           : "Approve the PPV Core revocation transaction in your verified wallet.",
       );
 
-      const result = await signAndSendTransaction({
-        transaction: base64Bytes(prepared.transactionBase64),
-        wallet,
-        chain: prepared.chain,
-        options: { skipSimulation: false },
-      });
+      reportPpvClientEvent("sign_started", action);
+      let result;
+      try {
+        result = await signAndSendTransaction({
+          transaction: base64Bytes(prepared.transactionBase64),
+          wallet,
+          chain: prepared.chain,
+          options: {
+            optimisticBroadcast: true,
+            skipSimulation: false,
+          },
+        });
+      } catch (error) {
+        reportPpvClientEvent("sign_failed", action, ppvClientErrorCode(error));
+        throw error;
+      }
+      reportPpvClientEvent("broadcast_returned", action);
       const submittedSignature = bs58.encode(result.signature);
       submitted = {
         operationId: prepared.operationId,
@@ -319,6 +359,7 @@ export function PpvProofActions({
       setSignature(submittedSignature);
       setState("confirming");
       setMessage("Transaction broadcast. Waiting for finalized Solana state…");
+      reportPpvClientEvent("confirm_started", action);
 
       const resultConfirmation = await confirm(submitted);
       if (!resultConfirmation || resultConfirmation.status !== "finalized") {
