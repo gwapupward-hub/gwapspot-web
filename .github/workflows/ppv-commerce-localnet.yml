@@ -2,6 +2,8 @@ name: PPV Commerce Localnet Acceptance
 
 on:
   workflow_dispatch:
+  push:
+    branches: ["ci/ppv-commerce-localnet-run"]
 
 permissions:
   contents: read
