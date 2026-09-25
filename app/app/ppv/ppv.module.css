@@ -468,6 +468,7 @@
 
 .proofForm textarea,
 .proofForm select,
+.proofForm input,
 .revokeBar input {
   width: 100%;
   box-sizing: border-box;
@@ -486,6 +487,7 @@
 
 .proofForm textarea:focus,
 .proofForm select:focus,
+.proofForm input:focus,
 .revokeBar input:focus {
   outline: 2px solid rgba(19,221,19,.24);
   border-color: rgba(19,221,19,.5);
@@ -521,6 +523,16 @@
 .secondaryAction:disabled {
   cursor: not-allowed;
   opacity: .46;
+}
+
+.agreementActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.agreementActions > button {
+  flex: 1 1 190px;
 }
 
 .proofResult {
