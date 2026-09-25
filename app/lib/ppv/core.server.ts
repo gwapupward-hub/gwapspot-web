@@ -16,10 +16,12 @@ import {
 } from "../ppv-sdk/instructions";
 import {
   PPV_CORE_PROOF_ACCOUNT_BYTES,
+  bytesToLowerHex,
   fixedHexToBytes,
   isPpvCoreProofKind,
   type PpvCoreProofKind,
 } from "./core";
+import { getPpvObservationConfig } from "./config.server";
 import { PPV_PROGRAM_IDS, PpvPolicyError } from "./policy";
 import { requirePpvMutationReadiness } from "./readiness.server";
 
@@ -27,7 +29,22 @@ const PROOF_MIN_BYTES = 132;
 const PROOF_SCHEMA_OFFSET = 8;
 const PROOF_ID_OFFSET = 10;
 const PROOF_AUTHORITY_OFFSET = 26;
+const PROOF_CONTENT_HASH_OFFSET = 58;
+const PROOF_CONTEXT_HASH_OFFSET = 90;
+const PROOF_KIND_OFFSET = 122;
 const PROOF_STATUS_OFFSET = 123;
+const PROOF_CREATED_AT_OFFSET = 124;
+const PROOF_REVOKED_AT_OFFSET = 132;
+const PROOF_RECORD_READ_BYTES = 140;
+
+const PROOF_KIND_BY_INDEX = [
+  "creation",
+  "document",
+  "agreement",
+  "invoice",
+  "deliverable",
+  "other",
+] as const;
 
 export class PpvCoreRequestError extends Error {
   code: string;
@@ -98,12 +115,68 @@ function proofState(
   throw new PpvCoreRequestError("UNEXPECTED_PROOF_STATUS", 409);
 }
 
+function decodeProofRecord(
+  data: Buffer,
+  authority: PublicKey,
+  proofId: Uint8Array,
+) {
+  if (data.length < PROOF_RECORD_READ_BYTES) {
+    throw new PpvCoreRequestError("UNEXPECTED_PROOF_ACCOUNT", 409);
+  }
+
+  const state = proofState(data, authority, proofId);
+  const kind = PROOF_KIND_BY_INDEX[data[PROOF_KIND_OFFSET]];
+  if (!kind) {
+    throw new PpvCoreRequestError("UNEXPECTED_PROOF_KIND", 409);
+  }
+
+  const createdAtBig = data.readBigInt64LE(PROOF_CREATED_AT_OFFSET);
+  const revokedAtBig = data.readBigInt64LE(PROOF_REVOKED_AT_OFFSET);
+  const toSafeNumber = (value: bigint, code: string) => {
+    if (
+      value > BigInt(Number.MAX_SAFE_INTEGER) ||
+      value < BigInt(Number.MIN_SAFE_INTEGER)
+    ) {
+      throw new PpvCoreRequestError(code, 409);
+    }
+    return Number(value);
+  };
+
+  return {
+    schemaVersion: data[PROOF_SCHEMA_OFFSET],
+    proofIdHex: bytesToLowerHex(
+      data.subarray(PROOF_ID_OFFSET, PROOF_ID_OFFSET + 16),
+    ),
+    authority: authority.toBase58(),
+    contentHashHex: bytesToLowerHex(
+      data.subarray(PROOF_CONTENT_HASH_OFFSET, PROOF_CONTENT_HASH_OFFSET + 32),
+    ),
+    contextHashHex: bytesToLowerHex(
+      data.subarray(PROOF_CONTEXT_HASH_OFFSET, PROOF_CONTEXT_HASH_OFFSET + 32),
+    ),
+    kind,
+    state,
+    createdAtUnix: toSafeNumber(createdAtBig, "PROOF_CREATED_AT_OVERFLOW"),
+    revokedAtUnix: toSafeNumber(revokedAtBig, "PROOF_REVOKED_AT_OVERFLOW"),
+  };
+}
+
+
 function proofAddress(authority: PublicKey, proofId: Uint8Array) {
   return deriveCoreProofRecord(
     PPV_PROGRAM_IDS.core,
     authority.toBase58(),
     proofId,
   );
+}
+
+async function coreReadConnection() {
+  const config = getPpvObservationConfig();
+  if (config.policy.cluster !== "devnet") {
+    throw new PpvPolicyError("PPV_DEVNET_REQUIRED");
+  }
+  if (!config.rpcUrl) throw new PpvPolicyError("PPV_RPC_REQUIRED");
+  return new Connection(config.rpcUrl, "finalized");
 }
 
 async function coreConnection() {
@@ -312,5 +385,28 @@ export async function confirmCoreProofTransaction(input: {
     proofAddress: proof,
     proofState: state,
     verification: "transaction_and_program_state" as const,
+  };
+}
+
+
+export async function readCoreProofRecord(input: {
+  authority: string;
+  proofIdHex: string;
+}) {
+  const authority = authorityKey(input.authority);
+  const proofId = fixedHexToBytes(input.proofIdHex, 16, "proofId");
+  const proof = proofAddress(authority, proofId);
+  const connection = await coreReadConnection();
+  const account = await connection.getAccountInfo(new PublicKey(proof), "finalized");
+
+  if (!account) throw new PpvCoreRequestError("PROOF_NOT_FOUND", 404);
+  if (!account.owner.equals(new PublicKey(PPV_PROGRAM_IDS.core))) {
+    throw new PpvCoreRequestError("WRONG_PROOF_OWNER", 409);
+  }
+
+  return {
+    proofAddress: proof,
+    cluster: "devnet" as const,
+    ...decodeProofRecord(account.data, authority, proofId),
   };
 }

@@ -573,6 +573,86 @@
   font-weight: 800;
 }
 
+.verifyPanel {
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.verifyPanel > div:first-child > span {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+}
+
+.verifyPanel h3 {
+  margin: 6px 0 8px;
+  font-size: 1rem;
+}
+
+.verifyPanel p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.5;
+}
+
+.verifyActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.verifyActions strong {
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+}
+
+.verifySuccess {
+  color: #13dd13;
+}
+
+.verifyFailure {
+  color: #ff8a65;
+}
+
+.verifyNeutral {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.verifyMessage {
+  margin-top: 12px !important;
+}
+
+.verifyMeta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 14px 0 0;
+}
+
+.verifyMeta div {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.verifyMeta dt {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.verifyMeta dd {
+  margin: 4px 0 0;
+  color: #fff;
+  font-size: 0.84rem;
+}
+
 .revokeBar {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(220px, 360px) auto;

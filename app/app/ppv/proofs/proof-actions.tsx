@@ -45,6 +45,22 @@ type Confirmation =
       proofState: "active" | "revoked";
     };
 
+type CoreProofRecord = {
+  proofAddress: string;
+  cluster: "devnet";
+  schemaVersion: number;
+  proofIdHex: string;
+  authority: string;
+  contentHashHex: string;
+  contextHashHex: string;
+  kind: PpvCoreProofKind;
+  state: "active" | "revoked";
+  createdAtUnix: number;
+  revokedAtUnix: number;
+};
+
+type VerificationState = "idle" | "checking" | "verified" | "mismatch" | "error";
+
 type PendingCoreAction = {
   operationId?: string;
   owner: string;
@@ -222,6 +238,12 @@ export function PpvProofActions({
   const [proofAddress, setProofAddress] = useState("");
   const [signature, setSignature] = useState("");
   const [state, setState] = useState<UiState>("idle");
+  const [verificationState, setVerificationState] =
+    useState<VerificationState>("idle");
+  const [verificationMessage, setVerificationMessage] = useState(
+    "Paste the original evidence and verify it against the finalized on-chain commitment. Evidence stays in this browser.",
+  );
+  const [verifiedRecord, setVerifiedRecord] = useState<CoreProofRecord | null>(null);
   const [message, setMessage] = useState(
     "Evidence is hashed in this browser. Only the hashes are sent to the PPV transaction service.",
   );
@@ -277,6 +299,7 @@ export function PpvProofActions({
     const timer = window.setTimeout(() => {
       const pending = loadPending(account.verifiedWallet);
       if (!pending) return;
+      resetLocalVerification();
       setProofIdHex(pending.proofIdHex);
       setProofAddress(pending.proofAddress);
       setSignature(pending.signature);
@@ -287,6 +310,14 @@ export function PpvProofActions({
     }, 0);
     return () => window.clearTimeout(timer);
   }, [account.verifiedWallet]);
+
+  function resetLocalVerification() {
+    setVerificationState("idle");
+    setVerifiedRecord(null);
+    setVerificationMessage(
+      "Paste the original evidence and verify it against the finalized on-chain commitment. Evidence stays in this browser.",
+    );
+  }
 
   async function prepareAndSend(
     action: "create" | "revoke",
@@ -317,6 +348,7 @@ export function PpvProofActions({
       }
       const prepared = body as PreparedTransaction;
 
+      resetLocalVerification();
       setProofIdHex(prepared.proofIdHex);
       setProofAddress(prepared.proofAddress);
       setState("signing");
@@ -440,6 +472,63 @@ export function PpvProofActions({
     await prepareAndSend("revoke", { proofIdHex: normalized });
   }
 
+  async function verifyEvidenceAgainstProof() {
+    const normalized = proofIdHex.trim().toLowerCase();
+    if (
+      !proofIdValid(normalized) ||
+      !evidence.trim() ||
+      verificationState === "checking"
+    ) {
+      return;
+    }
+
+    setVerificationState("checking");
+    setVerificationMessage(
+      "Hashing the evidence locally and reading the finalized Core proof…",
+    );
+
+    try {
+      const [contentHashHex, contextHashHex] = await Promise.all([
+        hashText(evidence),
+        context.trim() ? hashText(context) : Promise.resolve(ZERO_HASH),
+      ]);
+
+      const response = await authenticatedFetch("/api/ppv/core/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ proofIdHex: normalized }),
+      });
+      const body = (await response.json().catch(() => ({}))) as unknown;
+      if (!response.ok) {
+        throw new Error(readApiError(body, "PPV could not read this proof."));
+      }
+
+      const record = body as CoreProofRecord;
+      setVerifiedRecord(record);
+      setProofAddress(record.proofAddress);
+
+      const contentMatches = contentHashHex === record.contentHashHex;
+      const contextMatches = contextHashHex === record.contextHashHex;
+      if (contentMatches && contextMatches) {
+        setVerificationState("verified");
+        setVerificationMessage(
+          record.state === "active"
+            ? "VERIFIED: these exact evidence and context bytes match the finalized active proof."
+            : "VERIFIED: these exact evidence and context bytes match the finalized proof. The proof is revoked, so the historical commitment remains valid but no longer active.",
+        );
+      } else {
+        setVerificationState("mismatch");
+        setVerificationMessage(
+          "MISMATCH: the current evidence or context does not match the finalized on-chain commitment.",
+        );
+      }
+    } catch (error) {
+      setVerifiedRecord(null);
+      setVerificationState("error");
+      setVerificationMessage(actionError(error));
+    }
+  }
+
   async function retryVerification() {
     const pending = loadPending(account.verifiedWallet);
     if (!pending || inFlight.current) return;
@@ -521,7 +610,10 @@ export function PpvProofActions({
             <span>Evidence bytes</span>
             <textarea
               value={evidence}
-              onChange={(event) => setEvidence(event.target.value)}
+              onChange={(event) => {
+                resetLocalVerification();
+                setEvidence(event.target.value);
+              }}
               rows={7}
               maxLength={20_000}
               disabled={busy || recoveryPending || !writesReady}
@@ -532,7 +624,10 @@ export function PpvProofActions({
             <span>Private context / manifest (optional)</span>
             <textarea
               value={context}
-              onChange={(event) => setContext(event.target.value)}
+              onChange={(event) => {
+                resetLocalVerification();
+                setContext(event.target.value);
+              }}
               rows={3}
               maxLength={8_000}
               disabled={busy || recoveryPending || !writesReady}
@@ -598,6 +693,52 @@ export function PpvProofActions({
         </aside>
       </div>
 
+      <section className={styles.verifyPanel} aria-labelledby="ppv-proof-verify">
+        <div>
+          <span>LOCAL VERIFICATION</span>
+          <h3 id="ppv-proof-verify">Verify the exact bytes against Solana.</h3>
+          <p>
+            GWAP hashes the Evidence and optional Context fields in this browser.
+            The server receives only the proof ID and returns the finalized commitment hashes.
+          </p>
+        </div>
+        <div className={styles.verifyActions}>
+          <button
+            type="button"
+            className={styles.secondaryAction}
+            disabled={
+              verificationState === "checking" ||
+              !proofIdValid(proofIdHex.trim().toLowerCase()) ||
+              !evidence.trim()
+            }
+            onClick={() => void verifyEvidenceAgainstProof()}
+          >
+            {verificationState === "checking" ? "Verifying…" : "Verify exact evidence"}
+          </button>
+          <strong
+            className={
+              verificationState === "verified"
+                ? styles.verifySuccess
+                : verificationState === "mismatch" || verificationState === "error"
+                  ? styles.verifyFailure
+                  : styles.verifyNeutral
+            }
+          >
+            {verificationState.toUpperCase()}
+          </strong>
+        </div>
+        <p className={styles.verifyMessage} aria-live="polite">
+          {verificationMessage}
+        </p>
+        {verifiedRecord ? (
+          <dl className={styles.verifyMeta}>
+            <div><dt>Proof state</dt><dd>{verifiedRecord.state}</dd></div>
+            <div><dt>Kind</dt><dd>{verifiedRecord.kind}</dd></div>
+            <div><dt>Network</dt><dd>{verifiedRecord.cluster}</dd></div>
+          </dl>
+        ) : null}
+      </section>
+
       <div className={styles.revokeBar}>
         <div>
           <span>REVOCATION</span>
@@ -606,11 +747,12 @@ export function PpvProofActions({
         <input
           aria-label="Proof ID to revoke"
           value={proofIdHex}
-          onChange={(event) =>
+          onChange={(event) => {
+            resetLocalVerification();
             setProofIdHex(
               event.target.value.toLowerCase().replace(/[^0-9a-f]/g, "").slice(0, 32),
-            )
-          }
+            );
+          }}
           placeholder="32 hex characters"
           disabled={busy || !revokeReady || state === "sync-required"}
         />
