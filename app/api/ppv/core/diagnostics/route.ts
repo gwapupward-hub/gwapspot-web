@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { isGwapAppHostname } from "../../../../../lib/app-domain-routing";
-import { hasValidOrigin } from "../../../../../lib/request-guard";
+import { isGwapAppHostname } from "../../../../lib/app-domain-routing";
+import { hasValidOrigin } from "../../../../lib/request-guard";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
