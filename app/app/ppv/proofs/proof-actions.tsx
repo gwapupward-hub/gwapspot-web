@@ -299,6 +299,7 @@ export function PpvProofActions({
     const timer = window.setTimeout(() => {
       const pending = loadPending(account.verifiedWallet);
       if (!pending) return;
+      resetLocalVerification();
       setProofIdHex(pending.proofIdHex);
       setProofAddress(pending.proofAddress);
       setSignature(pending.signature);
@@ -310,13 +311,13 @@ export function PpvProofActions({
     return () => window.clearTimeout(timer);
   }, [account.verifiedWallet]);
 
-  useEffect(() => {
+  function resetLocalVerification() {
     setVerificationState("idle");
     setVerifiedRecord(null);
     setVerificationMessage(
       "Paste the original evidence and verify it against the finalized on-chain commitment. Evidence stays in this browser.",
     );
-  }, [context, evidence, proofIdHex]);
+  }
 
   async function prepareAndSend(
     action: "create" | "revoke",
@@ -347,6 +348,7 @@ export function PpvProofActions({
       }
       const prepared = body as PreparedTransaction;
 
+      resetLocalVerification();
       setProofIdHex(prepared.proofIdHex);
       setProofAddress(prepared.proofAddress);
       setState("signing");
@@ -608,7 +610,10 @@ export function PpvProofActions({
             <span>Evidence bytes</span>
             <textarea
               value={evidence}
-              onChange={(event) => setEvidence(event.target.value)}
+              onChange={(event) => {
+                resetLocalVerification();
+                setEvidence(event.target.value);
+              }}
               rows={7}
               maxLength={20_000}
               disabled={busy || recoveryPending || !writesReady}
@@ -619,7 +624,10 @@ export function PpvProofActions({
             <span>Private context / manifest (optional)</span>
             <textarea
               value={context}
-              onChange={(event) => setContext(event.target.value)}
+              onChange={(event) => {
+                resetLocalVerification();
+                setContext(event.target.value);
+              }}
               rows={3}
               maxLength={8_000}
               disabled={busy || recoveryPending || !writesReady}
@@ -739,11 +747,12 @@ export function PpvProofActions({
         <input
           aria-label="Proof ID to revoke"
           value={proofIdHex}
-          onChange={(event) =>
+          onChange={(event) => {
+            resetLocalVerification();
             setProofIdHex(
               event.target.value.toLowerCase().replace(/[^0-9a-f]/g, "").slice(0, 32),
-            )
-          }
+            );
+          }}
           placeholder="32 hex characters"
           disabled={busy || !revokeReady || state === "sync-required"}
         />
