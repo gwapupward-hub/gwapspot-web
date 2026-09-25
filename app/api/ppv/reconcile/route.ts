@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { isValidInternalApiKey } from "../../../lib/daily-ideas-telegram-account-core";
 import { PpvConfigurationError, reconcilePrograms } from "../../../lib/ppv-reputation-server";
+import { shouldRunScheduledWorker } from "../../../lib/vercel-cron-boundary";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,6 +31,14 @@ function authorized(request: Request) {
 
 async function reconcile(request: Request) {
   if (!authorized(request)) return json({ error: "Unauthorized" }, 401);
+  if (
+    !shouldRunScheduledWorker({
+      isVercelCron: request.headers.has("x-vercel-cron"),
+      projectId: process.env.VERCEL_PROJECT_ID,
+    })
+  ) {
+    return json({ ok: true, skipped: "NON_CANONICAL_VERCEL_PROJECT" });
+  }
   const requested = Number(new URL(request.url).searchParams.get("limit"));
   try {
     const report = await reconcilePrograms({ maxTransactions: Number.isFinite(requested) && requested > 0 ? requested : 100 });

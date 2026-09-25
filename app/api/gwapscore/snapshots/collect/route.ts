@@ -15,6 +15,7 @@ import {
 } from "../../../../lib/gwapscore-snapshots";
 import { getSocialVerification } from "../../../../lib/social-proof-control";
 import { collectXSnapshotObservation } from "../../../../lib/x-social-snapshot-source";
+import { shouldRunScheduledWorker } from "../../../../lib/vercel-cron-boundary";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -58,6 +59,21 @@ function batchSizeFrom(request: Request) {
 async function collect(request: Request) {
   const requestId = requestIdFrom(request);
   if (!authorized(request)) return json({ error: "Unauthorized", requestId }, 401);
+
+  if (
+    !shouldRunScheduledWorker({
+      isVercelCron: request.headers.has("x-vercel-cron"),
+      projectId: process.env.VERCEL_PROJECT_ID,
+    })
+  ) {
+    return json({
+      requestId,
+      enabled: snapshotCollectionEnabled(),
+      skipped: "NON_CANONICAL_VERCEL_PROJECT",
+      claimed: 0,
+      results: [],
+    });
+  }
 
   if (!snapshotCollectionEnabled()) {
     return json({ requestId, enabled: false, claimed: 0, results: [] });
