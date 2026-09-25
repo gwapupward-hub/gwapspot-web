@@ -32,7 +32,8 @@ test("Core verification reads the canonical proof account at finalized commitmen
 });
 
 test("changing local proof inputs invalidates a prior VERIFIED result", () => {
-  assert.match(client, /\[context, evidence, proofIdHex\]/);
-  assert.match(client, /setVerificationState\("idle"\)/);
-  assert.match(client, /setVerifiedRecord\(null\)/);
+  assert.match(client, /function resetLocalVerification\(\)/);
+  assert.match(client, /resetLocalVerification\(\);\s*setEvidence/);
+  assert.match(client, /resetLocalVerification\(\);\s*setContext/);
+  assert.match(client, /resetLocalVerification\(\);\s*setProofIdHex/);
 });
