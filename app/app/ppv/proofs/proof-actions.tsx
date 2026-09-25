@@ -322,8 +322,8 @@ export function PpvProofActions({
       setState("signing");
       setMessage(
         action === "create"
-          ? "Approve the PPV Core proof transaction in your verified wallet."
-          : "Approve the PPV Core revocation transaction in your verified wallet.",
+          ? "Approve the PPV Core proof transaction. Phantom users must have Testnet Mode set to Solana Devnet before approving."
+          : "Approve the PPV Core revocation transaction. Phantom users must have Testnet Mode set to Solana Devnet before approving.",
       );
 
       reportPpvClientEvent("sign_started", action);
@@ -387,7 +387,7 @@ export function PpvProofActions({
           setMessage(
             terminalCode === "TRANSACTION_EXPIRED"
               ? "The devnet transaction expired before finalization. No proof was confirmed, so it is safe to create a fresh proof."
-              : "The devnet transaction reached the chain but failed. No proof was confirmed, so it is safe to create a fresh proof.",
+              : "The devnet transaction reached the chain but failed. No proof was confirmed, so it is safe to create a fresh proof. If you use Phantom, verify Testnet Mode is set to Solana Devnet before retrying.",
           );
         } else {
           setState("sync-required");
@@ -479,7 +479,7 @@ export function PpvProofActions({
         setMessage(
           terminalCode === "TRANSACTION_EXPIRED"
             ? "The devnet transaction expired before it finalized. No proof account was confirmed, so it is safe to create a fresh proof."
-            : "The devnet transaction was finalized as failed. No proof account was created, so it is safe to create a fresh proof.",
+            : "The devnet transaction was finalized as failed. No proof account was created, so it is safe to create a fresh proof. If you use Phantom, verify Testnet Mode is set to Solana Devnet before retrying.",
         );
       } else {
         setState("sync-required");
@@ -505,6 +505,15 @@ export function PpvProofActions({
           {writesReady ? "DEVNET WRITES READY" : "READ-ONLY"}
         </span>
       </header>
+
+      <div className={styles.networkNotice} role="note" aria-label="PPV devnet wallet requirement">
+        <strong>PPV NETWORK: SOLANA DEVNET</strong>
+        <p>
+          External wallets must be connected in their devnet/testnet context for PPV writes.
+          In Phantom: Settings → Developer Settings → Testnet Mode → Solana Devnet.
+          Your normal GWAP login can stay the same; only the PPV transaction network must be devnet.
+        </p>
+      </div>
 
       <div className={styles.proofGrid}>
         <div className={styles.proofForm}>
