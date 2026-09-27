@@ -78,7 +78,8 @@ jobs:
 
       - name: Install PPV dependencies
         working-directory: ppv-foundation
-        run: npm ci
+        # Match the pinned PPV package's validated npm version without changing its lockfile.
+        run: npm exec --yes --package=npm@10.9.8 -- npm ci --no-audit --no-fund
 
       - name: Build PPV fixtures and run GwapSpot Commerce acceptance
         shell: bash
