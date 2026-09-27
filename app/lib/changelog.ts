@@ -31,18 +31,20 @@ export type BuildLogSnapshot = {
 export const PUBLIC_SITE_URL = "https://www.gwapspot.com";
 
 export const latestBuildLogEntry: BuildLogEntry = {
-  slug: "harden-core-finalization-recovery",
-  releasedAt: "2026-09-24T05:50:59Z",
+  slug: "align-ppv-commerce-localnet-runtime",
+  releasedAt: "2026-09-27T09:38:38Z",
   kind: "Infrastructure",
   status: "Live",
-  title: "harden Core finalization recovery",
+  title: "Align PPV Commerce localnet runtime",
   summary:
-    "PPV Core devnet recovery was hardened after live Phantom testing exposed a transaction-finalization gap.",
+    "PPV Commerce localnet acceptance now uses the aligned runtime required by the gated integration workflow.",
   highlights: [
-    "Stopped optimistic PPV broadcasts so proof submission waits for a durable network send.",
-    "Added proof-account recovery, transaction-expiry detection, and duplicate-submission protection.",
+    "Aligned the local validator and Commerce acceptance runtime used by the CI workflow.",
+    "Keeps PPV Commerce validation gated to localnet rather than implying a public or mainnet release.",
   ],
-  links: [{ label: "Explore PPV", href: "/ppv" }],
+  links: [
+    { label: "Explore PPV", href: "/ecosystem/private-proof-vault" },
+  ],
 };
 
 export const buildLogEntries: readonly BuildLogEntry[] = [
@@ -59,7 +61,7 @@ export const buildLogEntries: readonly BuildLogEntry[] = [
       "Added authenticated prepare and finalized-confirm services for proof create and revoke.",
       "Hashes evidence locally before signing so raw evidence bytes do not leave the browser.",
     ],
-    links: [{ label: "Explore PPV", href: "/ppv" }],
+    links: [{ label: "Explore PPV", href: "/ecosystem/private-proof-vault" }],
   },
   {
     slug: "ecosystem-layers-and-shareable-lookups",
