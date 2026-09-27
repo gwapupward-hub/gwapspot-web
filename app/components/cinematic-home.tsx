@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState, type ChangeEvent, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { formatBuildLogDate, latestBuildLogEntry, type BuildLogSnapshot } from "../lib/changelog";
 import { ecosystemProductGroups, ecosystemProductIndexBySlug, ecosystemProducts, getProductDestination, isExternalProductDestination, socialLinks } from "../lib/ecosystem";
+import { roadmapPhases } from "../lib/roadmap";
 import { CountUp } from "./count-up";
 import { GwapEcosystemGraph } from "./gwap-ecosystem-graph";
 import { HomeUtility } from "./home-utility";
@@ -307,9 +308,15 @@ export function CinematicHome() {
         <div className="section-kicker"><span>04</span><p>Deliberate execution beats empty hype.</p></div>
         <div className="premium-heading roadmap-heading"><div><span className="eyebrow-premium"><Icon name="spark" /> Execution roadmap</span><h2>Built in phases.<br /><em>Designed to compound.</em></h2></div><GlassButton href="/roadmap">View full roadmap</GlassButton></div>
         <div className="roadmap-rail">
-          <article className="phase-card complete"><span>PHASE 01</span><div className="phase-orb"><i /></div><h3>Foundation</h3><p>Flagship website, production foundation, analytics, and ecosystem positioning.</p><small>Complete</small></article>
-          <article className="phase-card current"><span>PHASE 02</span><div className="phase-orb"><i /></div><h3>Expansion</h3><p>Premium discovery, product surfaces, community, and partner-ready storytelling.</p><small>Current</small></article>
-          <article className="phase-card started"><span>PHASE 03</span><div className="phase-orb"><i /></div><h3>Integration</h3><p>Wallet authentication and the GWAP OS identity runtime are live; shared profiles and cross-product data continue rolling out.</p><small>Underway</small></article>
+          {roadmapPhases.slice(0, 3).map((phase) => (
+            <article className={`phase-card ${phase.railClass}`} key={phase.phase}>
+              <span>{phase.phase.toUpperCase()}</span>
+              <div className="phase-orb"><i /></div>
+              <h3>{phase.title}</h3>
+              <p>{phase.homeSummary}</p>
+              <small>{phase.status}</small>
+            </article>
+          ))}
         </div>
         <Link className="latest-build-card" href={`/changelog#${latestBuild.slug}`}>
           <span className="latest-build-signal" aria-hidden="true"><i /></span>
