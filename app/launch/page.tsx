@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowIcon, PageHero, PageShell, SparkIcon } from "../components/site-shell";
-import { ecosystemProducts } from "../lib/ecosystem";
+import { ecosystemProducts, isPubliclyAvailable } from "../lib/ecosystem";
 import { createPageMetadata } from "../lib/metadata";
 import Launchpad from "./launchpad";
 import "../launch.css";
@@ -13,7 +13,7 @@ export const metadata = createPageMetadata({
 });
 
 export default function LaunchPage() {
-  const availableNow = ecosystemProducts.filter((product) => product.externalUrl).length;
+  const availableNow = ecosystemProducts.filter(isPubliclyAvailable).length;
 
   return (
     <PageShell>
@@ -36,7 +36,7 @@ export default function LaunchPage() {
           <strong>{String(ecosystemProducts.length).padStart(2, "0")}</strong>
         </div>
         <div className="summary-stat">
-          <span>AVAILABLE NOW</span>
+          <span>LIVE + BETA ACCESS</span>
           <strong>{String(availableNow).padStart(2, "0")}</strong>
         </div>
         <div className="summary-stat">
@@ -62,11 +62,11 @@ export default function LaunchPage() {
         <div className="cta-panel">
           <div>
             <span className="eyebrow">
-              <SparkIcon /> Integration comes next
+              <SparkIcon /> Integration is underway
             </span>
-            <h2>The launchpad becomes the front door to GWAP OS.</h2>
+            <h2>GWAP OS is the integration layer now.</h2>
             <p>
-              The next operating layer will add accounts, wallet connectivity, shared profiles, and personalized product access without replacing the independent ventures.
+              Wallet authentication and the identity runtime are live. Shared profiles, cross-product data, permissions, analytics, and personalized access are the current Phase 03 work.
             </p>
           </div>
           <Link className="primary-button" href="/roadmap">
