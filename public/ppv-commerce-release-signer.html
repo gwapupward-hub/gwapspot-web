@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex,nofollow,noarchive" />
+  <title>PPV Commerce — Phantom Release Signer</title>
+  <style>
+    :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: #070707; color: #f5f5f5; display: grid; place-items: center; padding: 24px; }
+    main { width: min(760px, 100%); border: 1px solid #252525; background: #0e0e0e; border-radius: 22px; padding: 24px; box-shadow: 0 18px 70px rgba(0,0,0,.45); }
+    .eyebrow { color: #13dd13; font-weight: 800; letter-spacing: .12em; font-size: .76rem; text-transform: uppercase; }
+    h1 { margin: 8px 0 10px; font-size: clamp(1.75rem, 5vw, 2.6rem); line-height: 1.05; }
+    p { color: #b9b9b9; line-height: 1.55; }
+    .facts, .message, .warning { border-radius: 14px; padding: 14px; margin-top: 18px; }
+    .facts { border: 1px solid #303030; background: #111; }
+    .message { border: 1px solid #285f28; background: #0d170d; }
+    .warning { border: 1px solid #3a3014; background: #171407; color: #dfca85; font-size: .92rem; }
+    .fact { display: grid; grid-template-columns: 118px 1fr; gap: 8px; margin: 6px 0; font-size: .88rem; }
+    .fact span:first-child { color: #858585; }
+    code, pre, input { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    pre { white-space: pre-wrap; overflow-wrap: anywhere; color: #d7ffd7; font-size: .82rem; line-height: 1.5; margin: 10px 0 0; }
+    button { width: 100%; border: 0; border-radius: 12px; padding: 14px 16px; font-weight: 900; font-size: 1rem; cursor: pointer; }
+    #connect { background: #9955ff; color: #fff; margin-top: 18px; }
+    #sign { background: #13dd13; color: #041004; margin-top: 10px; }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+    label { display: block; margin: 20px 0 8px; font-weight: 700; }
+    input { width: 100%; background: #090909; color: #f5f5f5; border: 1px solid #303030; border-radius: 12px; padding: 13px; font-size: .78rem; }
+    .row { display: grid; grid-template-columns: 1fr auto; gap: 10px; }
+    .row button { width: auto; min-width: 92px; background: #1f1f1f; color: #fff; }
+    #status { min-height: 24px; margin-top: 16px; font-weight: 700; color: #d8d8d8; }
+    .ok { color: #13dd13 !important; }
+    .err { color: #ff8d8d !important; }
+    .small { font-size: .82rem; color: #888; }
+  </style>
+</head>
+<body>
+<main>
+  <div class="eyebrow">GWAP · PPV Commerce · Devnet</div>
+  <h1>Release Approval Signer</h1>
+  <p>This page signs one exact PPV Commerce devnet release message. It never creates a transaction, deploys a program, moves funds, or requests private key material.</p>
+
+  <div class="facts">
+    <div class="fact"><span>Program</span><code>ppv_commerce</code></div>
+    <div class="fact"><span>Program ID</span><code>GmRDoFuPrBrsxnvTX751WK5rLu14JXe4sgjh6vNwHzr3</code></div>
+    <div class="fact"><span>Commit</span><code>7c4ea67a9b6d69ab85a20f497eb0c2a31b48cfd2</code></div>
+    <div class="fact"><span>Cluster</span><code>devnet</code></div>
+    <div class="fact"><span>Message bytes</span><code>161</code></div>
+    <div class="fact"><span>SHA-256</span><code>8206a6ddf7bc619f902da85f0e879573985476ba1659b11502558c7e8524ffe5</code></div>
+  </div>
+
+  <div class="message">
+    <strong>Exact message to sign</strong>
+    <pre id="message">PPV_DEVNET_RELEASE_V1
+program=ppv_commerce
+program_id=GmRDoFuPrBrsxnvTX751WK5rLu14JXe4sgjh6vNwHzr3
+commit=7c4ea67a9b6d69ab85a20f497eb0c2a31b48cfd2
+cluster=devnet</pre>
+  </div>
+
+  <div class="warning">Use only a configured PPV Squads member wallet. Verify the exact release facts in Phantom before approving. Any PPV commit after <strong>7c4ea67…</strong> invalidates this signer.</div>
+
+  <button id="connect">Connect Phantom</button>
+  <button id="sign" disabled>Sign Exact Commerce Release Message</button>
+  <div id="status">Open this page inside Phantom’s in-app browser.</div>
+
+  <label for="approver">Approver public key</label>
+  <div class="row">
+    <input id="approver" readonly placeholder="Connect an authorized signer first" />
+    <button data-copy="approver">Copy</button>
+  </div>
+
+  <label for="signature">Signature (canonical padded Base64)</label>
+  <div class="row">
+    <input id="signature" readonly placeholder="Sign first" />
+    <button data-copy="signature">Copy</button>
+  </div>
+
+  <p class="small">Repeat with a second distinct authorized Squads member. Return only the public approver address and Base64 signature. Never paste a seed phrase, secret key, or keypair JSON anywhere.</p>
+</main>
+
+<script>
+(() => {
+  const EXPECTED_SHA256 = '8206a6ddf7bc619f902da85f0e879573985476ba1659b11502558c7e8524ffe5';
+  const MEMBERS = new Set([
+    '58kuGbxpvaamvYE44WYkyipBB6FVKt2qT9u3vAKtyKYV',
+    '2FFVcm9xJmUHG6zfo15ktzuGQTXACPG42iquGHe6faTN',
+    'BJmFM4k7Q32CiCYSdoYkAhXdD5Sk3BegMh2cbEAsgSwJ'
+  ]);
+  const message = document.getElementById('message').textContent;
+  const connectBtn = document.getElementById('connect');
+  const signBtn = document.getElementById('sign');
+  const status = document.getElementById('status');
+  const approver = document.getElementById('approver');
+  const signature = document.getElementById('signature');
+  let provider = null;
+  let payloadVerified = false;
+
+  function getProvider() {
+    const p = window.phantom?.solana || window.solana;
+    return p && p.isPhantom ? p : null;
+  }
+
+  function setStatus(text, cls = '') {
+    status.textContent = text;
+    status.className = cls;
+  }
+
+  function toBase64(bytes) {
+    let binary = '';
+    const chunk = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunk) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+    }
+    return btoa(binary);
+  }
+
+  async function verifyPayload() {
+    const bytes = new TextEncoder().encode(message);
+    if (bytes.length !== 161) throw new Error('Release message byte length mismatch. Refusing to sign.');
+    const digest = await crypto.subtle.digest('SHA-256', bytes);
+    const hex = Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, '0')).join('');
+    if (hex !== EXPECTED_SHA256) throw new Error('Release message SHA-256 mismatch. Refusing to sign.');
+    payloadVerified = true;
+  }
+
+  async function connect() {
+    try {
+      await verifyPayload();
+      provider = getProvider();
+      if (!provider) throw new Error('Phantom provider not detected. Open this URL inside Phantom’s Browser tab.');
+      const result = await provider.connect();
+      const key = (result?.publicKey || provider.publicKey)?.toString();
+      if (!key) throw new Error('No public key returned by Phantom.');
+      approver.value = key;
+      signature.value = '';
+      if (!MEMBERS.has(key)) {
+        signBtn.disabled = true;
+        throw new Error('Connected wallet is not an authorized PPV Squads release approver.');
+      }
+      signBtn.disabled = false;
+      setStatus('Authorized PPV signer connected. Verify the exact message in Phantom, then sign.', 'ok');
+    } catch (err) {
+      setStatus(err?.message || 'Unable to connect Phantom.', 'err');
+    }
+  }
+
+  async function signRelease() {
+    try {
+      if (!payloadVerified) await verifyPayload();
+      provider = provider || getProvider();
+      const key = provider?.publicKey?.toString();
+      if (!provider || !key || !MEMBERS.has(key)) {
+        throw new Error('An authorized PPV Squads member must be connected.');
+      }
+      signBtn.disabled = true;
+      setStatus('Waiting for Phantom approval…');
+      const encoded = new TextEncoder().encode(message);
+      const result = await provider.signMessage(encoded, 'utf8');
+      const sigBytes = result?.signature instanceof Uint8Array
+        ? result.signature
+        : new Uint8Array(result?.signature || []);
+      if (sigBytes.length !== 64) throw new Error(`Unexpected Ed25519 signature length: ${sigBytes.length} bytes.`);
+      const encodedSignature = toBase64(sigBytes);
+      if (encodedSignature.length !== 88 || !encodedSignature.endsWith('==')) {
+        throw new Error('Signature was not encoded as canonical padded Base64.');
+      }
+      approver.value = key;
+      signature.value = encodedSignature;
+      setStatus('Signature created. Copy only the public approver address and Base64 signature.', 'ok');
+    } catch (err) {
+      signature.value = '';
+      setStatus(err?.message || 'Signing was cancelled.', 'err');
+    } finally {
+      signBtn.disabled = !MEMBERS.has(provider?.publicKey?.toString() || '');
+    }
+  }
+
+  connectBtn.addEventListener('click', connect);
+  signBtn.addEventListener('click', signRelease);
+
+  document.querySelectorAll('[data-copy]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const field = document.getElementById(btn.dataset.copy);
+      if (!field.value) return;
+      await navigator.clipboard.writeText(field.value);
+      const original = btn.textContent;
+      btn.textContent = 'Copied';
+      setTimeout(() => btn.textContent = original, 1200);
+    });
+  });
+
+  verifyPayload().then(() => {
+    if (!getProvider()) setStatus('Release payload verified. Open this page inside Phantom’s browser, then tap Connect Phantom.');
+  }).catch(err => setStatus(err.message, 'err'));
+})();
+</script>
+</body>
+</html>
