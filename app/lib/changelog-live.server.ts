@@ -91,7 +91,7 @@ function inferKind(title: string, branch: string): BuildLogKind {
 
 function destinationFor(title: string, branch: string) {
   const text = `${title} ${branch}`.toLowerCase();
-  if (/ppv/.test(text)) return "/ppv";
+  if (/ppv/.test(text)) return "/ecosystem/private-proof-vault";
   if (/gwapmoji/.test(text)) return "/gwapmojis";
   if (/wallet|privy|auth|gwap os|gwapos/.test(text)) return "/app";
   if (/roadmap/.test(text)) return "/roadmap";
