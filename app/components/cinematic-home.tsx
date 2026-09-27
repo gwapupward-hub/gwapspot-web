@@ -3,7 +3,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState, type ChangeEvent, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
-import { formatBuildLogDate, latestBuildLogEntry, type BuildLogSnapshot } from "../lib/changelog";
+import {
+  formatBuildLogDate,
+  latestBuildLogEntry,
+  type BuildLogEntry,
+  type BuildLogSnapshot,
+} from "../lib/changelog";
 import { ecosystemProductGroups, ecosystemProductIndexBySlug, ecosystemProducts, getProductDestination, isExternalProductDestination, socialLinks } from "../lib/ecosystem";
 import { roadmapPhases } from "../lib/roadmap";
 import { CountUp } from "./count-up";
@@ -39,11 +44,15 @@ function GlassButton({ href, children, primary = false }: { href: string; childr
   );
 }
 
-export function CinematicHome() {
+export function CinematicHome({
+  initialLatestBuild = latestBuildLogEntry,
+}: {
+  initialLatestBuild?: BuildLogEntry;
+}) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [latestBuild, setLatestBuild] = useState(latestBuildLogEntry);
+  const [latestBuild, setLatestBuild] = useState(initialLatestBuild);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchButtonRef = useRef<HTMLButtonElement>(null);
   const searchDialogRef = useRef<HTMLDivElement>(null);
