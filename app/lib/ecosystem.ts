@@ -31,13 +31,13 @@ export const ecosystemProducts: EcosystemProduct[] = [
     status: "Live",
     accent: "green",
     logo: "/logos/gns.webp",
-    summary: ".gwap names, wallet-linked profiles, and a portable identity layer for the open web.",
+    summary: ".gwap names, wallet-linked profiles, and a portable identity layer. Current registrations settle on Solana devnet.",
     description:
-      "GNS turns a wallet into a readable, portable identity. Each .gwap name can connect addresses, public profile information, links, payments, and reputation into one recognizable destination.",
+      "GNS turns a wallet into a readable, portable identity. Each .gwap name can connect addresses, public profile information, links, payments, and reputation into one recognizable destination. Current .gwap registration transactions settle on Solana devnet.",
     role: "The identity and naming layer for the GWAP ecosystem.",
     audience: "Wallet users, creators, communities, merchants, and applications that need a human-readable identity layer.",
     capabilities: [
-      ".gwap name registration and ownership",
+      ".gwap name registration and ownership on Solana devnet",
       "Wallet-linked public profiles",
       "Links, bios, themes, and payment settings",
       "GwapScore and verification integration",
@@ -215,12 +215,12 @@ export const ecosystemProducts: EcosystemProduct[] = [
     name: "Private Proof Vault",
     eyebrow: "Verification layer",
     category: "infrastructure",
-    status: "Planned",
+    status: "In Development",
     accent: "purple",
     logo: "/logos/private-proof-vault.webp",
-    summary: "A privacy-aware system for storing, managing, and verifying important digital proofs.",
+    summary: "Gated proof and commerce infrastructure under active devnet/localnet validation; not publicly released.",
     description:
-      "Private Proof Vault is planned as a controlled layer for evidence, credentials, agreements, and verification records that should not live openly on a public profile.",
+      "Private Proof Vault is under active development as a controlled layer for evidence, credentials, agreements, and verification records. Core proof actions are gated on Solana devnet, Commerce acceptance runs on localnet, and mainnet/public production remain disabled.",
     role: "The private evidence and verification layer across GWAP.",
     audience: "Individuals, merchants, creators, counterparties, and applications that need selective proof sharing.",
     capabilities: [
@@ -230,9 +230,9 @@ export const ecosystemProducts: EcosystemProduct[] = [
       "Connections to identity and reputation records",
     ],
     roadmap: [
-      "Define the proof schema and permission model",
+      "Complete gated Core devnet and Commerce localnet validation",
       "Integrate disputes, agreements, and attestations",
-      "Add partner verification and controlled sharing",
+      "Open public access only after release gates and production readiness checks pass",
     ],
   },
 ];
@@ -266,6 +266,32 @@ export const ecosystemProductGroups = ecosystemGroups.map((group) => ({
   ...group,
   products: ecosystemProducts.filter((product) => product.category === group.id),
 }));
+
+export function isPubliclyAvailable(product: EcosystemProduct) {
+  return (
+    (product.status === "Live" || product.status === "Beta") &&
+    Boolean(product.internalUrl || product.externalUrl)
+  );
+}
+
+export function getPublicProductDestination(product: EcosystemProduct) {
+  if (!isPubliclyAvailable(product)) return null;
+  if (product.internalUrl) {
+    return {
+      href: product.internalUrl,
+      label: product.internalLabel ?? "Open product",
+      external: false,
+    } as const;
+  }
+  if (product.externalUrl) {
+    return {
+      href: product.externalUrl,
+      label: product.externalLabel ?? "Launch product",
+      external: true,
+    } as const;
+  }
+  return null;
+}
 
 export function getProductDestination(product: EcosystemProduct) {
   return `/ecosystem/${product.slug}`;
