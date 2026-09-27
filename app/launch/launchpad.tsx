@@ -2,7 +2,11 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import type { EcosystemProduct, ProductStatus } from "../lib/ecosystem";
+import {
+  getPublicProductDestination,
+  type EcosystemProduct,
+  type ProductStatus,
+} from "../lib/ecosystem";
 import { ArrowIcon } from "../components/site-shell";
 
 type Filter = "All" | ProductStatus;
@@ -69,34 +73,52 @@ export default function Launchpad({ products }: { products: EcosystemProduct[] }
 
       {filteredProducts.length > 0 ? (
         <div className="launch-grid">
-          {filteredProducts.map((product, index) => (
-            <article className={`launch-card accent-${product.accent}`} key={product.slug}>
-              <div className="launch-card-top">
-                <span>{String(index + 1).padStart(2, "0")}</span>
-                <small>{product.status}</small>
-              </div>
+          {filteredProducts.map((product, index) => {
+            const launchDestination = getPublicProductDestination(product);
 
-              <div>
-                <p>{product.eyebrow}</p>
-                <h2>{product.name}</h2>
-                <strong>{product.role}</strong>
-                <span>{product.summary}</span>
-              </div>
+            return (
+              <article className={`launch-card accent-${product.accent}`} key={product.slug}>
+                <div className="launch-card-top">
+                  <span>{String(index + 1).padStart(2, "0")}</span>
+                  <small>{product.status}</small>
+                </div>
 
-              <div className="launch-card-actions">
-                <Link href={`/ecosystem/${product.slug}`}>
-                  Product details <ArrowIcon />
-                </Link>
-                {product.externalUrl ? (
-                  <a href={product.externalUrl} target="_blank" rel="noreferrer">
-                    {product.externalLabel ?? "Launch product"} <ArrowIcon />
-                  </a>
-                ) : (
-                  <span>Not publicly available yet</span>
-                )}
-              </div>
-            </article>
-          ))}
+                <div>
+                  <p>{product.eyebrow}</p>
+                  <h2>{product.name}</h2>
+                  <strong>{product.role}</strong>
+                  <span>{product.summary}</span>
+                </div>
+
+                <div className="launch-card-actions">
+                  <Link href={`/ecosystem/${product.slug}`}>
+                    Product details <ArrowIcon />
+                  </Link>
+                  {launchDestination ? (
+                    launchDestination.external ? (
+                      <a
+                        href={launchDestination.href}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {launchDestination.label} <ArrowIcon />
+                      </a>
+                    ) : (
+                      <Link href={launchDestination.href}>
+                        {launchDestination.label} <ArrowIcon />
+                      </Link>
+                    )
+                  ) : (
+                    <span>
+                      {product.status === "Planned"
+                        ? "Planned — not publicly released"
+                        : "In development — not publicly released"}
+                    </span>
+                  )}
+                </div>
+              </article>
+            );
+          })}
         </div>
       ) : (
         <div className="launch-empty">
