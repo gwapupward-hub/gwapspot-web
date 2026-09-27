@@ -33,7 +33,7 @@ test("Daily Ideas owns the active ecosystem product slot", () => {
   assert.match(ecosystem, /slug: "daily-ideas"/);
   assert.match(ecosystem, /name: "Daily Ideas 2\.0"/);
   assert.match(ecosystem, /internalUrl: "\/app\/ideas"/);
-  assert.match(productPage, /product\.internalUrl/);
+  assert.match(productPage, /getPublicProductDestination\(product\)/);
   assert.equal(existsSync(resolve(publicRoot, "logos/daily-ideas-2-official.webp")), true);
 });
 
