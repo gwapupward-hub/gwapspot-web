@@ -8,6 +8,7 @@ import {
 } from "../../components/site-shell";
 import {
   ecosystemProducts,
+  getPublicProductDestination,
   productBySlug,
 } from "../../lib/ecosystem";
 import { createPageMetadata } from "../../lib/metadata";
@@ -57,6 +58,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
   );
   const nextProduct =
     ecosystemProducts[(productIndex + 1) % ecosystemProducts.length];
+  const launchDestination = getPublicProductDestination(product);
 
   return (
     <PageShell>
@@ -90,19 +92,21 @@ export default async function ProductPage({ params }: ProductPageProps) {
             <h1>{product.name}</h1>
             <p>{product.description}</p>
             <div className="inner-hero-actions">
-              {product.internalUrl ? (
-                <Link className="primary-button" href={product.internalUrl}>
-                  {product.internalLabel ?? "Open product"} <ArrowIcon />
-                </Link>
-              ) : product.externalUrl ? (
-                <a
-                  className="primary-button"
-                  href={product.externalUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {product.externalLabel ?? "Launch product"} <ArrowIcon />
-                </a>
+              {launchDestination ? (
+                launchDestination.external ? (
+                  <a
+                    className="primary-button"
+                    href={launchDestination.href}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {launchDestination.label} <ArrowIcon />
+                  </a>
+                ) : (
+                  <Link className="primary-button" href={launchDestination.href}>
+                    {launchDestination.label} <ArrowIcon />
+                  </Link>
+                )
               ) : (
                 <Link className="primary-button" href="/roadmap">
                   View development roadmap <ArrowIcon />
