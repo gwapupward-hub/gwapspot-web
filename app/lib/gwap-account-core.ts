@@ -117,12 +117,23 @@ export function mergeGwapAccountIdentity(
     });
   }
 
+  const nextPrimaryWallet = isSolanaAddress(input.verifiedWallet)
+    ? input.verifiedWallet
+    : record.primaryWallet;
+  const walletChanged = nextPrimaryWallet !== record.primaryWallet;
+  const hasExplicitGnsIdentity = input.primaryGnsIdentity !== undefined;
+  const primaryGnsIdentity = hasExplicitGnsIdentity
+    ? safeString(input.primaryGnsIdentity, 128) || null
+    : walletChanged
+      ? null
+      : record.primaryGnsIdentity;
+
   return {
     ...record,
     privyUserIds,
     wallets: [...walletMap.values()].slice(0, 12),
-    primaryWallet: isSolanaAddress(input.verifiedWallet) ? input.verifiedWallet : record.primaryWallet,
-    primaryGnsIdentity: safeString(input.primaryGnsIdentity, 128) || record.primaryGnsIdentity,
+    primaryWallet: nextPrimaryWallet,
+    primaryGnsIdentity,
     updatedAt: now,
   };
 }
