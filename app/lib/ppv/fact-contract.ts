@@ -1,11 +1,11 @@
 import {
   isReputationEventV1,
   type ReputationEventV1,
-} from "../ppv-reputation/contracts";
+} from "../ppv-reputation/contracts.ts";
 import {
   PPV_RUNTIME_ENVIRONMENT_SCHEMA_VERSION,
   type PpvRuntimeEnvironmentV1,
-} from "./environment";
+} from "./environment.ts";
 
 export const PPV_FACT_ENVELOPE_SCHEMA_VERSION = 1 as const;
 
