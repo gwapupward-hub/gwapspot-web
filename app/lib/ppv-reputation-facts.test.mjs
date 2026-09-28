@@ -46,19 +46,24 @@ test("facts count, never weigh", () => {
     receipt({ sig: signatureFromByte(2), counterparties: [WALLET_B], completedAt: "2026-01-09T00:00:00.000Z" }),
     receipt({ sig: signatureFromByte(3), eventType: "dispute.opened", outcome: "opened", role: "collaborator", counterparties: [WALLET_C], sealState: "verified", disputeOpen: true }),
     receipt({ sig: signatureFromByte(4), eventType: "proof.created", outcome: "recorded", role: "creator", counterparties: [], sealState: "recorded", sourceProduct: null, completedAt: "2025-12-01T00:00:00.000Z" }),
-    receipt({ sig: signatureFromByte(5), holderWallet: WALLET_B }), // someone else's receipt is ignored
+    receipt({ sig: signatureFromByte(5), eventType: "proof.approved", role: "collaborator", sealState: "counterparty_confirmed" }),
+    receipt({ sig: signatureFromByte(6), eventType: "milestone.settled", role: "payee", sealState: "settled" }),
+    receipt({ sig: signatureFromByte(7), holderWallet: WALLET_B }), // someone else's receipt is ignored
     { junk: true },
   ]);
   assert.ok(isReputationFactsV1(facts));
-  assert.equal(facts.receiptCount, 4);
-  assert.equal(facts.verifiedReceiptCount, 3);
-  assert.equal(facts.settledCount, 2);
+  assert.equal(facts.receiptCount, 6);
+  assert.equal(facts.verifiedReceiptCount, 5);
+  assert.equal(facts.settledCount, 3);
   assert.equal(facts.disputesOpened, 1);
   assert.equal(facts.activeDisputes, 1);
   assert.equal(facts.distinctCounterparties, 2);
   assert.equal(facts.repeatCounterparties, 1);
-  assert.equal(facts.productCounts.marketplace, 3);
-  assert.equal(facts.roleCounts.payee, 2);
+  assert.equal(facts.productCounts.marketplace, 5);
+  assert.equal(facts.roleCounts.payee, 3);
+  assert.equal(facts.counterpartyConfirmedCount, 1);
+  assert.equal(facts.eventCounts["proof.approved"], 1);
+  assert.equal(facts.eventCounts["milestone.settled"], 1);
   assert.equal(facts.firstActivityAt, "2025-12-01T00:00:00.000Z");
   assert.equal(facts.lastActivityAt, "2026-01-09T00:00:00.000Z");
   for (const key of Object.keys(facts)) assert.ok(!/score|trust|rating|tier/i.test(key), `${key} is not a judgement`);
