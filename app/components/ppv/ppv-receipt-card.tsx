@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { PpvReceiptV1 } from "../../lib/ppv-reputation/contracts";
 import {
   EVENT_TYPE_LABELS,
+  PPV_EXPLORER_CLUSTER,
   ROLE_LABELS,
   SEAL_STATE_LABELS,
   SOURCE_PRODUCT_LABELS,
@@ -30,7 +31,9 @@ export function PpvReceiptCard({ receipt, actions }: { receipt: PpvReceiptV1; ac
     <article className="ppv-receipt" aria-labelledby={`ppv-receipt-${receipt.receiptId}`}>
       <header className="ppv-receipt-head">
         <div>
-          <p className="ppv-receipt-kicker">PPV receipt · schema v{receipt.schemaVersion}</p>
+          <p className="ppv-receipt-kicker">
+            PPV receipt · schema v{receipt.schemaVersion} · Solana {PPV_EXPLORER_CLUSTER}
+          </p>
           <h1 className="ppv-receipt-title" id={`ppv-receipt-${receipt.receiptId}`}>
             {EVENT_TYPE_LABELS[receipt.eventType]}
           </h1>
