@@ -38,9 +38,23 @@ function rewriteRelativeJsImports(source) {
   );
 }
 
-async function syncFile({ sourceDir, targetDir, name, header, label }) {
+function rewriteEscrowSupportImports(source) {
+  return rewriteRelativeJsImports(source).replace(
+    /from "\.\.\/reputation\//g,
+    'from "../ppv-reputation/',
+  );
+}
+
+async function syncFile({
+  sourceDir,
+  targetDir,
+  name,
+  header,
+  label,
+  rewrite = rewriteRelativeJsImports,
+}) {
   const original = await readFile(path.join(sourceDir, name), "utf8");
-  const rewritten = header + rewriteRelativeJsImports(original);
+  const rewritten = header + rewrite(original);
   const destination = path.join(targetDir, name);
   if (check) {
     const existing = await readFile(destination, "utf8").catch(() => null);
@@ -79,6 +93,7 @@ for (const name of escrowSupportFiles) {
     name,
     header: escrowHeader,
     label: "app/lib/escrow",
+    rewrite: rewriteEscrowSupportImports,
   });
 }
 
