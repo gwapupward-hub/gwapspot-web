@@ -1,0 +1,266 @@
+.page {
+  min-height: 100svh;
+  padding: max(28px, env(safe-area-inset-top)) 18px max(32px, env(safe-area-inset-bottom));
+  background:
+    radial-gradient(circle at 10% 0%, rgba(19, 221, 19, 0.14), transparent 32rem),
+    radial-gradient(circle at 90% 100%, rgba(153, 85, 255, 0.12), transparent 30rem),
+    #030504;
+  color: #f7faf7;
+  display: grid;
+  place-items: center;
+}
+
+.card {
+  width: min(100%, 760px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 28px;
+  padding: clamp(20px, 5vw, 36px);
+  background: rgba(10, 14, 11, 0.94);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
+}
+
+.brandRow {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.brandRow h1 {
+  margin: 3px 0 0;
+  font-size: clamp(1.65rem, 6vw, 2.4rem);
+  line-height: 1.04;
+}
+
+.eyebrow {
+  margin: 0;
+  color: #13dd13;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.notice {
+  margin: 24px 0;
+  padding: 14px 16px;
+  border: 1px solid rgba(19, 221, 19, 0.28);
+  border-radius: 16px;
+  background: rgba(19, 221, 19, 0.07);
+  display: grid;
+  gap: 4px;
+  font-size: 0.9rem;
+}
+
+.notice span {
+  color: rgba(247, 250, 247, 0.7);
+}
+
+.meta {
+  margin: 0 0 22px;
+  display: grid;
+  gap: 10px;
+}
+
+.meta div {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.meta dt {
+  color: rgba(247, 250, 247, 0.48);
+  font-size: 0.78rem;
+}
+
+.meta dd {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.78rem;
+  overflow-wrap: anywhere;
+}
+
+.integrity {
+  margin-bottom: 14px;
+  color: #ffd166;
+  font-size: 0.8rem;
+}
+
+.integrity[data-ok] {
+  color: #13dd13;
+}
+
+.payloadLabel,
+.walletLabel {
+  display: block;
+  margin-bottom: 8px;
+  color: rgba(247, 250, 247, 0.62);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.payload,
+.output {
+  margin: 0;
+  padding: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 16px;
+  background: #060907;
+  color: #edf4ed;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.72rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.walletPanel {
+  margin: 20px 0 14px;
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.045);
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.walletPanel > div {
+  min-width: 0;
+}
+
+.walletValue {
+  display: block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+
+.approved,
+.rejected {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.75rem;
+}
+
+.approved {
+  color: #13dd13;
+}
+
+.rejected {
+  color: #ff8d8d;
+}
+
+.primaryButton,
+.secondaryButton,
+.copyButton,
+.slotPicker button {
+  appearance: none;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+.primaryButton {
+  width: 100%;
+  min-height: 54px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #13dd13, #9aff63);
+  color: #031003;
+  font-weight: 900;
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.secondaryButton,
+.copyButton {
+  min-height: 42px;
+  padding: 0 15px;
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.09);
+  color: #fff;
+  font-weight: 750;
+}
+
+.error {
+  margin: 14px 0 0;
+  color: #ff9f9f;
+  font-size: 0.86rem;
+}
+
+.result {
+  margin-top: 22px;
+  padding: 18px;
+  border: 1px solid rgba(19, 221, 19, 0.22);
+  border-radius: 20px;
+  background: rgba(19, 221, 19, 0.05);
+}
+
+.result h2 {
+  margin: 0 0 6px;
+  font-size: 1.08rem;
+}
+
+.result p {
+  margin: 0 0 14px;
+  color: rgba(247, 250, 247, 0.67);
+  font-size: 0.84rem;
+}
+
+.slotPicker {
+  margin-bottom: 12px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 0.78rem;
+}
+
+.slotPicker button {
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.slotPicker button[data-active] {
+  background: #13dd13;
+  color: #031003;
+  font-weight: 800;
+}
+
+.copyButton {
+  margin-top: 12px;
+}
+
+.footer {
+  margin: 20px 0 0;
+  color: rgba(247, 250, 247, 0.46);
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 620px) {
+  .card {
+    border-radius: 22px;
+  }
+
+  .walletPanel {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .secondaryButton {
+    width: 100%;
+  }
+
+  .meta div {
+    grid-template-columns: 1fr;
+    gap: 3px;
+  }
+}
