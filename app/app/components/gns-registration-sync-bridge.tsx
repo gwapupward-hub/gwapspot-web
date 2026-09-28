@@ -120,6 +120,7 @@ export function GnsRegistrationSyncBridge() {
       clearLocalPending(account.verifiedWallet);
       updateGnsIdentity({
         status: "found",
+        resolutionSource: "registry",
         name: registration.name,
         fullName: registration.fullName,
       });

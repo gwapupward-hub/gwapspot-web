@@ -28,6 +28,7 @@ export function cachedGnsIdentity(primaryGnsIdentity: string | null): GnsIdentit
   if (!name) {
     return {
       status: "none",
+      resolutionSource: "none",
       name: null,
       fullName: null,
       avatar: null,
@@ -46,6 +47,7 @@ export function cachedGnsIdentity(primaryGnsIdentity: string | null): GnsIdentit
 
   return {
     status: "found",
+    resolutionSource: "cache",
     name,
     fullName: `${name}.gwap`,
     avatar: null,
@@ -54,7 +56,7 @@ export function cachedGnsIdentity(primaryGnsIdentity: string | null): GnsIdentit
     scoreTier: null,
     scoreStatus: "unavailable",
     scoreMessage: "GwapScore loads independently from GNS identity.",
-    verified: true,
+    verified: false,
     isGenesis: false,
     tier: null,
     profileUrl: getGnsProfileUrl(name),
@@ -114,7 +116,11 @@ export function seedNewWorkspaceFromGns(
   hasCloudState: boolean,
   identity: GnsIdentity,
 ) {
-  if (hasCloudState || identity.status !== "found") return state;
+  if (
+    hasCloudState ||
+    identity.status !== "found" ||
+    identity.resolutionSource !== "registry"
+  ) return state;
 
   return {
     ...state,
