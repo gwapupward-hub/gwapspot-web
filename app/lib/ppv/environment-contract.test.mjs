@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   PpvEnvironmentError,
@@ -155,4 +156,22 @@ test("fact envelope rejects a program outside the declared PPV environment", () 
     () => createPpvFactEnvelope({ environment: ENVIRONMENT, fact }),
     /does not belong/,
   );
+});
+
+const factsRouteSource = readFileSync(
+  new URL("../../api/ppv/facts/[wallet]/route.ts", import.meta.url),
+  "utf8",
+);
+const activityRouteSource = readFileSync(
+  new URL("../../api/ppv/activity/route.ts", import.meta.url),
+  "utf8",
+);
+
+test("GwapScore facts and GwapOS activity expose PPV environment provenance", () => {
+  assert.match(factsRouteSource, /ppvEnvironmentResponseHeaders/);
+  assert.match(factsRouteSource, /X-PPV-Facts-Schema-Version/);
+  assert.match(factsRouteSource, /PPV fact environment is not verified/);
+  assert.match(activityRouteSource, /ppvEnvironmentResponseHeaders/);
+  assert.match(activityRouteSource, /Access-Control-Expose-Headers/);
+  assert.match(activityRouteSource, /PPV activity environment is not verified/);
 });
