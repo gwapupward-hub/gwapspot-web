@@ -149,3 +149,23 @@ export function ppvExplorerTransactionUrl(
     ? `https://explorer.solana.com/tx/${encoded}?cluster=devnet`
     : `https://explorer.solana.com/tx/${encoded}?cluster=custom`;
 }
+
+export const PPV_ENVIRONMENT_RESPONSE_HEADERS = Object.freeze({
+  schema: "X-PPV-Environment-Schema",
+  cluster: "X-PPV-Cluster",
+  genesisHash: "X-PPV-Genesis-Hash",
+  rpcProfileId: "X-PPV-RPC-Profile",
+});
+
+export function ppvEnvironmentResponseHeaders(
+  environment: PpvRuntimeEnvironmentV1,
+): Record<string, string> {
+  return {
+    [PPV_ENVIRONMENT_RESPONSE_HEADERS.schema]: String(
+      environment.schemaVersion,
+    ),
+    [PPV_ENVIRONMENT_RESPONSE_HEADERS.cluster]: environment.cluster,
+    [PPV_ENVIRONMENT_RESPONSE_HEADERS.genesisHash]: environment.genesisHash,
+    [PPV_ENVIRONMENT_RESPONSE_HEADERS.rpcProfileId]: environment.rpcProfileId,
+  };
+}
