@@ -31,6 +31,10 @@ test("Verified Activity fails closed on PPV environment or identity mismatch", (
   assert.match(activityComponent, /resolvedWallet !== wallet/);
   assert.match(activityComponent, /resolvedDomain !== expectedDomain/);
   assert.match(activityComponent, /item\.holderWallet !== wallet/);
+  assert.match(
+    activityComponent,
+    /item\.holderGnsRecord\.owner !== item\.holderWallet/,
+  );
   assert.match(activityComponent, /item\.holderGnsRecord\?\.owner !== resolvedWallet/);
 });
 
