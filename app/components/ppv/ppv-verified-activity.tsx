@@ -90,6 +90,12 @@ export function PpvVerifiedActivity({
 
         const items = payload.items ?? [];
         const invalid = items.some((item) => {
+          if (
+            item.holderGnsRecord &&
+            item.holderGnsRecord.owner !== item.holderWallet
+          ) {
+            return true;
+          }
           if (wallet && item.holderWallet !== wallet) return true;
           if (!expectedDomain) return false;
           return (
