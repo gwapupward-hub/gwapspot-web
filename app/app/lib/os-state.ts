@@ -11,7 +11,7 @@ export type GwapPersona = "general" | "builder" | "freelancer" | "creator" | "in
 export type GwapSettings = { compactMode: boolean; reduceMotion: boolean; bootAnimation: boolean; productUpdates: boolean; communityUpdates: boolean; persona: GwapPersona };
 export type GwapOsState = { profile: GwapProfile; favorites: string[]; recent: RecentLaunch[]; ideas: DailyIdea[]; ideaProjects: IdeaProject[]; marketplaceIntents: MarketplaceIntent[]; settings: GwapSettings };
 export type GwapAccount = { displayName: string; email: string; embeddedWallet: string | null; verifiedWallet: string; walletProvider: "embedded" | "external"; walletProviderLabel: string };
-export type GnsIdentity = { status: "found" | "none" | "unavailable"; name: string | null; fullName: string | null; avatar: string | null; bio: string | null; score: number | null; scoreTier: GwapScoreTier | null; scoreStatus: GwapScoreStatus; scoreMessage: string; verified: boolean; isGenesis: boolean; tier: "premium" | "free" | null; profileUrl: string | null; updatedAt: string | null };
+export type GnsIdentity = { status: "found" | "none" | "unavailable"; resolutionSource: "registry" | "cache" | "none" | "unavailable"; name: string | null; fullName: string | null; avatar: string | null; bio: string | null; score: number | null; scoreTier: GwapScoreTier | null; scoreStatus: GwapScoreStatus; scoreMessage: string; verified: boolean; isGenesis: boolean; tier: "premium" | "free" | null; profileUrl: string | null; updatedAt: string | null };
 
 export const GWAP_OS_STORAGE_KEY = "gwap-os-state-v1";
 export const MAX_GWAP_OS_STATE_BYTES = 64_000;
