@@ -31,3 +31,19 @@ test("the sync script rewrites both sibling and parent relative imports", () => 
   assert.match(syncScript, /\.js/);
   assert.match(syncScript, /\.ts/);
 });
+
+test("escrow support modules map canonical reputation imports into the web vendor path", () => {
+  const events = readFileSync(
+    new URL("./escrow/events.ts", import.meta.url),
+    "utf8",
+  );
+  const reader = readFileSync(
+    new URL("./escrow/reader.ts", import.meta.url),
+    "utf8",
+  );
+  assert.match(events, /\.\.\/ppv-reputation\/hashing\.ts/);
+  assert.match(events, /\.\.\/ppv-reputation\/chain-events\.ts/);
+  assert.match(reader, /\.\.\/ppv-reputation\/base58\.ts/);
+  assert.doesNotMatch(events, /\.\.\/reputation\//);
+  assert.doesNotMatch(reader, /\.\.\/reputation\//);
+});
