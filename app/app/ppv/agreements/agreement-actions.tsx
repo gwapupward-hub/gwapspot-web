@@ -8,6 +8,13 @@ import {
 import bs58 from "bs58";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { hashDocumentHexV1 } from "../../../lib/ppv-sdk/canonical";
+import {
+  assertPreparedPpvEnvironment,
+  inspectWalletChainSupport,
+  ppvExplorerTransactionUrl,
+  walletChainForPpvCluster,
+  type PpvRuntimeEnvironmentV1,
+} from "../../../lib/ppv/environment";
 import { useGwapOs } from "../../components/os-provider";
 import styles from "../ppv.module.css";
 
@@ -48,7 +55,10 @@ type AgreementRecord = {
 type PreparedTransaction = {
   operationId: string;
   action: CommerceAction;
+  cluster: "devnet";
   chain: "solana:devnet";
+  genesisHash: string;
+  programId: string;
   agreementAddress: string;
   agreementIdHex: string;
   partyA: string;
@@ -131,10 +141,6 @@ function randomAgreementId() {
 
 function validAgreementId(value: string) {
   return HEX_ID.test(value.trim().toLowerCase());
-}
-
-function explorerUrl(signature: string) {
-  return `https://explorer.solana.com/tx/${encodeURIComponent(signature)}?cluster=devnet`;
 }
 
 function parseDocument(value: string, label: string) {
@@ -249,9 +255,11 @@ function reportClientEvent(
 }
 
 export function PpvAgreementActions({
+  environment,
   mutationCapability,
   layerCapability,
 }: {
+  environment: PpvRuntimeEnvironmentV1 | null;
   mutationCapability: Capability;
   layerCapability: Capability;
 }) {
@@ -279,6 +287,7 @@ export function PpvAgreementActions({
   const [reviewMessage, setReviewMessage] = useState(
     "Load an agreement, then compare these local documents to the exact finalized version before signing.",
   );
+  const [networkConfirmedForWallet, setNetworkConfirmedForWallet] = useState<string | null>(null);
 
   const writesReady = mutationCapability.state === "ready";
   const readsAvailable = layerCapability.state === "ready" || layerCapability.state === "read_only";
@@ -286,6 +295,23 @@ export function PpvAgreementActions({
     () => wallets.find((candidate) => candidate.address === account.verifiedWallet),
     [account.verifiedWallet, wallets],
   );
+  const expectedWalletChain = environment
+    ? walletChainForPpvCluster(environment.cluster)
+    : null;
+  const walletChainSupport = useMemo(
+    () =>
+      wallet && expectedWalletChain
+        ? inspectWalletChainSupport(wallet, expectedWalletChain)
+        : "unknown",
+    [expectedWalletChain, wallet],
+  );
+  const walletNetworkConfirmed =
+    networkConfirmedForWallet === account.verifiedWallet;
+  const walletNetworkReady =
+    writesReady &&
+    expectedWalletChain === "solana:devnet" &&
+    walletNetworkConfirmed &&
+    walletChainSupport !== "unsupported";
 
   const authenticatedFetch = useCallback(
     async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -440,6 +466,27 @@ export function PpvAgreementActions({
       );
       return;
     }
+    if (!environment || !expectedWalletChain) {
+      setState("error");
+      setMessage(
+        "PPV cannot verify the runtime environment. No wallet request was opened.",
+      );
+      return;
+    }
+    if (walletChainSupport === "unsupported") {
+      setState("error");
+      setMessage(
+        "This wallet does not advertise Solana Devnet support. Use a Devnet-capable Solana wallet before retrying.",
+      );
+      return;
+    }
+    if (!walletNetworkConfirmed) {
+      setState("error");
+      setMessage(
+        "Before signing, enable Testnet Mode → Solana Devnet in your wallet, then confirm Devnet readiness below. Your draft stays intact.",
+      );
+      return;
+    }
 
     inFlight.current = true;
     let submitted: PendingCommerceAction | null = null;
@@ -456,6 +503,17 @@ export function PpvAgreementActions({
         throw new Error(readApiError(body, "PPV could not prepare this Commerce transaction."));
       }
       const prepared = body as PreparedTransaction;
+      try {
+        assertPreparedPpvEnvironment({
+          expected: environment,
+          prepared,
+          layer: "commerce",
+        });
+      } catch {
+        throw new Error(
+          "PPV environment verification changed before signing. No wallet request was opened; reload the workbench and retry.",
+        );
+      }
       setPartyA(prepared.partyA);
       setPartyB(prepared.partyB);
       setAgreementIdHex(prepared.agreementIdHex);
@@ -480,7 +538,14 @@ export function PpvAgreementActions({
           },
         });
       } catch (error) {
-        reportClientEvent("sign_failed", action, clientErrorCode(error));
+        const code = clientErrorCode(error);
+        reportClientEvent("sign_failed", action, code);
+        if (code === "NETWORK_ERROR") {
+          setNetworkConfirmedForWallet(null);
+          throw new Error(
+            "The wallet could not submit the Devnet transaction. Re-check Testnet Mode → Solana Devnet, then retry; your Commerce state is preserved.",
+          );
+        }
         throw error;
       }
 
@@ -692,10 +757,32 @@ export function PpvAgreementActions({
       <div className={styles.networkNotice} role="note">
         <strong>PPV COMMERCE · SOLANA DEVNET</strong>
         <p>
-          Drafting and canonical hashing are available in the interface now. Wallet
-          mutations stay locked until the canonical Commerce program is deployed and
-          independently approved. When writes open, Phantom must be in Testnet Mode → Solana Devnet.
+          GWAP verifies the PPV RPC genesis, deployment profile, program identity and
+          prepared transaction before any wallet prompt opens. External Solana wallets
+          do not reliably expose their actively selected cluster, so Testnet Mode →
+          Solana Devnet must also be confirmed explicitly before a signed write.
         </p>
+        {writesReady ? (
+          <div className={styles.agreementActions}>
+            <button
+              type="button"
+              className={styles.secondaryAction}
+              disabled={!wallet || walletChainSupport === "unsupported"}
+              onClick={() => setNetworkConfirmedForWallet(account.verifiedWallet)}
+            >
+              {walletNetworkConfirmed
+                ? "Devnet confirmed for this wallet"
+                : "Confirm wallet is on Solana Devnet"}
+            </button>
+            <small>
+              {walletChainSupport === "unsupported"
+                ? "This connected wallet does not advertise Devnet support."
+                : walletChainSupport === "supported"
+                  ? "Devnet is supported; confirmation records the wallet's current Testnet Mode selection."
+                  : "GWAP cannot read the wallet's active cluster, so this confirmation is required."}
+            </small>
+          </div>
+        ) : null}
       </div>
 
       <div className={styles.proofGrid}>
@@ -807,7 +894,7 @@ export function PpvAgreementActions({
               disabled={
                 busy ||
                 recoveryPending ||
-                !writesReady ||
+                !walletNetworkReady ||
                 !partyB.trim() ||
                 !content.trim() ||
                 !terms.trim()
@@ -822,7 +909,7 @@ export function PpvAgreementActions({
               disabled={
                 busy ||
                 recoveryPending ||
-                !writesReady ||
+                !walletNetworkReady ||
                 record?.state !== "pending" ||
                 !content.trim() ||
                 !terms.trim()
@@ -853,7 +940,14 @@ export function PpvAgreementActions({
             <div><dt>Your signature</dt><dd>{currentSigner ? `v${currentSigner.versionSigned}` : "not signed"}</dd></div>
           </dl>
           {signature ? (
-            <a href={explorerUrl(signature)} target="_blank" rel="noreferrer">
+            <a
+              href={ppvExplorerTransactionUrl(
+                signature,
+                environment?.cluster ?? "devnet",
+              )}
+              target="_blank"
+              rel="noreferrer"
+            >
               View transaction on Solana Explorer ↗
             </a>
           ) : null}
@@ -914,7 +1008,7 @@ export function PpvAgreementActions({
             disabled={
               busy ||
               recoveryPending ||
-              !writesReady ||
+              !walletNetworkReady ||
               record?.state !== "pending" ||
               reviewState !== "match" ||
               reviewedVersion !== record?.version ||
@@ -930,7 +1024,7 @@ export function PpvAgreementActions({
             disabled={
               busy ||
               recoveryPending ||
-              !writesReady ||
+              !walletNetworkReady ||
               record?.state !== "pending"
             }
             onClick={() => void cancelAgreement()}
