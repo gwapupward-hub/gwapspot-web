@@ -18,6 +18,7 @@ import { buildCredentialMetadata, evaluateCredentialEligibility, type Credential
 import { resolveSealState } from "./ppv-reputation/seal-state.ts";
 import {
   ReputationProjection,
+  filterIdentityBoundReceipts,
   toVerifiedActivityItem,
   type ChainVerification,
   type ProjectionStorage,
@@ -404,15 +405,44 @@ export async function lookupVerifiedActivity(lookup: ActivityLookup, limit = 50)
   if (lookup.domain) {
     const name = lookup.domain.trim().toLowerCase().replace(/\.gwap$/, "");
     const owner = await resolveGnsOwner(name);
-    if (!owner) return { schemaVersion: 1, resolvedBy: "domain", wallet: null, domain: `${name}.gwap`, items: [] };
-    // History belongs to the wallet. A name that moved shows its new owner's
-    // activity; the previous owner's receipts stay with the previous owner.
-    const receipts = await projection.listWalletReceipts(owner);
-    return { schemaVersion: 1, resolvedBy: "domain", wallet: owner, domain: `${name}.gwap`, items: receipts.slice(0, limit).map(toVerifiedActivityItem) };
+    if (!owner) {
+      return {
+        schemaVersion: 1,
+        resolvedBy: "domain",
+        wallet: null,
+        domain: `${name}.gwap`,
+        items: [],
+      };
+    }
+
+    // A domain profile shows only receipts recorded while the CURRENT owner
+    // held this exact .gwap identity. Wallet activity from before the name was
+    // held, under another .gwap, or from a previous owner never transfers with
+    // the domain.
+    const receipts = filterIdentityBoundReceipts(
+      await projection.listNameReceipts(name),
+      { wallet: owner, domain: name },
+    );
+    return {
+      schemaVersion: 1,
+      resolvedBy: "domain",
+      wallet: owner,
+      domain: `${name}.gwap`,
+      items: receipts.slice(0, limit).map(toVerifiedActivityItem),
+    };
   }
   if (lookup.wallet) {
-    const receipts = await projection.listWalletReceipts(lookup.wallet);
-    return { schemaVersion: 1, resolvedBy: "wallet", wallet: lookup.wallet, domain: null, items: receipts.slice(0, limit).map(toVerifiedActivityItem) };
+    const receipts = filterIdentityBoundReceipts(
+      await projection.listWalletReceipts(lookup.wallet),
+      { wallet: lookup.wallet },
+    );
+    return {
+      schemaVersion: 1,
+      resolvedBy: "wallet",
+      wallet: lookup.wallet,
+      domain: null,
+      items: receipts.slice(0, limit).map(toVerifiedActivityItem),
+    };
   }
   return null;
 }

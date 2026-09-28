@@ -6,7 +6,13 @@ import { EVENT_TYPE_LABELS, ROLE_LABELS, SEAL_STATE_LABELS, SOURCE_PRODUCT_LABEL
 
 type ActivityState =
   | { status: "loading" }
-  | { status: "ready"; items: VerifiedActivityItem[]; wallet: string | null }
+  | {
+      status: "ready";
+      items: VerifiedActivityItem[];
+      wallet: string | null;
+      domain: string | null;
+      cluster: "devnet";
+    }
   | { status: "unavailable"; message: string };
 
 /**
@@ -25,7 +31,13 @@ export function PpvVerifiedActivity({
   title?: string;
   receiptHref?: (receiptId: string) => string;
 }) {
-  const query = wallet ? `wallet=${encodeURIComponent(wallet)}` : domain ? `domain=${encodeURIComponent(domain)}` : null;
+  const normalizedDomain = domain?.trim().toLowerCase().replace(/\.gwap$/, "") || null;
+  const query = (() => {
+    const params = new URLSearchParams();
+    if (wallet) params.set("wallet", wallet);
+    if (normalizedDomain) params.set("domain", normalizedDomain);
+    return params.size ? params.toString() : null;
+  })();
   const [state, setState] = useState<ActivityState>(() =>
     query ? { status: "loading" } : { status: "unavailable", message: "Nothing to resolve." },
   );
@@ -35,13 +47,77 @@ export function PpvVerifiedActivity({
     let cancelled = false;
     fetch(`/api/ppv/activity?${query}`, { cache: "no-store" })
       .then(async (response) => {
-        const payload = (await response.json()) as { items?: VerifiedActivityItem[]; wallet?: string | null; error?: string };
+        const payload = (await response.json()) as {
+          items?: VerifiedActivityItem[];
+          wallet?: string | null;
+          domain?: string | null;
+          error?: string;
+        };
         if (cancelled) return;
         if (!response.ok) {
           setState({ status: "unavailable", message: payload.error || "Verified activity is unavailable." });
           return;
         }
-        setState({ status: "ready", items: payload.items ?? [], wallet: payload.wallet ?? null });
+
+        const cluster = response.headers.get("X-PPV-Cluster");
+        if (cluster !== "devnet") {
+          setState({
+            status: "unavailable",
+            message: "PPV environment could not be verified as Devnet.",
+          });
+          return;
+        }
+
+        const resolvedWallet = payload.wallet ?? null;
+        const resolvedDomain = payload.domain?.toLowerCase() ?? null;
+        const expectedDomain = normalizedDomain ? `${normalizedDomain}.gwap` : null;
+        if (wallet && resolvedWallet !== wallet) {
+          setState({
+            status: "unavailable",
+            message: expectedDomain
+              ? "This .gwap no longer resolves to the wallet authenticated in GwapOS."
+              : "PPV activity resolved to a different wallet.",
+          });
+          return;
+        }
+        if (expectedDomain && resolvedDomain !== expectedDomain) {
+          setState({
+            status: "unavailable",
+            message: "PPV activity resolved to a different .gwap identity.",
+          });
+          return;
+        }
+
+        const items = payload.items ?? [];
+        const invalid = items.some((item) => {
+          if (
+            item.holderGnsRecord &&
+            item.holderGnsRecord.owner !== item.holderWallet
+          ) {
+            return true;
+          }
+          if (wallet && item.holderWallet !== wallet) return true;
+          if (!expectedDomain) return false;
+          return (
+            item.holderGnsRecord?.owner !== resolvedWallet ||
+            item.holderGnsRecord?.fullName !== expectedDomain
+          );
+        });
+        if (invalid) {
+          setState({
+            status: "unavailable",
+            message: "PPV activity failed identity attribution checks.",
+          });
+          return;
+        }
+
+        setState({
+          status: "ready",
+          items,
+          wallet: resolvedWallet,
+          domain: resolvedDomain,
+          cluster,
+        });
       })
       .catch(() => {
         if (!cancelled) setState({ status: "unavailable", message: "Verified activity is unavailable." });
@@ -49,13 +125,15 @@ export function PpvVerifiedActivity({
     return () => {
       cancelled = true;
     };
-  }, [query]);
+  }, [normalizedDomain, query, wallet]);
 
   return (
     <section className="ppv-activity" aria-label={title}>
       <header className="ppv-activity-head">
         <div>
-          <span className="os-terminal-label">PPV · GNS VERIFIED ACTIVITY</span>
+          <span className="os-terminal-label">
+            PPV · GNS VERIFIED ACTIVITY{state.status === "ready" ? " · DEVNET" : ""}
+          </span>
           <h2>{title}</h2>
           <p>Factual PPV protocol records attributed to the wallet that held them. Seal states are derived from the PPV state machine, never entered by hand.</p>
         </div>

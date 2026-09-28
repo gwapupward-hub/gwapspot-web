@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { EVENT_TYPE_LABELS, ROLE_LABELS, SEAL_STATE_LABELS, SOURCE_PRODUCT_LABELS, formatCompletedAt } from "../../../components/ppv/ppv-labels";
 import "../../../components/ppv/ppv.css";
 import { getAuthenticatedWalletIdentity } from "../../../lib/privy-server";
+import { filterIdentityBoundReceipts } from "../../../lib/ppv-reputation-projection";
 import { getProjection, isPpvReputationConfigured } from "../../../lib/ppv-reputation-server";
 import styles from "../vault-mode.module.css";
 
@@ -17,7 +18,10 @@ export default async function VaultReceiptsPage() {
   let unavailable = false;
   if (configured) {
     try {
-      receipts = await getProjection().listWalletReceipts(identity.verifiedWallet);
+      receipts = filterIdentityBoundReceipts(
+        await getProjection().listWalletReceipts(identity.verifiedWallet),
+        { wallet: identity.verifiedWallet },
+      );
     } catch {
       unavailable = true;
     }
@@ -33,6 +37,7 @@ export default async function VaultReceiptsPage() {
         </p>
         <div className={styles.heroMeta}>
           <span className={styles.chip}>{identity.verifiedWallet.slice(0, 6)}…{identity.verifiedWallet.slice(-4)}</span>
+          <span className={styles.chip}>SOLANA DEVNET</span>
           <span className={styles.chip}>{receipts.length} receipt{receipts.length === 1 ? "" : "s"}</span>
           <Link className={styles.chip} href="/app/vault">← Vault</Link>
         </div>

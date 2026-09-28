@@ -2,7 +2,11 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { normalizeChainEvent, normalizeProductSubmission } from "./ppv-reputation/normalize.ts";
 import { receiptId } from "./ppv-reputation/hashing.ts";
-import { ReputationProjection, toVerifiedActivityItem } from "./ppv-reputation-projection.ts";
+import {
+  ReputationProjection,
+  filterIdentityBoundReceipts,
+  toVerifiedActivityItem,
+} from "./ppv-reputation-projection.ts";
 import {
   AGREEMENT_PDA,
   FIXTURES,
@@ -126,6 +130,23 @@ test("identity: emerald.gwap moving to wallet B leaves wallet A's history with w
   const underName = await projection.listNameReceipts("emerald");
   assert.deepEqual(underName.map((r) => r.holderWallet).sort(), [WALLET_A, WALLET_B].sort());
   assert.equal(underName.find((r) => r.holderWallet === WALLET_A).holderGnsRecord.owner, WALLET_A);
+
+  // A public/current-domain surface must not inherit the previous owner's
+  // receipts when the name transfers. Only receipts recorded while the current
+  // owner held emerald.gwap are eligible for that identity surface.
+  const currentIdentity = filterIdentityBoundReceipts(underName, {
+    wallet: WALLET_B,
+    domain: "emerald",
+  });
+  assert.equal(currentIdentity.length, 1);
+  assert.equal(currentIdentity[0].holderWallet, WALLET_B);
+  assert.equal(currentIdentity[0].holderGnsRecord.fullName, "emerald.gwap");
+
+  // Wallet history remains portable even after the name moves.
+  assert.equal(
+    filterIdentityBoundReceipts(walletA, { wallet: WALLET_A }).length,
+    1,
+  );
 });
 
 test("receipts: multiple participants and a participant without GNS", async () => {
