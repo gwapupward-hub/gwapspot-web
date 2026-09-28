@@ -3,6 +3,8 @@ import { isValidInternalApiKey } from "../../../../lib/daily-ideas-telegram-acco
 import { getPublicLookupSubject } from "../../../../lib/public-lookup";
 import { isSolanaAddress } from "../../../../lib/ppv-reputation/contracts";
 import { getProjection, PpvConfigurationError } from "../../../../lib/ppv-reputation-server";
+import { ppvEnvironmentResponseHeaders } from "../../../../lib/ppv/environment";
+import { getPpvWorkspaceReadiness } from "../../../../lib/ppv/readiness.server";
 import { computeReputationFacts } from "../../../../lib/ppv-reputation-facts";
 import { checkRateLimit } from "../../../../lib/request-guard";
 
@@ -38,10 +40,18 @@ export async function GET(request: Request, context: { params: Promise<{ wallet:
   }
 
   try {
+    const readiness = await getPpvWorkspaceReadiness();
+    if (!readiness.environment) {
+      return json({ error: "PPV fact environment is not verified." }, 503);
+    }
+
     const projection = getProjection();
     const cached = await projection.getFacts(wallet);
     const facts = cached ?? computeReputationFacts(wallet, await projection.listWalletReceipts(wallet));
-    return json(facts);
+    return json(facts, 200, {
+      ...ppvEnvironmentResponseHeaders(readiness.environment),
+      "X-PPV-Facts-Schema-Version": String(facts.schemaVersion),
+    });
   } catch (error) {
     if (error instanceof PpvConfigurationError) return json({ error: "PPV facts are not configured." }, 503);
     return json({ error: "Facts are temporarily unavailable." }, 503);
