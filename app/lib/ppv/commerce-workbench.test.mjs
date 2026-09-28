@@ -18,6 +18,10 @@ const diagnostics = readFileSync(
   new URL("../../api/ppv/commerce/diagnostics/route.ts", import.meta.url),
   "utf8",
 );
+const commerceServer = readFileSync(
+  new URL("./commerce.server.ts", import.meta.url),
+  "utf8",
+);
 
 test("Commerce workbench hashes content and terms in the browser", () => {
   assert.match(client, /hashDocumentHexV1/);
@@ -64,4 +68,23 @@ test("Commerce client telemetry is bounded and excludes transaction material", (
   assert.doesNotMatch(diagnostics, /transactionBase64/);
   assert.doesNotMatch(diagnostics, /contentHash/);
   assert.doesNotMatch(diagnostics, /termsHash/);
+});
+
+test("Commerce binds every prepared write to the verified PPV environment", () => {
+  assert.match(commerceServer, /cluster: "devnet"/);
+  assert.match(commerceServer, /genesisHash: string/);
+  assert.match(commerceServer, /programId: string/);
+  assert.match(commerceServer, /observation\.genesisHash/);
+  assert.match(client, /assertPreparedPpvEnvironment/);
+  assert.match(client, /layer: "commerce"/);
+  assert.match(page, /environment=\{readiness\.environment\}/);
+  assert.match(readiness, /environment: PpvRuntimeEnvironmentV1 \| null/);
+});
+
+test("Commerce blocks wallet signing until Devnet readiness is explicit", () => {
+  assert.match(client, /walletNetworkConfirmed/);
+  assert.match(client, /walletChainSupport === "unsupported"/);
+  assert.match(client, /No wallet request was opened/);
+  assert.match(client, /Confirm wallet is on Solana Devnet/);
+  assert.match(client, /!walletNetworkReady/);
 });
