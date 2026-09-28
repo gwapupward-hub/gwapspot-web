@@ -36,6 +36,8 @@ export function PublicExperienceLayers() {
     pathname === "/os-sign-in" ||
     pathname.startsWith("/os-sign-in/") ||
     pathname === "/refresh" ||
+    pathname === "/ppv-commerce-approval" ||
+    pathname.startsWith("/ppv-commerce-approval/") ||
     pathname === "/app" ||
     pathname.startsWith("/app/");
 
