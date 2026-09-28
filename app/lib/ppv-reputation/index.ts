@@ -15,6 +15,7 @@ export {
   type ProductIdempotencyKey,
 } from "./hashing.ts";
 export * from "./normalize.ts";
+export * from "./normalize-escrow.ts";
 export * from "./receipts.ts";
 export * from "./seal-state.ts";
 export * from "./eligibility.ts";

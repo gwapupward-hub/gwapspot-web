@@ -56,8 +56,20 @@ export function computeReputationFacts(wallet: string, receipts: readonly unknow
     roleCounts[receipt.role] = (roleCounts[receipt.role] ?? 0) + 1;
     if (receipt.sourceProduct) productCounts[receipt.sourceProduct] = (productCounts[receipt.sourceProduct] ?? 0) + 1;
     if (sealRank(receipt.sealState) >= sealRank("verified")) verified += 1;
-    if (receipt.eventType === "settlement.completed" || receipt.eventType === "invoice.paid") settled += 1;
-    if (receipt.eventType === "agreement.executed" || receipt.eventType === "milestone.approved") confirmed += 1;
+    if (
+      receipt.eventType === "settlement.completed" ||
+      receipt.eventType === "invoice.paid" ||
+      receipt.eventType === "milestone.settled"
+    ) {
+      settled += 1;
+    }
+    if (
+      receipt.eventType === "agreement.executed" ||
+      receipt.eventType === "milestone.approved" ||
+      receipt.eventType === "proof.approved"
+    ) {
+      confirmed += 1;
+    }
     if (receipt.eventType === "dispute.opened") disputesOpened += 1;
     if (receipt.eventType === "dispute.resolved") disputesResolved += 1;
     if (receipt.eventType === "proof.revoked") revoked += 1;
