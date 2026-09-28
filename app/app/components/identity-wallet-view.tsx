@@ -112,7 +112,21 @@ export function IdentityWalletView() {
       </div>
 
       <div style={{ marginTop: 14 }}>
-        <PpvVerifiedActivity wallet={account.verifiedWallet} receiptHref={(id) => `/app/vault/receipts/${id}`} />
+        {registryBacked && gnsIdentity.name ? (
+          <PpvVerifiedActivity
+            wallet={account.verifiedWallet}
+            domain={gnsIdentity.name}
+            receiptHref={(id) => `/app/vault/receipts/${id}`}
+          />
+        ) : (
+          <section className={styles.card}>
+            <p className={styles.eyebrow}>PPV · VERIFIED ACTIVITY</p>
+            <p>
+              Verified Activity stays hidden until GNS confirms this .gwap
+              still belongs to the authenticated wallet.
+            </p>
+          </section>
+        )}
       </div>
 
       {registryBacked && gnsIdentity.name ? <div className={styles.profileEditor}><GnsProfileEditor name={gnsIdentity.name} /></div> : null}
