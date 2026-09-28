@@ -8,6 +8,7 @@ import {
   PPV_SOURCE_PINS,
 } from "./deployment-manifest";
 import { getPpvObservationConfig, getPpvServerConfig, type PpvServerConfig } from "./config.server";
+import type { PpvRuntimeEnvironmentV1 } from "./environment";
 import {
   PPV_PROGRAM_IDS,
   UPGRADEABLE_LOADER,
@@ -53,6 +54,7 @@ export type PublicPpvReadiness = {
   mainnet: false;
   realValue: false;
   enabled: boolean;
+  environment: PpvRuntimeEnvironmentV1 | null;
   manifest: {
     reviewStatus: string;
     sdkSourceCommit: string;
@@ -329,6 +331,13 @@ export async function getPpvWorkspaceReadiness(): Promise<PublicPpvReadiness> {
       mainnet: false,
       realValue: false,
       enabled: policy.enabled,
+      environment: {
+        schemaVersion: 1,
+        cluster: policy.cluster,
+        genesisHash: observation.genesisHash,
+        rpcProfileId: observation.rpcProfileId,
+        programs: { ...PPV_PROGRAM_IDS },
+      },
       manifest: {
         reviewStatus: PPV_DEPLOYMENT_MANIFEST.reviewStatus,
         sdkSourceCommit: PPV_DEPLOYMENT_MANIFEST.sdkSourceCommit,
@@ -386,6 +395,7 @@ export async function getPpvWorkspaceReadiness(): Promise<PublicPpvReadiness> {
       mainnet: false,
       realValue: false,
       enabled: false,
+      environment: null,
       manifest: {
         reviewStatus: PPV_DEPLOYMENT_MANIFEST.reviewStatus,
         sdkSourceCommit: PPV_DEPLOYMENT_MANIFEST.sdkSourceCommit,
