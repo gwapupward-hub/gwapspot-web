@@ -70,6 +70,7 @@ function emptyIdentity(
 ): GnsIdentity {
   return {
     status,
+    resolutionSource: status === "none" ? "none" : "unavailable",
     name: null,
     fullName: null,
     avatar: null,
@@ -95,6 +96,7 @@ function identityFromDomain(
 
   return {
     status: "found",
+    resolutionSource: "registry",
     name,
     fullName,
     avatar: asString(domain.avatar),
