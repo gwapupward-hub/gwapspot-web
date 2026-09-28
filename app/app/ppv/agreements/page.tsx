@@ -22,6 +22,7 @@ export default async function PpvAgreementsPage() {
       ]}
     >
       <PpvAgreementActions
+        environment={readiness.environment}
         mutationCapability={readiness.actions["agreement.create"]}
         layerCapability={readiness.layers.commerce}
       />

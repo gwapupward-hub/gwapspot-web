@@ -131,13 +131,16 @@ async function commerceReadConnection() {
 }
 
 async function commerceConnection() {
-  const { server } = await requirePpvMutationReadiness(["commerce"]);
+  const { server, observation } = await requirePpvMutationReadiness(["commerce"]);
   if (server.policy.cluster !== "devnet") {
     throw new PpvPolicyError("PPV_DEVNET_REQUIRED");
   }
   if (!server.rpcUrl) throw new PpvPolicyError("PPV_RPC_REQUIRED");
   return {
     connection: new Connection(server.rpcUrl, "finalized"),
+    cluster: server.policy.cluster,
+    genesisHash: observation.genesisHash,
+    programId: PPV_PROGRAM_IDS.commerce,
     rpcProfileId: server.rpcProfileId,
   };
 }
@@ -210,7 +213,10 @@ export type PrepareCommerceInput =
 
 export type PreparedCommerceTransaction = {
   action: PrepareCommerceInput["action"];
+  cluster: "devnet";
   chain: "solana:devnet";
+  genesisHash: string;
+  programId: string;
   agreementAddress: string;
   agreementIdHex: string;
   partyA: string;
@@ -248,7 +254,8 @@ export async function prepareCommerceTransaction(
 ): Promise<PreparedCommerceTransaction> {
   const authority = publicKey(input.authority);
   const agreementId = hexBytes(input.agreementIdHex, 16, "INVALID_AGREEMENT_ID");
-  const { connection, rpcProfileId } = await commerceConnection();
+  const { connection, cluster, genesisHash, programId, rpcProfileId } =
+    await commerceConnection();
 
   let partyA: PublicKey;
   let partyB: PublicKey;
@@ -394,7 +401,10 @@ export async function prepareCommerceTransaction(
 
   return {
     action: input.action,
+    cluster,
     chain: "solana:devnet",
+    genesisHash,
+    programId,
     agreementAddress: address,
     agreementIdHex: input.agreementIdHex.toLowerCase(),
     partyA: partyA.toBase58(),

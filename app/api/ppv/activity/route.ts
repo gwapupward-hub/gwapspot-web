@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { getPublicLookupSubject } from "../../../lib/public-lookup";
 import { isSolanaAddress } from "../../../lib/ppv-reputation/contracts";
 import { PpvConfigurationError, lookupVerifiedActivity } from "../../../lib/ppv-reputation-server";
+import {
+  PPV_ENVIRONMENT_RESPONSE_HEADERS,
+  ppvEnvironmentResponseHeaders,
+} from "../../../lib/ppv/environment";
+import { getPpvWorkspaceReadiness } from "../../../lib/ppv/readiness.server";
 import { checkRateLimit } from "../../../lib/request-guard";
 
 export const runtime = "nodejs";
@@ -11,6 +16,12 @@ const responseHeaders = {
   "Cache-Control": "no-store, max-age=0",
   "X-Robots-Tag": "noindex",
   "Access-Control-Allow-Origin": "*",
+  "Access-Control-Expose-Headers": [
+    PPV_ENVIRONMENT_RESPONSE_HEADERS.schema,
+    PPV_ENVIRONMENT_RESPONSE_HEADERS.cluster,
+    PPV_ENVIRONMENT_RESPONSE_HEADERS.genesisHash,
+    PPV_ENVIRONMENT_RESPONSE_HEADERS.rpcProfileId,
+  ].join(", "),
 };
 
 function json(payload: unknown, status = 200, headers?: HeadersInit) {
@@ -54,9 +65,14 @@ export async function GET(request: Request) {
   }
 
   try {
+    const readiness = await getPpvWorkspaceReadiness();
+    if (!readiness.environment) {
+      return json({ error: "PPV activity environment is not verified." }, 503);
+    }
+
     const activity = await lookupVerifiedActivity({ wallet, domain, proofId, receiptId }, limit);
     if (!activity) return json({ error: "Nothing to resolve." }, 400);
-    return json(activity);
+    return json(activity, 200, ppvEnvironmentResponseHeaders(readiness.environment));
   } catch (error) {
     if (error instanceof PpvConfigurationError) return json({ error: "PPV activity is not configured." }, 503);
     return json({ error: "Verified activity is temporarily unavailable." }, 503);

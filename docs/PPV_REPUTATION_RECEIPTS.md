@@ -29,6 +29,28 @@ on drift). They are pure modules: no storage, no network.
 | `PpvReceiptV1` | A participant's deterministic view of an event. `receiptId = H(eventId, holder, role)`. |
 | `PpvSealState` | `recorded → verified → counterparty_confirmed → settled → dispute_resolved`, plus terminal `revoked`. |
 
+## Environment boundary
+
+`ReputationEventV1` remains the canonical PPV fact. Do not add score deltas,
+trust labels, ratings, tiers, wallet-financial signals or model-specific
+judgements to it. GwapScore owns interpretation downstream.
+
+Cross-environment transport uses `PpvFactEnvelopeV1`
+(`app/lib/ppv/fact-contract.ts`). The envelope pairs the unchanged fact with
+the verified PPV runtime environment: cluster, genesis hash, RPC profile and
+canonical Core/Commerce/Escrow program ids. A fact whose program id is not part
+of that environment is rejected.
+
+The public facts and Verified Activity routes keep their existing response
+bodies for compatibility, but now return `X-PPV-Environment-Schema`,
+`X-PPV-Cluster`, `X-PPV-Genesis-Hash` and `X-PPV-RPC-Profile`. Consumers
+must treat missing or mismatched provenance as unavailable evidence rather than
+silently mixing devnet and future mainnet activity.
+
+This boundary is intentionally separate from scoring: PPV proves what happened;
+GNS binds the wallet to the historical identity snapshot; GwapScore decides
+what the verified fact means.
+
 Event types: `proof.created`, `proof.revoked`, `proof.submitted`,
 `agreement.created`, `agreement.revised`, `agreement.signed`,
 `agreement.executed`, `agreement.cancelled`, `escrow.funded`,
