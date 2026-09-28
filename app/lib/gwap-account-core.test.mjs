@@ -67,3 +67,52 @@ test("merges additional Privy and wallet identities without losing the account",
   assert.equal(merged.primaryGnsIdentity, "builder");
   assert.equal(merged.updatedAt, "2026-08-20T08:30:00.000Z");
 });
+
+test("changing the primary wallet clears a cached .gwap identity until it is re-resolved", () => {
+  const record = {
+    ...baseRecord(),
+    primaryGnsIdentity: "builder",
+  };
+  const merged = mergeGwapAccountIdentity(record, {
+    privyUserId: "did:privy:secondary",
+    verifiedWallet: embeddedWallet,
+    embeddedWallet,
+    now: "2026-08-20T09:00:00.000Z",
+  });
+
+  assert.equal(merged.primaryWallet, embeddedWallet);
+  assert.equal(merged.primaryGnsIdentity, null);
+});
+
+test("a newly verified .gwap identity may be supplied with the new primary wallet", () => {
+  const record = {
+    ...baseRecord(),
+    primaryGnsIdentity: "old-builder",
+  };
+  const merged = mergeGwapAccountIdentity(record, {
+    privyUserId: "did:privy:secondary",
+    verifiedWallet: embeddedWallet,
+    embeddedWallet,
+    primaryGnsIdentity: "new-builder",
+    now: "2026-08-20T09:15:00.000Z",
+  });
+
+  assert.equal(merged.primaryWallet, embeddedWallet);
+  assert.equal(merged.primaryGnsIdentity, "new-builder");
+});
+
+test("an explicit null clears the cached .gwap identity without changing wallets", () => {
+  const record = {
+    ...baseRecord(),
+    primaryGnsIdentity: "builder",
+  };
+  const merged = mergeGwapAccountIdentity(record, {
+    privyUserId: "did:privy:primary",
+    verifiedWallet: primaryWallet,
+    primaryGnsIdentity: null,
+    now: "2026-08-20T09:30:00.000Z",
+  });
+
+  assert.equal(merged.primaryWallet, primaryWallet);
+  assert.equal(merged.primaryGnsIdentity, null);
+});
