@@ -30,6 +30,7 @@ export function IdentityWalletView() {
 
   const displayName = gnsIdentity.fullName || `${gnsIdentity.name}.gwap`;
   const scoreLabel = gnsIdentity.score == null ? "Pending" : String(gnsIdentity.score);
+  const registryBacked = gnsIdentity.resolutionSource === "registry";
 
   async function copyWallet() {
     try {
@@ -52,12 +53,27 @@ export function IdentityWalletView() {
           <div className={styles.nameBlock}>
             <h1>{displayName}</h1>
             <p>{shortAddress(account.verifiedWallet)}</p>
-            <span className={styles.verified}>{gnsIdentity.verified ? "● Verified identity" : "○ Verification pending"}</span>
+            <span className={styles.verified}>
+              {registryBacked
+                ? "● Wallet → .gwap resolved"
+                : "◌ Revalidating cached .gwap"}
+            </span>
           </div>
         </div>
-        <p className={styles.bio}>{gnsIdentity.bio || "Your .gwap name is now the primary identity for this GwapOS session."}</p>
+        <p className={styles.bio}>
+          {gnsIdentity.bio ||
+            (registryBacked
+              ? "Your .gwap name is resolved from the wallet that authenticated this GwapOS session."
+              : "This cached .gwap is display-only until GNS confirms it still belongs to the authenticated wallet.")}
+        </p>
         <div className={styles.actions}>
-          {gnsIdentity.profileUrl ? <a className={styles.primary} href={gnsIdentity.profileUrl} target="_blank" rel="noreferrer">Open public profile ↗</a> : <Link className={styles.primary} href="/app/profile">Complete profile →</Link>}
+          {registryBacked && gnsIdentity.profileUrl ? (
+            <a className={styles.primary} href={gnsIdentity.profileUrl} target="_blank" rel="noreferrer">Open public profile ↗</a>
+          ) : registryBacked ? (
+            <Link className={styles.primary} href="/app/profile">Complete profile →</Link>
+          ) : (
+            <span className={styles.primary} aria-disabled="true">Revalidating .gwap…</span>
+          )}
           <button className={styles.secondary} type="button" onClick={copyWallet}>{copied ? "Wallet copied" : "Copy wallet"}</button>
           <a className={styles.secondary} href="https://gwapspot.fun/" target="_blank" rel="noreferrer">Manage .gwap ↗</a>
         </div>
@@ -72,7 +88,7 @@ export function IdentityWalletView() {
           <div className={styles.stats}>
             <div className={styles.stat}><span>.gwap</span><strong className={styles.green}>{displayName}</strong></div>
             <div className={styles.stat}><span>GwapScore</span><strong>{scoreLabel}</strong></div>
-            <div className={styles.stat}><span>Identity</span><strong>{gnsIdentity.verified ? "Verified" : "Pending"}</strong></div>
+            <div className={styles.stat}><span>Identity</span><strong>{registryBacked ? "Resolved" : "Revalidating"}</strong></div>
             <div className={styles.stat}><span>Tier</span><strong>{gnsIdentity.isGenesis ? "Genesis" : gnsIdentity.tier || "Standard"}</strong></div>
           </div>
           <div style={{ marginTop: 14 }}><GwapScoreDisplay result={score} variant="card" /></div>
@@ -88,9 +104,9 @@ export function IdentityWalletView() {
             <button type="button" onClick={copyWallet}>{copied ? "COPIED" : "COPY"}</button>
           </div>
           <div className={styles.pipeline} style={{ marginTop: 12 }}>
-            <div className={styles.pipelineRow}><span className={styles.pipelineIcon}>◎</span><div><strong>.gwap resolution</strong><small>{displayName} is mounted for this wallet.</small></div><span className={styles.pipelineState}>Live</span></div>
+            <div className={styles.pipelineRow}><span className={styles.pipelineIcon}>◎</span><div><strong>.gwap resolution</strong><small>{registryBacked ? `${displayName} is resolved for this wallet.` : `${displayName} is cached while ownership is revalidated.`}</small></div><span className={styles.pipelineState}>{registryBacked ? "Live" : "Sync"}</span></div>
             <div className={styles.pipelineRow}><span className={styles.pipelineIcon}>◇</span><div><strong>GwapScore context</strong><small>Reputation travels with your GwapOS identity.</small></div><span className={styles.pipelineState}>{gnsIdentity.scoreStatus === "scored" ? "Live" : "Sync"}</span></div>
-            <div className={styles.pipelineRow}><span className={styles.pipelineIcon}>✓</span><div><strong>Proof of ownership</strong><small>The wallet that authenticated this session anchors the identity.</small></div><span className={styles.pipelineState}>{gnsIdentity.verified ? "Verified" : "Pending"}</span></div>
+            <div className={styles.pipelineRow}><span className={styles.pipelineIcon}>✓</span><div><strong>Wallet continuity</strong><small>{registryBacked ? "The authenticated wallet was matched to this .gwap by GNS." : "Cached identity never counts as wallet ownership proof."}</small></div><span className={styles.pipelineState}>{registryBacked ? "Verified" : "Sync"}</span></div>
           </div>
         </section>
       </div>
@@ -99,7 +115,7 @@ export function IdentityWalletView() {
         <PpvVerifiedActivity wallet={account.verifiedWallet} receiptHref={(id) => `/app/vault/receipts/${id}`} />
       </div>
 
-      {gnsIdentity.name ? <div className={styles.profileEditor}><GnsProfileEditor name={gnsIdentity.name} /></div> : null}
+      {registryBacked && gnsIdentity.name ? <div className={styles.profileEditor}><GnsProfileEditor name={gnsIdentity.name} /></div> : null}
     </div>
   );
 }
