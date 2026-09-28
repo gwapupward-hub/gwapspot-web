@@ -1,12 +1,5 @@
-import type { Metadata } from "next";
-import { CommerceApprovalSigner } from "./commerce-approval-signer";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "PPV Commerce Release Approval",
-  description: "Temporary wallet signing page for the PPV Commerce devnet release approval ceremony.",
-  robots: { index: false, follow: false },
-};
-
-export default function PpvCommerceApprovalPage() {
-  return <CommerceApprovalSigner />;
+export default function RetiredPpvCommerceApprovalPage() {
+  redirect("/ppv-commerce-approval-83b5e884");
 }

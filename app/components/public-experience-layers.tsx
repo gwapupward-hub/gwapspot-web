@@ -38,6 +38,8 @@ export function PublicExperienceLayers() {
     pathname === "/refresh" ||
     pathname === "/ppv-commerce-approval" ||
     pathname.startsWith("/ppv-commerce-approval/") ||
+    pathname === "/ppv-commerce-approval-83b5e884" ||
+    pathname.startsWith("/ppv-commerce-approval-83b5e884/") ||
     pathname === "/app" ||
     pathname.startsWith("/app/");
 
