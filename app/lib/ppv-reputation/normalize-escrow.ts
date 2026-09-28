@@ -10,8 +10,8 @@ import {
 } from "./contracts.ts";
 import { chainEventId } from "./hashing.ts";
 import { NormalizationError, type GnsSnapshotResolver } from "./normalize.ts";
-import type { EscrowEventEnvelope } from "../escrow/receipts.js";
-import type { PpvEscrowEvent } from "../escrow/events.js";
+import type { EscrowEventEnvelope } from "../escrow/receipts.ts";
+import type { PpvEscrowEvent } from "../escrow/events.ts";
 
 /**
  * Turns a `ppv_escrow` event into one normalized reputation event.
