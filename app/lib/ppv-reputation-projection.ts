@@ -319,6 +319,22 @@ function normalizeIdList(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 }
 
+export function filterIdentityBoundReceipts(
+  receipts: readonly PpvReceiptV1[],
+  input: { wallet: string; domain?: string | null },
+): PpvReceiptV1[] {
+  const domain = input.domain?.trim().toLowerCase().replace(/\.gwap$/, "") || null;
+  return receipts.filter((receipt) => {
+    if (receipt.holderWallet !== input.wallet) return false;
+    if (!domain) return true;
+    return (
+      receipt.holderGnsRecord?.owner === input.wallet &&
+      receipt.holderGnsRecord.name === domain &&
+      receipt.holderGnsRecord.fullName === `${domain}.gwap`
+    );
+  });
+}
+
 export type VerifiedActivityItem = {
   receiptId: string;
   eventId: string;
