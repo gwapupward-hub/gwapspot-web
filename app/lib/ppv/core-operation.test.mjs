@@ -26,3 +26,13 @@ test("the proof client persists the server operation id and server-selected proo
   assert.match(client, /proofIdHex: prepared\.proofIdHex/);
   assert.match(client, /operationId: pending\.operationId/);
 });
+
+
+test("Core finalization projects the finalized signature without making projection authoritative", () => {
+  const ledger = read("./core-operation.server.ts");
+  const reputation = read("../ppv-reputation-server.ts");
+  assert.match(ledger, /projectFinalizedPpvSignature/);
+  assert.match(ledger, /result\.status !== "finalized"/);
+  assert.match(reputation, /status: "deferred"/);
+  assert.match(reputation, /ppv_finalize_projection_deferred/);
+});

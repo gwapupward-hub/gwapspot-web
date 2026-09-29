@@ -2,6 +2,7 @@ import "server-only";
 
 import { createHash, randomUUID } from "node:crypto";
 import { getPrivateStorageKey, getWorkspaceRedis } from "../redis";
+import { projectFinalizedPpvSignature } from "../ppv-reputation-server";
 import {
   PpvCommerceRequestError,
   confirmCommerceTransaction,
@@ -191,7 +192,11 @@ export async function confirmCommerceOperation(input: {
     if (result.status !== "finalized") {
       throw new PpvCommerceRequestError("OPERATION_STATE_MISMATCH", 409);
     }
-    return { ...result, verification: "operation_ledger" as const };
+    return {
+      ...result,
+      verification: "operation_ledger" as const,
+      projection: await projectFinalizedPpvSignature(result.signature),
+    };
   }
   if (record.status === "expired") {
     throw new PpvCommerceRequestError("TRANSACTION_EXPIRED", 409);
@@ -218,7 +223,11 @@ export async function confirmCommerceOperation(input: {
       updatedAt: new Date().toISOString(),
     });
 
-    return result;
+    if (result.status !== "finalized") return result;
+    return {
+      ...result,
+      projection: await projectFinalizedPpvSignature(result.signature),
+    };
   } catch (error) {
     if (error instanceof PpvCommerceRequestError) {
       const terminal =
