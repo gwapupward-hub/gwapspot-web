@@ -13,10 +13,10 @@ export const PPV_SOURCE_PINS = Object.freeze({
 /**
  * Devnet integration manifest.
  *
- * PPV Core is independently evidenced at its permanent devnet identity and is
- * approved for non-custodial proof mutations when the explicit server feature
- * flags and pinned RPC profile are enabled. Commerce remains undeployed at its
- * canonical identity. Escrow remains mutation-blocked and custody-closed.
+ * PPV Core and Commerce are independently evidenced at their permanent devnet
+ * identities and are approved for non-custodial mutations when the explicit
+ * server feature flags and pinned RPC profile are enabled. Escrow remains
+ * mutation-blocked and custody-closed.
  */
 export const PPV_DEPLOYMENT_MANIFEST: PpvDeploymentManifest = Object.freeze({
   schemaVersion: 1,
@@ -41,14 +41,14 @@ export const PPV_DEPLOYMENT_MANIFEST: PpvDeploymentManifest = Object.freeze({
     },
     commerce: {
       programId: PPV_PROGRAM_IDS.commerce,
-      programDataAddress: null,
-      deploymentSlot: null,
-      upgradeAuthority: null,
-      binarySha256: null,
-      idlSha256: null,
-      sourceCommit: null,
+      programDataAddress: "G8XpcqxCRyuASXwsE2yevjMn398f4E8Mg5ZArUg2qCT7",
+      deploymentSlot: 505322161,
+      upgradeAuthority: "B6tcsTrMCKTZV5vi3rRCnA3FMPeeWACSHuuTSz5XQgnX",
+      binarySha256: "c59e208cb6d8a499d92a14ce2301f490de903b28444f953dafb1c4686e867f89",
+      idlSha256: "bd0523c1c8b14be040970cf462e6903420ae4a74c2bbb07aebb106e7be081d4b",
+      sourceCommit: "83b5e8843b5492f4c1b596cb5d4be5d997eb87e4",
       sdkSourceCommit: PPV_SOURCE_PINS.ppvPackage,
-      mutationApproved: false,
+      mutationApproved: true,
     },
     escrow: {
       programId: PPV_PROGRAM_IDS.escrow,
@@ -66,12 +66,16 @@ export const PPV_DEPLOYMENT_MANIFEST: PpvDeploymentManifest = Object.freeze({
 });
 
 export const PPV_KNOWN_DEVNET_REFERENCE = Object.freeze({
-  observedAt: "2026-09-22T00:45:00.131Z",
+  observedAt: "2026-09-28T23:11:11.823Z",
   core: {
     deploymentSlot: 497437304,
     binarySha256: "91f95db407c3573eb1693bb52f86fc367113ea537b7628fc6ccc332cb727261e",
   },
-  commerce: { exists: false },
+  commerce: {
+    exists: true,
+    deploymentSlot: 505322161,
+    binarySha256: "c59e208cb6d8a499d92a14ce2301f490de903b28444f953dafb1c4686e867f89",
+  },
   escrowPreRr13: {
     deploymentSlot: 498656161,
     binarySha256: "0acc61defeb2ee810cf3a4bc87f93f8ef457399fe6b52d170055ed7e0c96f9bf",
