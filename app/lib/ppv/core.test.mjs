@@ -38,14 +38,19 @@ test("fixed hex parsing rejects malformed or wrong-length values", () => {
   assert.throws(() => fixedHexToBytes("zz".repeat(16), 16, "proofId"));
 });
 
-test("Core devnet deployment is the only mutation-approved PPV program", () => {
+test("Core and Commerce are mutation-approved while Escrow remains custody-closed", () => {
   assert.equal(PPV_DEPLOYMENT_MANIFEST.reviewStatus, "APPROVED_DEVNET_INTEGRATION");
   assert.equal(PPV_DEPLOYMENT_MANIFEST.programs.core.mutationApproved, true);
-  assert.equal(PPV_DEPLOYMENT_MANIFEST.programs.commerce.mutationApproved, false);
+  assert.equal(PPV_DEPLOYMENT_MANIFEST.programs.commerce.mutationApproved, true);
   assert.equal(PPV_DEPLOYMENT_MANIFEST.programs.escrow.mutationApproved, false);
   assert.equal(
     PPV_DEPLOYMENT_MANIFEST.programs.core.programDataAddress,
     "FfEQrpiQSzxUErCBkXCukbt26JivKiExA6HswMpQkiSA",
   );
   assert.equal(PPV_DEPLOYMENT_MANIFEST.programs.core.deploymentSlot, 497437304);
+  assert.equal(
+    PPV_DEPLOYMENT_MANIFEST.programs.commerce.programDataAddress,
+    "G8XpcqxCRyuASXwsE2yevjMn398f4E8Mg5ZArUg2qCT7",
+  );
+  assert.equal(PPV_DEPLOYMENT_MANIFEST.programs.commerce.deploymentSlot, 505322161);
 });
