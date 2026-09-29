@@ -8,6 +8,7 @@ import {
   type PrepareCoreProofInput,
 } from "./core.server";
 import { getPrivateStorageKey, getWorkspaceRedis } from "../redis";
+import { projectFinalizedPpvSignature } from "../ppv-reputation-server";
 
 const OPERATION_TTL_SECONDS = 2 * 60 * 60;
 const INTENT_RESERVATION_TTL_SECONDS = 30;
@@ -176,7 +177,12 @@ export async function confirmCoreOperation(input: {
   lastValidBlockHeight?: number;
 }) {
   if (!input.operationId) {
-    return confirmCoreProofTransaction(input);
+    const result = await confirmCoreProofTransaction(input);
+    if (result.status !== "finalized") return result;
+    return {
+      ...result,
+      projection: await projectFinalizedPpvSignature(result.signature),
+    };
   }
 
   const record = await loadOperation(input.operationId);
@@ -201,12 +207,14 @@ export async function confirmCoreOperation(input: {
   }
 
   if (record.status === "finalized" && record.proofState) {
+    const signature = record.signature ?? input.signature;
     return {
       status: "finalized" as const,
-      signature: record.signature ?? input.signature,
+      signature,
       proofAddress: record.prepared.proofAddress,
       proofState: record.proofState,
       verification: "operation_ledger" as const,
+      projection: await projectFinalizedPpvSignature(signature),
     };
   }
 
@@ -239,7 +247,11 @@ export async function confirmCoreOperation(input: {
       updatedAt: new Date().toISOString(),
     });
 
-    return result;
+    if (result.status !== "finalized") return result;
+    return {
+      ...result,
+      projection: await projectFinalizedPpvSignature(result.signature),
+    };
   } catch (error) {
     if (error instanceof PpvCoreRequestError) {
       const terminal =
