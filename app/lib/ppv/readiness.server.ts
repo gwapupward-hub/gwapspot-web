@@ -257,6 +257,9 @@ function layerCapability(
 }
 
 export async function requirePpvMutationReadiness(layers: readonly PpvLayer[]) {
+  if (layers.includes("escrow")) {
+    throw new PpvPolicyError("CUSTODY_GATE_CLOSED");
+  }
   const server = getPpvServerConfig();
   if (!server.rpcUrl || !server.rpcEndpointSha256) {
     throw new PpvPolicyError("PPV_RPC_REQUIRED");
@@ -303,6 +306,9 @@ export async function getPpvWorkspaceReadiness(): Promise<PublicPpvReadiness> {
 
     const policy = observationConfig.policy;
     const mutationFor = (layer: PpvLayer): PpvCapability => {
+      if (layer === "escrow") {
+        return { state: "disabled", reasonCode: "CUSTODY_GATE_CLOSED" };
+      }
       if (!policy.enabled || !policy[layer]) {
         return { state: "disabled", reasonCode: "FEATURE_DISABLED" };
       }
