@@ -1,10 +1,9 @@
 # Default ownership
 * @gwapupward-hub
 
-# Security- and compliance-sensitive surfaces
+# Security-sensitive surfaces
 /.github/ @gwapupward-hub
 /app/api/ @gwapupward-hub
-/docs/compliance/ @gwapupward-hub
 /next.config.ts @gwapupward-hub
 /proxy.ts @gwapupward-hub
 /.env.example @gwapupward-hub
