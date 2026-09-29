@@ -12,6 +12,10 @@ const readinessSource = readFileSync(
   new URL("./readiness.server.ts", import.meta.url),
   "utf8",
 );
+const workspaceSource = readFileSync(
+  new URL("../../app/ppv/page.tsx", import.meta.url),
+  "utf8",
+);
 
 test("GwapOS attests the released Commerce program before enabling devnet writes", () => {
   const commerce = PPV_DEPLOYMENT_MANIFEST.programs.commerce;
@@ -73,4 +77,14 @@ test("mainnet, real-value escrow and an open custody gate remain impossible conf
         error instanceof PpvPolicyError && error.code === "MAINNET_DISABLED",
     );
   }
+});
+
+
+test("workspace labels attested Core and Commerce truthfully after release", () => {
+  assert.match(readinessSource, /return "attested"/);
+  assert.match(readinessSource, /expected\.programDataAddress/);
+  assert.match(readinessSource, /observed\.binarySha256 === expected\.binarySha256/);
+  assert.doesNotMatch(workspaceSource, /Commerce is not currently deployed/);
+  assert.match(workspaceSource, /Core and Commerce are deployed, attested/);
+  assert.match(workspaceSource, /custody[\s\S]*mutation stays hard-closed/);
 });
