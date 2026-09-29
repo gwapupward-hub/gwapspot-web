@@ -261,6 +261,62 @@ export async function ingestWebhookPayload(payload: unknown) {
   return { results, skippedItems: skipped };
 }
 
+export type FinalizedProjectionResult =
+  | {
+      status: "projected";
+      signature: string;
+      events: number;
+      stored: number;
+      receipts: number;
+      duplicate: boolean;
+    }
+  | {
+      status: "deferred";
+      signature: string;
+      reason: "TRANSACTION_NOT_AVAILABLE" | "PROJECTION_UNAVAILABLE";
+    };
+
+/**
+ * Projects a transaction that the signed-write path has already independently
+ * verified as finalized. Projection is deliberately best-effort: chain
+ * finality remains authoritative, while webhook/reconciliation can repair any
+ * temporary GNS or storage outage later.
+ */
+export async function projectFinalizedPpvSignature(
+  signature: string,
+): Promise<FinalizedProjectionResult> {
+  try {
+    const parsed = await fetchParsedTransaction(signature);
+    if (!parsed) {
+      return {
+        status: "deferred",
+        signature,
+        reason: "TRANSACTION_NOT_AVAILABLE",
+      };
+    }
+
+    const summary = await ingestParsedTransaction(parsed);
+    return {
+      status: "projected",
+      signature,
+      events: summary.events,
+      stored: summary.stored,
+      receipts: summary.receipts,
+      duplicate: summary.skipped === "duplicate",
+    };
+  } catch (error) {
+    console.error("ppv_finalize_projection_deferred", {
+      signature,
+      name: error instanceof Error ? error.name : "Error",
+    });
+    return {
+      status: "deferred",
+      signature,
+      reason: "PROJECTION_UNAVAILABLE",
+    };
+  }
+}
+
 export async function fetchParsedTransaction(signature: string): Promise<ParsedTransaction | null> {
   const response = await getConnection().getTransaction(signature, { commitment: "finalized", maxSupportedTransactionVersion: 0 });
   if (!response) return null;
