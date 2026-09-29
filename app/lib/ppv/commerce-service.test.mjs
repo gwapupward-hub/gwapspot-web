@@ -75,3 +75,16 @@ test("Commerce read endpoint only returns records to an authenticated agreement 
   assert.match(readRoute, /getAuthenticatedWalletIdentityResult/);
   assert.match(readRoute, /hasValidOrigin/);
 });
+
+
+test("Commerce finalization immediately attempts idempotent Verified Activity projection", () => {
+  const reputation = readFileSync(
+    new URL("../ppv-reputation-server.ts", import.meta.url),
+    "utf8",
+  );
+  assert.match(ledger, /projectFinalizedPpvSignature/);
+  assert.match(ledger, /result\.status !== "finalized"/);
+  assert.match(reputation, /ingestParsedTransaction\(parsed\)/);
+  assert.match(reputation, /skipped === "duplicate"/);
+  assert.match(reputation, /status: "deferred"/);
+});
