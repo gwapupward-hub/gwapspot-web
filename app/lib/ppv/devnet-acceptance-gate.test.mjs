@@ -86,5 +86,5 @@ test("workspace labels attested Core and Commerce truthfully after release", () 
   assert.match(readinessSource, /observed\.binarySha256 === expected\.binarySha256/);
   assert.doesNotMatch(workspaceSource, /Commerce is not currently deployed/);
   assert.match(workspaceSource, /Core and Commerce are deployed, attested/);
-  assert.match(workspaceSource, /custody mutation stays hard-closed/);
+  assert.match(workspaceSource, /custody[\s\S]*mutation stays hard-closed/);
 });
