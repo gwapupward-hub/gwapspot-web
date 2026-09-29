@@ -407,7 +407,7 @@ test("corrupt registry entries are rejected, never coerced into listings", async
       { ...good, workspaceId: WS_B, id: good.id },                        // id/workspace mismatch
       { ...good, workspaceId: WS_C, id: derivePublicationId(WS_C), deploymentUrl: "http://plain.example.com/" },
       { ...good, workspaceId: WS_C, id: derivePublicationId(WS_C), visibility: "private" },
-      { ...good, workspaceId: WS_C, id: derivePublicationId(WS_C), title: "<b>Bold</b> " },
+      { ...good, workspaceId: WS_C, id: derivePublicationId(WS_C), title: "<b>Bold</b>\u0000" },
       { ...good, workspaceId: WS_C, id: derivePublicationId(WS_C), address: "wrong.emerald.gwap" },
       "junk",
       null,
