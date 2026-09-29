@@ -87,6 +87,50 @@ type Confirmation =
       verification: string;
     };
 
+type PreparedBoundAgreementProof = {
+  operationId: string;
+  action: "create";
+  chain: "solana:devnet";
+  proofAddress: string;
+  proofIdHex: string;
+  transactionBase64: string;
+  blockhash: string;
+  lastValidBlockHeight: number;
+  rpcProfileId: string;
+  binding: {
+    schemaVersion: 1;
+    agreementAddress: string;
+    agreementIdHex: string;
+    agreementVersion: number;
+    termsHashHex: string;
+    contextHashHex: string;
+    proofKind: "agreement";
+  };
+};
+
+type BoundProofConfirmation =
+  | {
+      status: "pending";
+      signature: string;
+      proofAddress: string;
+    }
+  | {
+      status: "finalized";
+      signature: string;
+      proofAddress: string;
+      proofState: "active" | "revoked";
+      projection?: { status?: "projected" | "deferred" };
+    };
+
+type BoundProofState =
+  | "idle"
+  | "preparing"
+  | "signing"
+  | "confirming"
+  | "finalized"
+  | "sync-required"
+  | "error";
+
 type PendingCommerceAction = {
   operationId: string;
   owner: string;
@@ -257,10 +301,12 @@ function reportClientEvent(
 export function PpvAgreementActions({
   environment,
   mutationCapability,
+  coreMutationCapability,
   layerCapability,
 }: {
   environment: PpvRuntimeEnvironmentV1 | null;
   mutationCapability: Capability;
+  coreMutationCapability: Capability;
   layerCapability: Capability;
 }) {
   const { getAccessToken } = usePrivy();
@@ -288,6 +334,13 @@ export function PpvAgreementActions({
     "Load an agreement, then compare these local documents to the exact finalized version before signing.",
   );
   const [networkConfirmedForWallet, setNetworkConfirmedForWallet] = useState<string | null>(null);
+  const [boundProofState, setBoundProofState] = useState<BoundProofState>("idle");
+  const [boundProofMessage, setBoundProofMessage] = useState(
+    "Execute the agreement first. Party A can then create a Core proof bound to the finalized terms.",
+  );
+  const [boundProofId, setBoundProofId] = useState("");
+  const [boundProofAddress, setBoundProofAddress] = useState("");
+  const [boundProofSignature, setBoundProofSignature] = useState("");
 
   const writesReady = mutationCapability.state === "ready";
   const readsAvailable = layerCapability.state === "ready" || layerCapability.state === "read_only";
@@ -312,6 +365,7 @@ export function PpvAgreementActions({
     expectedWalletChain === "solana:devnet" &&
     walletNetworkConfirmed &&
     walletChainSupport !== "unsupported";
+  const coreWritesReady = coreMutationCapability.state === "ready";
 
   const authenticatedFetch = useCallback(
     async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -607,6 +661,142 @@ export function PpvAgreementActions({
         setState("error");
         setMessage(actionError(error));
       }
+    } finally {
+      inFlight.current = false;
+    }
+  }
+
+  async function createBoundAgreementProof() {
+    if (
+      inFlight.current ||
+      !record ||
+      record.state !== "executed" ||
+      record.partyA !== account.verifiedWallet ||
+      !agreementAddress ||
+      !coreWritesReady
+    ) {
+      return;
+    }
+    if (!wallet) {
+      setBoundProofState("error");
+      setBoundProofMessage(
+        "Reconnect Party A's Solana wallet before creating the bound Core proof.",
+      );
+      return;
+    }
+    if (!walletNetworkReady) {
+      setBoundProofState("error");
+      setBoundProofMessage(
+        "Confirm Phantom is in Testnet Mode → Solana Devnet before creating the bound proof.",
+      );
+      return;
+    }
+
+    inFlight.current = true;
+    try {
+      setBoundProofState("preparing");
+      setBoundProofMessage(
+        "Re-reading the executed Commerce agreement and preparing its canonical Core proof…",
+      );
+      const response = await authenticatedFetch(
+        "/api/ppv/commerce/agreement-proof/prepare",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            partyA: record.partyA,
+            agreementIdHex: record.agreementId,
+          }),
+        },
+      );
+      const body = (await response.json().catch(() => ({}))) as unknown;
+      if (!response.ok) {
+        throw new Error(
+          readApiError(body, "PPV could not prepare the bound agreement proof."),
+        );
+      }
+      const prepared = body as PreparedBoundAgreementProof;
+      if (
+        prepared.chain !== "solana:devnet" ||
+        prepared.binding.agreementAddress !== agreementAddress ||
+        prepared.binding.agreementIdHex !== record.agreementId ||
+        prepared.binding.agreementVersion !== record.version ||
+        prepared.binding.termsHashHex !== record.termsHash ||
+        prepared.binding.proofKind !== "agreement"
+      ) {
+        throw new Error(
+          "The prepared Core proof does not match the finalized Commerce agreement. No wallet request was opened.",
+        );
+      }
+
+      setBoundProofId(prepared.proofIdHex);
+      setBoundProofAddress(prepared.proofAddress);
+      setBoundProofState("signing");
+      setBoundProofMessage(
+        "Approve the Core agreement-proof transaction in Phantom on Solana Devnet.",
+      );
+
+      const signed = await signAndSendTransaction({
+        transaction: base64Bytes(prepared.transactionBase64),
+        wallet,
+        chain: prepared.chain,
+        options: {
+          optimisticBroadcast: true,
+          skipSimulation: false,
+        },
+      });
+      const submittedSignature = bs58.encode(signed.signature);
+      setBoundProofSignature(submittedSignature);
+      setBoundProofState("confirming");
+      setBoundProofMessage(
+        "Bound Core proof broadcast. Waiting for finalized proof state and Verified Activity projection…",
+      );
+
+      let confirmation: BoundProofConfirmation | null = null;
+      for (let attempt = 0; attempt < 14; attempt += 1) {
+        const confirmResponse = await authenticatedFetch("/api/ppv/core/confirm", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            operationId: prepared.operationId,
+            action: "create",
+            proofIdHex: prepared.proofIdHex,
+            signature: submittedSignature,
+            lastValidBlockHeight: prepared.lastValidBlockHeight,
+          }),
+        });
+        const confirmBody = (await confirmResponse.json().catch(() => ({}))) as unknown;
+        if (confirmResponse.status === 202) {
+          await new Promise((resolve) => window.setTimeout(resolve, 1_200));
+          continue;
+        }
+        if (!confirmResponse.ok) {
+          throw new Error(
+            readApiError(confirmBody, "PPV could not verify the bound Core proof."),
+          );
+        }
+        confirmation = confirmBody as BoundProofConfirmation;
+        break;
+      }
+
+      if (!confirmation || confirmation.status !== "finalized") {
+        setBoundProofState("sync-required");
+        setBoundProofMessage(
+          "The bound proof was broadcast but finalization is still pending. Do not create another proof; use the Proofs workbench to verify this proof ID.",
+        );
+        return;
+      }
+
+      setBoundProofState("finalized");
+      setBoundProofAddress(confirmation.proofAddress);
+      setBoundProofMessage(
+        confirmation.projection?.status === "projected"
+          ? "Bound Core proof finalized and projected into Verified Activity."
+          : "Bound Core proof finalized. Activity projection is deferred and can be repaired from chain.",
+      );
+    } catch (error) {
+      setBoundProofState("error");
+      setBoundProofMessage(actionError(error));
     } finally {
       inFlight.current = false;
     }
@@ -1032,6 +1222,66 @@ export function PpvAgreementActions({
             Cancel pending agreement
           </button>
         </div>
+
+        {record?.state === "executed" ? (
+          <div className={styles.verifyActions}>
+            <div>
+              <span>CORE BINDING</span>
+              <p>
+                Party A can create a Core proof whose content hash is the executed
+                agreement's finalized terms hash and whose context commits to this
+                exact Commerce account.
+              </p>
+            </div>
+            <button
+              type="button"
+              className={styles.primaryAction}
+              disabled={
+                busy ||
+                boundProofState === "preparing" ||
+                boundProofState === "signing" ||
+                boundProofState === "confirming" ||
+                !coreWritesReady ||
+                !walletNetworkReady ||
+                record.partyA !== account.verifiedWallet
+              }
+              onClick={() => void createBoundAgreementProof()}
+            >
+              {boundProofState === "preparing"
+                ? "Preparing bound proof…"
+                : boundProofState === "signing"
+                  ? "Waiting for Phantom…"
+                  : boundProofState === "confirming"
+                    ? "Finalizing bound proof…"
+                    : boundProofState === "finalized"
+                      ? "Bound proof created"
+                      : "Create bound Core proof"}
+            </button>
+            <p className={styles.verifyMessage} aria-live="polite">
+              {record.partyA === account.verifiedWallet
+                ? boundProofMessage
+                : "Switch back to Party A to create the canonical bound Core proof."}
+            </p>
+            {boundProofId ? (
+              <dl className={styles.verifyMeta}>
+                <div><dt>Proof ID</dt><dd>{boundProofId}</dd></div>
+                <div><dt>Proof account</dt><dd>{boundProofAddress || "pending"}</dd></div>
+              </dl>
+            ) : null}
+            {boundProofSignature ? (
+              <a
+                href={ppvExplorerTransactionUrl(
+                  boundProofSignature,
+                  environment?.cluster ?? "devnet",
+                )}
+                target="_blank"
+                rel="noreferrer"
+              >
+                View bound proof transaction on Solana Explorer ↗
+              </a>
+            ) : null}
+          </div>
+        ) : null}
       </section>
     </section>
   );
