@@ -1229,7 +1229,7 @@ export function PpvAgreementActions({
               <span>CORE BINDING</span>
               <p>
                 Party A can create a Core proof whose content hash is the executed
-                agreement's finalized terms hash and whose context commits to this
+                agreement&apos;s finalized terms hash and whose context commits to this
                 exact Commerce account.
               </p>
             </div>
