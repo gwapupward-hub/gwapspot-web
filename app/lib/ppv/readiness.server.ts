@@ -286,6 +286,21 @@ function programStatus(layer: PpvLayer, observed: PpvProgramObservation | undefi
   ) {
     return "pre_rr13_001_binary";
   }
+
+  const expected = PPV_DEPLOYMENT_MANIFEST.programs[layer];
+  if (
+    expected.programDataAddress &&
+    expected.deploymentSlot !== null &&
+    expected.upgradeAuthority &&
+    expected.binarySha256 &&
+    observed.programDataAddress === expected.programDataAddress &&
+    observed.deploymentSlot === expected.deploymentSlot &&
+    observed.upgradeAuthority === expected.upgradeAuthority &&
+    observed.binarySha256 === expected.binarySha256
+  ) {
+    return "attested";
+  }
+
   return "observed_unattested";
 }
 
