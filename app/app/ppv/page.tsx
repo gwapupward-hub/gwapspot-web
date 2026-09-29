@@ -119,11 +119,11 @@ export default async function PpvWorkspacePage() {
       </section>
 
       <aside className={styles.notice}>
-        <strong>Current public-devnet blockers are explicit.</strong>
+        <strong>Current public-devnet boundary is explicit.</strong>
         <p>
-          Commerce is not currently deployed at its canonical devnet ID. The observed
-          Escrow deployment is the older pre-RR13-001 binary. Core is observable, but
-          writes stay gated until current SDK/IDL/binary compatibility is attested.
+          Core and Commerce are deployed, attested and available for non-custodial
+          devnet writes. Escrow remains the older pre-RR13-001 binary and every custody
+          mutation stays hard-closed. Mainnet and real-value custody remain disabled.
         </p>
       </aside>
     </div>
