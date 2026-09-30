@@ -522,3 +522,57 @@
 @media (prefers-reduced-motion: reduce) {
   .daily-ideas-tabs button, .daily-ideas-card-actions button, .daily-ideas-category-grid button { transition: none !important; }
 }
+
+
+/* Explicit devnet runtime state. Production remains visually unchanged. */
+.os-devnet-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  margin-left: 2px;
+  padding: 0 7px;
+  border: 1px solid rgba(168, 112, 255, .34);
+  border-radius: 999px;
+  background: rgba(123, 64, 196, .12);
+  color: #cda9ff;
+  font-size: 7px;
+  font-style: normal;
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+
+.os-devnet-banner {
+  position: relative;
+  z-index: 2;
+  width: min(1440px, calc(100% - 28px));
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 14px auto 0;
+  padding: 10px 14px;
+  border: 1px solid rgba(168, 112, 255, .24);
+  border-radius: 12px;
+  background: rgba(84, 40, 126, .13);
+  color: rgba(240, 229, 255, .78);
+  font-size: 9px;
+}
+
+.os-devnet-banner strong {
+  flex: 0 0 auto;
+  color: #cda9ff;
+  font-size: 8px;
+  letter-spacing: .12em;
+}
+
+@media (max-width: 720px) {
+  .os-devnet-banner {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .os-devnet-badge {
+    display: none;
+  }
+}
