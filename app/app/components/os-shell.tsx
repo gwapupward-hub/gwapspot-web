@@ -44,7 +44,7 @@ export function OsShell({ children }: { children: ReactNode }) {
   const [actionOpen, setActionOpen] = useState(false);
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "error">("idle");
   const copyResetRef = useRef<number | null>(null);
-  const portfolio = useWalletPortfolio();
+  const portfolio = useWalletPortfolio(runtimeMode === "production");
 
   const handle = useMemo(
     () => gnsIdentity.fullName || shortenWalletAddress(account.verifiedWallet),
@@ -131,13 +131,22 @@ export function OsShell({ children }: { children: ReactNode }) {
           </span>
           <span className="os-status-item os-trust"><small>TRUST</small><strong>{gnsIdentity.score ?? "—"}</strong></span>
           <span className="os-status-item os-balance">
-            <small>{portfolio.status === "error" ? "WALLET" : account.walletProviderLabel.toUpperCase()}</small>
-            {portfolio.status === "error" ? (
-              <button type="button" className="os-balance-retry" onClick={portfolio.refetch}>
-                Retry
-              </button>
+            {runtimeMode === "devnet" ? (
+              <>
+                <small>NETWORK</small>
+                <strong>DEVNET</strong>
+              </>
             ) : (
-              <strong>{balance ?? "—"}</strong>
+              <>
+                <small>{portfolio.status === "error" ? "WALLET" : account.walletProviderLabel.toUpperCase()}</small>
+                {portfolio.status === "error" ? (
+                  <button type="button" className="os-balance-retry" onClick={portfolio.refetch}>
+                    Retry
+                  </button>
+                ) : (
+                  <strong>{balance ?? "—"}</strong>
+                )}
+              </>
             )}
           </span>
         </div>
