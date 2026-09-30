@@ -1148,6 +1148,74 @@ export function PpvAgreementActions({
         ) : null}
       </div>
 
+      {runtimeMode === "devnet" ? (
+        <section className={styles.inboxPanel} aria-labelledby="ppv-commerce-inbox">
+          <header className={styles.inboxHeader}>
+            <div>
+              <span>COUNTERPARTY INBOX</span>
+              <h3 id="ppv-commerce-inbox">Contracts sent to this wallet</h3>
+              <p>{inboxMessage}</p>
+            </div>
+            <button
+              type="button"
+              className={styles.secondaryAction}
+              disabled={inboxState === "loading"}
+              onClick={() => void loadInbox()}
+            >
+              {inboxState === "loading" ? "Refreshing…" : "Refresh inbox"}
+            </button>
+          </header>
+
+          {inboxItems.length > 0 ? (
+            <div className={styles.inboxList}>
+              {inboxItems.map((item) => {
+                const incoming = item.partyB === account.verifiedWallet;
+                const awaitingResponse =
+                  incoming && item.state === "pending" && item.sigB === null;
+                const counterparty = incoming ? item.partyA : item.partyB;
+
+                return (
+                  <button
+                    key={item.agreementAddress}
+                    type="button"
+                    className={styles.inboxItem}
+                    data-pending={awaitingResponse || undefined}
+                    disabled={busy || recoveryPending}
+                    onClick={() => void openInboxItem(item)}
+                  >
+                    <span className={styles.inboxItemCopy}>
+                      <strong>{item.title}</strong>
+                      <small>
+                        {incoming ? "From" : "To"} {shortWallet(counterparty)} · v{item.version}
+                      </small>
+                    </span>
+                    <span
+                      className={
+                        awaitingResponse ? styles.inboxAction : styles.inboxState
+                      }
+                    >
+                      {awaitingResponse ? "REVIEW" : item.state.toUpperCase()}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <p className={styles.inboxEmpty}>
+              {inboxState === "loading"
+                ? "Checking this wallet for agreements…"
+                : "No delivered devnet agreements are indexed for this wallet yet."}
+            </p>
+          )}
+
+          <small className={styles.inboxPrivacy}>
+            DEVNET TEST STORAGE: documents in this inbox are stored in authenticated
+            private workspace storage for testing only. Do not use confidential
+            production contract terms until PPV envelope encryption is enabled.
+          </small>
+        </section>
+      ) : null}
+
       <div className={styles.proofGrid}>
         <div className={styles.proofForm}>
           <label>
