@@ -10,6 +10,7 @@ import { BootSequence } from "./boot-sequence";
 import { CommandPalette } from "./command-palette";
 import { GwapActionSheet } from "./gwap-action-sheet";
 import { GwapMetalButton } from "./gwap-metal-button";
+import { PpvCommerceInboxIndicator } from "./ppv-commerce-inbox-indicator";
 import { useGwapOs } from "./os-provider";
 import { SignOutButton } from "./sign-out-button";
 
@@ -35,6 +36,7 @@ export function OsShell({ children }: { children: ReactNode }) {
     migrateLocalState,
     migrationAvailable,
     retrySync,
+    runtimeMode,
     state,
     syncStatus,
   } = useGwapOs();
@@ -42,7 +44,7 @@ export function OsShell({ children }: { children: ReactNode }) {
   const [actionOpen, setActionOpen] = useState(false);
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "error">("idle");
   const copyResetRef = useRef<number | null>(null);
-  const portfolio = useWalletPortfolio();
+  const portfolio = useWalletPortfolio(runtimeMode === "production");
 
   const handle = useMemo(
     () => gnsIdentity.fullName || shortenWalletAddress(account.verifiedWallet),
@@ -98,6 +100,9 @@ export function OsShell({ children }: { children: ReactNode }) {
             <strong>GWAP OS</strong>
             <small>{breadcrumb(pathname)}</small>
           </span>
+          {runtimeMode === "devnet" ? (
+            <em className="os-devnet-badge">DEVNET</em>
+          ) : null}
         </Link>
 
         <div className="os-menubar-status" aria-label="Wallet identity status">
@@ -126,18 +131,28 @@ export function OsShell({ children }: { children: ReactNode }) {
           </span>
           <span className="os-status-item os-trust"><small>TRUST</small><strong>{gnsIdentity.score ?? "—"}</strong></span>
           <span className="os-status-item os-balance">
-            <small>{portfolio.status === "error" ? "WALLET" : account.walletProviderLabel.toUpperCase()}</small>
-            {portfolio.status === "error" ? (
-              <button type="button" className="os-balance-retry" onClick={portfolio.refetch}>
-                Retry
-              </button>
+            {runtimeMode === "devnet" ? (
+              <>
+                <small>NETWORK</small>
+                <strong>DEVNET</strong>
+              </>
             ) : (
-              <strong>{balance ?? "—"}</strong>
+              <>
+                <small>{portfolio.status === "error" ? "WALLET" : account.walletProviderLabel.toUpperCase()}</small>
+                {portfolio.status === "error" ? (
+                  <button type="button" className="os-balance-retry" onClick={portfolio.refetch}>
+                    Retry
+                  </button>
+                ) : (
+                  <strong>{balance ?? "—"}</strong>
+                )}
+              </>
             )}
           </span>
         </div>
 
         <div className="os-menubar-actions">
+          <PpvCommerceInboxIndicator />
           <button
             type="button"
             className="os-command-trigger"
@@ -177,6 +192,13 @@ export function OsShell({ children }: { children: ReactNode }) {
             <small>Changes remain staged on this device.</small>
           </span>
           <button type="button" onClick={retrySync}>Retry sync</button>
+        </section>
+      ) : null}
+
+      {runtimeMode === "devnet" ? (
+        <section className="os-devnet-banner" role="status">
+          <strong>GWAP OS DEVNET</strong>
+          <span>Test assets and test programs only. Mainnet value transfers are disabled in this environment.</span>
         </section>
       ) : null}
 

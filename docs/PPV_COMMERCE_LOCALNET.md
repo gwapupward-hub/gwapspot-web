@@ -22,7 +22,7 @@ The report contains the localnet genesis, ephemeral program IDs, fixture account
 
 ## What it does not claim
 
-This does **not** enable Commerce on public devnet. The canonical Commerce devnet program is still absent, so production GwapOS must continue to report Commerce as unavailable.
+This localnet workflow does **not** control public-devnet enablement. PPV Commerce is now separately attested in the GwapSpot deployment manifest at its permanent devnet program ID and may be enabled only when the explicit PPV feature flags and live readiness checks pass.
 
 This does **not** enable Escrow custody. The production Escrow binary remains mutation-blocked until its separate security/deployment gates are satisfied.
 

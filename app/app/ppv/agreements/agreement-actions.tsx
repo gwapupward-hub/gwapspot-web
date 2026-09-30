@@ -52,6 +52,30 @@ type AgreementRecord = {
   cancelledAt: number;
 };
 
+type CommerceInboxItem = {
+  agreementAddress: string;
+  agreementIdHex: string;
+  partyA: string;
+  partyB: string;
+  version: number;
+  state: "pending" | "executed" | "cancelled";
+  sigA: AgreementSignature | null;
+  sigB: AgreementSignature | null;
+  contentHash: string;
+  termsHash: string;
+  content: string;
+  terms: string;
+  title: string;
+  createdAt: number;
+  expiresAt: number;
+  inboxUpdatedAt: string;
+};
+
+type CommerceInboxPayload = {
+  items: CommerceInboxItem[];
+  pendingIncoming: number;
+};
+
 type PreparedTransaction = {
   operationId: string;
   action: CommerceAction;
@@ -187,6 +211,10 @@ function validAgreementId(value: string) {
   return HEX_ID.test(value.trim().toLowerCase());
 }
 
+function shortWallet(value: string) {
+  return value.length > 16 ? `${value.slice(0, 7)}…${value.slice(-7)}` : value;
+}
+
 function parseDocument(value: string, label: string) {
   let parsed: unknown;
   try {
@@ -310,7 +338,7 @@ export function PpvAgreementActions({
   layerCapability: Capability;
 }) {
   const { getAccessToken } = usePrivy();
-  const { account } = useGwapOs();
+  const { account, runtimeMode } = useGwapOs();
   const { wallets } = usePrivySolanaWallets();
   const { signAndSendTransaction } = useSignAndSendTransaction();
   const inFlight = useRef(false);
@@ -326,7 +354,7 @@ export function PpvAgreementActions({
   const [signature, setSignature] = useState("");
   const [state, setState] = useState<UiState>("idle");
   const [message, setMessage] = useState(
-    "Draft content and machine-readable terms locally. Only canonical SHA-256 hashes are sent when Commerce writes become available.",
+    "Draft content and machine-readable terms locally. Devnet writes commit only canonical hashes on-chain; the optional devnet inbox can deliver the matching test documents to the counterparty.",
   );
   const [reviewState, setReviewState] = useState<ReviewState>("idle");
   const [reviewedVersion, setReviewedVersion] = useState<number | null>(null);
@@ -341,6 +369,11 @@ export function PpvAgreementActions({
   const [boundProofId, setBoundProofId] = useState("");
   const [boundProofAddress, setBoundProofAddress] = useState("");
   const [boundProofSignature, setBoundProofSignature] = useState("");
+  const [inboxItems, setInboxItems] = useState<CommerceInboxItem[]>([]);
+  const [inboxState, setInboxState] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  const [inboxMessage, setInboxMessage] = useState(
+    "Pending agreements addressed to this wallet appear here automatically.",
+  );
 
   const writesReady = mutationCapability.state === "ready";
   const readsAvailable = layerCapability.state === "ready" || layerCapability.state === "read_only";
@@ -375,6 +408,82 @@ export function PpvAgreementActions({
       return fetch(input, { ...init, headers, credentials: "same-origin" });
     },
     [getAccessToken],
+  );
+
+  const loadInbox = useCallback(async () => {
+    if (runtimeMode !== "devnet") {
+      setInboxItems([]);
+      setInboxState("idle");
+      return;
+    }
+
+    setInboxState("loading");
+    try {
+      const response = await authenticatedFetch("/api/ppv/commerce/inbox", {
+        method: "GET",
+        cache: "no-store",
+      });
+      if (!response.ok) {
+        setInboxItems([]);
+        setInboxState(response.status === 404 ? "idle" : "error");
+        if (response.status !== 404) {
+          setInboxMessage("The Commerce inbox could not be loaded. Manual agreement lookup still works.");
+        }
+        return;
+      }
+
+      const payload = (await response.json()) as CommerceInboxPayload;
+      setInboxItems(Array.isArray(payload.items) ? payload.items : []);
+      setInboxState("ready");
+      setInboxMessage(
+        payload.pendingIncoming > 0
+          ? `${payload.pendingIncoming} agreement${payload.pendingIncoming === 1 ? "" : "s"} waiting for your review.`
+          : "No incoming agreements are waiting for your signature.",
+      );
+    } catch {
+      setInboxState("error");
+      setInboxMessage("The Commerce inbox could not be loaded. Manual agreement lookup still works.");
+    }
+  }, [authenticatedFetch, runtimeMode]);
+
+  const syncInbox = useCallback(
+    async (agreement: AgreementRecord) => {
+      if (
+        runtimeMode !== "devnet" ||
+        !content.trim() ||
+        !terms.trim()
+      ) {
+        return false;
+      }
+
+      try {
+        const response = await authenticatedFetch("/api/ppv/commerce/inbox", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            partyA: agreement.partyA,
+            agreementIdHex: agreement.agreementId,
+            content,
+            terms,
+          }),
+        });
+        if (!response.ok) {
+          setInboxMessage(
+            "The on-chain agreement finalized, but the devnet inbox handoff did not sync. You can retry by loading the agreement and reviewing it manually.",
+          );
+          return false;
+        }
+        window.dispatchEvent(new Event("gwap:ppv-commerce-inbox-changed"));
+        await loadInbox();
+        return true;
+      } catch {
+        setInboxMessage(
+          "The on-chain agreement finalized, but the devnet inbox handoff did not sync. The chain state remains authoritative.",
+        );
+        return false;
+      }
+    },
+    [authenticatedFetch, content, loadInbox, runtimeMode, terms],
   );
 
   const resetReview = useCallback(() => {
@@ -429,6 +538,11 @@ export function PpvAgreementActions({
     return () => window.clearTimeout(timer);
   }, [account.verifiedWallet]);
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => void loadInbox(), 0);
+    return () => window.clearTimeout(timer);
+  }, [account.verifiedWallet, loadInbox]);
+
   function applyRecord(next: AgreementRecord & { agreementAddress?: string }) {
     setRecord(next);
     setPartyA(next.partyA);
@@ -436,6 +550,64 @@ export function PpvAgreementActions({
     setAgreementIdHex(next.agreementId);
     if (next.agreementAddress) setAgreementAddress(next.agreementAddress);
     resetReview();
+  }
+
+  async function openInboxItem(item: CommerceInboxItem) {
+    if (inFlight.current || !readsAvailable) return;
+
+    inFlight.current = true;
+    try {
+      setState("loading");
+      setMessage("Loading the latest finalized agreement state…");
+      setContent(item.content);
+      setTerms(item.terms);
+      const response = await authenticatedFetch("/api/ppv/commerce/agreement", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          partyA: item.partyA,
+          agreementIdHex: item.agreementIdHex,
+        }),
+      });
+      const body = (await response.json().catch(() => ({}))) as unknown;
+      if (!response.ok) {
+        throw new Error(readApiError(body, "PPV could not load this agreement."));
+      }
+
+      const next = body as AgreementRecord & { agreementAddress: string };
+      applyRecord(next);
+      setAgreementAddress(next.agreementAddress);
+
+      const hashes = await localHashes(item.content, item.terms);
+      if (
+        hashes.contentHashHex === next.contentHash &&
+        hashes.termsHashHex === next.termsHash
+      ) {
+        setReviewState("match");
+        setReviewedVersion(next.version);
+        setReviewMessage(
+          `VERIFIED: the delivered devnet documents match finalized agreement version ${next.version}. Read them carefully before accepting.`,
+        );
+      } else {
+        setReviewState("mismatch");
+        setReviewedVersion(null);
+        setReviewMessage(
+          "The inbox documents no longer match the finalized agreement. Do not sign this version.",
+        );
+      }
+
+      setState("idle");
+      setMessage(
+        next.state === "pending"
+          ? "Agreement loaded from your inbox. Review the document, then accept or decline."
+          : `Agreement loaded from your inbox. Current state: ${next.state}.`,
+      );
+    } catch (error) {
+      setState("error");
+      setMessage(actionError(error));
+    } finally {
+      inFlight.current = false;
+    }
   }
 
   async function loadAgreement() {
@@ -636,6 +808,7 @@ export function PpvAgreementActions({
         ...resultConfirmation.agreement,
         agreementAddress: resultConfirmation.agreementAddress,
       });
+      await syncInbox(resultConfirmation.agreement);
       setState("finalized");
       setMessage(
         `${action.toUpperCase()} finalized. Agreement version ${resultConfirmation.agreement.version} is now ${resultConfirmation.agreement.state}.`,
@@ -900,6 +1073,7 @@ export function PpvAgreementActions({
         ...result.agreement,
         agreementAddress: result.agreementAddress,
       });
+      await syncInbox(result.agreement);
       setSignature(result.signature);
       setState("finalized");
       setMessage(
@@ -974,6 +1148,74 @@ export function PpvAgreementActions({
           </div>
         ) : null}
       </div>
+
+      {runtimeMode === "devnet" ? (
+        <section className={styles.inboxPanel} aria-labelledby="ppv-commerce-inbox">
+          <header className={styles.inboxHeader}>
+            <div>
+              <span>COUNTERPARTY INBOX</span>
+              <h3 id="ppv-commerce-inbox">Contracts sent to this wallet</h3>
+              <p>{inboxMessage}</p>
+            </div>
+            <button
+              type="button"
+              className={styles.secondaryAction}
+              disabled={inboxState === "loading"}
+              onClick={() => void loadInbox()}
+            >
+              {inboxState === "loading" ? "Refreshing…" : "Refresh inbox"}
+            </button>
+          </header>
+
+          {inboxItems.length > 0 ? (
+            <div className={styles.inboxList}>
+              {inboxItems.map((item) => {
+                const incoming = item.partyB === account.verifiedWallet;
+                const awaitingResponse =
+                  incoming && item.state === "pending" && item.sigB === null;
+                const counterparty = incoming ? item.partyA : item.partyB;
+
+                return (
+                  <button
+                    key={item.agreementAddress}
+                    type="button"
+                    className={styles.inboxItem}
+                    data-pending={awaitingResponse || undefined}
+                    disabled={busy || recoveryPending}
+                    onClick={() => void openInboxItem(item)}
+                  >
+                    <span className={styles.inboxItemCopy}>
+                      <strong>{item.title}</strong>
+                      <small>
+                        {incoming ? "From" : "To"} {shortWallet(counterparty)} · v{item.version}
+                      </small>
+                    </span>
+                    <span
+                      className={
+                        awaitingResponse ? styles.inboxAction : styles.inboxState
+                      }
+                    >
+                      {awaitingResponse ? "REVIEW" : item.state.toUpperCase()}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <p className={styles.inboxEmpty}>
+              {inboxState === "loading"
+                ? "Checking this wallet for agreements…"
+                : "No delivered devnet agreements are indexed for this wallet yet."}
+            </p>
+          )}
+
+          <small className={styles.inboxPrivacy}>
+            DEVNET TEST STORAGE: documents in this inbox are stored in authenticated
+            private workspace storage for testing only. Do not use confidential
+            production contract terms until PPV envelope encryption is enabled.
+          </small>
+        </section>
+      ) : null}
 
       <div className={styles.proofGrid}>
         <div className={styles.proofForm}>
@@ -1156,10 +1398,12 @@ export function PpvAgreementActions({
       <section className={styles.verifyPanel} aria-labelledby="ppv-commerce-review">
         <div>
           <span>EXACT VERSION REVIEW</span>
-          <h3 id="ppv-commerce-review">Hash locally. Compare. Then sign.</h3>
+          <h3 id="ppv-commerce-review">Review. Verify. Then accept or decline.</h3>
           <p>
-            Content and terms stay in this browser. GWAP compares their canonical hashes to
-            the finalized agreement and enables signing only after an exact match.
+            Manual drafts stay in this browser. When the devnet inbox is enabled,
+            finalized test documents are delivered through authenticated private
+            workspace storage. GWAP independently re-hashes them and enables approval
+            only when they match the current finalized agreement exactly.
           </p>
         </div>
         <div className={styles.verifyActions}>
@@ -1206,7 +1450,9 @@ export function PpvAgreementActions({
             }
             onClick={() => void signAgreement()}
           >
-            Sign exact current version
+            {record?.partyB === account.verifiedWallet
+              ? "Accept agreement"
+              : "Sign exact current version"}
           </button>
           <button
             type="button"
@@ -1219,7 +1465,9 @@ export function PpvAgreementActions({
             }
             onClick={() => void cancelAgreement()}
           >
-            Cancel pending agreement
+            {record?.partyB === account.verifiedWallet
+              ? "Decline agreement"
+              : "Cancel pending agreement"}
           </button>
         </div>
 

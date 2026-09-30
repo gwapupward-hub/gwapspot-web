@@ -11,7 +11,15 @@ both wallet authentication and workspace storage are configured.
 
 ## Privy setup
 
-Use two Privy applications: one production application for `gwapspot.com` and one development application for localhost and Vercel previews. Do not mix an app ID, app secret, or client ID from different Privy applications.
+Use two Privy applications: one production application for `gwapspot.com` and one development application for localhost, Vercel previews, and the dedicated `dev.gwapspot.com` Devnet GwapOS environment. Do not mix an app ID, app secret, or client ID from different Privy applications.
+
+### Devnet GwapOS contract
+
+`dev.gwapspot.com` is a separate runtime boundary for test assets and test programs. It must be deployed from this repository through a dedicated Vercel project (or otherwise isolated deployment) with its own development Privy credentials and devnet environment variables. Do not attach `dev.gwapspot.com` as a second production domain to the same Vercel project that serves `app.gwapspot.com`, because both domains would receive the same production environment values.
+
+The development Privy application should allow `https://dev.gwapspot.com` as an origin. Prefer host-scoped authentication cookies for the development app; do not intentionally share the production root-domain Privy cookie/session configuration between the production and devnet Privy applications. The application code hard-pins `app.gwapspot.com` to production mode and `dev.gwapspot.com` to devnet mode, so `GWAP_OS_RUNTIME_MODE` is only an override for localhost/preview-style hosts.
+
+Devnet mode does not create a second GWAP identity. Privy still proves the same wallet/email account identity; only transaction execution is isolated. Mainnet Send is disabled in the devnet runtime. PPV/GNS devnet workflows may remain enabled according to their own feature/readiness gates.
 
 ### Production contract
 
@@ -121,6 +129,7 @@ fallback and can be rate limited.
   GWAP OS, sign out, and reconnect.
 - Solflare, Backpack, and a desktop Wallet Standard wallet complete the same
   flow.
+- `dev.gwapspot.com` uses the development Privy application and visibly renders the DEVNET runtime banner; mainnet Send is blocked there.
 - Ordinary Safari/Chrome users can choose email directly on app.gwapspot.com;
   injected-wallet detection must never hide the email path.
 - Rejecting a signature leaves the user signed out and shows a safe error.

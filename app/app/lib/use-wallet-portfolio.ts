@@ -134,19 +134,19 @@ export function clearWalletPortfolioCache() {
   inFlight = null;
 }
 
-export function useWalletPortfolio() {
+export function useWalletPortfolio(enabled = true) {
   const { getAccessToken } = usePrivy();
   const state = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   useEffect(() => {
-    if (cachedState.status === "loading" && !inFlight) {
+    if (enabled && cachedState.status === "loading" && !inFlight) {
       void load(getAccessToken);
     }
-  }, [getAccessToken]);
+  }, [enabled, getAccessToken]);
 
   const refetch = useCallback(() => {
-    void load(getAccessToken);
-  }, [getAccessToken]);
+    if (enabled) void load(getAccessToken);
+  }, [enabled, getAccessToken]);
 
   return { ...state, refetch };
 }

@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { useWalletPortfolio } from "../lib/use-wallet-portfolio";
+import { useGwapOs } from "./os-provider";
 
 const usd = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -23,7 +24,8 @@ function formatTokenAmount(value: string) {
 }
 
 export function WalletPortfolioCard() {
-  const state = useWalletPortfolio();
+  const { runtimeMode } = useGwapOs();
+  const state = useWalletPortfolio(runtimeMode === "production");
 
   const visibleAssets = useMemo(() => {
     if (state.status !== "ready") return [];
@@ -31,6 +33,25 @@ export function WalletPortfolioCard() {
       .filter((asset) => asset.kind === "native" || Number(asset.amount) > 0)
       .slice(0, 8);
   }, [state]);
+
+  if (runtimeMode === "devnet") {
+    return (
+      <article className="os-runtime-panel">
+        <div className="os-console-chrome">
+          <span>~/wallet/portfolio</span>
+          <span>DEVNET</span>
+        </div>
+        <div className="os-runtime-note">
+          <span className="os-terminal-label">TEST ENVIRONMENT</span>
+          <h2>Mainnet portfolio hidden.</h2>
+          <p>
+            Devnet Mode does not poll or display production wallet balances.
+            Use the PPV devnet workspaces for test transactions and approvals.
+          </p>
+        </div>
+      </article>
+    );
+  }
 
   return (
     <article className="os-runtime-panel">
