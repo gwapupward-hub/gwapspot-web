@@ -538,6 +538,10 @@ export function PpvAgreementActions({
     return () => window.clearTimeout(timer);
   }, [account.verifiedWallet]);
 
+  useEffect(() => {
+    void loadInbox();
+  }, [account.verifiedWallet, loadInbox]);
+
   function applyRecord(next: AgreementRecord & { agreementAddress?: string }) {
     setRecord(next);
     setPartyA(next.partyA);
