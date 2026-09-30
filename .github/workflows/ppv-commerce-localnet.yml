@@ -17,10 +17,10 @@ jobs:
     timeout-minutes: 90
     steps:
       - name: Checkout GwapSpot
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Checkout pinned PPV package
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: gwapupward-hub/ppv
           ref: 7c4ea67a9b6d69ab85a20f497eb0c2a31b48cfd2
