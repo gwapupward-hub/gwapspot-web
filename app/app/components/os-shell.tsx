@@ -10,6 +10,7 @@ import { BootSequence } from "./boot-sequence";
 import { CommandPalette } from "./command-palette";
 import { GwapActionSheet } from "./gwap-action-sheet";
 import { GwapMetalButton } from "./gwap-metal-button";
+import { PpvCommerceInboxIndicator } from "./ppv-commerce-inbox-indicator";
 import { useGwapOs } from "./os-provider";
 import { SignOutButton } from "./sign-out-button";
 
@@ -142,6 +143,7 @@ export function OsShell({ children }: { children: ReactNode }) {
         </div>
 
         <div className="os-menubar-actions">
+          <PpvCommerceInboxIndicator />
           <button
             type="button"
             className="os-command-trigger"
