@@ -1,0 +1,37 @@
+version: "1.0.0"
+updated_at: "2026-09-30"
+decisions:
+  - id: GWAP-ARCH-001
+    status: PRODUCTION
+    owner: GWAP_MASTER
+    title: "Bounded ecosystem architecture"
+    decision: "Keep identity, reputation, proof/commerce, payment rails, application orchestration, and digital assets as separate domains."
+    review_trigger: "Explicit Founder architecture change."
+
+  - id: GWAP-PROTO-001
+    status: PRODUCTION
+    owner: GWAP_MASTER
+    title: "Protocol claims require activation evidence"
+    decision: "SIMD acceptance or implementation is insufficient to claim live support; target-cluster evidence is required."
+    review_trigger: "Solana changes its feature activation model."
+
+  - id: GWAP-PPV-001
+    status: DEVNET_VERIFIED
+    owner: PPV
+    title: "PPV staged deployment"
+    decision: "Core and Commerce may operate on devnet; custody/escrow and mainnet remain governed by PPV local gates and explicit approval."
+    review_trigger: "Custody/mainnet authorization."
+
+  - id: GWAP-PAY-001
+    status: RESEARCHED
+    owner: GWAPOS
+    title: "Separate payment boundaries"
+    decision: "Stripe, MPP/x402, Pay/Pay Kit, Kora, and PPV have separate responsibilities."
+    review_trigger: "First production agentic-payment or sponsorship launch."
+
+  - id: GWAP-ASSET-001
+    status: PRODUCTION
+    owner: GWAP_MASTER
+    title: "Outcome-driven digital assets"
+    decision: "Do not tokenize by default; compare off-chain state, custom state, Token-2022, Metaplex primitives, and product/channel restrictions first."
+    review_trigger: "A GWAP product enters on-chain asset implementation."

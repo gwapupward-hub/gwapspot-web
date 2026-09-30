@@ -1,0 +1,60 @@
+version: "1.0.0"
+updated_at: "2026-09-30"
+canonical_master: "gwapupward-hub/gwapspot-web/docs/master"
+
+repositories:
+  gwapspot_web:
+    repo: "gwapupward-hub/gwapspot-web"
+    role: "public gateway + GwapOS application/integration"
+    local_authority:
+      - "README.md"
+      - "AGENTS.md"
+      - "repo-local docs and tests"
+
+  ppv:
+    repo: "gwapupward-hub/ppv"
+    role: "proof + commerce protocol"
+    local_authority:
+      - "README.md"
+      - "docs/deployment-gates.md"
+      - "docs/security-model.md"
+      - "docs/threat-model.md"
+      - "deployments/evidence/"
+    hard_rule: "MASTER may coordinate PPV but cannot weaken PPV custody/mainnet/release gates."
+
+  gns:
+    repo: "gwapupward-hub/gwap-names"
+    role: ".gwap naming and identity protocol"
+    local_authority:
+      - "CLAUDE.md"
+      - "gwap-names/docs/protocol-spec.md"
+      - "program source + generated IDLs"
+    hard_rule: "Mainnet authority/audit requirements remain repo-local gates."
+
+  gwapscore:
+    repo: "gwapupward-hub/GwapScore-Official-v1"
+    role: "GwapScore implementation reference"
+    master_direction: "GwapScore is social reputation; financial/on-chain identity belongs to GNS."
+    hard_rule: "Older scoring assumptions do not override current Founder product direction."
+
+  gwapmojis:
+    repo: "gwapupward-hub/gwapmojis"
+    role: "Telegram-native collectible/gifting protocol"
+    local_authority:
+      - "docs/FOUNDER-SPEC-FREEZE-v1.1-FINAL.md"
+      - "config/founder-locks.json"
+      - "docs/FORGE-FINAL-33.md"
+      - "docs/SECURITY-AND-RELEASE-GATES.md"
+    hard_rule: "Founder Spec Freeze wins for repo-local behavior; Solana/Metaplex research cannot silently replace TON/Telegram locks."
+
+integration_contract:
+  master_owns:
+    - "cross-system boundaries"
+    - "source authority routing"
+    - "shared decision status vocabulary"
+    - "cross-system release evidence expectations"
+  local_repos_own:
+    - "implementation-specific invariants"
+    - "stronger security gates"
+    - "repo-specific release procedures"
+    - "frozen Founder/product constants"
