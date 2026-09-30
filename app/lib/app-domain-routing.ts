@@ -1,4 +1,5 @@
 export const GWAP_APP_HOSTNAME = "app.gwapspot.com";
+export const GWAP_DEVNET_HOSTNAME = "dev.gwapspot.com";
 
 export function normalizeHostname(value: string | null | undefined) {
   const candidate = (value ?? "").split(",")[0]?.trim().toLowerCase() ?? "";
@@ -15,7 +16,12 @@ export function normalizeHostname(value: string | null | undefined) {
 }
 
 export function isGwapAppHostname(value: string | null | undefined) {
-  return normalizeHostname(value) === GWAP_APP_HOSTNAME;
+  const hostname = normalizeHostname(value);
+  return hostname === GWAP_APP_HOSTNAME || hostname === GWAP_DEVNET_HOSTNAME;
+}
+
+export function isGwapDevnetHostname(value: string | null | undefined) {
+  return normalizeHostname(value) === GWAP_DEVNET_HOSTNAME;
 }
 
 export function isAllowedGwapAppPath(pathname: string) {
