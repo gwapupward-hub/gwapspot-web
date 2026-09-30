@@ -8,10 +8,42 @@ updates:
       day: "monday"
       time: "08:00"
       timezone: "America/New_York"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 8
+    groups:
+      react-stack:
+        applies-to: "version-updates"
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
+        update-types:
+          - "minor"
+          - "patch"
+      routine-dependencies:
+        applies-to: "version-updates"
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "next"
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
+          - "@types/node"
+          - "eslint"
+          - "@privy-io/node"
+          - "@solana/web3.js"
+          - "@solana-program/system"
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      - dependency-name: "@types/node"
+        versions:
+          - ">=23"
     labels:
       - "dependencies"
-      - "security"
 
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -20,7 +52,11 @@ updates:
       day: "monday"
       time: "08:30"
       timezone: "America/New_York"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 5
+    groups:
+      github-actions:
+        applies-to: "version-updates"
+        patterns:
+          - "*"
     labels:
       - "dependencies"
-      - "security"
