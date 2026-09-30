@@ -551,6 +551,64 @@ export function PpvAgreementActions({
     resetReview();
   }
 
+  async function openInboxItem(item: CommerceInboxItem) {
+    if (inFlight.current || !readsAvailable) return;
+
+    inFlight.current = true;
+    try {
+      setState("loading");
+      setMessage("Loading the latest finalized agreement state…");
+      setContent(item.content);
+      setTerms(item.terms);
+      const response = await authenticatedFetch("/api/ppv/commerce/agreement", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          partyA: item.partyA,
+          agreementIdHex: item.agreementIdHex,
+        }),
+      });
+      const body = (await response.json().catch(() => ({}))) as unknown;
+      if (!response.ok) {
+        throw new Error(readApiError(body, "PPV could not load this agreement."));
+      }
+
+      const next = body as AgreementRecord & { agreementAddress: string };
+      applyRecord(next);
+      setAgreementAddress(next.agreementAddress);
+
+      const hashes = await localHashes(item.content, item.terms);
+      if (
+        hashes.contentHashHex === next.contentHash &&
+        hashes.termsHashHex === next.termsHash
+      ) {
+        setReviewState("match");
+        setReviewedVersion(next.version);
+        setReviewMessage(
+          `VERIFIED: the delivered devnet documents match finalized agreement version ${next.version}. Read them carefully before accepting.`,
+        );
+      } else {
+        setReviewState("mismatch");
+        setReviewedVersion(null);
+        setReviewMessage(
+          "The inbox documents no longer match the finalized agreement. Do not sign this version.",
+        );
+      }
+
+      setState("idle");
+      setMessage(
+        next.state === "pending"
+          ? "Agreement loaded from your inbox. Review the document, then accept or decline."
+          : `Agreement loaded from your inbox. Current state: ${next.state}.`,
+      );
+    } catch (error) {
+      setState("error");
+      setMessage(actionError(error));
+    } finally {
+      inFlight.current = false;
+    }
+  }
+
   async function loadAgreement() {
     const normalized = agreementIdHex.trim().toLowerCase();
     if (
