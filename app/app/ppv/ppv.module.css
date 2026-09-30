@@ -691,3 +691,142 @@
     display: grid;
   }
 }
+
+
+.inboxPanel {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid rgba(168, 112, 255, .24);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 92% 0%, rgba(153, 85, 255, .10), transparent 36%),
+    rgba(255,255,255,.025);
+}
+
+.inboxHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.inboxHeader > div {
+  min-width: 0;
+}
+
+.inboxHeader span {
+  color: #cda9ff;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+
+.inboxHeader h3 {
+  margin: 5px 0 6px;
+  font-size: 18px;
+}
+
+.inboxHeader p,
+.inboxEmpty {
+  margin: 0;
+  color: rgba(255,255,255,.58);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.inboxList {
+  display: grid;
+  gap: 8px;
+}
+
+.inboxItem {
+  width: 100%;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 14px;
+  background: rgba(0,0,0,.24);
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.inboxItem[data-pending="true"] {
+  border-color: rgba(19,221,19,.24);
+  background: rgba(19,221,19,.045);
+}
+
+.inboxItem:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
+.inboxItem:focus-visible,
+.inboxItem:hover:not(:disabled) {
+  outline: none;
+  border-color: rgba(205,169,255,.45);
+  background: rgba(153,85,255,.07);
+}
+
+.inboxItemCopy {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.inboxItemCopy strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.inboxItemCopy small {
+  color: rgba(255,255,255,.48);
+  font-size: 10px;
+}
+
+.inboxAction,
+.inboxState {
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+
+.inboxAction {
+  background: rgba(19,221,19,.12);
+  color: #13dd13;
+}
+
+.inboxState {
+  background: rgba(255,255,255,.07);
+  color: rgba(255,255,255,.58);
+}
+
+.inboxPrivacy {
+  color: rgba(255,190,130,.68);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+@media (max-width: 640px) {
+  .inboxHeader {
+    display: grid;
+  }
+
+  .inboxHeader > button {
+    width: 100%;
+  }
+
+  .inboxItem {
+    align-items: flex-start;
+  }
+}
