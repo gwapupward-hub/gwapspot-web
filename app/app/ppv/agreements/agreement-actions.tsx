@@ -52,6 +52,30 @@ type AgreementRecord = {
   cancelledAt: number;
 };
 
+type CommerceInboxItem = {
+  agreementAddress: string;
+  agreementIdHex: string;
+  partyA: string;
+  partyB: string;
+  version: number;
+  state: "pending" | "executed" | "cancelled";
+  sigA: AgreementSignature | null;
+  sigB: AgreementSignature | null;
+  contentHash: string;
+  termsHash: string;
+  content: string;
+  terms: string;
+  title: string;
+  createdAt: number;
+  expiresAt: number;
+  inboxUpdatedAt: string;
+};
+
+type CommerceInboxPayload = {
+  items: CommerceInboxItem[];
+  pendingIncoming: number;
+};
+
 type PreparedTransaction = {
   operationId: string;
   action: CommerceAction;
@@ -187,6 +211,10 @@ function validAgreementId(value: string) {
   return HEX_ID.test(value.trim().toLowerCase());
 }
 
+function shortWallet(value: string) {
+  return value.length > 16 ? `${value.slice(0, 7)}…${value.slice(-7)}` : value;
+}
+
 function parseDocument(value: string, label: string) {
   let parsed: unknown;
   try {
@@ -310,7 +338,7 @@ export function PpvAgreementActions({
   layerCapability: Capability;
 }) {
   const { getAccessToken } = usePrivy();
-  const { account } = useGwapOs();
+  const { account, runtimeMode } = useGwapOs();
   const { wallets } = usePrivySolanaWallets();
   const { signAndSendTransaction } = useSignAndSendTransaction();
   const inFlight = useRef(false);
@@ -326,7 +354,7 @@ export function PpvAgreementActions({
   const [signature, setSignature] = useState("");
   const [state, setState] = useState<UiState>("idle");
   const [message, setMessage] = useState(
-    "Draft content and machine-readable terms locally. Only canonical SHA-256 hashes are sent when Commerce writes become available.",
+    "Draft content and machine-readable terms locally. Devnet writes commit only canonical hashes on-chain; the optional devnet inbox can deliver the matching test documents to the counterparty.",
   );
   const [reviewState, setReviewState] = useState<ReviewState>("idle");
   const [reviewedVersion, setReviewedVersion] = useState<number | null>(null);
@@ -341,6 +369,11 @@ export function PpvAgreementActions({
   const [boundProofId, setBoundProofId] = useState("");
   const [boundProofAddress, setBoundProofAddress] = useState("");
   const [boundProofSignature, setBoundProofSignature] = useState("");
+  const [inboxItems, setInboxItems] = useState<CommerceInboxItem[]>([]);
+  const [inboxState, setInboxState] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  const [inboxMessage, setInboxMessage] = useState(
+    "Pending agreements addressed to this wallet appear here automatically.",
+  );
 
   const writesReady = mutationCapability.state === "ready";
   const readsAvailable = layerCapability.state === "ready" || layerCapability.state === "read_only";
