@@ -20,21 +20,27 @@ updates:
         update-types:
           - "minor"
           - "patch"
+      next-stack:
+        applies-to: "version-updates"
+        patterns:
+          - "next"
+          - "eslint-config-next"
+        update-types:
+          - "minor"
+          - "patch"
       routine-dependencies:
         applies-to: "version-updates"
         patterns:
-          - "*"
-        exclude-patterns:
-          - "next"
-          - "react"
-          - "react-dom"
-          - "@types/react"
-          - "@types/react-dom"
-          - "@types/node"
-          - "eslint"
-          - "@privy-io/node"
-          - "@solana/web3.js"
-          - "@solana-program/system"
+          - "@upstash/redis"
+          - "@vercel/analytics"
+          - "@vercel/speed-insights"
+          - "redis"
+          - "bs58"
+          - "buffer"
+          - "tweetnacl"
+          - "@tailwindcss/postcss"
+          - "tailwindcss"
+          - "typescript"
         update-types:
           - "minor"
           - "patch"
