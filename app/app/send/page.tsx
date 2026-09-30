@@ -64,7 +64,7 @@ function shorten(value: string) {
 }
 
 export default function SendPage() {
-  const { account } = useGwapOs();
+  const { account, runtimeMode } = useGwapOs();
   const { ready: walletsReady, wallets } = useWallets();
   const { signAndSendTransaction } = useSignAndSendTransaction();
   const [recipientInput, setRecipientInput] = useState("");
@@ -83,6 +83,31 @@ export default function SendPage() {
     () => wallets.find((wallet) => wallet.address === account.verifiedWallet) ?? null,
     [account.verifiedWallet, wallets],
   );
+
+  if (runtimeMode === "devnet") {
+    return (
+      <div className={styles.page}>
+        <section className={styles.hero}>
+          <p className={styles.kicker}>Send SOL</p>
+          <h1>Mainnet Send is disabled in Devnet Mode.</h1>
+          <p>
+            This GwapOS session is isolated for test programs and test assets.
+            Switch to the production GwapOS environment before sending real SOL.
+          </p>
+          <div className={styles.source}>
+            <small>Authenticated wallet</small>
+            <strong>{account.verifiedWallet}</strong>
+          </div>
+        </section>
+        <section className={styles.panel}>
+          <div className={styles.warning}>
+            No mainnet transaction can be prepared from this Devnet Mode screen.
+            PPV and other approved devnet workflows remain available.
+          </div>
+        </section>
+      </div>
+    );
+  }
 
   async function assertMainnet() {
     const genesisHash = await connection.getGenesisHash();
