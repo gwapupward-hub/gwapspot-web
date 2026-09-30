@@ -410,6 +410,82 @@ export function PpvAgreementActions({
     [getAccessToken],
   );
 
+  const loadInbox = useCallback(async () => {
+    if (runtimeMode !== "devnet") {
+      setInboxItems([]);
+      setInboxState("idle");
+      return;
+    }
+
+    setInboxState("loading");
+    try {
+      const response = await authenticatedFetch("/api/ppv/commerce/inbox", {
+        method: "GET",
+        cache: "no-store",
+      });
+      if (!response.ok) {
+        setInboxItems([]);
+        setInboxState(response.status === 404 ? "idle" : "error");
+        if (response.status !== 404) {
+          setInboxMessage("The Commerce inbox could not be loaded. Manual agreement lookup still works.");
+        }
+        return;
+      }
+
+      const payload = (await response.json()) as CommerceInboxPayload;
+      setInboxItems(Array.isArray(payload.items) ? payload.items : []);
+      setInboxState("ready");
+      setInboxMessage(
+        payload.pendingIncoming > 0
+          ? `${payload.pendingIncoming} agreement${payload.pendingIncoming === 1 ? "" : "s"} waiting for your review.`
+          : "No incoming agreements are waiting for your signature.",
+      );
+    } catch {
+      setInboxState("error");
+      setInboxMessage("The Commerce inbox could not be loaded. Manual agreement lookup still works.");
+    }
+  }, [authenticatedFetch, runtimeMode]);
+
+  const syncInbox = useCallback(
+    async (agreement: AgreementRecord) => {
+      if (
+        runtimeMode !== "devnet" ||
+        !content.trim() ||
+        !terms.trim()
+      ) {
+        return false;
+      }
+
+      try {
+        const response = await authenticatedFetch("/api/ppv/commerce/inbox", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            partyA: agreement.partyA,
+            agreementIdHex: agreement.agreementId,
+            content,
+            terms,
+          }),
+        });
+        if (!response.ok) {
+          setInboxMessage(
+            "The on-chain agreement finalized, but the devnet inbox handoff did not sync. You can retry by loading the agreement and reviewing it manually.",
+          );
+          return false;
+        }
+        window.dispatchEvent(new Event("gwap:ppv-commerce-inbox-changed"));
+        await loadInbox();
+        return true;
+      } catch {
+        setInboxMessage(
+          "The on-chain agreement finalized, but the devnet inbox handoff did not sync. The chain state remains authoritative.",
+        );
+        return false;
+      }
+    },
+    [authenticatedFetch, content, loadInbox, runtimeMode, terms],
+  );
+
   const resetReview = useCallback(() => {
     setReviewState("idle");
     setReviewedVersion(null);
