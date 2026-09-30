@@ -69,4 +69,4 @@ This gives the public gateway and GWAP OS independent production deployments, ru
 
 Keep durable product documentation under `docs/`. Temporary audit notes, one-off acceptance notes, generated output, and agent scratch files should not live at the repository root.
 
-Current durable references include authentication, GWAP OS architecture, browser behavior, developer billing, reputation snapshots, PPV receipts, domain separation, and production operations.
+Current durable references include authentication, GWAP OS architecture, browser behavior, developer billing, reputation snapshots, PPV receipts, domain separation, production operations, and **[GWAP MASTER](docs/master/README.md)** for cross-system architecture, source authority, and decision evidence.
