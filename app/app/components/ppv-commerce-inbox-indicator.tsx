@@ -46,14 +46,14 @@ export function PpvCommerceInboxIndicator() {
   }, [getAccessToken, runtimeMode]);
 
   useEffect(() => {
-    void refresh();
-
+    const initialRefresh = window.setTimeout(() => void refresh(), 0);
     const onFocus = () => void refresh();
     const onInboxChanged = () => void refresh();
     window.addEventListener("focus", onFocus);
     window.addEventListener("gwap:ppv-commerce-inbox-changed", onInboxChanged);
 
     return () => {
+      window.clearTimeout(initialRefresh);
       window.removeEventListener("focus", onFocus);
       window.removeEventListener("gwap:ppv-commerce-inbox-changed", onInboxChanged);
     };
