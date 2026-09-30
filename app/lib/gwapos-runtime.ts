@@ -2,7 +2,7 @@ import {
   GWAP_APP_HOSTNAME,
   GWAP_DEVNET_HOSTNAME,
   normalizeHostname,
-} from "./app-domain-routing";
+} from "./app-domain-routing.ts";
 
 export type GwapOsRuntimeMode = "production" | "devnet";
 
