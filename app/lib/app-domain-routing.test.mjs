@@ -2,8 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   GWAP_APP_HOSTNAME,
+  GWAP_DEVNET_HOSTNAME,
   isAllowedGwapAppPath,
   isGwapAppHostname,
+  isGwapDevnetHostname,
   normalizeHostname,
 } from "./app-domain-routing.ts";
 
@@ -38,6 +40,9 @@ test("treats missing and empty host headers as not the app domain", () => {
 test("matches the app hostname exactly, not by suffix", () => {
   assert.equal(isGwapAppHostname("app.gwapspot.com"), true);
   assert.equal(isGwapAppHostname("app.gwapspot.com:8443"), true);
+  assert.equal(isGwapAppHostname(GWAP_DEVNET_HOSTNAME), true);
+  assert.equal(isGwapDevnetHostname(GWAP_DEVNET_HOSTNAME), true);
+  assert.equal(isGwapDevnetHostname(GWAP_APP_HOSTNAME), false);
   assert.equal(isGwapAppHostname("www.gwapspot.com"), false);
   assert.equal(isGwapAppHostname("gwapspot.com"), false);
   // A lookalike must not be admitted just because it ends with the real host.
