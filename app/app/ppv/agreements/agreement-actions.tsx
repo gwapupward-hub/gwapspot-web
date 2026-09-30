@@ -1397,10 +1397,12 @@ export function PpvAgreementActions({
       <section className={styles.verifyPanel} aria-labelledby="ppv-commerce-review">
         <div>
           <span>EXACT VERSION REVIEW</span>
-          <h3 id="ppv-commerce-review">Hash locally. Compare. Then sign.</h3>
+          <h3 id="ppv-commerce-review">Review. Verify. Then accept or decline.</h3>
           <p>
-            Content and terms stay in this browser. GWAP compares their canonical hashes to
-            the finalized agreement and enables signing only after an exact match.
+            Manual drafts stay in this browser. When the devnet inbox is enabled,
+            finalized test documents are delivered through authenticated private
+            workspace storage. GWAP independently re-hashes them and enables approval
+            only when they match the current finalized agreement exactly.
           </p>
         </div>
         <div className={styles.verifyActions}>
@@ -1447,7 +1449,9 @@ export function PpvAgreementActions({
             }
             onClick={() => void signAgreement()}
           >
-            Sign exact current version
+            {record?.partyB === account.verifiedWallet
+              ? "Accept agreement"
+              : "Sign exact current version"}
           </button>
           <button
             type="button"
@@ -1460,7 +1464,9 @@ export function PpvAgreementActions({
             }
             onClick={() => void cancelAgreement()}
           >
-            Cancel pending agreement
+            {record?.partyB === account.verifiedWallet
+              ? "Decline agreement"
+              : "Cancel pending agreement"}
           </button>
         </div>
 
