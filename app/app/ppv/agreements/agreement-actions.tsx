@@ -539,7 +539,8 @@ export function PpvAgreementActions({
   }, [account.verifiedWallet]);
 
   useEffect(() => {
-    void loadInbox();
+    const timer = window.setTimeout(() => void loadInbox(), 0);
+    return () => window.clearTimeout(timer);
   }, [account.verifiedWallet, loadInbox]);
 
   function applyRecord(next: AgreementRecord & { agreementAddress?: string }) {
