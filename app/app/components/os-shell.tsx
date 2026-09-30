@@ -35,6 +35,7 @@ export function OsShell({ children }: { children: ReactNode }) {
     migrateLocalState,
     migrationAvailable,
     retrySync,
+    runtimeMode,
     state,
     syncStatus,
   } = useGwapOs();
@@ -98,6 +99,9 @@ export function OsShell({ children }: { children: ReactNode }) {
             <strong>GWAP OS</strong>
             <small>{breadcrumb(pathname)}</small>
           </span>
+          {runtimeMode === "devnet" ? (
+            <em className="os-devnet-badge">DEVNET</em>
+          ) : null}
         </Link>
 
         <div className="os-menubar-status" aria-label="Wallet identity status">
@@ -177,6 +181,13 @@ export function OsShell({ children }: { children: ReactNode }) {
             <small>Changes remain staged on this device.</small>
           </span>
           <button type="button" onClick={retrySync}>Retry sync</button>
+        </section>
+      ) : null}
+
+      {runtimeMode === "devnet" ? (
+        <section className="os-devnet-banner" role="status">
+          <strong>GWAP OS DEVNET</strong>
+          <span>Test assets and test programs only. Mainnet value transfers are disabled in this environment.</span>
         </section>
       ) : null}
 
