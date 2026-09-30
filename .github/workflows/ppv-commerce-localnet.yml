@@ -17,10 +17,10 @@ jobs:
     timeout-minutes: 90
     steps:
       - name: Checkout GwapSpot
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Checkout pinned PPV package
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: gwapupward-hub/ppv
           ref: 7c4ea67a9b6d69ab85a20f497eb0c2a31b48cfd2
@@ -31,7 +31,7 @@ jobs:
           node-version: 24
           cache: npm
 
-      - uses: actions/cache/restore@v4
+      - uses: actions/cache/restore@v6
         id: anchor-cache
         with:
           path: |
@@ -64,7 +64,7 @@ jobs:
           fi
           "${HOME}/.cargo/bin/anchor" --version
 
-      - uses: actions/cache/save@v4
+      - uses: actions/cache/save@v6
         if: steps.anchor-cache.outputs.cache-hit != 'true'
         with:
           path: |
@@ -136,7 +136,7 @@ jobs:
           PPV_LOCALNET_RPC_URL=http://127.0.0.1:8899           PPV_LOCALNET_CORE_PROGRAM_ID="${core_id}"           PPV_LOCALNET_COMMERCE_PROGRAM_ID="${commerce_id}"           PPV_LOCALNET_REPORT_PATH="${repo_root}/artifacts/ppv-commerce-localnet-report.json"             npm run test:ppv:commerce:localnet
 
       - name: Upload acceptance evidence
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ppv-commerce-localnet-evidence
           path: artifacts/ppv-commerce-localnet-report.json
