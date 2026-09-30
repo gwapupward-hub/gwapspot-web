@@ -136,7 +136,7 @@ jobs:
           PPV_LOCALNET_RPC_URL=http://127.0.0.1:8899           PPV_LOCALNET_CORE_PROGRAM_ID="${core_id}"           PPV_LOCALNET_COMMERCE_PROGRAM_ID="${commerce_id}"           PPV_LOCALNET_REPORT_PATH="${repo_root}/artifacts/ppv-commerce-localnet-report.json"             npm run test:ppv:commerce:localnet
 
       - name: Upload acceptance evidence
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ppv-commerce-localnet-evidence
           path: artifacts/ppv-commerce-localnet-report.json
