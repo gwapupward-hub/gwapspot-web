@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { AuthSetupRequired } from "../components/auth-setup-required";
@@ -9,6 +10,7 @@ import {
   gwapOsAppViewport,
 } from "../lib/gwapos-app-metadata";
 import { getAuthenticatedWalletIdentityResult } from "../lib/privy-server";
+import { resolveGwapOsRuntime } from "../lib/gwapos-runtime";
 import { GnsIdentityHydrationBridge } from "./components/gns-identity-hydration-bridge";
 import { GnsRegistrationSyncBridge } from "./components/gns-registration-sync-bridge";
 import { GwapOsProvider } from "./components/os-provider";
@@ -44,6 +46,12 @@ export default async function GwapOsLayout({ children }: { children: ReactNode }
   }
   if (result.status === "unavailable") return <SessionCheckUnavailable />;
 
+  const requestHeaders = await headers();
+  const runtime = resolveGwapOsRuntime({
+    host: requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host"),
+    override: process.env.GWAP_OS_RUNTIME_MODE,
+  });
+
   const workspace = await loadAccountWorkspace(result.identity);
   const gnsIdentity = cachedGnsIdentity(workspace.gwapAccount.primaryGnsIdentity);
   const state = seedNewWorkspaceFromGns(
@@ -59,6 +67,7 @@ export default async function GwapOsLayout({ children }: { children: ReactNode }
         gnsIdentity={gnsIdentity}
         hasCloudState={workspace.hasCloudState}
         initialState={state}
+        runtimeMode={runtime.mode}
       >
         <GnsIdentityHydrationBridge />
         <GnsRegistrationSyncBridge />
