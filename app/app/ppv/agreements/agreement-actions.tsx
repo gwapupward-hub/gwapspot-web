@@ -807,6 +807,7 @@ export function PpvAgreementActions({
         ...resultConfirmation.agreement,
         agreementAddress: resultConfirmation.agreementAddress,
       });
+      await syncInbox(resultConfirmation.agreement);
       setState("finalized");
       setMessage(
         `${action.toUpperCase()} finalized. Agreement version ${resultConfirmation.agreement.version} is now ${resultConfirmation.agreement.state}.`,
@@ -1071,6 +1072,7 @@ export function PpvAgreementActions({
         ...result.agreement,
         agreementAddress: result.agreementAddress,
       });
+      await syncInbox(result.agreement);
       setSignature(result.signature);
       setState("finalized");
       setMessage(
