@@ -3,10 +3,7 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import { getPrivateStorageKey, getWorkspaceRedis } from "../redis";
 import { hashDocumentHexV1 } from "../ppv-sdk/canonical";
-import {
-  PpvCommerceRequestError,
-  readCommerceAgreement,
-} from "./commerce.server";
+import { readCommerceAgreement } from "./commerce.server";
 
 const SCHEMA_VERSION = 1 as const;
 const MAX_ITEMS_PER_WALLET = 64;
@@ -296,9 +293,4 @@ export function pendingIncomingCommerceCount(
       item.state === "pending" &&
       item.sigB === null,
   ).length;
-}
-
-export function assertCommerceInboxInputSupported(error: unknown) {
-  if (error instanceof PpvCommerceRequestError) return error;
-  return error;
 }
