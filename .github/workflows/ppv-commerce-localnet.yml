@@ -26,7 +26,7 @@ jobs:
           ref: 7c4ea67a9b6d69ab85a20f497eb0c2a31b48cfd2
           path: ppv-foundation
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
