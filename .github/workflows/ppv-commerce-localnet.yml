@@ -31,7 +31,7 @@ jobs:
           node-version: 24
           cache: npm
 
-      - uses: actions/cache/restore@v4
+      - uses: actions/cache/restore@v6
         id: anchor-cache
         with:
           path: |
@@ -64,7 +64,7 @@ jobs:
           fi
           "${HOME}/.cargo/bin/anchor" --version
 
-      - uses: actions/cache/save@v4
+      - uses: actions/cache/save@v6
         if: steps.anchor-cache.outputs.cache-hit != 'true'
         with:
           path: |
