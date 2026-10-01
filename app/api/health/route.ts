@@ -11,7 +11,7 @@ export async function GET() {
     try {
       storageReachable = await getWorkspaceRedis().ping();
     } catch {
-      console.warn("gwap_redis_health_failed", {
+      console.warn("gwap_workspace_storage_health_failed", {
         provider: authentication.storageSource,
       });
     }

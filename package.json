@@ -30,7 +30,8 @@
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "redis": "^6.2.1",
-    "tweetnacl": "^1.0.3"
+    "tweetnacl": "^1.0.3",
+    "pg": "^8.23.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.0",
@@ -40,7 +41,8 @@
     "eslint": "^9.0.0",
     "eslint-config-next": "^16.3.6",
     "tailwindcss": "^4.1.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "@types/pg": "^8.23.1"
   },
   "overrides": {
     "@coinbase/cdp-sdk": {

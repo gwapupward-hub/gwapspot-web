@@ -1,4 +1,5 @@
 export type WorkspaceStorageSource =
+  | "postgres"
   | "upstash"
   | "vercel-kv"
   | "redis-url"
@@ -12,6 +13,11 @@ export type WorkspaceStorageConfigurationStatus = {
 };
 
 export type WorkspaceStorageCredentials =
+  | {
+      kind: "postgres";
+      source: "postgres";
+      url: string;
+    }
   | {
       kind: "rest";
       source: "upstash" | "vercel-kv";
@@ -42,16 +48,20 @@ function normalizeValue(value: string | undefined) {
   return normalized || null;
 }
 
-function normalizeDirectRedisUrl(value: string | undefined) {
+function normalizeQuotedValue(value: string | undefined) {
   const rawValue = normalizeValue(value);
   if (!rawValue) return null;
 
   const firstCharacter = rawValue[0];
-  const normalized =
-    (firstCharacter === '"' || firstCharacter === "'") &&
+  return (firstCharacter === '"' || firstCharacter === "'") &&
     rawValue.at(-1) === firstCharacter
-      ? rawValue.slice(1, -1).trim()
-      : rawValue;
+    ? rawValue.slice(1, -1).trim()
+    : rawValue;
+}
+
+function normalizeDirectRedisUrl(value: string | undefined) {
+  const normalized = normalizeQuotedValue(value);
+  if (!normalized) return null;
 
   try {
     const url = new URL(normalized);
@@ -62,6 +72,31 @@ function normalizeDirectRedisUrl(value: string | undefined) {
   } catch {
     return null;
   }
+}
+
+function normalizePostgresUrl(value: string | undefined) {
+  const normalized = normalizeQuotedValue(value);
+  if (!normalized) return null;
+
+  try {
+    const url = new URL(normalized);
+    if (
+      !url.hostname ||
+      (url.protocol !== "postgres:" && url.protocol !== "postgresql:")
+    ) {
+      return null;
+    }
+    return normalized;
+  } catch {
+    return null;
+  }
+}
+
+function requestedWorkspaceStorageBackend() {
+  const value = normalizeValue(process.env.WORKSPACE_STORAGE_BACKEND)?.toLowerCase();
+  if (!value) return null;
+  if (value === "postgres" || value === "redis") return value;
+  return "invalid" as const;
 }
 
 function getWorkspaceStorageCandidates() {
@@ -80,6 +115,31 @@ function getWorkspaceStorageCandidates() {
 }
 
 export function getWorkspaceStorageConfigurationStatus(): WorkspaceStorageConfigurationStatus {
+  const requestedBackend = requestedWorkspaceStorageBackend();
+
+  if (requestedBackend === "postgres") {
+    const rawValue = normalizeValue(process.env.DATABASE_URL);
+    const postgresUrl = normalizePostgresUrl(process.env.DATABASE_URL);
+    return {
+      configured: Boolean(postgresUrl),
+      source: "postgres",
+      urlConfigured: Boolean(rawValue),
+      // Postgres credentials are carried by the connection URL rather than a
+      // separate token. Keep this legacy field true when the URL is valid so
+      // existing health consumers continue to treat storage as complete.
+      tokenConfigured: Boolean(postgresUrl),
+    };
+  }
+
+  if (requestedBackend === "invalid") {
+    return {
+      configured: false,
+      source: "none",
+      urlConfigured: false,
+      tokenConfigured: false,
+    };
+  }
+
   const directValue = normalizeValue(process.env.REDIS_URL);
   const directUrl = normalizeDirectRedisUrl(process.env.REDIS_URL);
   if (directUrl) {
@@ -122,6 +182,17 @@ export function getWorkspaceStorageConfigurationStatus(): WorkspaceStorageConfig
 }
 
 export function getWorkspaceStorageCredentials(): WorkspaceStorageCredentials | null {
+  const requestedBackend = requestedWorkspaceStorageBackend();
+
+  if (requestedBackend === "postgres") {
+    const postgresUrl = normalizePostgresUrl(process.env.DATABASE_URL);
+    return postgresUrl
+      ? { kind: "postgres", source: "postgres", url: postgresUrl }
+      : null;
+  }
+
+  if (requestedBackend === "invalid") return null;
+
   const directUrl = normalizeDirectRedisUrl(process.env.REDIS_URL);
   if (directUrl) {
     return { kind: "direct", source: "redis-url", url: directUrl };
