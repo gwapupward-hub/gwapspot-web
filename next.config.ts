@@ -1,5 +1,59 @@
 import type { NextConfig } from "next";
 
+function cspOrigin(value: string | undefined) {
+  if (!value) return null;
+
+  try {
+    const url = new URL(value);
+    return `${url.protocol}//${url.host}`;
+  } catch {
+    return null;
+  }
+}
+
+const configuredRpcOrigins = [
+  process.env.NEXT_PUBLIC_SOLANA_RPC_URL,
+  process.env.NEXT_PUBLIC_GNS_SOLANA_RPC_URL,
+  process.env.NEXT_PUBLIC_PPV_RPC_URL,
+]
+  .map(cspOrigin)
+  .filter((value): value is string => Boolean(value));
+
+const configuredRpcWebsocketOrigins = configuredRpcOrigins.map((origin) => {
+  if (origin.startsWith("https://")) return origin.replace("https://", "wss://");
+  if (origin.startsWith("http://")) return origin.replace("http://", "ws://");
+  return origin;
+});
+
+const reportOnlyContentSecurityPolicy = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "object-src 'none'",
+  "form-action 'self'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://*.privy.io https://telegram.org",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https:",
+  "font-src 'self' data: https:",
+  "media-src 'self' data: blob: https:",
+  "worker-src 'self' blob:",
+  [
+    "connect-src 'self'",
+    "https://*.privy.io",
+    "https://api.mainnet-beta.solana.com",
+    "https://api.devnet.solana.com",
+    "wss://api.mainnet-beta.solana.com",
+    "wss://api.devnet.solana.com",
+    "https://vitals.vercel-insights.com",
+    ...configuredRpcOrigins,
+    ...configuredRpcWebsocketOrigins,
+  ].join(" "),
+  "frame-src 'self' https://*.privy.io https://oauth.telegram.org https://web.telegram.org https://*.telegram.org",
+  "child-src 'self' blob: https://*.privy.io https://oauth.telegram.org",
+  "manifest-src 'self'",
+  "frame-ancestors 'self' https://web.telegram.org https://*.telegram.org",
+  "report-uri /api/csp-report",
+].join("; ");
+
 const commonSecurityHeaders = [
   { key: "X-DNS-Prefetch-Control", value: "on" },
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
@@ -8,6 +62,7 @@ const commonSecurityHeaders = [
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()" },
   { key: "Cross-Origin-Opener-Policy", value: "same-origin-allow-popups" },
   { key: "X-Permitted-Cross-Domain-Policies", value: "none" },
+  { key: "Content-Security-Policy-Report-Only", value: reportOnlyContentSecurityPolicy },
 ];
 
 const websiteFrameProtection = [
