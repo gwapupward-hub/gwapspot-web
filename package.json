@@ -2,6 +2,7 @@
   "name": "gwapspot-web",
   "version": "0.2.0",
   "private": true,
+  "license": "UNLICENSED",
   "scripts": {
     "dev": "next dev",
     "prebuild": "node scripts/generate-splash.mjs",
