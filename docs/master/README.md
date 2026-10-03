@@ -1,6 +1,6 @@
 # GWAP MASTER
 
-**Version:** 1.1.0  
+**Version:** 1.2.0  
 **Status:** ACTIVE  
 **Canonical location:** this directory
 
@@ -34,12 +34,13 @@ A cross-system MASTER rule does not weaken a stronger repo-local security or Fou
 | GwapMojis | Telegram-native gifting/collectibles and Forge protocol |
 | Marketplace | Economic discovery and future value-exchange layer |
 
-## Payment boundaries
+## Payment and value-moving boundaries
 
 - **Stripe:** fiat checkout/subscription rail.
 - **MPP / x402 + Pay / Pay Kit:** HTTP machine/API payment challenges.
 - **Kora:** fee sponsorship/paymaster/trusted-signer boundary.
 - **PPV:** business evidence, receipts, and commerce state around value movement.
+- **Streamflow:** candidate token vesting/distribution/streaming rail; currently research/pilot-reference only.
 
 These are complementary and must not be collapsed into one authority.
 
@@ -72,11 +73,16 @@ Accepted or implemented does not mean activated.
 
 ## Source discovery
 
-Curated repositories can expand our research surface without becoming trusted dependencies. `StockpileLabs/awesome-solana-oss` is now treated as a discovery index; promoted candidates receive separate intake before MASTER relies on them.
+Curated repositories can expand our research surface without becoming trusted dependencies. `StockpileLabs/awesome-solana-oss` and Superteam OSS are treated as discovery indexes; promoted candidates receive separate intake before MASTER relies on them.
 
 See:
 - [SOURCE-AUTHORITY.md](./SOURCE-AUTHORITY.md)
 - [SOLANA-OSS-DISCOVERY.md](./SOLANA-OSS-DISCOVERY.md)
+- [STREAMFLOW-INTEGRATION.md](./STREAMFLOW-INTEGRATION.md)
+
+## Third-party value protocols
+
+A protocol being open source or audited is not sufficient for production use. Before GWAP connects a protocol that moves or locks value, verify the exact deployed identity, upgrade authority, audit scope/delta, applicable license, signer/custody boundaries, fee/oracle behavior, supported assets, failure/retry semantics, and devnet evidence.
 
 ## Release truth
 
