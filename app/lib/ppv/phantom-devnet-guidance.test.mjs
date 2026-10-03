@@ -7,15 +7,23 @@ const source = readFileSync(
   "utf8",
 );
 
-test("PPV proof UI names the external-wallet devnet requirement", () => {
+test("PPV proof UI distinguishes embedded and external-wallet devnet handling", () => {
   assert.match(source, /PPV NETWORK: SOLANA DEVNET/);
-  assert.match(source, /Settings → Developer Settings → Testnet Mode → Solana Devnet/);
+  assert.match(source, /embedded GWAP Wallet is routed to Solana Devnet/);
+  assert.match(
+    source,
+    /External wallets must be connected in their devnet\/testnet context before approving/,
+  );
   assert.match(source, /only the PPV transaction network must be devnet/);
 });
 
-test("PPV signing copy warns Phantom users before wallet approval", () => {
+test("PPV signing copy names the verified Solana wallet before approval", () => {
   assert.match(
     source,
-    /Phantom users must have Testnet Mode set to Solana Devnet before approving/,
+    /Approve the PPV Core proof transaction in your verified Solana wallet/,
+  );
+  assert.match(
+    source,
+    /Approve the PPV Core revocation transaction in your verified Solana wallet/,
   );
 });
