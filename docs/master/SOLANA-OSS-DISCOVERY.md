@@ -1,15 +1,68 @@
 # Solana OSS Discovery Intake
 
+## StockpileLabs awesome-solana-oss
+
 **Source:** https://github.com/StockpileLabs/awesome-solana-oss  
 **Reviewed:** 2026-10-02  
 **Pinned catalog commit:** `c707998854f8a3491f05f07d0f1119e371439ec3`  
 **Classification:** `REFERENCE_ONLY / DISCOVERY_INDEX`
 
-## Rule
+### Rule
 
 `awesome-solana-oss` is useful for discovering relevant Solana open-source projects. It is **not** implementation authority and does not grant transitive trust to repositories it lists.
 
 Every repository discovered through this catalog must still receive its own intake covering maintenance, exact revision, license, audit/security posture, compatibility, authority implications, and concrete GWAP use.
+
+## Superteam OSS
+
+**Source:** https://oss.superteam.fun/  
+**Reviewed:** 2026-10-02  
+**Classification:** `REFERENCE_ONLY / COMMUNITY_DISCOVERY_INDEX / DYNAMIC_CATALOG`
+
+Superteam OSS is a broad community directory of Solana open-source projects. It is useful for discovering patterns and projects, but it is not implementation authority and cannot be pinned to one immutable Git revision like a repository.
+
+### Dynamic catalog rule
+
+For dynamic catalogs:
+
+1. record the review date/time;
+2. follow each candidate to its canonical repository/source;
+3. identify current owner, default branch, release/version, and maintenance state;
+4. pin the exact candidate commit/tag/version independently;
+5. inspect license, audit/security posture, dependencies, authority assumptions, and compatibility;
+6. compare the candidate against current MASTER authorities and working GWAP architecture;
+7. classify the candidate independently before adoption.
+
+The directory's inclusion decision never transfers trust to the listed project.
+
+### Freshness gate
+
+Superteam OSS includes useful current work alongside older Solana patterns and historical projects. A listed project must not become a modern default merely because it appears in the directory.
+
+Before adopting a candidate, check whether it relies on superseded or legacy assumptions such as:
+
+- deprecated Web3.js-era scaffolding where newer Solana Kit patterns are now preferred;
+- xNFT-era architecture that is no longer a current GWAP requirement;
+- Candy Machine v2 or other older Metaplex defaults;
+- abandoned or archived payment experiments;
+- stale wallet, RPC, transaction-format, or Token-2022 assumptions.
+
+### Security gate
+
+Community examples may intentionally trade security for convenience. GWAP must not inherit those tradeoffs without explicit approval.
+
+In particular, production wallet/private-key material must never be stored in browser `localStorage`, browser cache, or similar client persistence simply because a listed sample uses a burner/hot-wallet pattern.
+
+### Useful Superteam watch areas
+
+These remain discovery leads until a concrete GWAP feature requires dedicated intake:
+
+- passkey-based wallet/session UX;
+- mobile wallet interoperability;
+- wallet monitoring and transaction-intent safety;
+- on-chain 2FA / transaction-policy patterns;
+- treasury, vesting, payroll, and token-distribution tooling;
+- new developer tooling that closes a gap not already covered by current MASTER sources.
 
 ## Promoted sources
 
@@ -85,7 +138,7 @@ Do not replace proven PPV tests or make Trident mandatory CI until the pilot dem
 
 These stay as discovery leads until a concrete GWAP feature needs them:
 
-- Firedancer, Jito Solana, Sig, Mithril, Salsa, Samba — validator/client diversity and implementation research.
+- Firedancer, Jito Solana, Sig, Mithril, Salsa — validator/client diversity and implementation research.
 - Mollusk, LiteSVM, Seashell, svm-unit-test — testing alternatives/adjuncts; current testing stack already has Surfpool plus repo-local suites.
 - Yellowstone gRPC, Carbon, Vixen — indexing/streaming candidates when GNS/PPV data volume requires a new ingestion architecture.
 - Squads v4 — already relevant to authority governance; intake should remain tied to the exact repo/tool used by PPV/GNS.
@@ -98,7 +151,7 @@ A curated list can answer **"what should we inspect?"**. It cannot answer **"wha
 
 For any future curated list:
 
-1. pin the list revision;
+1. pin the list revision when possible; otherwise record a review timestamp;
 2. mark it `DISCOVERY_INDEX`;
 3. extract only candidates connected to an active GWAP problem;
 4. run each promoted candidate through normal intake;
@@ -109,7 +162,7 @@ For any future curated list:
 
 Re-review this intake when:
 
-- the catalog adds a tool directly relevant to an active GWAP subsystem;
+- either discovery catalog adds a tool directly relevant to an active GWAP subsystem;
 - GwapOS changes Solana client architecture;
 - PPV/GNS change their testing toolchains;
 - GNS changes its Codama generation pipeline;
