@@ -14,8 +14,8 @@ const client = readFileSync(
   new URL("../../app/ppv/agreements/agreement-actions.tsx", import.meta.url),
   "utf8",
 );
-const page = readFileSync(
-  new URL("../../app/ppv/agreements/page.tsx", import.meta.url),
+const advancedPage = readFileSync(
+  new URL("../../app/ppv/agreements/advanced/page.tsx", import.meta.url),
   "utf8",
 );
 
@@ -39,7 +39,7 @@ test("bound agreement proof route derives authority from authenticated wallet", 
   assert.match(route, /isGwapAppHostname/);
 });
 
-test("Commerce workbench verifies binding before opening the Core wallet request", () => {
+test("Commerce advanced workbench verifies binding before opening the Core wallet request", () => {
   assert.match(client, /\/api\/ppv\/commerce\/agreement-proof\/prepare/);
   assert.match(client, /prepared\.binding\.agreementAddress !== agreementAddress/);
   assert.match(client, /prepared\.binding\.agreementIdHex !== record\.agreementId/);
@@ -50,8 +50,11 @@ test("Commerce workbench verifies binding before opening the Core wallet request
   assert.match(client, /Create bound Core proof/);
 });
 
-test("bound proof is Party A only and requires independent Core readiness", () => {
-  assert.match(page, /coreMutationCapability=\{readiness\.actions\["proof\.create"\]\}/);
+test("bound proof stays Party A only and retains independent Core readiness in Advanced", () => {
+  assert.match(
+    advancedPage,
+    /coreMutationCapability=\{readiness\.actions\["proof\.create"\]\}/,
+  );
   assert.match(client, /const coreWritesReady = coreMutationCapability\.state === "ready"/);
   assert.match(client, /record\.partyA !== account\.verifiedWallet/);
   assert.match(client, /record\?\.state === "executed"/);
