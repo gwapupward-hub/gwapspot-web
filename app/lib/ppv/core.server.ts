@@ -161,7 +161,6 @@ function decodeProofRecord(
   };
 }
 
-
 function proofAddress(authority: PublicKey, proofId: Uint8Array) {
   return deriveCoreProofRecord(
     PPV_PROGRAM_IDS.core,
@@ -270,6 +269,19 @@ export async function prepareCoreProofTransaction(input: PrepareCoreProofInput) 
       "INSUFFICIENT_DEVNET_SOL",
       409,
       `This wallet needs at least ${requiredLamports} devnet lamports for this PPV action and currently has ${balanceLamports}.`,
+    );
+  }
+
+  const simulation = await connection.simulateTransaction(transaction);
+  if (simulation.value.err) {
+    console.warn("ppv_core_preflight_failed", {
+      action: input.action,
+      error: JSON.stringify(simulation.value.err).slice(0, 160),
+    });
+    throw new PpvCoreRequestError(
+      "TRANSACTION_SIMULATION_FAILED",
+      409,
+      "The PPV devnet transaction failed simulation before wallet signing.",
     );
   }
 
@@ -387,7 +399,6 @@ export async function confirmCoreProofTransaction(input: {
     verification: "transaction_and_program_state" as const,
   };
 }
-
 
 export async function readCoreProofRecord(input: {
   authority: string;
