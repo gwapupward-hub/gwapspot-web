@@ -11,6 +11,13 @@ test("PPV Core returns from wallet broadcast before waiting on Privy confirmatio
   assert.match(client, /reportPpvClientEvent\("confirm_started"/);
 });
 
+test("PPV Core simulates the exact prepared transaction before wallet handoff", () => {
+  const server = read("../core.server.ts");
+  assert.match(server, /simulateTransaction\(transaction\)/);
+  assert.match(server, /TRANSACTION_SIMULATION_FAILED/);
+  assert.match(server, /ppv_core_preflight_failed/);
+});
+
 test("PPV client diagnostics never accept raw transaction or identity material", () => {
   const route = read("../../api/ppv/core/diagnostics/route.ts");
   assert.match(route, /ALLOWED_EVENTS/);
