@@ -86,6 +86,16 @@ function normalizePostgresUrl(value: string | undefined) {
     ) {
       return null;
     }
+
+    const sslMode = url.searchParams.get("sslmode")?.toLowerCase();
+    if (sslMode === "prefer" || sslMode === "require" || sslMode === "verify-ca") {
+      // pg currently treats these modes as aliases for verify-full, but pg v9
+      // will adopt libpq semantics. Make the existing certificate-verification
+      // behavior explicit now so the upgrade cannot silently weaken TLS checks.
+      url.searchParams.set("sslmode", "verify-full");
+      return url.toString();
+    }
+
     return normalized;
   } catch {
     return null;
