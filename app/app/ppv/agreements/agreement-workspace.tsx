@@ -100,11 +100,7 @@ type PreparedTransaction = {
 };
 
 type Confirmation =
-  | {
-      status: "pending";
-      signature: string;
-      agreementAddress: string;
-    }
+  | { status: "pending"; signature: string; agreementAddress: string }
   | {
       status: "finalized";
       signature: string;
@@ -174,8 +170,6 @@ const EMPTY_FORM: AgreementForm = {
   expiryHours: "24",
 };
 
-const HEX_ID = /^[0-9a-f]{32}$/;
-
 function splitLines(value: string) {
   return value
     .split("\n")
@@ -240,7 +234,6 @@ function hydrateForm(
     terms?.payment && typeof terms.payment === "object" && !Array.isArray(terms.payment)
       ? (terms.payment as Record<string, unknown>)
       : null;
-
   const deliverables = Array.isArray(content?.deliverables)
     ? content.deliverables.filter((value): value is string => typeof value === "string")
     : [];
@@ -362,7 +355,7 @@ export function PpvAgreementWorkspace({
   );
   const [inboxItems, setInboxItems] = useState<CommerceInboxItem[]>([]);
   const [inboxLoading, setInboxLoading] = useState(false);
-  const [networkConfirmed, setNetworkConfirmed] = useState(false);
+  const [networkConfirmedForWallet, setNetworkConfirmedForWallet] = useState<string | null>(null);
   const [loadedDocuments, setLoadedDocuments] = useState<{
     contentJson: string;
     termsJson: string;
@@ -372,7 +365,6 @@ export function PpvAgreementWorkspace({
   const generatedDocuments = useMemo(() => canonicalDocuments(form), [form]);
   const activeDocuments =
     loadedDocuments && !draftChanged ? loadedDocuments : generatedDocuments;
-
   const writesReady = mutationCapability.state === "ready";
   const readsReady =
     layerCapability.state === "ready" || layerCapability.state === "read_only";
@@ -390,6 +382,7 @@ export function PpvAgreementWorkspace({
         : "unknown",
     [expectedChain, wallet],
   );
+  const networkConfirmed = networkConfirmedForWallet === account.verifiedWallet;
   const walletReady =
     writesReady &&
     Boolean(wallet) &&
@@ -422,7 +415,7 @@ export function PpvAgreementWorkspace({
   );
 
   const updateForm = useCallback(
-    <K extends keyof AgreementForm>(key: K, value: AgreementForm[K]) => {
+    <K extends keyof AgreementForm,>(key: K, value: AgreementForm[K]) => {
       setForm((current) => ({ ...current, [key]: value }));
       setDraftChanged(true);
       setReviewState("idle");
@@ -464,19 +457,12 @@ export function PpvAgreementWorkspace({
     return () => window.clearTimeout(timer);
   }, [account.verifiedWallet, loadInbox]);
 
-  useEffect(() => {
-    setNetworkConfirmed(false);
-  }, [account.verifiedWallet]);
-
   async function confirm(operationId: string, submittedSignature: string) {
     for (let attempt = 0; attempt < 14; attempt += 1) {
       const response = await authenticatedFetch("/api/ppv/commerce/confirm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          operationId,
-          signature: submittedSignature,
-        }),
+        body: JSON.stringify({ operationId, signature: submittedSignature }),
       });
       const body = (await response.json().catch(() => ({}))) as unknown;
       if (response.status === 202) {
@@ -484,9 +470,7 @@ export function PpvAgreementWorkspace({
         continue;
       }
       if (!response.ok) {
-        throw new Error(
-          readApiError(body, "PPV could not verify the Commerce transaction."),
-        );
+        throw new Error(readApiError(body, "PPV could not verify the Commerce transaction."));
       }
       return body as Confirmation;
     }
@@ -509,10 +493,7 @@ export function PpvAgreementWorkspace({
     if (response.ok) await loadInbox();
   }
 
-  async function prepareAndSend(
-    action: CommerceAction,
-    payload: Record<string, unknown>,
-  ) {
+  async function prepareAndSend(action: CommerceAction, payload: Record<string, unknown>) {
     if (inFlight.current || !writesReady) return null;
     if (!wallet || !environment || !expectedChain) {
       throw new Error("Reconnect the Solana wallet used by this GWAP session.");
@@ -521,9 +502,7 @@ export function PpvAgreementWorkspace({
       throw new Error("This connected wallet does not advertise Solana Devnet support.");
     }
     if (!networkConfirmed) {
-      throw new Error(
-        "Confirm Solana Devnet readiness before opening the wallet approval request.",
-      );
+      throw new Error("Confirm Solana Devnet readiness before opening the wallet approval request.");
     }
 
     inFlight.current = true;
@@ -537,16 +516,10 @@ export function PpvAgreementWorkspace({
       });
       const body = (await response.json().catch(() => ({}))) as unknown;
       if (!response.ok) {
-        throw new Error(
-          readApiError(body, "PPV could not prepare this Commerce transaction."),
-        );
+        throw new Error(readApiError(body, "PPV could not prepare this Commerce transaction."));
       }
       const prepared = body as PreparedTransaction;
-      assertPreparedPpvEnvironment({
-        expected: environment,
-        prepared,
-        layer: "commerce",
-      });
+      assertPreparedPpvEnvironment({ expected: environment, prepared, layer: "commerce" });
 
       setState("signing");
       setMessage("Approve this exact agreement transaction in your GWAP wallet.");
@@ -566,10 +539,7 @@ export function PpvAgreementWorkspace({
           transaction: base64Bytes(prepared.transactionBase64),
           wallet,
           chain: prepared.chain,
-          options: {
-            optimisticBroadcast: true,
-            skipSimulation: false,
-          },
+          options: { optimisticBroadcast: true, skipSimulation: false },
         });
       } catch (error) {
         void authenticatedFetch("/api/ppv/commerce/diagnostics", {
@@ -623,9 +593,7 @@ export function PpvAgreementWorkspace({
       setReviewState("idle");
       setReviewedVersion(null);
       setState("finalized");
-      setMessage(
-        `${action.toUpperCase()} finalized. Agreement version ${next.version} is ${next.state}.`,
-      );
+      setMessage(`${action.toUpperCase()} finalized. Agreement version ${next.version} is ${next.state}.`);
       return next;
     } finally {
       inFlight.current = false;
@@ -704,22 +672,15 @@ export function PpvAgreementWorkspace({
         hashDocumentHexV1(contentDocument),
         hashDocumentHexV1(termsDocument),
       ]);
-      if (
-        contentHashHex !== record.contentHash ||
-        termsHashHex !== record.termsHash
-      ) {
+      if (contentHashHex !== record.contentHash || termsHashHex !== record.termsHash) {
         setReviewState("mismatch");
         setReviewedVersion(null);
-        setReviewMessage(
-          "This draft differs from the finalized agreement. Publish a revision before signing.",
-        );
+        setReviewMessage("This draft differs from the finalized agreement. Publish a revision before signing.");
         return;
       }
       setReviewState("match");
       setReviewedVersion(record.version);
-      setReviewMessage(
-        `Verified: this is the exact content and terms committed by agreement version ${record.version}.`,
-      );
+      setReviewMessage(`Verified: this is the exact content and terms committed by agreement version ${record.version}.`);
     } catch (error) {
       setReviewState("error");
       setReviewedVersion(null);
@@ -782,10 +743,7 @@ export function PpvAgreementWorkspace({
       const response = await authenticatedFetch("/api/ppv/commerce/agreement", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          partyA: item.partyA,
-          agreementIdHex: item.agreementIdHex,
-        }),
+        body: JSON.stringify({ partyA: item.partyA, agreementIdHex: item.agreementIdHex }),
       });
       const body = (await response.json().catch(() => ({}))) as unknown;
       if (!response.ok) {
@@ -813,15 +771,10 @@ export function PpvAgreementWorkspace({
           hashDocumentHexV1(contentDocument),
           hashDocumentHexV1(termsDocument),
         ]);
-        if (
-          contentHashHex === next.contentHash &&
-          termsHashHex === next.termsHash
-        ) {
+        if (contentHashHex === next.contentHash && termsHashHex === next.termsHash) {
           setReviewState("match");
           setReviewedVersion(next.version);
-          setReviewMessage(
-            `Verified: the delivered documents match finalized version ${next.version}.`,
-          );
+          setReviewMessage(`Verified: the delivered documents match finalized version ${next.version}.`);
         } else {
           setReviewState("mismatch");
           setReviewedVersion(null);
@@ -853,26 +806,14 @@ export function PpvAgreementWorkspace({
     setReviewState("idle");
     setReviewedVersion(null);
     setState("idle");
-    setMessage(
-      "Create an agreement in plain language. GWAP generates the canonical documents and hashes behind the scenes.",
-    );
+    setMessage("Create an agreement in plain language. GWAP generates the canonical documents and hashes behind the scenes.");
   }
 
   const timeline = useMemo(() => {
     if (!record) return [] as { label: string; at: number }[];
     const entries = [{ label: "Agreement created", at: record.createdAt }];
-    if (record.sigA) {
-      entries.push({
-        label: `Party A approved version ${record.sigA.versionSigned}`,
-        at: record.sigA.signedAt,
-      });
-    }
-    if (record.sigB) {
-      entries.push({
-        label: `Party B approved version ${record.sigB.versionSigned}`,
-        at: record.sigB.signedAt,
-      });
-    }
+    if (record.sigA) entries.push({ label: `Party A approved version ${record.sigA.versionSigned}`, at: record.sigA.signedAt });
+    if (record.sigB) entries.push({ label: `Party B approved version ${record.sigB.versionSigned}`, at: record.sigB.signedAt });
     if (record.executedAt) entries.push({ label: "Agreement executed", at: record.executedAt });
     if (record.cancelledAt) entries.push({ label: "Agreement cancelled", at: record.cancelledAt });
     return entries.sort((left, right) => left.at - right.at);
@@ -911,7 +852,7 @@ export function PpvAgreementWorkspace({
           type="button"
           className={networkConfirmed ? styles.confirmedButton : styles.secondaryButton}
           disabled={!wallet || walletChainSupport === "unsupported"}
-          onClick={() => setNetworkConfirmed(true)}
+          onClick={() => setNetworkConfirmedForWallet(account.verifiedWallet)}
         >
           {networkConfirmed ? "Devnet confirmed" : "Confirm Solana Devnet"}
         </button>
@@ -989,10 +930,7 @@ export function PpvAgreementWorkspace({
                 <select
                   value={form.paymentAsset}
                   onChange={(event) =>
-                    updateForm(
-                      "paymentAsset",
-                      event.target.value as AgreementForm["paymentAsset"],
-                    )
+                    updateForm("paymentAsset", event.target.value as AgreementForm["paymentAsset"])
                   }
                   disabled={busy || !canEdit}
                 >
@@ -1019,10 +957,7 @@ export function PpvAgreementWorkspace({
                   inputMode="numeric"
                   value={form.revisionsAllowed}
                   onChange={(event) =>
-                    updateForm(
-                      "revisionsAllowed",
-                      event.target.value.replace(/[^0-9]/g, "").slice(0, 3),
-                    )
+                    updateForm("revisionsAllowed", event.target.value.replace(/[^0-9]/g, "").slice(0, 3))
                   }
                   disabled={busy || !canEdit}
                 />
@@ -1059,10 +994,7 @@ export function PpvAgreementWorkspace({
                       inputMode="numeric"
                       value={form.expiryHours}
                       onChange={(event) =>
-                        updateForm(
-                          "expiryHours",
-                          event.target.value.replace(/[^0-9]/g, "").slice(0, 4),
-                        )
+                        updateForm("expiryHours", event.target.value.replace(/[^0-9]/g, "").slice(0, 4))
                       }
                       disabled={busy || !canEdit}
                     />
@@ -1115,10 +1047,7 @@ export function PpvAgreementWorkspace({
                   <span>EXACT VERSION REVIEW</span>
                   <h3>Review first. Approve second.</h3>
                 </div>
-                <span
-                  className={styles.reviewBadge}
-                  data-review={reviewState}
-                >
+                <span className={styles.reviewBadge} data-review={reviewState}>
                   {reviewState === "match" ? "VERIFIED" : reviewState.toUpperCase()}
                 </span>
               </div>
@@ -1132,9 +1061,7 @@ export function PpvAgreementWorkspace({
                   <span>Deliverables</span>
                   {splitLines(form.deliverables).length ? (
                     <ul>
-                      {splitLines(form.deliverables).map((item) => (
-                        <li key={item}>{item}</li>
-                      ))}
+                      {splitLines(form.deliverables).map((item) => <li key={item}>{item}</li>)}
                     </ul>
                   ) : (
                     <p>No deliverables supplied.</p>
@@ -1190,9 +1117,7 @@ export function PpvAgreementWorkspace({
                     disabled={busy || !walletReady}
                     onClick={() => void cancelAgreement()}
                   >
-                    {record.partyB === account.verifiedWallet
-                      ? "Decline agreement"
-                      : "Cancel agreement"}
+                    {record.partyB === account.verifiedWallet ? "Decline agreement" : "Cancel agreement"}
                   </button>
                 ) : null}
               </div>
