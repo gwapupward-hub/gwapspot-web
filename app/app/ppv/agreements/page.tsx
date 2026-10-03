@@ -1,5 +1,6 @@
 import { getPpvWorkspaceReadiness } from "../../../lib/ppv/readiness.server";
 import { PpvSectionPage } from "../section-page";
+import { PpvAgreementSessionGate } from "./agreement-session-gate";
 import { PpvAgreementWorkspace } from "./agreement-workspace";
 
 export const dynamic = "force-dynamic";
@@ -21,11 +22,13 @@ export default async function PpvAgreementsPage() {
         { key: "agreement.cancel", label: "Decline or cancel", detail: "Either party can terminally cancel a pending agreement before execution." },
       ]}
     >
-      <PpvAgreementWorkspace
-        environment={readiness.environment}
-        mutationCapability={readiness.actions["agreement.create"]}
-        layerCapability={readiness.layers.commerce}
-      />
+      <PpvAgreementSessionGate>
+        <PpvAgreementWorkspace
+          environment={readiness.environment}
+          mutationCapability={readiness.actions["agreement.create"]}
+          layerCapability={readiness.layers.commerce}
+        />
+      </PpvAgreementSessionGate>
     </PpvSectionPage>
   );
 }
