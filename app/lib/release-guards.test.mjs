@@ -35,7 +35,8 @@ test("Privy remains the single authentication owner", () => {
 test("Privy registers PPV devnet RPCs for embedded Solana signing", () => {
   const provider = read("../components/wallet-auth-provider.tsx");
   assert.match(provider, /NEXT_PUBLIC_PPV_RPC_URL/);
-  assert.match(provider, /solanaClusters:/);
+  assert.match(provider, /solana:\s*\{/);
+  assert.match(provider, /rpcs:\s*\{/);
   assert.match(provider, /"solana:devnet"/);
   assert.match(provider, /createSolanaRpc\(ppvDevnetRpcUrl\)/);
   assert.match(provider, /createSolanaRpcSubscriptions\(ppvDevnetWsUrl\)/);
