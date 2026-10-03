@@ -135,7 +135,7 @@ type AgreementForm = {
 };
 
 type CanonicalAgreementContent = {
-  schemaVersion: 1;
+  schemaVersion: "1";
   type: "ppv-commerce-agreement";
   title: string;
   summary: string;
@@ -143,15 +143,15 @@ type CanonicalAgreementContent = {
 };
 
 type CanonicalAgreementTerms = {
-  schemaVersion: 1;
+  schemaVersion: "1";
   payment: {
     amount: string;
     asset: AgreementForm["paymentAsset"];
     mode: "terms-only";
   };
-  dueDate: string | null;
+  dueDate: string;
   milestones: string[];
-  revisionsAllowed: number;
+  revisionsAllowed: string;
   approvalRequired: true;
   additionalTerms: string;
 };
@@ -180,7 +180,7 @@ function splitLines(value: string) {
 
 function canonicalDocuments(form: AgreementForm) {
   const content: CanonicalAgreementContent = {
-    schemaVersion: 1,
+    schemaVersion: "1",
     type: "ppv-commerce-agreement",
     title: form.title.trim(),
     summary: form.summary.trim(),
@@ -188,18 +188,18 @@ function canonicalDocuments(form: AgreementForm) {
   };
   const parsedRevisions = Number(form.revisionsAllowed);
   const terms: CanonicalAgreementTerms = {
-    schemaVersion: 1,
+    schemaVersion: "1",
     payment: {
       amount: form.paymentAmount.trim(),
       asset: form.paymentAsset,
       mode: "terms-only",
     },
-    dueDate: form.dueDate || null,
+    dueDate: form.dueDate,
     milestones: splitLines(form.milestones),
     revisionsAllowed:
       Number.isInteger(parsedRevisions) && parsedRevisions >= 0
-        ? parsedRevisions
-        : 0,
+        ? String(parsedRevisions)
+        : "0",
     approvalRequired: true,
     additionalTerms: form.additionalTerms.trim(),
   };
@@ -264,9 +264,11 @@ function hydrateForm(
     dueDate: typeof terms?.dueDate === "string" ? terms.dueDate : "",
     milestones: milestones.join("\n"),
     revisionsAllowed:
-      typeof terms?.revisionsAllowed === "number"
-        ? String(terms.revisionsAllowed)
-        : "0",
+      typeof terms?.revisionsAllowed === "string"
+        ? terms.revisionsAllowed
+        : typeof terms?.revisionsAllowed === "number"
+          ? String(terms.revisionsAllowed)
+          : "0",
     additionalTerms:
       typeof terms?.additionalTerms === "string" ? terms.additionalTerms : "",
     expiryHours: "24",
