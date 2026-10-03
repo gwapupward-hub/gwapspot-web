@@ -1,5 +1,5 @@
-version: "1.0.0"
-updated_at: "2026-09-30"
+version: "1.2.0"
+updated_at: "2026-10-02"
 decisions:
   - id: GWAP-ARCH-001
     status: PRODUCTION
@@ -26,8 +26,8 @@ decisions:
     status: RESEARCHED
     owner: GWAPOS
     title: "Separate payment boundaries"
-    decision: "Stripe, MPP/x402, Pay/Pay Kit, Kora, and PPV have separate responsibilities."
-    review_trigger: "First production agentic-payment or sponsorship launch."
+    decision: "Stripe, MPP/x402, Pay/Pay Kit, Kora, PPV, and candidate token-distribution rails such as Streamflow have separate responsibilities."
+    review_trigger: "First production agentic-payment, sponsorship, or token-distribution launch."
 
   - id: GWAP-ASSET-001
     status: PRODUCTION
@@ -35,3 +35,45 @@ decisions:
     title: "Outcome-driven digital assets"
     decision: "Do not tokenize by default; compare off-chain state, custom state, Token-2022, Metaplex primitives, and product/channel restrictions first."
     review_trigger: "A GWAP product enters on-chain asset implementation."
+
+  - id: GWAP-SOURCE-001
+    status: PRODUCTION
+    owner: GWAP_MASTER
+    title: "Discovery indexes do not grant transitive trust"
+    decision: "Curated lists and dynamic catalogs such as awesome-solana-oss and Superteam OSS are discovery sources only. Any repository promoted from them must receive its own pinned intake before GWAP trusts, installs, or implements from it."
+    review_trigger: "MASTER changes its external-source trust model."
+
+  - id: GWAP-SOLANA-CLIENT-001
+    status: RESEARCHED
+    owner: GWAP_MASTER
+    title: "Direct current Solana implementation references"
+    decision: "Track Agave for exact runtime implementation evidence, Anza Kit for current JavaScript SDK reference, Wallet Adapter for wallet interoperability, and Codama for IDL/client-generation reference without forcing migrations from working GWAP abstractions."
+    review_trigger: "GwapOS or GNS changes its Solana client/IDL architecture or one of the pinned sources undergoes a major version/ownership/license change."
+
+  - id: GWAP-SEC-001
+    status: PILOT
+    owner: PPV
+    title: "Trident fuzzing evaluation"
+    decision: "Evaluate Trident as an additional stateful/property fuzzing layer for PPV before considering GNS; do not replace proven existing invariant/property suites until the pilot demonstrates additional reproducible value."
+    review_trigger: "PPV Trident pilot completes or its pinned Solana/Anchor compatibility changes."
+
+  - id: GWAP-DIST-001
+    status: RESEARCHED
+    owner: GWAP_MASTER
+    title: "Streamflow is a separate vesting/distribution rail"
+    decision: "Treat Streamflow as a candidate token vesting, timelock, distribution, and future streaming-compensation rail. It does not replace PPV, Kora, Stripe, MPP/x402, or wallet authorization."
+    review_trigger: "GWAP defines a real token vesting, grant, contributor, payroll, partner-allocation, or airdrop requirement."
+
+  - id: GWAP-DIST-002
+    status: BLOCKED
+    owner: PPV
+    title: "No direct Streamflow CPI in current PPV toolchain"
+    decision: "Do not add the current Streamflow Rust SDK to PPV while PPV remains on Anchor 0.30.1 because the reviewed Streamflow SDK requires Anchor >=0.32.1. Do not upgrade PPV solely for Streamflow."
+    review_trigger: "PPV independently approves a toolchain migration or Streamflow publishes a compatible supported SDK."
+
+  - id: GWAP-DIST-003
+    status: BLOCKED
+    owner: GWAPOS
+    title: "Streamflow JS dependency requires license clarification"
+    decision: "Do not ship the Streamflow JS SDK as a production GWAP dependency until its applicable GPL/AGPL licensing is clarified and reviewed for GWAP's distribution model."
+    review_trigger: "Streamflow clarifies or changes the JS SDK license, or GWAP completes formal license review."
