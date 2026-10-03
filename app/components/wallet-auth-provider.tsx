@@ -41,7 +41,6 @@ const authConfig: PrivyClientConfig = {
     ethereum: { createOnLogin: "off" },
     solana: { createOnLogin: "users-without-wallets" },
   },
-  solanaClusters: [{ name: "devnet", rpcUrl: ppvDevnetRpcUrl }],
   solana: {
     rpcs: {
       "solana:devnet": {
