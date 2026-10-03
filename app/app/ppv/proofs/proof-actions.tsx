@@ -181,6 +181,7 @@ function terminalConfirmationCode(error: unknown) {
 
 function ppvClientErrorCode(error: unknown) {
   const message = error instanceof Error ? error.message : "";
+  if (/PPV_WALLET_SIGNATURE_MISSING/.test(message)) return "MISSING_SIGNATURE";
   if (/reject|declin|cancel/i.test(message)) return "WALLET_REJECTED";
   if (/insufficient|lamports|funds/i.test(message)) return "INSUFFICIENT_FUNDS";
   if (/simulation/i.test(message)) return "SIMULATION_FAILED";
@@ -193,6 +194,7 @@ function reportPpvClientEvent(
   event: "sign_started" | "sign_failed" | "broadcast_returned" | "confirm_started",
   action: "create" | "revoke",
   code?: string,
+  walletType = "solana-standard",
 ) {
   void fetch("/api/ppv/core/diagnostics", {
     method: "POST",
@@ -203,13 +205,16 @@ function reportPpvClientEvent(
       event,
       action,
       code,
-      walletType: "privy-solana",
+      walletType,
     }),
   }).catch(() => undefined);
 }
 
 function actionError(error: unknown) {
   const message = error instanceof Error ? error.message : "PPV Core action failed.";
+  if (/PPV_WALLET_SIGNATURE_MISSING/.test(message)) {
+    return "The wallet returned without a usable Solana signature. Reconnect the verified Solana wallet and retry the devnet proof.";
+  }
   if (/reject|declin|cancel/i.test(message)) {
     return "The wallet rejected the request. No new PPV state was confirmed.";
   }
@@ -334,6 +339,7 @@ export function PpvProofActions({
 
     inFlight.current = true;
     let submitted: PendingCoreAction | null = null;
+    const walletType = wallet.standardWallet.name || "solana-standard";
     try {
       setState("preparing");
       setMessage("Checking live PPV deployment evidence and preparing the devnet transaction…");
@@ -354,11 +360,11 @@ export function PpvProofActions({
       setState("signing");
       setMessage(
         action === "create"
-          ? "Approve the PPV Core proof transaction. Phantom users must have Testnet Mode set to Solana Devnet before approving."
-          : "Approve the PPV Core revocation transaction. Phantom users must have Testnet Mode set to Solana Devnet before approving.",
+          ? "Approve the PPV Core proof transaction in your verified Solana wallet."
+          : "Approve the PPV Core revocation transaction in your verified Solana wallet.",
       );
 
-      reportPpvClientEvent("sign_started", action);
+      reportPpvClientEvent("sign_started", action, undefined, walletType);
       let result;
       try {
         result = await signAndSendTransaction({
@@ -367,14 +373,27 @@ export function PpvProofActions({
           chain: prepared.chain,
           options: {
             optimisticBroadcast: true,
-            skipSimulation: false,
+            // The prepare endpoint already simulated this exact transaction on
+            // GWAP's canonical devnet RPC. Avoid a redundant provider preflight
+            // that can fail before the wallet returns a broadcast signature.
+            skipSimulation: true,
           },
         });
       } catch (error) {
-        reportPpvClientEvent("sign_failed", action, ppvClientErrorCode(error));
+        reportPpvClientEvent(
+          "sign_failed",
+          action,
+          ppvClientErrorCode(error),
+          walletType,
+        );
         throw error;
       }
-      reportPpvClientEvent("broadcast_returned", action);
+      if (!(result?.signature instanceof Uint8Array) || result.signature.byteLength !== 64) {
+        const error = new Error("PPV_WALLET_SIGNATURE_MISSING");
+        reportPpvClientEvent("sign_failed", action, "MISSING_SIGNATURE", walletType);
+        throw error;
+      }
+      reportPpvClientEvent("broadcast_returned", action, undefined, walletType);
       const submittedSignature = bs58.encode(result.signature);
       submitted = {
         operationId: prepared.operationId,
@@ -391,7 +410,7 @@ export function PpvProofActions({
       setSignature(submittedSignature);
       setState("confirming");
       setMessage("Transaction broadcast. Waiting for finalized Solana state…");
-      reportPpvClientEvent("confirm_started", action);
+      reportPpvClientEvent("confirm_started", action, undefined, walletType);
 
       const resultConfirmation = await confirm(submitted);
       if (!resultConfirmation || resultConfirmation.status !== "finalized") {
@@ -419,7 +438,7 @@ export function PpvProofActions({
           setMessage(
             terminalCode === "TRANSACTION_EXPIRED"
               ? "The devnet transaction expired before finalization. No proof was confirmed, so it is safe to create a fresh proof."
-              : "The devnet transaction reached the chain but failed. No proof was confirmed, so it is safe to create a fresh proof. If you use Phantom, verify Testnet Mode is set to Solana Devnet before retrying.",
+              : "The devnet transaction reached the chain but failed. No proof was confirmed, so it is safe to create a fresh proof. If you use an external wallet, verify it is connected to Solana Devnet before retrying.",
           );
         } else {
           setState("sync-required");
@@ -568,7 +587,7 @@ export function PpvProofActions({
         setMessage(
           terminalCode === "TRANSACTION_EXPIRED"
             ? "The devnet transaction expired before it finalized. No proof account was confirmed, so it is safe to create a fresh proof."
-            : "The devnet transaction was finalized as failed. No proof account was created, so it is safe to create a fresh proof. If you use Phantom, verify Testnet Mode is set to Solana Devnet before retrying.",
+            : "The devnet transaction was finalized as failed. No proof account was created, so it is safe to create a fresh proof. If you use an external wallet, verify it is connected to Solana Devnet before retrying.",
         );
       } else {
         setState("sync-required");
@@ -598,8 +617,8 @@ export function PpvProofActions({
       <div className={styles.networkNotice} role="note" aria-label="PPV devnet wallet requirement">
         <strong>PPV NETWORK: SOLANA DEVNET</strong>
         <p>
-          External wallets must be connected in their devnet/testnet context for PPV writes.
-          In Phantom: Settings → Developer Settings → Testnet Mode → Solana Devnet.
+          The embedded GWAP Wallet is routed to Solana Devnet for PPV writes.
+          External wallets must be connected in their devnet/testnet context before approving.
           Your normal GWAP login can stay the same; only the PPV transaction network must be devnet.
         </p>
       </div>
