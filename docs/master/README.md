@@ -1,6 +1,6 @@
 # GWAP MASTER
 
-**Version:** 1.0.0  
+**Version:** 1.1.0  
 **Status:** ACTIVE  
 **Canonical location:** this directory
 
@@ -18,7 +18,7 @@ External technology informs GWAP. It does not control GWAP.
 4. Current official protocol/specification evidence matching the environment.
 5. Pinned official upstream repositories/releases.
 6. Established ecosystem documentation and audited implementation references.
-7. Examples, templates, community guidance, tutorials, and generated code.
+7. Examples, templates, community guidance, tutorials, generated code, and curated discovery indexes.
 
 A cross-system MASTER rule does not weaken a stronger repo-local security or Founder lock.
 
@@ -69,6 +69,14 @@ For Solana claims, use:
 6. examples/community material.
 
 Accepted or implemented does not mean activated.
+
+## Source discovery
+
+Curated repositories can expand our research surface without becoming trusted dependencies. `StockpileLabs/awesome-solana-oss` is now treated as a discovery index; promoted candidates receive separate intake before MASTER relies on them.
+
+See:
+- [SOURCE-AUTHORITY.md](./SOURCE-AUTHORITY.md)
+- [SOLANA-OSS-DISCOVERY.md](./SOLANA-OSS-DISCOVERY.md)
 
 ## Release truth
 
