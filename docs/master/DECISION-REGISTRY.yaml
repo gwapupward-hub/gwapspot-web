@@ -1,5 +1,5 @@
-version: "1.0.0"
-updated_at: "2026-09-30"
+version: "1.1.0"
+updated_at: "2026-10-02"
 decisions:
   - id: GWAP-ARCH-001
     status: PRODUCTION
@@ -35,3 +35,24 @@ decisions:
     title: "Outcome-driven digital assets"
     decision: "Do not tokenize by default; compare off-chain state, custom state, Token-2022, Metaplex primitives, and product/channel restrictions first."
     review_trigger: "A GWAP product enters on-chain asset implementation."
+
+  - id: GWAP-SOURCE-001
+    status: PRODUCTION
+    owner: GWAP_MASTER
+    title: "Discovery indexes do not grant transitive trust"
+    decision: "Curated lists such as awesome-solana-oss are discovery sources only. Any repository promoted from them must receive its own pinned intake before GWAP trusts, installs, or implements from it."
+    review_trigger: "MASTER changes its external-source trust model."
+
+  - id: GWAP-SOLANA-CLIENT-001
+    status: RESEARCHED
+    owner: GWAP_MASTER
+    title: "Direct current Solana implementation references"
+    decision: "Track Agave for exact runtime implementation evidence, Anza Kit for current JavaScript SDK reference, Wallet Adapter for wallet interoperability, and Codama for IDL/client-generation reference without forcing migrations from working GWAP abstractions."
+    review_trigger: "GwapOS or GNS changes its Solana client/IDL architecture or one of the pinned sources undergoes a major version/ownership/license change."
+
+  - id: GWAP-SEC-001
+    status: PILOT
+    owner: PPV
+    title: "Trident fuzzing evaluation"
+    decision: "Evaluate Trident as an additional stateful/property fuzzing layer for PPV before considering GNS; do not replace proven existing invariant/property suites until the pilot demonstrates additional reproducible value."
+    review_trigger: "PPV Trident pilot completes or its pinned Solana/Anchor compatibility changes."
