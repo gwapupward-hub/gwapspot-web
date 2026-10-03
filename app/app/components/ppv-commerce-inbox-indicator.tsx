@@ -10,20 +10,28 @@ type InboxPayload = {
 };
 
 export function PpvCommerceInboxIndicator() {
-  const { getAccessToken } = usePrivy();
+  const { authenticated, getAccessToken, ready } = usePrivy();
   const { account, runtimeMode } = useGwapOs();
   const [pending, setPending] = useState(0);
 
   const refresh = useCallback(async () => {
-    if (runtimeMode !== "devnet") {
+    if (
+      runtimeMode !== "devnet" ||
+      !ready ||
+      !authenticated ||
+      !account.verifiedWallet
+    ) {
       setPending(0);
       return;
     }
 
     try {
       const token = await getAccessToken();
-      const headers = new Headers();
-      if (token) headers.set("Authorization", `Bearer ${token}`);
+      if (!token) {
+        setPending(0);
+        return;
+      }
+      const headers = new Headers({ Authorization: `Bearer ${token}` });
       const response = await fetch("/api/ppv/commerce/inbox", {
         method: "GET",
         headers,
@@ -43,9 +51,11 @@ export function PpvCommerceInboxIndicator() {
     } catch {
       setPending(0);
     }
-  }, [getAccessToken, runtimeMode]);
+  }, [account.verifiedWallet, authenticated, getAccessToken, ready, runtimeMode]);
 
   useEffect(() => {
+    if (!ready || !authenticated || !account.verifiedWallet) return;
+
     const initialRefresh = window.setTimeout(() => void refresh(), 0);
     const onFocus = () => void refresh();
     const onInboxChanged = () => void refresh();
@@ -57,7 +67,7 @@ export function PpvCommerceInboxIndicator() {
       window.removeEventListener("focus", onFocus);
       window.removeEventListener("gwap:ppv-commerce-inbox-changed", onInboxChanged);
     };
-  }, [account.verifiedWallet, refresh]);
+  }, [account.verifiedWallet, authenticated, ready, refresh]);
 
   if (runtimeMode !== "devnet" || pending <= 0) return null;
 
