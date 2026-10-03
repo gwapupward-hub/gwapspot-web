@@ -1,6 +1,6 @@
 import { getPpvWorkspaceReadiness } from "../../../lib/ppv/readiness.server";
 import { PpvSectionPage } from "../section-page";
-import { PpvAgreementActions } from "./agreement-actions";
+import { PpvAgreementWorkspace } from "./agreement-workspace";
 
 export const dynamic = "force-dynamic";
 
@@ -12,19 +12,18 @@ export default async function PpvAgreementsPage() {
       layer="commerce"
       kicker="PPV COMMERCE"
       title="Agreements"
-      description="Draft, review, revise and sign the exact version both wallets intend to execute."
+      description="Create, review, revise and approve the exact agreement version both parties intend to execute—without writing protocol JSON."
       readiness={readiness}
       actions={[
-        { key: "agreement.create", label: "Create agreement", detail: "Canonicalize content and terms before the wallet reviews the current version." },
-        { key: "agreement.revise", label: "Revise agreement", detail: "A revision increments the version and clears every prior signature." },
-        { key: "agreement.sign", label: "Sign current version", detail: "Sign only after the local content and terms match the finalized current version." },
-        { key: "agreement.cancel", label: "Cancel pending agreement", detail: "Either party can terminally cancel an agreement while it is still pending." },
+        { key: "agreement.create", label: "Create agreement", detail: "Write normal contract terms while GWAP generates the canonical structured documents and fingerprints." },
+        { key: "agreement.revise", label: "Revise agreement", detail: "A published revision increments the version and clears prior signatures so everyone reviews the same terms again." },
+        { key: "agreement.sign", label: "Approve & sign", detail: "Approval unlocks only after GWAP verifies the displayed agreement matches the finalized on-chain fingerprints." },
+        { key: "agreement.cancel", label: "Decline or cancel", detail: "Either party can terminally cancel a pending agreement before execution." },
       ]}
     >
-      <PpvAgreementActions
+      <PpvAgreementWorkspace
         environment={readiness.environment}
         mutationCapability={readiness.actions["agreement.create"]}
-        coreMutationCapability={readiness.actions["proof.create"]}
         layerCapability={readiness.layers.commerce}
       />
     </PpvSectionPage>
