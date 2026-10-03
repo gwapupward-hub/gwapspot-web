@@ -21,7 +21,7 @@ test("PPV Core rejects a wallet handoff that returns without a usable signature"
 });
 
 test("PPV Core simulates the exact prepared transaction before wallet handoff", () => {
-  const server = read("../core.server.ts");
+  const server = read("./core.server.ts");
   assert.match(server, /simulateTransaction\(transaction\)/);
   assert.match(server, /TRANSACTION_SIMULATION_FAILED/);
   assert.match(server, /ppv_core_preflight_failed/);
