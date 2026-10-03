@@ -132,6 +132,32 @@ test("postgres storage wins only when explicitly selected", () => {
   });
 });
 
+test("legacy postgres ssl modes are normalized to verify-full", () => {
+  clearStorageEnvironment();
+  process.env.WORKSPACE_STORAGE_BACKEND = "postgres";
+  process.env.DATABASE_URL =
+    "postgresql://gwap:secret@ep-example-pooler.us-east-2.aws.neon.tech/gwapspot?sslmode=require";
+
+  const credentials = getWorkspaceStorageCredentials();
+  assert.equal(credentials?.kind, "postgres");
+  assert.equal(
+    credentials?.url,
+    "postgresql://gwap:secret@ep-example-pooler.us-east-2.aws.neon.tech/gwapspot?sslmode=verify-full",
+  );
+});
+
+test("explicit postgres verify-full is preserved", () => {
+  clearStorageEnvironment();
+  process.env.WORKSPACE_STORAGE_BACKEND = "postgres";
+  process.env.DATABASE_URL =
+    "postgresql://gwap:secret@ep-example-pooler.us-east-2.aws.neon.tech/gwapspot?sslmode=verify-full";
+
+  assert.equal(
+    getWorkspaceStorageCredentials()?.url,
+    process.env.DATABASE_URL,
+  );
+});
+
 test("wallet authentication is ready with Privy and explicit postgres storage", () => {
   clearStorageEnvironment();
   process.env.NEXT_PUBLIC_PRIVY_APP_ID = "privy-app";
