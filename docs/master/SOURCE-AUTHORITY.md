@@ -23,13 +23,34 @@ Do not treat repositories as equal authorities. First identify whether a source 
 - IDL normalization/client generation: Codama, with separate intake for executable visitors/renderers.
 - Transaction-v1 compatibility: transaction-v1 examples.
 - Current docs lookup: official Solana MCP.
-- Curated OSS discovery: `StockpileLabs/awesome-solana-oss`, discovery only; see [SOLANA-OSS-DISCOVERY.md](./SOLANA-OSS-DISCOVERY.md).
+- Curated OSS discovery: `StockpileLabs/awesome-solana-oss` and `https://oss.superteam.fun/`, discovery only; see [SOLANA-OSS-DISCOVERY.md](./SOLANA-OSS-DISCOVERY.md).
+- Token vesting/distribution/streaming evaluation: Streamflow active SDKs, subject to license, audit-scope, deployment-authority, and compatibility gates; see [STREAMFLOW-INTEGRATION.md](./STREAMFLOW-INTEGRATION.md).
 
 ## Discovery indexes
 
 Curated lists and ecosystem indexes answer **what should we inspect?**, not **what should we trust?**
 
 A repository listed by a discovery index receives no transitive authority, security, license, audit, compatibility, or maintenance approval. Any candidate promoted into MASTER must go through its own intake and receive a pinned revision plus explicit classification.
+
+Dynamic web catalogs that cannot be pinned to a Git commit must record a review timestamp and route every candidate to its canonical source before classification.
+
+## Third-party financial / value-moving protocols
+
+A third-party protocol that moves, locks, vests, sponsors, settles, or controls value receives no production approval merely because it is open source, audited, popular, or listed by an ecosystem directory.
+
+Before production use, verify at minimum:
+
+- canonical current source and pinned SDK/release;
+- exact deployed program/contract identity;
+- upgrade/admin authority;
+- audit scope and code/deployment delta;
+- license obligations;
+- fees and oracle dependencies;
+- signer/custody/treasury boundaries;
+- supported assets and token extensions;
+- retry/idempotency/failure behavior;
+- local/devnet evidence;
+- rollback/kill switch.
 
 ## Metaplex routing
 
@@ -48,6 +69,7 @@ Use one of:
 - PILOT_REFERENCE
 - MIGRATION_REFERENCE
 - REFERENCE_ONLY
+- HISTORICAL_REFERENCE_ONLY
 - REJECTED
 - SUPERSEDED
 
