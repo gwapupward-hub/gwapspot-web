@@ -32,6 +32,16 @@ test("Privy remains the single authentication owner", () => {
   assert.match(provider, /externalWallets:/);
 });
 
+test("Privy registers PPV devnet RPCs for embedded Solana signing", () => {
+  const provider = read("../components/wallet-auth-provider.tsx");
+  assert.match(provider, /NEXT_PUBLIC_PPV_RPC_URL/);
+  assert.match(provider, /solana:\s*\{/);
+  assert.match(provider, /rpcs:\s*\{/);
+  assert.match(provider, /"solana:devnet"/);
+  assert.match(provider, /createSolanaRpc\(ppvDevnetRpcUrl\)/);
+  assert.match(provider, /createSolanaRpcSubscriptions\(ppvDevnetWsUrl\)/);
+});
+
 test("the app domain routes through the unified wallet-or-email access column", () => {
   const column = read("../components/app-access-column.tsx");
   const page = read("../os-sign-in/page.tsx");

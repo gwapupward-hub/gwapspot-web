@@ -5,6 +5,7 @@
 // email OTP users receive/reuse a Privy embedded Solana wallet.
 import { PrivyProvider, type PrivyClientConfig } from "@privy-io/react-auth";
 import { toSolanaWalletConnectors } from "@privy-io/react-auth/solana";
+import { createSolanaRpc, createSolanaRpcSubscriptions } from "@solana/kit";
 import { Buffer } from "buffer";
 import type { ReactNode } from "react";
 
@@ -13,6 +14,9 @@ import type { ReactNode } from "react";
 if (typeof globalThis.Buffer === "undefined") globalThis.Buffer = Buffer;
 
 const solanaConnectors = toSolanaWalletConnectors({ shouldAutoConnect: true });
+const ppvDevnetRpcUrl =
+  process.env.NEXT_PUBLIC_PPV_RPC_URL?.trim() || "https://api.devnet.solana.com";
+const ppvDevnetWsUrl = ppvDevnetRpcUrl.replace(/^http/, "ws");
 
 const authConfig: PrivyClientConfig = {
   loginMethods: ["wallet", "email"],
@@ -36,6 +40,14 @@ const authConfig: PrivyClientConfig = {
   embeddedWallets: {
     ethereum: { createOnLogin: "off" },
     solana: { createOnLogin: "users-without-wallets" },
+  },
+  solana: {
+    rpcs: {
+      "solana:devnet": {
+        rpc: createSolanaRpc(ppvDevnetRpcUrl),
+        rpcSubscriptions: createSolanaRpcSubscriptions(ppvDevnetWsUrl),
+      },
+    },
   },
 };
 
