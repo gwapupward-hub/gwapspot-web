@@ -21,7 +21,7 @@
     "@solana-program/token": "^0.17.0",
     "@solana/kit": "^8.3.0",
     "@solana/web3.js": "^1.99.0",
-    "@stripe/stripe-js": "^1.54.2",
+    "@stripe/stripe-js": "^10.0.0",
     "@upstash/redis": "^1.39.0",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
