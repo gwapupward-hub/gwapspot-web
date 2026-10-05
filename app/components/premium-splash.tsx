@@ -266,14 +266,14 @@ export default function PremiumSplash({ skipIntro = false }: PremiumSplashProps)
       ) : (
         <div className="premium-splash__route-mark">
           <div className="premium-splash__route-logos" aria-hidden="true">
-            <span className="premium-splash__logo-shell premium-splash__logo-shell--occo">
-              <Image src="/logos/occo.webp" alt="" width={86} height={86} unoptimized />
+            <span className="premium-splash__logo-shell premium-splash__logo-shell--ppv">
+              <Image src="/brand/ppv/v1/ppv-app-icon.png" alt="" width={86} height={86} loading="eager" unoptimized />
             </span>
             <span className="premium-splash__logo-shell premium-splash__logo-shell--gwap">
-              <Image src="/logos/gwap-agent.png" alt="" width={84} height={84} unoptimized />
+              <Image src="/logos/gwap-agent.png" alt="" width={84} height={84} loading="eager" unoptimized />
             </span>
             <span className="premium-splash__logo-shell premium-splash__logo-shell--gns">
-              <Image src="/logos/gns.webp" alt="" width={86} height={86} unoptimized />
+              <Image src="/logos/gns.webp" alt="" width={86} height={86} loading="eager" unoptimized />
             </span>
           </div>
           <strong>GWAP</strong>
