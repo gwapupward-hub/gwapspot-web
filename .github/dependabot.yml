@@ -45,6 +45,10 @@ updates:
           - "minor"
           - "patch"
     ignore:
+      # Major TypeScript upgrades require a compatible typescript-eslint API.
+      - dependency-name: "typescript"
+        update-types:
+          - "version-update:semver-major"
       - dependency-name: "@types/node"
         versions:
           - ">=23"
