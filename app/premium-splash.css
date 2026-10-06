@@ -268,7 +268,7 @@ body:has(.premium-splash--intro.is-leaving) .page-transition-shell {
   animation: gwap-route-logo-arrive 900ms cubic-bezier(.16, 1, .3, 1) both;
 }
 
-.premium-splash__logo-shell--occo {
+.premium-splash__logo-shell--ppv {
   animation-delay: 120ms;
 }
 

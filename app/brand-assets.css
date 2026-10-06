@@ -110,7 +110,15 @@
 .premium-product-card[data-gwap-product="money-neva-sleeps"] .product-glyph { background-image: url("/logos/money-neva-sleeps.webp"); }
 .premium-product-card[data-gwap-product="marketplace"] .product-glyph { background-image: url("/logos/marketplace.webp"); }
 .premium-product-card[data-gwap-product="occo"] .product-glyph { background-image: url("/logos/occo-official.svg"); }
-.premium-product-card[data-gwap-product="private-proof-vault"] .product-glyph { background-image: url("/logos/private-proof-vault.webp"); }
+.premium-product-card[data-gwap-product="private-proof-vault"] .product-glyph { background-image: url("/brand/ppv/v1/ppv-app-icon.png"); }
+
+.product-card--private-proof-vault .product-logo-wrap,
+.product-hero-logo--private-proof-vault {
+  border-color: rgba(139, 92, 246, 0.28);
+  background:
+    radial-gradient(circle at 50% 30%, rgba(139, 92, 246, 0.16), transparent 66%),
+    #0a0b0f;
+}
 
 @media (max-width: 700px) {
   .product-logo-wrap {

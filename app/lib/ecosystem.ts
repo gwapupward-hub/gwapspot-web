@@ -217,7 +217,7 @@ export const ecosystemProducts: EcosystemProduct[] = [
     category: "infrastructure",
     status: "In Development",
     accent: "purple",
-    logo: "/logos/private-proof-vault.webp",
+    logo: "/brand/ppv/v1/ppv-app-icon.png",
     summary: "Gated proof and commerce infrastructure under active devnet/localnet validation; not publicly released.",
     description:
       "Private Proof Vault is under active development as a controlled layer for evidence, credentials, agreements, and verification records. Core proof actions are gated on Solana devnet, Commerce acceptance runs on localnet, and mainnet/public production remain disabled.",
