@@ -1,6 +1,6 @@
 # GWAP MASTER
 
-**Version:** 1.2.0  
+**Version:** 1.3.0  
 **Status:** ACTIVE  
 **Canonical location:** this directory
 
@@ -28,11 +28,25 @@ A cross-system MASTER rule does not weaken a stronger repo-local security or Fou
 | --- | --- |
 | GwapSpot / GwapOS | Public gateway, application orchestration, auth/wallet UX, integration |
 | GNS / GWAP Names | .gwap identity, naming, resolution, public profile identity |
-| GwapScore | Social reputation and social proof-of-control |
+| GwapScore | Multidimensional reputation: social reputation and proof-of-control as the primary reputation surface, with Wallet Intelligence and verified GWAP ecosystem evidence as supporting inputs |
 | PPV | Proof, receipts, commerce evidence, contracts/invoices; custody remains separately gated |
 | Daily Ideas | Discovery, validation, projects/workspaces |
 | GwapMojis | Telegram-native gifting/collectibles and Forge protocol |
 | Marketplace | Economic discovery and future value-exchange layer |
+
+## GwapScore evidence boundary
+
+GwapScore is the canonical GWAP reputation layer. It may consume verified evidence from other GWAP systems, but those systems do not become the scoring authority.
+
+- **Social reputation remains the primary reputation surface.** Proof-of-Control establishes ownership of external accounts; longitudinal snapshots provide observable social evidence over time.
+- **Wallet Intelligence may contribute reputation evidence.** Reputation-relevant wallet history, longevity, meaningful protocol activity, consistency, verified relationships, and other explainable wallet facts may improve or lower the composite result when supported by sufficient evidence.
+- **Wallet Exposure Risk remains separate.** Portfolio concentration, token-risk, volatility, liquidity, and similar exposure signals are not themselves reputation. A reputable user may hold a risky portfolio, and a conservative portfolio does not prove reputation.
+- **No single source may unilaterally determine the final score.** Strong wallet evidence may materially improve a weak social result, but it must not erase contradictory or weak social evidence. The same rule applies in reverse.
+- **Unavailable evidence is not zero.** Missing, inaccessible, unconnected, or temporarily unavailable evidence affects coverage/confidence rather than being fabricated as negative reputation.
+- **The headline score must remain explainable.** A GwapScore result should expose its major dimensions, evidence coverage, confidence, and material reasons so users can understand why the score changed.
+- **Weights are versioned model policy, not permanent architecture.** Initial component weights must be validated against real evidence distributions before being frozen; any production weight change requires a model-version bump and decision evidence.
+
+The canonical product direction is documented in [`../GWAPSCORE_REPUTATION_MODEL_V2.md`](../GWAPSCORE_REPUTATION_MODEL_V2.md).
 
 ## Payment and value-moving boundaries
 
