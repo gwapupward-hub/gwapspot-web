@@ -2,6 +2,7 @@ import "server-only";
 
 import { Connection, PublicKey, clusterApiUrl } from "@solana/web3.js";
 import {
+  buildGwapScoreWalletEvidencePayload,
   collectWalletHistoryEvidence,
   type WalletHistoryEvidence,
 } from "./gwapscore-wallet-evidence-core";
@@ -119,6 +120,11 @@ export async function syncVerifiedWalletEvidenceToGwapScore(input: {
 }): Promise<WalletHistoryEvidence> {
   const evidence = await deriveVerifiedWalletHistoryEvidence(input.verifiedWallet);
   const config = getGwapScoreConfig();
+  const payload = buildGwapScoreWalletEvidencePayload({
+    subjectId: input.subjectId,
+    verifiedWallet: input.verifiedWallet,
+    evidence,
+  });
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), GWAPSCORE_SYNC_TIMEOUT_MS);
@@ -129,13 +135,7 @@ export async function syncVerifiedWalletEvidenceToGwapScore(input: {
         Authorization: `Bearer ${config.apiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        subjectId: input.subjectId,
-        walletAddress: input.verifiedWallet,
-        walletAgeDays: evidence.walletAgeDays,
-        txCount: evidence.txCount,
-        ownershipVerified: true,
-      }),
+      body: JSON.stringify(payload),
       cache: "no-store",
       signal: controller.signal,
     });
