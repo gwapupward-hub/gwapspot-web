@@ -113,10 +113,11 @@ export async function deriveVerifiedWalletHistoryEvidence(
   }
 }
 
-export async function syncVerifiedWalletEvidenceToGwapScore(
-  verifiedWallet: string,
-): Promise<WalletHistoryEvidence> {
-  const evidence = await deriveVerifiedWalletHistoryEvidence(verifiedWallet);
+export async function syncVerifiedWalletEvidenceToGwapScore(input: {
+  subjectId: string;
+  verifiedWallet: string;
+}): Promise<WalletHistoryEvidence> {
+  const evidence = await deriveVerifiedWalletHistoryEvidence(input.verifiedWallet);
   const config = getGwapScoreConfig();
 
   const controller = new AbortController();
@@ -129,8 +130,8 @@ export async function syncVerifiedWalletEvidenceToGwapScore(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        subjectId: verifiedWallet,
-        walletAddress: verifiedWallet,
+        subjectId: input.subjectId,
+        walletAddress: input.verifiedWallet,
         walletAgeDays: evidence.walletAgeDays,
         txCount: evidence.txCount,
         ownershipVerified: true,
