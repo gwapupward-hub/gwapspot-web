@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  buildGwapScoreWalletEvidencePayload,
   collectWalletHistoryEvidence,
   GWAPSCORE_TX_ACTIVITY_CAP,
   GWAPSCORE_WALLET_AGE_CAP_DAYS,
@@ -16,6 +17,24 @@ function signature(index, ageDays) {
     blockTime: NOW_SECONDS - ageDays * DAY,
   };
 }
+
+test("wallet evidence payload keeps canonical GWAP subject separate from wallet", () => {
+  const payload = buildGwapScoreWalletEvidencePayload({
+    subjectId: "gwap_canonicalAccount123",
+    verifiedWallet: "11111111111111111111111111111111111111111111",
+    evidence: {
+      walletAgeDays: 400,
+      txCount: 700,
+    },
+  });
+
+  assert.equal(payload.subjectId, "gwap_canonicalAccount123");
+  assert.equal(payload.walletAddress, "11111111111111111111111111111111111111111111");
+  assert.notEqual(payload.subjectId, payload.walletAddress);
+  assert.equal(payload.ownershipVerified, true);
+  assert.equal(payload.walletAgeDays, 400);
+  assert.equal(payload.txCount, 700);
+});
 
 test("small exhausted wallet produces complete conservative evidence", async () => {
   const pages = [
