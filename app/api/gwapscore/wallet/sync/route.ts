@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isGwapAppHostname } from "../../../../lib/app-domain-routing";
+import { getOrCreateGwapAccount } from "../../../../lib/gwap-account";
 import {
   GwapScoreWalletBridgeError,
   syncVerifiedWalletEvidenceToGwapScore,
@@ -30,7 +31,8 @@ function json(payload: unknown, status = 200) {
  * POST /api/gwapscore/wallet/sync
  *
  * The request body is intentionally ignored. Wallet authority comes only from
- * the verified Privy server session, and wallet history is derived server-side.
+ * the verified Privy server session, the GwapScore subject comes from the
+ * canonical GWAP account, and wallet history is derived server-side.
  */
 export async function POST(request: Request) {
   const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
@@ -63,7 +65,11 @@ export async function POST(request: Request) {
   }
 
   try {
-    const evidence = await syncVerifiedWalletEvidenceToGwapScore(identity.verifiedWallet);
+    const account = await getOrCreateGwapAccount(identity);
+    const evidence = await syncVerifiedWalletEvidenceToGwapScore({
+      subjectId: account.id,
+      verifiedWallet: identity.verifiedWallet,
+    });
     auditAuthEvent("gwapscore.wallet.sync", identity.userId, "success");
     return json({
       synced: true,
