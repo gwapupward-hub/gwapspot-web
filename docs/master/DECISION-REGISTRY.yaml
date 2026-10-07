@@ -1,5 +1,5 @@
-version: "1.2.0"
-updated_at: "2026-10-02"
+version: "1.3.0"
+updated_at: "2026-10-07"
 decisions:
   - id: GWAP-ARCH-001
     status: PRODUCTION
@@ -7,6 +7,13 @@ decisions:
     title: "Bounded ecosystem architecture"
     decision: "Keep identity, reputation, proof/commerce, payment rails, application orchestration, and digital assets as separate domains."
     review_trigger: "Explicit Founder architecture change."
+
+  - id: GWAP-REPUTATION-001
+    status: PRODUCTION
+    owner: GWAPSCORE
+    title: "Composite multidimensional GwapScore reputation"
+    decision: "GwapScore remains the canonical GWAP reputation layer and social reputation/proof-of-control remains its primary reputation surface, while reputation-relevant Wallet Intelligence and verified GWAP ecosystem evidence may contribute to the final 300-900 score. Wallet Exposure Risk remains a separate risk product, unavailable evidence is never scored as zero, no single evidence source may unilaterally determine the result, and production weights must be confidence-aware, explainable, empirically validated, and versioned."
+    review_trigger: "GwapScore scoring-model implementation, material evidence-source changes, a proposed production weight change, or explicit Founder architecture change."
 
   - id: GWAP-PROTO-001
     status: PRODUCTION
