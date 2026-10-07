@@ -24,6 +24,28 @@ export type WalletHistoryEvidence = {
   stopReason: "history_exhausted" | "scoring_bounds_satisfied" | "scan_budget_exhausted";
 };
 
+export type GwapScoreWalletEvidencePayload = {
+  subjectId: string;
+  walletAddress: string;
+  walletAgeDays: number;
+  txCount: number;
+  ownershipVerified: true;
+};
+
+export function buildGwapScoreWalletEvidencePayload(input: {
+  subjectId: string;
+  verifiedWallet: string;
+  evidence: Pick<WalletHistoryEvidence, "walletAgeDays" | "txCount">;
+}): GwapScoreWalletEvidencePayload {
+  return {
+    subjectId: input.subjectId,
+    walletAddress: input.verifiedWallet,
+    walletAgeDays: input.evidence.walletAgeDays,
+    txCount: input.evidence.txCount,
+    ownershipVerified: true,
+  };
+}
+
 function ageDaysFromBlockTime(blockTime: number | null, nowMs: number) {
   if (blockTime === null || !Number.isFinite(blockTime)) return 0;
   return Math.max(0, Math.floor((nowMs - blockTime * 1_000) / 86_400_000));
