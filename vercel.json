@@ -10,5 +10,6 @@
       "path": "/api/ppv/reconcile",
       "schedule": "30 4 * * *"
     }
-  ]
+  ],
+  "ignoreCommand": "node scripts/vercel-ignore-build.mjs"
 }
