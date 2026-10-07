@@ -47,10 +47,8 @@ export function PublicExperienceLayers() {
   // primary download/browse actions must be tappable immediately, with no
   // intro overlay to dismiss first.
   const isCampaignLanding =
-    pathname === "/gwapmojis" ||
-    pathname.startsWith("/gwapmojis/") ||
-    pathname === "/lil-gwapz" ||
-    pathname.startsWith("/lil-gwapz/");
+    pathname === "/gwapmojis" || pathname.startsWith("/gwapmojis/") ||
+    pathname === "/lil-gwapz" || pathname.startsWith("/lil-gwapz/");
 
   if (isAppHost || isTelegram || isApplicationExperience) return null;
 
