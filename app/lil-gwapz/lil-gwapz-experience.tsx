@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useMemo, useRef, useState } from "react";
 import stickerData from "../lib/lil-gwapz-stickers.generated.json";
 
@@ -182,10 +183,10 @@ export default function LilGwapzExperience() {
     <main className="lil-gwapz-page">
       <section className="lg-hero" aria-labelledby="lil-gwapz-title">
         <header className="lg-header">
-          <a href="/" className="lg-brand" aria-label="GWAP home">
+          <Link href="/" className="lg-brand" aria-label="GWAP home">
             <span className="lg-gmark">G</span>
             <span className="lg-logo-text">LIL GWAPZ</span>
-          </a>
+          </Link>
           <span className="lg-pack-pill">REACTION PACK 01</span>
         </header>
 
