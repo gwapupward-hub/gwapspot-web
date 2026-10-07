@@ -6,7 +6,7 @@
 
 ## Purpose
 
-Allow a wallet that is already authenticated and server-verified by GwapOS to contribute reputation-eligible Wallet Intelligence evidence to GwapScore v2.
+Allow a wallet that is already authenticated and server-verified by GwapOS to contribute reputation-eligible Wallet Intelligence evidence to the **same canonical GwapScore subject** that will receive the user's social, identity/proof, and GWAP ecosystem evidence.
 
 The bridge does **not** let the browser declare wallet ownership, submit wallet history, or choose the GwapScore subject.
 
@@ -15,16 +15,24 @@ The bridge does **not** let the browser declare wallet ownership, submit wallet 
 ```text
 Privy access token / session
   -> GwapOS server verifies token
+  -> GwapOS resolves canonical GWAP Account (gwapUserId)
   -> GwapOS resolves verified Solana wallet
   -> GwapOS derives bounded mainnet wallet history server-side
   -> GwapOS calls privileged GwapScore Solana adapter
+       subjectId    = canonical GWAP account id
+       walletAddress = verified Solana wallet
   -> GwapScore persists dedicated Wallet Intelligence snapshot
-  -> Wallet Reputation may contribute to GwapScore v2
+  -> Wallet Reputation joins the same multidimensional GwapScore profile
 ```
 
-The canonical wallet authority is `identity.verifiedWallet` returned by `getAuthenticatedWalletIdentityResult()` in `app/lib/privy-server.ts`.
+Two identities have separate roles:
 
-Never use a client-provided wallet address or `ownershipVerified` boolean as the authority source.
+- **GwapScore subject:** the canonical `gwapUserId` / GWAP Account ID returned by `getOrCreateGwapAccount()`;
+- **wallet authority:** `identity.verifiedWallet` returned by `getAuthenticatedWalletIdentityResult()`.
+
+This follows the Relationship Graph rule that products resolve into the canonical GWAP account rather than creating parallel identities.
+
+Never use a client-provided subject ID, wallet address, or `ownershipVerified` boolean as an authority source.
 
 ## Endpoint
 
@@ -34,6 +42,7 @@ Properties:
 
 - available only on the GwapOS app hostname;
 - requires a valid server-verified Privy session;
+- resolves/creates the canonical GWAP Account server-side;
 - same-origin protected;
 - distributed rate limited;
 - request body is intentionally ignored;
@@ -79,19 +88,19 @@ Missing `blockTime` values do not create synthetic age.
 
 ## GwapScore adapter payload
 
-GwapOS sends only:
+GwapOS sends only server-derived values:
 
 ```json
 {
-  "subjectId": "<verified-wallet>",
-  "walletAddress": "<verified-wallet>",
+  "subjectId": "gwap_<canonical-account-id>",
+  "walletAddress": "<verified-solana-wallet>",
   "walletAgeDays": 0,
   "txCount": 0,
   "ownershipVerified": true
 }
 ```
 
-Both `subjectId` and `walletAddress` are the same server-verified wallet.
+The subject and wallet are intentionally **not the same identifier**. This prevents wallet evidence from creating a parallel GwapScore profile and allows future verified social evidence to join the same canonical person/account reputation record.
 
 The GwapScore adapter remains responsible for its own permission checks and for storing the dedicated v2 Wallet Intelligence snapshot. Generic GwapScore profile claims are not authoritative wallet-reputation evidence.
 
@@ -114,6 +123,7 @@ The bridge fails closed for:
 
 - unauthenticated Privy session;
 - temporarily unavailable Privy identity;
+- canonical GWAP account resolution failure;
 - invalid origin;
 - rate limit exceeded;
 - unavailable Solana history;
@@ -129,8 +139,9 @@ Before production activation:
 
 1. configure a reviewed GwapScore service deployment and least-privilege adapter key;
 2. verify mainnet RPC capacity/rate limits for bounded history collection;
-3. exercise wallet switch / primary-wallet behavior;
+3. exercise wallet switch / primary-wallet behavior against canonical account mapping;
 4. validate replay/idempotency expectations across repeated syncs;
-5. validate score distributions with representative wallets;
-6. complete GwapScore dependency-security remediation/disposition;
-7. explicitly approve v2 model promotion.
+5. ensure social reputation ingestion also targets the same canonical `gwapUserId` subject;
+6. validate score distributions with representative wallets/social profiles;
+7. complete GwapScore dependency-security remediation/disposition;
+8. explicitly approve v2 model promotion.
