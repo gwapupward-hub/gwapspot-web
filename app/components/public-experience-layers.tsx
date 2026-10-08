@@ -43,11 +43,12 @@ export function PublicExperienceLayers() {
     pathname === "/app" ||
     pathname.startsWith("/app/");
 
-  // The GwapMojis campaign page is a top-of-funnel landing target for shared
-  // links: its download CTA must be tappable immediately, with no intro
-  // overlay to dismiss first.
+  // Campaign pages are top-of-funnel landing targets for shared links: their
+  // primary download/browse actions must be tappable immediately, with no
+  // intro overlay to dismiss first.
   const isCampaignLanding =
-    pathname === "/gwapmojis" || pathname.startsWith("/gwapmojis/");
+    pathname === "/gwapmojis" || pathname.startsWith("/gwapmojis/") ||
+    pathname === "/lil-gwapz" || pathname.startsWith("/lil-gwapz/");
 
   if (isAppHost || isTelegram || isApplicationExperience) return null;
 
