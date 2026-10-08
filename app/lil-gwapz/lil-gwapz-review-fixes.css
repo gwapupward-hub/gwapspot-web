@@ -1,0 +1,55 @@
+.lil-gwapz-page .lg-search button {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+}
+
+.lil-gwapz-page .lg-nav-brand:focus-visible,
+.lil-gwapz-page .lg-nav-links button:focus-visible,
+.lil-gwapz-page .lg-nav-exit:focus-visible,
+.lil-gwapz-page .lg-vibe-card:focus-visible,
+.lil-gwapz-page .lg-primary:focus-visible,
+.lil-gwapz-page .lg-secondary:focus-visible,
+.lil-gwapz-page .lg-search input:focus-visible,
+.lil-gwapz-page .lg-search button:focus-visible,
+.lil-gwapz-page .lg-filters button:focus-visible,
+.lil-gwapz-page .lg-sticker-card:focus-visible,
+.lil-gwapz-page .lg-footer button:focus-visible,
+.lil-gwapz-page .lg-footer > a:focus-visible,
+.lil-gwapz-page .lg-close:focus-visible,
+.lil-gwapz-page .lg-sheet-primary:focus-visible,
+.lil-gwapz-page .lg-sheet-secondary:focus-visible {
+  outline: 2px solid var(--lg-green, #13dd13);
+  outline-offset: 3px;
+}
+
+.lil-gwapz-page .lg-sticker-card:focus-visible {
+  border-color: rgba(255, 255, 255, 0.30);
+}
+
+.lil-gwapz-page .lg-sheet {
+  max-height: min(92dvh, 760px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (forced-colors: active) {
+  .lil-gwapz-page .lg-nav-brand:focus-visible,
+  .lil-gwapz-page .lg-nav-links button:focus-visible,
+  .lil-gwapz-page .lg-nav-exit:focus-visible,
+  .lil-gwapz-page .lg-vibe-card:focus-visible,
+  .lil-gwapz-page .lg-primary:focus-visible,
+  .lil-gwapz-page .lg-secondary:focus-visible,
+  .lil-gwapz-page .lg-search input:focus-visible,
+  .lil-gwapz-page .lg-search button:focus-visible,
+  .lil-gwapz-page .lg-filters button:focus-visible,
+  .lil-gwapz-page .lg-sticker-card:focus-visible,
+  .lil-gwapz-page .lg-footer button:focus-visible,
+  .lil-gwapz-page .lg-footer > a:focus-visible,
+  .lil-gwapz-page .lg-close:focus-visible,
+  .lil-gwapz-page .lg-sheet-primary:focus-visible,
+  .lil-gwapz-page .lg-sheet-secondary:focus-visible {
+    outline: 2px solid CanvasText;
+  }
+}

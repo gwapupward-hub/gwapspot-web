@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import LilGwapzExperience from "./lil-gwapz-experience";
+import LilGwapzReviewGuard from "./lil-gwapz-review-guard";
 import "./lil-gwapz-page.css";
 import "./lil-gwapz-professional.css";
+import "./lil-gwapz-review-fixes.css";
 
 export const metadata: Metadata = {
   title: "Lil Gwapz — 152 Reactions. Every Mood.",
@@ -22,5 +24,10 @@ export const metadata: Metadata = {
 };
 
 export default function LilGwapzPage() {
-  return <LilGwapzExperience />;
+  return (
+    <>
+      <LilGwapzReviewGuard />
+      <LilGwapzExperience />
+    </>
+  );
 }
