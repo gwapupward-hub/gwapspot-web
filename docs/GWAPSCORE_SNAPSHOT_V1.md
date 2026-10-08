@@ -16,7 +16,7 @@ decided here.
 - **Snapshot v1** (`gwapscore-snapshot-core.ts`, `gwapscore-snapshots.ts`,
   `x-social-snapshot-source.ts`) observes that verified account on a schedule and
   persists an append-only series of raw public observations.
-- **GwapScore** remains the wallet reputation signal and is untouched.
+- **GwapScore** remains the wallet reputation signal and is untouched by this v1 collector. The canonical future direction is the multidimensional model in `GWAPSCORE_REPUTATION_MODEL_V2.md`, where social evidence becomes the primary reputation surface and reputation-eligible Wallet Intelligence remains a supporting input.
 - **Trust Graph** still explains evidence coverage; no weight changes here.
 
 Only verified accounts are ever observed. Revoking a verification stops
@@ -121,9 +121,25 @@ Account-scoped only in v1. There is no public and no B2B snapshot surface.
 
 The cron entry lives in `vercel.json` and runs daily at 04:00 UTC.
 
+## Relationship to GwapScore v2
+
+Snapshot v1 is one evidence producer for the future composite reputation model. It does not own weights, tiers, wallet interpretation, or the final score.
+
+When v2 scoring is implemented:
+
+- social snapshot facts remain provenance-bearing inputs rather than pre-scored judgements;
+- reputation-eligible Wallet Intelligence may contribute separately;
+- missing social metrics remain unavailable rather than zero;
+- evidence coverage and confidence remain distinct from reputation strength;
+- a strong wallet may improve the composite result without rewriting a weak social dimension as strong;
+- model changes require a version bump and regression evidence.
+
+See `GWAPSCORE_REPUTATION_MODEL_V2.md` for the canonical product/scoring direction.
+
 ## Not in this phase
 
 No score model, no weights, no confidence calculation, no evidence-window
 policy, no score history, no score deltas. Those are designed once several real
 accounts have accumulated repeated snapshots and the actual distributions are
-observable.
+observable. The v2 architecture is now defined, but its production weights and
+calibration remain intentionally outside Snapshot v1.

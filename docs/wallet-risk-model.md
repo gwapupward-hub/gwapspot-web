@@ -22,6 +22,25 @@ Higher means more portfolio exposure risk.
 
 Signals are threshold-based and return the points and evidence used. Missing data lowers confidence or produces insufficient-data status rather than a fabricated safe result.
 
+## GwapScore boundary
+
+Wallet Intelligence may provide a documented subset of reputation-relevant wallet evidence to GwapScore. Wallet Exposure Risk is not part of that subset and does not directly raise or lower the 300–900 reputation score.
+
+Potential reputation-eligible Wallet Intelligence evidence can include wallet longevity, sufficient transaction history, consistent participation, meaningful protocol usage, verified relationships, and other explainable behavioral facts registered by the scoring model.
+
+Portfolio characteristics such as concentration, volatility, liquidity exposure, drawdown, asset selection, and price-coverage gaps remain separate from reputation.
+
+```text
+Wallet Intelligence
+  -> reputation-eligible evidence subset
+  -> GwapScore
+
+Wallet Exposure Risk
+  -> separate portfolio-risk result
+```
+
+See `GWAPSCORE_REPUTATION_MODEL_V2.md` for the canonical composite reputation policy.
+
 ## Non-goals
 
-This model does not claim that an unverified token is fraudulent, does not infer criminality or identity risk, and does not modify the canonical GwapScore 300–900 reputation model.
+This model does not make identity or reputation judgements and does not directly modify the canonical GwapScore 300–900 reputation model.

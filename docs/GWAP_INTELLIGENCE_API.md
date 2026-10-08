@@ -8,6 +8,10 @@ Production base URL: `https://www.gwapspot.com`
 
 The endpoint returns GNS identity, canonical GwapScore reputation, Solana asset intelligence, enriched portfolio data, and wallet exposure risk from one response.
 
+The response may expose these products together, but they remain separate domains. GwapScore may consume only the versioned, reputation-eligible subset of Wallet Intelligence defined by the active GwapScore model. Wallet Exposure Risk remains a separate result and is not itself a GwapScore input.
+
+See `GWAPSCORE_REPUTATION_MODEL_V2.md` for the canonical composite reputation direction.
+
 ## Authentication
 
 Send a server-side GWAP API key using either header:
