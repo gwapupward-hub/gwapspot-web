@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import LilGwapzExperience from "./lil-gwapz-experience";
 import "./lil-gwapz-page.css";
+import "./lil-gwapz-professional.css";
 
 export const metadata: Metadata = {
   title: "Lil Gwapz — 152 Reactions. Every Mood.",
