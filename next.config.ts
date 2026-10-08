@@ -91,6 +91,7 @@ const gwapAppOwnedRoutes = [
 ];
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ["terminal.local"],
   reactStrictMode: true,
   poweredByHeader: false,
   async redirects() {
@@ -148,6 +149,7 @@ const nextConfig: NextConfig = {
       ...[
         "/gwapmojis/stickers/:path*",
         "/gwapmojis/share/:path*",
+        "/lil-gwapz/r01-v1/:path*",
         "/gwapos/icons/v1/:path*",
       ].map((source) => ({
         source,
