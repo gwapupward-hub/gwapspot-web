@@ -1,0 +1,633 @@
+/* Lil Gwapz v2.1 — premium editorial override
+   Loaded after lil-gwapz-page.css so the working interaction/export system stays untouched. */
+
+.lil-gwapz-page {
+  --lg-bg: #050505;
+  --lg-panel: rgba(10, 11, 10, 0.88);
+  --lg-panel-solid: #0a0b0a;
+  --lg-line: rgba(255, 255, 255, 0.10);
+  --lg-line-strong: rgba(255, 255, 255, 0.18);
+  --lg-text-muted: #9ca39e;
+  --lg-green: #13dd13;
+  background: var(--lg-bg);
+  color: #f7f8f7;
+}
+
+/* Navigation — product bar, not theme-park chrome. */
+.lg-site-nav {
+  top: max(0.75rem, env(safe-area-inset-top));
+  width: min(calc(100% - 1rem), 1240px);
+  min-height: 58px;
+  margin-top: 0.75rem;
+  padding: 0.35rem 0.45rem;
+  border: 1px solid var(--lg-line);
+  border-radius: 999px;
+  background: rgba(6, 7, 6, 0.78);
+  box-shadow: 0 18px 55px rgba(0, 0, 0, 0.30);
+  backdrop-filter: blur(22px) saturate(125%);
+  -webkit-backdrop-filter: blur(22px) saturate(125%);
+}
+
+.lg-nav-brand {
+  gap: 0.55rem;
+  padding-inline: 0.72rem;
+  font-size: 0.82rem;
+  letter-spacing: 0.055em;
+}
+
+.lg-nav-crown,
+.lg-footer-crown {
+  width: 0.55rem;
+  height: 0.55rem;
+  flex: 0 0 0.55rem;
+  border-radius: 50%;
+  background: var(--lg-green);
+  color: transparent;
+  font-size: 0;
+  box-shadow: 0 0 18px rgba(19, 221, 19, 0.55);
+}
+
+.lg-nav-links button,
+.lg-nav-exit {
+  min-height: 44px;
+  border-radius: 999px;
+  color: #aeb5b0;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.025em;
+}
+
+.lg-nav-links button:hover,
+.lg-nav-links button:focus-visible {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.075);
+}
+
+.lg-nav-exit {
+  padding-inline: 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Hero — artwork carries the atmosphere; UI stays disciplined. */
+.lg-hero {
+  width: min(calc(100% - 1rem), 1320px);
+  min-height: min(790px, calc(100svh - 88px));
+  margin-top: 0.85rem;
+  padding: clamp(2rem, 4vw, 4.75rem);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: clamp(1.4rem, 3vw, 2.2rem);
+  background-image:
+    linear-gradient(90deg, rgba(2, 3, 2, 0.94) 0%, rgba(2, 3, 2, 0.78) 34%, rgba(2, 3, 2, 0.26) 72%, rgba(2, 3, 2, 0.45) 100%),
+    linear-gradient(180deg, rgba(2, 3, 2, 0.06), rgba(2, 3, 2, 0.48)),
+    url("https://res.cloudinary.com/dg1u1wpdu/image/upload/f_auto,q_auto:good,w_2400/v1791429066/lil-gwapz/site/v2/hero-background.png");
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.36);
+}
+
+.lg-hero::before,
+.lg-hero::after,
+.lg-graffiti {
+  display: none;
+}
+
+.lg-hero-lockup {
+  max-width: 660px;
+  margin: 0;
+  text-align: left;
+}
+
+.lg-eyebrow,
+.lg-browser-heading p,
+.lg-guide-copy > p {
+  margin-bottom: 0.85rem;
+  color: #8ee88e;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+}
+
+.lg-wordmark {
+  justify-items: start;
+  margin-bottom: 1rem;
+  transform: none;
+  filter: none;
+  line-height: 0.82;
+}
+
+.lg-wordmark-lil {
+  color: #ffb20b;
+  font-size: clamp(2rem, 5.2vw, 4.2rem);
+  font-weight: 950;
+  letter-spacing: -0.055em;
+  -webkit-text-stroke: 0;
+  text-shadow: 0 10px 28px rgba(0, 0, 0, 0.40);
+}
+
+.lg-wordmark-lil::before {
+  display: none;
+}
+
+.lg-wordmark-gwapz {
+  color: #f7f7f5;
+  font-size: clamp(3rem, 7.7vw, 6.6rem);
+  font-weight: 950;
+  letter-spacing: -0.07em;
+  -webkit-text-stroke: 0;
+  text-shadow: 0 8px 30px rgba(0, 0, 0, 0.48);
+}
+
+.lg-pack-tag {
+  margin: 0 0 1.5rem;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  color: #dfe4e0;
+  background: rgba(5, 7, 5, 0.58);
+  box-shadow: none;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.17em;
+}
+
+.lg-hero-lockup h1 {
+  max-width: 630px;
+  font-size: clamp(3rem, 7.4vw, 6.3rem);
+  line-height: 0.88;
+  letter-spacing: -0.06em;
+  font-weight: 950;
+}
+
+.lg-hero-lockup h1 span {
+  color: var(--lg-green);
+  text-shadow: 0 0 28px rgba(19, 221, 19, 0.24);
+}
+
+.lg-hero-subcopy {
+  max-width: 520px;
+  margin-top: 1.15rem;
+  color: #b8bfba;
+  font-size: clamp(0.96rem, 1.65vw, 1.16rem);
+  line-height: 1.6;
+}
+
+/* Male/female entry cards — photography/product treatment rather than stickers-on-a-poster. */
+.lg-vibe-grid {
+  gap: 1rem;
+  max-width: none;
+  margin: 0;
+}
+
+.lg-vibe-card {
+  min-height: clamp(27rem, 42vw, 36rem);
+  border-radius: 1.65rem;
+  background: rgba(7, 8, 7, 0.74);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.lg-vibe-card.male,
+.lg-vibe-card.female {
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+}
+
+.lg-vibe-card::before,
+.lg-vibe-card.female::before {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 42%),
+    radial-gradient(circle at 50% 34%, rgba(19, 221, 19, 0.10), transparent 55%);
+}
+
+.lg-vibe-card.female::before {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 42%),
+    radial-gradient(circle at 50% 34%, rgba(255, 32, 78, 0.095), transparent 55%);
+}
+
+.lg-vibe-card:hover,
+.lg-vibe-card:focus-visible {
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.26);
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.40);
+}
+
+.lg-vibe-label,
+.female .lg-vibe-label {
+  top: 1rem;
+  left: 1rem;
+  padding: 0.48rem 0.7rem;
+  transform: none;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  color: #eff3ef;
+  background: rgba(5, 7, 5, 0.62);
+  box-shadow: none;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  font-size: 0.62rem;
+  font-weight: 850;
+  letter-spacing: 0.13em;
+}
+
+.lg-vibe-card.male .lg-vibe-label::before,
+.lg-vibe-card.female .lg-vibe-label::before {
+  content: "";
+  display: inline-block;
+  width: 0.42rem;
+  height: 0.42rem;
+  margin-right: 0.45rem;
+  border-radius: 50%;
+  background: var(--lg-green);
+  box-shadow: 0 0 12px rgba(19, 221, 19, 0.6);
+}
+
+.lg-vibe-card.female .lg-vibe-label::before {
+  background: #ff4268;
+  box-shadow: 0 0 12px rgba(255, 66, 104, 0.52);
+}
+
+.lg-hero-sprite {
+  inset: 1.15rem -0.45rem 5.2rem;
+  transform: scale(1.01);
+  filter: drop-shadow(0 24px 30px rgba(0, 0, 0, 0.36));
+}
+
+.lg-vibe-copy {
+  padding: 3.6rem 1.15rem 1.1rem;
+  background: linear-gradient(to top, rgba(2, 3, 2, 0.98), rgba(2, 3, 2, 0.72) 58%, transparent);
+}
+
+.lg-vibe-copy small,
+.female .lg-vibe-copy small {
+  color: #a8afa9;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+}
+
+.lg-vibe-copy strong {
+  font-size: clamp(1.1rem, 2.2vw, 1.55rem);
+  font-weight: 900;
+}
+
+.lg-vibe-copy > span {
+  margin-top: 0.55rem;
+  color: #d5dad6;
+  font-size: 0.76rem;
+}
+
+.lg-vibe-copy b,
+.female .lg-vibe-copy b {
+  color: #fff;
+}
+
+.lg-hero-actions {
+  max-width: 660px;
+  margin: 1.35rem 0 0;
+}
+
+.lg-primary,
+.lg-secondary,
+.lg-footer button,
+.lg-sheet-primary,
+.lg-sheet-secondary {
+  min-height: 56px;
+  border-radius: 999px;
+  font-weight: 850;
+}
+
+.lg-primary,
+.lg-footer button,
+.lg-sheet-primary {
+  border: 1px solid #21ef25;
+  color: #031003;
+  background: #19e51d;
+  box-shadow: 0 12px 34px rgba(19, 221, 19, 0.16);
+}
+
+.lg-secondary,
+.lg-sheet-secondary {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(7, 8, 7, 0.56);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.lg-stat-strip {
+  max-width: 660px;
+  margin: 1.1rem 0 0;
+  padding: 0.95rem 0;
+  border-color: rgba(255, 255, 255, 0.10);
+  color: #919992;
+  text-align: left;
+  font-size: 0.62rem;
+}
+
+.lg-stat-strip span {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.lg-stat-strip strong {
+  font-size: 1.1rem;
+  letter-spacing: -0.02em;
+}
+
+/* Browser — closest to the clean black/green reference screenshot. */
+.lg-gallery {
+  width: min(100%, 1180px);
+  padding-top: clamp(4.3rem, 8vw, 7rem);
+}
+
+.lg-browser-heading {
+  margin-bottom: 1.4rem;
+}
+
+.lg-browser-heading h2,
+.lg-guide-copy h2 {
+  font-size: clamp(2.5rem, 6vw, 4.4rem);
+  line-height: 0.94;
+  letter-spacing: -0.045em;
+}
+
+.lg-result-count {
+  border-color: rgba(255, 255, 255, 0.10);
+  color: #aab1ac;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.lg-browser-toolbar {
+  top: calc(max(0.75rem, env(safe-area-inset-top)) + 68px);
+  gap: 0.65rem;
+  padding: 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 1.25rem;
+  background: rgba(6, 7, 6, 0.82);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.26);
+  backdrop-filter: blur(22px) saturate(120%);
+  -webkit-backdrop-filter: blur(22px) saturate(120%);
+}
+
+.lg-search {
+  min-height: 56px;
+  border: 1px solid rgba(19, 221, 19, 0.48);
+  border-radius: 1rem;
+  background: rgba(8, 10, 8, 0.88);
+  box-shadow: inset 0 0 0 1px rgba(19, 221, 19, 0.04);
+}
+
+.lg-search > span {
+  color: #d7ddd8;
+}
+
+.lg-filters {
+  gap: 0.2rem;
+  padding: 0.22rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.lg-filters button {
+  min-height: 44px;
+  border-radius: 0.72rem;
+  color: #999f9b;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.lg-filters button.active {
+  color: #031003;
+  background: #19e51d;
+  box-shadow: none;
+}
+
+.lg-sticker-grid {
+  gap: 0.78rem;
+}
+
+.lg-sticker-card {
+  padding: 0.42rem;
+  border-color: rgba(255, 255, 255, 0.08);
+  border-radius: 1.35rem;
+  background: linear-gradient(180deg, #0c0d0c, #070807);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.20);
+}
+
+.lg-sticker-card:hover,
+.lg-sticker-card:focus-visible {
+  transform: translateY(-3px);
+  border-color: rgba(255, 255, 255, 0.22);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.32);
+}
+
+.lg-card-glow {
+  inset: 13% 15% 30%;
+  opacity: 0.42;
+  filter: blur(12px);
+}
+
+.lg-sticker-sprite {
+  border-radius: 1.05rem;
+}
+
+.lg-sticker-meta {
+  padding: 0.62rem 0.62rem 0.7rem;
+}
+
+.lg-meta-topline small,
+.lg-meta-topline i {
+  color: #8f9691;
+  font-size: 0.57rem;
+  font-weight: 800;
+  letter-spacing: 0.11em;
+}
+
+.lg-sticker-meta strong {
+  font-size: 0.9rem;
+  font-weight: 850;
+  letter-spacing: -0.02em;
+}
+
+/* Guide/footer — minimal editorial rhythm. */
+.lg-guide {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.lg-guide-grid article {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: #0a0b0a;
+  box-shadow: none;
+}
+
+.lg-guide-grid article b {
+  color: #6d746f;
+}
+
+.lg-footer {
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Bottom sheet — product action panel, not a modal poster. */
+.lg-sheet-backdrop {
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.lg-sheet {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #0b0c0b;
+  box-shadow: 0 -24px 80px rgba(0, 0, 0, 0.58);
+}
+
+@media (min-width: 900px) {
+  .lg-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(460px, 1.1fr);
+    grid-template-areas:
+      "lockup cards"
+      "actions cards"
+      "stats cards";
+    column-gap: clamp(2rem, 5vw, 5rem);
+    align-items: center;
+  }
+
+  .lg-hero-lockup { grid-area: lockup; align-self: end; }
+  .lg-vibe-grid { grid-area: cards; align-self: stretch; }
+  .lg-hero-actions { grid-area: actions; align-self: start; grid-template-columns: 1fr 1fr; }
+  .lg-stat-strip { grid-area: stats; align-self: start; }
+
+  .lg-sticker-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 680px) and (max-width: 899px) {
+  .lg-sticker-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 899px) {
+  .lg-hero {
+    min-height: auto;
+    background-image:
+      linear-gradient(180deg, rgba(2, 3, 2, 0.84) 0%, rgba(2, 3, 2, 0.38) 38%, rgba(2, 3, 2, 0.78) 100%),
+      url("https://res.cloudinary.com/dg1u1wpdu/image/upload/f_auto,q_auto:good,w_1400/v1791429066/lil-gwapz/site/v2/hero-background.png");
+    background-position: 58% center;
+  }
+
+  .lg-hero-lockup {
+    margin-bottom: 1.6rem;
+  }
+
+  .lg-vibe-grid {
+    margin-top: 1rem;
+  }
+
+  .lg-vibe-card {
+    min-height: clamp(21rem, 73vw, 31rem);
+  }
+
+  .lg-hero-actions,
+  .lg-stat-strip {
+    max-width: none;
+  }
+}
+
+@media (max-width: 620px) {
+  .lg-site-nav {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .lg-nav-brand {
+    font-size: 0.7rem;
+  }
+
+  .lg-nav-links {
+    justify-content: flex-start;
+  }
+
+  .lg-nav-links button {
+    padding-inline: 0.55rem;
+    font-size: 0.68rem;
+  }
+
+  .lg-nav-exit {
+    width: 42px;
+    padding: 0;
+    justify-content: center;
+    font-size: 0;
+  }
+
+  .lg-nav-exit span {
+    font-size: 0.9rem;
+  }
+
+  .lg-hero {
+    padding: 2.2rem 1rem 1.15rem;
+    border-radius: 1.45rem;
+  }
+
+  .lg-wordmark-lil {
+    font-size: clamp(1.8rem, 9vw, 2.55rem);
+  }
+
+  .lg-wordmark-gwapz {
+    font-size: clamp(3rem, 15vw, 4.55rem);
+  }
+
+  .lg-hero-lockup h1 {
+    font-size: clamp(2.85rem, 14vw, 4.6rem);
+  }
+
+  .lg-vibe-grid {
+    gap: 0.65rem;
+  }
+
+  .lg-vibe-card {
+    min-height: clamp(19.5rem, 88vw, 27rem);
+    border-radius: 1.15rem;
+  }
+
+  .lg-vibe-label,
+  .female .lg-vibe-label {
+    top: 0.65rem;
+    left: 0.65rem;
+    padding: 0.4rem 0.52rem;
+    font-size: 0.52rem;
+  }
+
+  .lg-vibe-copy {
+    padding: 2.9rem 0.72rem 0.72rem;
+  }
+
+  .lg-vibe-copy > span {
+    font-size: 0.65rem;
+  }
+
+  .lg-stat-strip {
+    text-align: center;
+  }
+
+  .lg-browser-heading {
+    align-items: flex-start;
+  }
+
+  .lg-browser-heading h2,
+  .lg-guide-copy h2 {
+    font-size: clamp(2.35rem, 11vw, 3.35rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lg-vibe-card,
+  .lg-sticker-card {
+    transition: none;
+  }
+}
