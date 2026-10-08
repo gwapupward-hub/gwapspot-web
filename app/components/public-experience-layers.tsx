@@ -43,14 +43,28 @@ export function PublicExperienceLayers() {
     pathname === "/app" ||
     pathname.startsWith("/app/");
 
+  const isStandaloneLilGwapz =
+    pathname === "/lil-gwapz" || pathname.startsWith("/lil-gwapz/");
+
   // Campaign pages are top-of-funnel landing targets for shared links: their
   // primary download/browse actions must be tappable immediately, with no
   // intro overlay to dismiss first.
   const isCampaignLanding =
-    pathname === "/gwapmojis" || pathname.startsWith("/gwapmojis/") ||
-    pathname === "/lil-gwapz" || pathname.startsWith("/lil-gwapz/");
+    pathname === "/gwapmojis" || pathname.startsWith("/gwapmojis/");
 
   if (isAppHost || isTelegram || isApplicationExperience) return null;
+
+  // Lil Gwapz is intentionally a self-contained collection experience. Keep
+  // analytics, but do not inherit the ecosystem interaction/sensory/memory
+  // layers that give the main GwapSpot site its product-shell behavior.
+  if (isStandaloneLilGwapz) {
+    return (
+      <>
+        <Telemetry />
+        <ConversionTelemetry />
+      </>
+    );
+  }
 
   return (
     <>
