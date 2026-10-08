@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import stickerData from "../lib/lil-gwapz-stickers.generated.json";
 
 type Sex = "M" | "F";
@@ -103,7 +103,10 @@ async function stickerBlob(choice: StickerChoice) {
   );
 
   return new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("PNG export failed."))), "image/png");
+    canvas.toBlob(
+      (blob) => (blob ? resolve(blob) : reject(new Error("PNG export failed."))),
+      "image/png",
+    );
   });
 }
 
@@ -113,6 +116,7 @@ function fileName(choice: StickerChoice) {
 
 export default function LilGwapzExperience() {
   const galleryRef = useRef<HTMLElement | null>(null);
+  const guideRef = useRef<HTMLElement | null>(null);
   const [filter, setFilter] = useState<Filter>("ALL");
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<StickerChoice | null>(null);
@@ -121,20 +125,38 @@ export default function LilGwapzExperience() {
   const filtered = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     const rows: StickerChoice[] = [];
+
     for (const reaction of reactions) {
-      const haystack = [reaction.reaction, reaction.emoji, ...reaction.keywords, formatId(reaction.id)]
+      const haystack = [
+        reaction.reaction,
+        reaction.emoji,
+        ...reaction.keywords,
+        formatId(reaction.id),
+      ]
         .join(" ")
         .toLowerCase();
+
       if (normalized && !haystack.includes(normalized)) continue;
-      if (filter === "ALL" || filter === "M") rows.push({ reaction, sex: "M", frame: reaction.male });
-      if (filter === "ALL" || filter === "F") rows.push({ reaction, sex: "F", frame: reaction.female });
+      if (filter === "ALL" || filter === "M") {
+        rows.push({ reaction, sex: "M", frame: reaction.male });
+      }
+      if (filter === "ALL" || filter === "F") {
+        rows.push({ reaction, sex: "F", frame: reaction.female });
+      }
     }
+
     return rows;
   }, [filter, query]);
 
   const scrollToGallery = useCallback((nextFilter?: Filter) => {
     if (nextFilter) setFilter(nextFilter);
-    requestAnimationFrame(() => galleryRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    requestAnimationFrame(() => {
+      galleryRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, []);
+
+  const scrollToGuide = useCallback(() => {
+    guideRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
 
   const downloadSticker = useCallback(async (choice: StickerChoice) => {
@@ -154,95 +176,159 @@ export default function LilGwapzExperience() {
     }
   }, []);
 
-  const shareSticker = useCallback(async (choice: StickerChoice) => {
-    setBusy("share");
-    try {
-      const blob = await stickerBlob(choice);
-      const file = new File([blob], fileName(choice), { type: "image/png" });
-      if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
-        await navigator.share({
-          title: `${choice.reaction.reaction} — Lil Gwapz`,
-          text: "Lil Gwapz — Reaction Pack 01",
-          files: [file],
-        });
-      } else {
+  const shareSticker = useCallback(
+    async (choice: StickerChoice) => {
+      setBusy("share");
+      try {
+        const blob = await stickerBlob(choice);
+        const file = new File([blob], fileName(choice), { type: "image/png" });
+        if (
+          navigator.share &&
+          (!navigator.canShare || navigator.canShare({ files: [file] }))
+        ) {
+          await navigator.share({
+            title: `${choice.reaction.reaction} — Lil Gwapz`,
+            text: "Lil Gwapz — Reaction Pack 01",
+            files: [file],
+          });
+        } else {
+          await downloadSticker(choice);
+        }
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
         await downloadSticker(choice);
+      } finally {
+        setBusy(null);
       }
-    } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") return;
-      await downloadSticker(choice);
-    } finally {
-      setBusy(null);
-    }
-  }, [downloadSticker]);
+    },
+    [downloadSticker],
+  );
 
-  const heroMale = reactions[1];
-  const heroFemale = reactions[4];
+  useEffect(() => {
+    if (!selected) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSelected(null);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [selected]);
+
+  const heroMale = reactions[20];
+  const heroFemale = reactions[11];
 
   return (
     <main className="lil-gwapz-page">
-      <section className="lg-hero" aria-labelledby="lil-gwapz-title">
-        <header className="lg-header">
-          <Link href="/" className="lg-brand" aria-label="GWAP home">
-            <span className="lg-gmark">G</span>
-            <span className="lg-logo-text">LIL GWAPZ</span>
-          </Link>
-          <span className="lg-pack-pill">REACTION PACK 01</span>
-        </header>
+      <nav className="lg-site-nav" aria-label="Lil Gwapz navigation">
+        <button
+          type="button"
+          className="lg-nav-brand"
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          aria-label="Back to Lil Gwapz top"
+        >
+          <span className="lg-nav-crown">♛</span>
+          <span>LIL GWAPZ</span>
+        </button>
+        <div className="lg-nav-links">
+          <button type="button" onClick={() => scrollToGallery("ALL")}>Browse</button>
+          <button type="button" onClick={() => scrollToGallery("M")}>Male</button>
+          <button type="button" onClick={() => scrollToGallery("F")}>Female</button>
+          <button type="button" onClick={scrollToGuide}>Use</button>
+        </div>
+        <Link href="/" className="lg-nav-exit" aria-label="Return to GwapSpot">
+          GWAP<span aria-hidden="true">↗</span>
+        </Link>
+      </nav>
 
-        <div className="lg-hero-copy">
+      <section className="lg-hero" aria-labelledby="lil-gwapz-title">
+        <div className="lg-graffiti" aria-hidden="true">
+          <span>♛</span><span>♛</span><span>×</span><span>♛</span>
+        </div>
+
+        <div className="lg-hero-lockup">
           <p className="lg-eyebrow">AN ORIGINAL GWAP COLLECTION</p>
+          <div className="lg-wordmark" aria-label="Lil Gwapz">
+            <span className="lg-wordmark-lil">LIL</span>
+            <span className="lg-wordmark-gwapz">GWAPZ</span>
+          </div>
+          <div className="lg-pack-tag">REACTION PACK 01</div>
           <h1 id="lil-gwapz-title">PICK YOUR <span>VIBE.</span></h1>
-          <p>76 reactions each. <strong>152 ways to say it.</strong></p>
+          <p className="lg-hero-subcopy">76 reactions each. <strong>152 ways to say it.</strong></p>
         </div>
 
         <div className="lg-vibe-grid">
           <button className="lg-vibe-card male" type="button" onClick={() => scrollToGallery("M")}>
-            <span className="lg-spray">MALE</span>
+            <span className="lg-vibe-label">MALE</span>
             <span className="lg-hero-sprite" style={spriteStyle(heroMale.male)} aria-hidden="true" />
             <span className="lg-vibe-copy">
+              <small>76 REACTIONS</small>
               <strong>LIL GWAPZ</strong>
-              <small>MALE · 76 REACTIONS</small>
-              <span>View Pack <b>→</b></span>
+              <span>View male pack <b>→</b></span>
             </span>
           </button>
+
           <button className="lg-vibe-card female" type="button" onClick={() => scrollToGallery("F")}>
-            <span className="lg-spray">FEMALE</span>
+            <span className="lg-vibe-label">FEMALE</span>
             <span className="lg-hero-sprite" style={spriteStyle(heroFemale.female)} aria-hidden="true" />
             <span className="lg-vibe-copy">
+              <small>76 REACTIONS</small>
               <strong>LIL GWAPZ</strong>
-              <small>FEMALE · 76 REACTIONS</small>
-              <span>View Pack <b>→</b></span>
+              <span>View female pack <b>→</b></span>
             </span>
           </button>
         </div>
 
         <div className="lg-hero-actions">
-          <button type="button" className="lg-primary" onClick={() => scrollToGallery("ALL")}>Browse All 152 <span>→</span></button>
-          <button className="lg-secondary" type="button" onClick={() => scrollToGallery("ALL")}>Save Individual PNGs <span>↓</span></button>
+          <button type="button" className="lg-primary" onClick={() => scrollToGallery("ALL")}>
+            Browse All 152 <span>→</span>
+          </button>
+          <button className="lg-secondary" type="button" onClick={scrollToGuide}>
+            How to save & share <span>↓</span>
+          </button>
+        </div>
+
+        <div className="lg-stat-strip" aria-label="Reaction Pack 01 details">
+          <span><strong>76</strong> expressions</span>
+          <span><strong>2</strong> character versions</span>
+          <span><strong>152</strong> stickers</span>
         </div>
       </section>
 
       <section className="lg-gallery" ref={galleryRef} aria-labelledby="reaction-browser-title">
-        <div className="lg-section-head">
+        <div className="lg-browser-heading">
           <div>
             <p>REACTION PACK 01</p>
-            <h2 id="reaction-browser-title">Find your reaction.</h2>
+            <h2 id="reaction-browser-title">Find the reaction.</h2>
           </div>
-          <span>{filtered.length} STICKERS</span>
+          <span className="lg-result-count" aria-live="polite">{filtered.length} stickers</span>
         </div>
 
-        <label className="lg-search">
-          <span aria-hidden="true">⌕</span>
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search reactions" aria-label="Search reactions" />
-        </label>
+        <div className="lg-browser-toolbar">
+          <label className="lg-search">
+            <span aria-hidden="true">⌕</span>
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search reactions"
+              aria-label="Search reactions"
+            />
+            {query && (
+              <button type="button" onClick={() => setQuery("")} aria-label="Clear search">×</button>
+            )}
+          </label>
 
-        <div className="lg-filters" role="group" aria-label="Filter by character">
-          {(["ALL", "M", "F"] as const).map((value) => (
-            <button key={value} type="button" className={filter === value ? "active" : ""} onClick={() => setFilter(value)}>
-              {value === "ALL" ? "All" : value === "M" ? "Male" : "Female"}
-            </button>
-          ))}
+          <div className="lg-filters" role="group" aria-label="Filter by character">
+            {(["ALL", "M", "F"] as const).map((value) => (
+              <button
+                key={value}
+                type="button"
+                className={filter === value ? "active" : ""}
+                aria-pressed={filter === value}
+                onClick={() => setFilter(value)}
+              >
+                {value === "ALL" ? "All" : value === "M" ? "Male" : "Female"}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="lg-sticker-grid">
@@ -254,36 +340,68 @@ export default function LilGwapzExperience() {
               onClick={() => setSelected(choice)}
               aria-label={`${choice.reaction.reaction}, ${choice.sex === "M" ? "male" : "female"} Lil Gwapz`}
             >
+              <span className="lg-card-glow" aria-hidden="true" />
               <span className="lg-sticker-sprite" style={spriteStyle(choice.frame)} aria-hidden="true" />
               <span className="lg-sticker-meta">
+                <span className="lg-meta-topline">
+                  <small>{choice.sex === "M" ? "MALE" : "FEMALE"}</small>
+                  <i>{formatId(choice.reaction.id).replace("LG-R01-", "#")}</i>
+                </span>
                 <strong>{choice.reaction.reaction}</strong>
-                <small>{formatId(choice.reaction.id)} · {choice.sex}</small>
               </span>
             </button>
           ))}
         </div>
 
-        {filtered.length === 0 && <p className="lg-empty">No reaction matched that search.</p>}
+        {filtered.length === 0 && (
+          <div className="lg-empty">
+            <strong>No match.</strong>
+            <span>Try another mood, phrase, or reaction number.</span>
+          </div>
+        )}
       </section>
 
-      <section className="lg-footer-cta">
-        <p>Keep the whole collection on your device.</p>
-        <h2>152 reactions. Ready when the group chat gets reckless.</h2>
-        <button type="button" onClick={() => scrollToGallery("ALL")}>Browse All 152 <span>→</span></button>
-        <small>Tap any sticker to save a PNG or open your phone’s Share sheet. Lil Gwapz remains separate from the original GwapMojis collection.</small>
+      <section className="lg-guide" ref={guideRef} aria-labelledby="lg-guide-title">
+        <div className="lg-guide-copy">
+          <p>USE THEM ANYWHERE</p>
+          <h2 id="lg-guide-title">Tap. Save. Send.</h2>
+          <span>Lil Gwapz is built for phones first — download the PNG or open your device share sheet directly from any sticker.</span>
+        </div>
+        <div className="lg-guide-grid">
+          <article><b>01</b><strong>Pick a reaction</strong><span>Search by mood, phrase, or browse the male and female packs.</span></article>
+          <article><b>02</b><strong>Open the sticker</strong><span>Tap any card for a focused preview and quick actions.</span></article>
+          <article><b>03</b><strong>Save or share</strong><span>Keep the transparent PNG or send it through your phone’s native share sheet.</span></article>
+        </div>
       </section>
+
+      <footer className="lg-footer">
+        <div>
+          <span className="lg-footer-crown">♛</span>
+          <strong>LIL GWAPZ</strong>
+          <small>REACTION PACK 01 · 152 STICKERS</small>
+        </div>
+        <button type="button" onClick={() => scrollToGallery("ALL")}>Browse collection <span>→</span></button>
+        <Link href="/">Back to GwapSpot</Link>
+      </footer>
 
       {selected && (
         <div className="lg-sheet-backdrop" role="presentation" onMouseDown={() => setSelected(null)}>
-          <section className="lg-sheet" role="dialog" aria-modal="true" aria-labelledby="lg-sheet-title" onMouseDown={(event) => event.stopPropagation()}>
+          <section
+            className="lg-sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="lg-sheet-title"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <span className="lg-sheet-handle" aria-hidden="true" />
             <button type="button" className="lg-close" onClick={() => setSelected(null)} aria-label="Close sticker actions">×</button>
             <div className="lg-sheet-preview">
               <span className="lg-sheet-sprite" style={spriteStyle(selected.frame)} aria-hidden="true" />
             </div>
             <div className="lg-sheet-copy">
-              <p>{formatId(selected.reaction.id)} · {selected.sex === "M" ? "MALE" : "FEMALE"}</p>
+              <p>REACTION · {selected.sex === "M" ? "MALE" : "FEMALE"}</p>
               <h2 id="lg-sheet-title">{selected.reaction.reaction}</h2>
-              <span>{selected.reaction.emoji} {selected.reaction.keywords.join(" · ")}</span>
+              <span>{formatId(selected.reaction.id)} · {selected.reaction.emoji} {selected.reaction.keywords.join(" · ")}</span>
             </div>
             <button className="lg-sheet-primary" type="button" disabled={busy !== null} onClick={() => downloadSticker(selected)}>
               {busy === "download" ? "Preparing PNG…" : "Download PNG"}
