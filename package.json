@@ -4,7 +4,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "dev": "next dev",
+    "dev": "node scripts/dev.mjs",
     "prebuild": "node scripts/generate-splash.mjs",
     "build": "next build",
     "start": "next start",
@@ -14,6 +14,9 @@
     "test:ppv:commerce:localnet": "node --experimental-strip-types scripts/ppv-commerce-localnet.mjs"
   },
   "dependencies": {
+    "@fontsource/barlow-condensed": "5.2.8",
+    "@fontsource/permanent-marker": "5.2.7",
+    "@phosphor-icons/react": "2.1.10",
     "@privy-io/node": "^0.35.0",
     "@privy-io/react-auth": "^3.45.0",
     "@solana-program/memo": "^0.15.0",
@@ -28,22 +31,22 @@
     "bs58": "^6.0.0",
     "buffer": "^6.0.3",
     "next": "^16.3.8",
+    "pg": "^8.23.1",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "redis": "^6.3.0",
-    "tweetnacl": "^1.0.3",
-    "pg": "^8.23.1"
+    "tweetnacl": "^1.0.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.0",
     "@types/node": "^22.20.4",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "eslint": "^9.0.0",
     "eslint-config-next": "^16.3.8",
     "tailwindcss": "^4.1.0",
-    "typescript": "^5.7.0",
-    "@types/pg": "^8.23.1"
+    "typescript": "^5.7.0"
   },
   "overrides": {
     "@coinbase/cdp-sdk": {
