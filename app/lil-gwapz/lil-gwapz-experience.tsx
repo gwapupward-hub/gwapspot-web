@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { getLilGwapzMood, LIL_GWAPZ_MOODS, type LilGwapzMood } from "../lib/lil-gwapz-moods";
 import stickerData from "../lib/lil-gwapz-stickers.generated.json";
 
 type Sex = "M" | "F";
@@ -59,7 +60,7 @@ function loadAtlas(src: string) {
         image.crossOrigin = "anonymous";
         image.decoding = "async";
         image.onload = () => resolve(image);
-        image.onerror = reject;
+        image.onerror = () => { atlasCache.delete(src); reject(new Error("Sticker artwork could not load. Please try again.")); };
         image.src = src;
       }),
     );
@@ -116,302 +117,229 @@ function fileName(choice: StickerChoice) {
 
 export default function LilGwapzExperience() {
   const galleryRef = useRef<HTMLElement | null>(null);
-  const guideRef = useRef<HTMLElement | null>(null);
+  const dialogRef = useRef<HTMLDialogElement | null>(null);
   const [filter, setFilter] = useState<Filter>("ALL");
+  const [mood, setMood] = useState<LilGwapzMood>("all");
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<StickerChoice | null>(null);
   const [busy, setBusy] = useState<"download" | "share" | null>(null);
+  const [status, setStatus] = useState("");
+  const [activeSection, setActiveSection] = useState("explore");
 
   const filtered = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
+    const normalized = query.trim().toLowerCase().replace(/[-’'.,!?]+/g, " ").replace(/\s+/g, " ").trim();
     const rows: StickerChoice[] = [];
-
     for (const reaction of reactions) {
-      const haystack = [
-        reaction.reaction,
-        reaction.emoji,
-        ...reaction.keywords,
-        formatId(reaction.id),
-      ]
-        .join(" ")
-        .toLowerCase();
-
+      if (mood !== "all" && getLilGwapzMood(reaction.id) !== mood) continue;
+      const haystack = [reaction.reaction, reaction.emoji, ...reaction.keywords, formatId(reaction.id)]
+        .join(" ").toLowerCase().replace(/[-’'.,!?]+/g, " ").replace(/\s+/g, " ");
       if (normalized && !haystack.includes(normalized)) continue;
-      if (filter === "ALL" || filter === "M") {
-        rows.push({ reaction, sex: "M", frame: reaction.male });
-      }
-      if (filter === "ALL" || filter === "F") {
-        rows.push({ reaction, sex: "F", frame: reaction.female });
-      }
+      if (filter === "ALL" || filter === "M") rows.push({ reaction, sex: "M", frame: reaction.male });
+      if (filter === "ALL" || filter === "F") rows.push({ reaction, sex: "F", frame: reaction.female });
     }
-
     return rows;
-  }, [filter, query]);
+  }, [filter, query, mood]);
 
-  const scrollToGallery = useCallback((nextFilter?: Filter) => {
-    if (nextFilter) setFilter(nextFilter);
-    requestAnimationFrame(() => {
-      galleryRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
+  const goTo = useCallback((id: string) => {
+    setActiveSection(id === "packs" ? "packs" : id === "guide" ? "guide" : "explore");
+    const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth";
+    document.getElementById(`lg-${id}`)?.scrollIntoView({ behavior, block: "start" });
   }, []);
 
-  const scrollToGuide = useCallback(() => {
-    guideRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, []);
+  const browseMood = (value: LilGwapzMood) => {
+    setMood(value);
+    setQuery("");
+    requestAnimationFrame(() => goTo("gallery"));
+  };
+
+  const browseAll = () => {
+    setMood("all"); setFilter("ALL"); setQuery("");
+    requestAnimationFrame(() => goTo("gallery"));
+  };
 
   const downloadSticker = useCallback(async (choice: StickerChoice) => {
-    setBusy("download");
+    setBusy("download"); setStatus("");
     try {
       const blob = await stickerBlob(choice);
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
-      anchor.href = url;
-      anchor.download = fileName(choice);
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-    } finally {
-      setBusy(null);
-    }
+      anchor.href = url; anchor.download = fileName(choice);
+      document.body.appendChild(anchor); anchor.click(); anchor.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+      setStatus("PNG prepared. Find it in your device’s Files or Downloads.");
+    } catch {
+      setStatus("Could not prepare this sticker. Check your connection and try again.");
+    } finally { setBusy(null); }
   }, []);
 
-  const shareSticker = useCallback(
-    async (choice: StickerChoice) => {
-      setBusy("share");
-      try {
-        const blob = await stickerBlob(choice);
-        const file = new File([blob], fileName(choice), { type: "image/png" });
-        if (
-          navigator.share &&
-          (!navigator.canShare || navigator.canShare({ files: [file] }))
-        ) {
-          await navigator.share({
-            title: `${choice.reaction.reaction} — Lil Gwapz`,
-            text: "Lil Gwapz — Reaction Pack 01",
-            files: [file],
-          });
-        } else {
-          await downloadSticker(choice);
-        }
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") return;
-        await downloadSticker(choice);
-      } finally {
-        setBusy(null);
+  const shareSticker = useCallback(async (choice: StickerChoice) => {
+    setBusy("share"); setStatus("");
+    try {
+      const blob = await stickerBlob(choice);
+      const file = new File([blob], fileName(choice), { type: "image/png" });
+      if (navigator.share && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ title: `${choice.reaction.reaction} — Lil Gwapz`, files: [file] });
+        setStatus("Shared.");
+      } else { await downloadSticker(choice); }
+    } catch (error) {
+      if (!(error instanceof DOMException && error.name === "AbortError")) {
+        setStatus("Sharing is unavailable here. Try Download PNG instead.");
       }
-    },
-    [downloadSticker],
-  );
+    } finally { setBusy(null); }
+  }, [downloadSticker]);
 
   useEffect(() => {
     if (!selected) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setSelected(null);
+    const dialog = dialogRef.current;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    dialog?.showModal();
+    return () => {
+      dialog?.close();
+      document.body.style.overflow = previousOverflow;
+      previousFocus?.focus({ preventScroll: true });
     };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
   }, [selected]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) if (entry.isIntersecting) {
+        const id = entry.target.id.replace("lg-", "");
+        setActiveSection(id === "gallery" ? "explore" : id);
+      }
+    }, { rootMargin: "-15% 0px -60% 0px" });
+    ["explore", "packs", "gallery", "guide"].forEach((id) => {
+      const section = document.getElementById(`lg-${id}`);
+      if (section) observer.observe(section);
+    });
+    return () => observer.disconnect();
+  }, []);
 
   const heroMale = reactions[20];
   const heroFemale = reactions[11];
+  const previews: StickerChoice[] = [
+    { reaction: reactions[30], sex: "M", frame: reactions[30].male },
+    { reaction: reactions[61], sex: "F", frame: reactions[61].female },
+    { reaction: reactions[12], sex: "M", frame: reactions[12].male },
+    { reaction: reactions[41], sex: "F", frame: reactions[41].female },
+  ];
+  const openSticker = (choice: StickerChoice) => { setStatus(""); setSelected(choice); };
 
   return (
     <main className="lil-gwapz-page">
-      <nav className="lg-site-nav" aria-label="Lil Gwapz navigation">
-        <button
-          type="button"
-          className="lg-nav-brand"
-          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          aria-label="Back to Lil Gwapz top"
-        >
-          <span className="lg-nav-crown">♛</span>
-          <span>LIL GWAPZ</span>
-        </button>
-        <div className="lg-nav-links">
-          <button type="button" onClick={() => scrollToGallery("ALL")}>Browse</button>
-          <button type="button" onClick={() => scrollToGallery("M")}>Male</button>
-          <button type="button" onClick={() => scrollToGallery("F")}>Female</button>
-          <button type="button" onClick={scrollToGuide}>Use</button>
+      <a className="lg-skip" href="#lg-gallery">Skip to reactions</a>
+      <header className="lg-site-nav">
+        <a href="#lg-explore" className="lg-nav-brand" aria-label="Lil Gwapz home">
+          <Crown /><span>Lil <b>Gwapz</b></span>
+        </a>
+        <nav className="lg-nav-links" aria-label="Lil Gwapz navigation">
+          <a href="#lg-gallery">Explore</a><a href="#lg-packs">Packs</a><a href="#lg-guide">Guide</a>
+        </nav>
+        <Link href="/" className="lg-nav-exit">GwapSpot</Link>
+      </header>
+
+      <section className="lg-hero" id="lg-explore" aria-labelledby="lil-gwapz-title">
+        <div className="lg-hero-copy">
+          <p className="lg-eyebrow">SMALL CHARACTERS. BIG ENERGY.</p>
+          <h1 id="lil-gwapz-title">A REACTION<br />FOR EVERY<br /><span>MOOD.</span></h1>
+          <p className="lg-hero-subcopy">Same energy. Different expressions.</p>
+          <button type="button" className="lg-primary" onClick={() => goTo("moods")}>Find my mood <Spark /></button>
         </div>
-        <Link href="/" className="lg-nav-exit" aria-label="Return to GwapSpot">
-          GWAP<span aria-hidden="true">↗</span>
-        </Link>
-      </nav>
-
-      <section className="lg-hero" aria-labelledby="lil-gwapz-title">
-        <div className="lg-graffiti" aria-hidden="true">
-          <span>♛</span><span>♛</span><span>×</span><span>♛</span>
-        </div>
-
-        <div className="lg-hero-lockup">
-          <p className="lg-eyebrow">AN ORIGINAL GWAP COLLECTION</p>
-          <div className="lg-wordmark" aria-label="Lil Gwapz">
-            <span className="lg-wordmark-lil">LIL</span>
-            <span className="lg-wordmark-gwapz">GWAPZ</span>
-          </div>
-          <div className="lg-pack-tag">REACTION PACK 01</div>
-          <h1 id="lil-gwapz-title">PICK YOUR <span>VIBE.</span></h1>
-          <p className="lg-hero-subcopy">76 reactions each. <strong>152 ways to say it.</strong></p>
-        </div>
-
-        <div className="lg-vibe-grid">
-          <button className="lg-vibe-card male" type="button" onClick={() => scrollToGallery("M")}>
-            <span className="lg-vibe-label">MALE</span>
-            <span className="lg-hero-sprite" style={spriteStyle(heroMale.male)} aria-hidden="true" />
-            <span className="lg-vibe-copy">
-              <small>76 REACTIONS</small>
-              <strong>LIL GWAPZ</strong>
-              <span>View male pack <b>→</b></span>
-            </span>
-          </button>
-
-          <button className="lg-vibe-card female" type="button" onClick={() => scrollToGallery("F")}>
-            <span className="lg-vibe-label">FEMALE</span>
-            <span className="lg-hero-sprite" style={spriteStyle(heroFemale.female)} aria-hidden="true" />
-            <span className="lg-vibe-copy">
-              <small>76 REACTIONS</small>
-              <strong>LIL GWAPZ</strong>
-              <span>View female pack <b>→</b></span>
-            </span>
-          </button>
-        </div>
-
-        <div className="lg-hero-actions">
-          <button type="button" className="lg-primary" onClick={() => scrollToGallery("ALL")}>
-            Browse All 152 <span>→</span>
-          </button>
-          <button className="lg-secondary" type="button" onClick={scrollToGuide}>
-            How to save & share <span>↓</span>
-          </button>
-        </div>
-
-        <div className="lg-stat-strip" aria-label="Reaction Pack 01 details">
-          <span><strong>76</strong> expressions</span>
-          <span><strong>2</strong> character versions</span>
-          <span><strong>152</strong> stickers</span>
+        <div className="lg-hero-art" aria-label="Male and female Lil Gwapz characters">
+          <span className="lg-art-spark spark-one" aria-hidden="true">✦</span>
+          <span className="lg-art-spark spark-two" aria-hidden="true">✦</span>
+          <div className="lg-hero-character character-male"><span className="lg-hero-sprite" style={spriteStyle(heroMale.male)} role="img" aria-label="Male Lil Gwapz crying laugh" /></div>
+          <div className="lg-hero-character character-female"><span className="lg-hero-sprite" style={spriteStyle(heroFemale.female)} role="img" aria-label="Female Lil Gwapz blowing a kiss" /></div>
+          <span className="lg-art-tag" aria-hidden="true">BIG MOOD ENERGY</span>
         </div>
       </section>
 
-      <section className="lg-gallery" ref={galleryRef} aria-labelledby="reaction-browser-title">
-        <div className="lg-browser-heading">
-          <div>
-            <p>REACTION PACK 01</p>
-            <h2 id="reaction-browser-title">Find the reaction.</h2>
-          </div>
-          <span className="lg-result-count" aria-live="polite">{filtered.length} stickers</span>
-        </div>
-
-        <div className="lg-browser-toolbar">
-          <label className="lg-search">
-            <span aria-hidden="true">⌕</span>
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search reactions"
-              aria-label="Search reactions"
-            />
-            {query && (
-              <button type="button" onClick={() => setQuery("")} aria-label="Clear search">×</button>
-            )}
-          </label>
-
-          <div className="lg-filters" role="group" aria-label="Filter by character">
-            {(["ALL", "M", "F"] as const).map((value) => (
-              <button
-                key={value}
-                type="button"
-                className={filter === value ? "active" : ""}
-                aria-pressed={filter === value}
-                onClick={() => setFilter(value)}
-              >
-                {value === "ALL" ? "All" : value === "M" ? "Male" : "Female"}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="lg-sticker-grid">
-          {filtered.map((choice) => (
-            <button
-              key={`${choice.reaction.id}-${choice.sex}`}
-              className={`lg-sticker-card ${colorClass[choice.reaction.color] ?? "green"}`}
-              type="button"
-              onClick={() => setSelected(choice)}
-              aria-label={`${choice.reaction.reaction}, ${choice.sex === "M" ? "male" : "female"} Lil Gwapz`}
-            >
-              <span className="lg-card-glow" aria-hidden="true" />
-              <span className="lg-sticker-sprite" style={spriteStyle(choice.frame)} aria-hidden="true" />
-              <span className="lg-sticker-meta">
-                <span className="lg-meta-topline">
-                  <small>{choice.sex === "M" ? "MALE" : "FEMALE"}</small>
-                  <i>{formatId(choice.reaction.id).replace("LG-R01-", "#")}</i>
-                </span>
-                <strong>{choice.reaction.reaction}</strong>
-              </span>
+      <section className="lg-moods" id="lg-moods" aria-labelledby="lg-moods-title">
+        <div className="lg-section-heading"><h2 id="lg-moods-title">Browse by mood</h2><span>Your mood. Your reaction.</span></div>
+        <div className="lg-mood-row" role="group" aria-label="Choose a mood">
+          {LIL_GWAPZ_MOODS.map((item) => (
+            <button key={item.id} type="button" className={`lg-mood ${item.color}`} aria-pressed={mood === item.id} onClick={() => browseMood(item.id)}>
+              <span className="lg-mood-orb" aria-hidden="true">{item.emoji}</span><span>{item.label}</span>
             </button>
           ))}
         </div>
+      </section>
 
-        {filtered.length === 0 && (
-          <div className="lg-empty">
-            <strong>No match.</strong>
-            <span>Try another mood, phrase, or reaction number.</span>
+      <section className="lg-featured" id="lg-packs" aria-labelledby="lg-pack-title">
+        <div className="lg-featured-copy">
+          <p className="lg-eyebrow">THE FIRST COLLECTION</p>
+          <h2 id="lg-pack-title">Reaction Pack 01</h2>
+          <p>76 expressions. Two characters.<br />152 ways to say what you feel.</p>
+          <button type="button" onClick={browseAll}>Explore the pack <span aria-hidden="true">✦</span></button>
+        </div>
+        <div className="lg-featured-art" aria-hidden="true">
+          <span style={spriteStyle(reactions[5].male)} /><span style={spriteStyle(reactions[4].female)} />
+        </div>
+        <span className="lg-pack-stamp">152<br /><small>STICKERS</small></span>
+      </section>
+
+      <section className="lg-sneak" aria-labelledby="lg-sneak-title">
+        <div className="lg-section-heading"><h2 id="lg-sneak-title">A little preview</h2><button type="button" onClick={browseAll}>See all reactions</button></div>
+        <div className="lg-preview-grid">
+          {previews.map((choice) => (
+            <button key={choice.reaction.id} type="button" className={`lg-preview-card ${colorClass[choice.reaction.color]}`} onClick={() => openSticker(choice)} aria-label={`Preview ${choice.reaction.reaction}, ${choice.sex === "M" ? "male" : "female"}`}>
+              <span className="lg-sticker-sprite" style={spriteStyle(choice.frame)} aria-hidden="true" />
+              <strong>{choice.reaction.reaction}</strong>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="lg-gallery" id="lg-gallery" ref={galleryRef} aria-labelledby="reaction-browser-title">
+        <div className="lg-browser-heading"><div><p className="lg-eyebrow">FIND YOUR NEXT REACTION</p><h2 id="reaction-browser-title">The reaction vault.</h2></div><span className="lg-result-count" aria-live="polite">{filtered.length} stickers</span></div>
+        <div className="lg-browser-toolbar">
+          <label className="lg-search"><SearchIcon /><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Find your reaction…" aria-label="Search reactions" />{query && <button type="button" onClick={() => setQuery("")} aria-label="Clear search">×</button>}</label>
+          <div className="lg-filters" role="group" aria-label="Filter by character">
+            {(["ALL", "M", "F"] as const).map((value) => <button key={value} type="button" aria-pressed={filter === value} onClick={() => setFilter(value)}>{value === "ALL" ? "All" : value === "M" ? "Male" : "Female"}</button>)}
           </div>
-        )}
+          <div className="lg-mood-chips" role="group" aria-label="Filter reactions by mood">
+            {LIL_GWAPZ_MOODS.map((item) => <button key={item.id} type="button" aria-pressed={mood === item.id} onClick={() => setMood(item.id)}>{item.label}</button>)}
+          </div>
+        </div>
+        <div className="lg-sticker-grid">
+          {filtered.map((choice) => <button key={`${choice.reaction.id}-${choice.sex}`} className={`lg-sticker-card ${colorClass[choice.reaction.color]}`} type="button" onClick={() => openSticker(choice)} aria-label={`${choice.reaction.reaction}, ${choice.sex === "M" ? "male" : "female"} Lil Gwapz`}>
+            <span className="lg-sticker-sprite" style={spriteStyle(choice.frame)} aria-hidden="true" />
+            <span className="lg-sticker-meta"><small>{choice.sex === "M" ? "MALE" : "FEMALE"}</small><strong>{choice.reaction.reaction}</strong></span>
+          </button>)}
+        </div>
+        {filtered.length === 0 && <div className="lg-empty" role="status"><strong>No reaction found.</strong><p>Try another word, mood, or character.</p><button type="button" onClick={browseAll}>Reset filters</button></div>}
       </section>
 
-      <section className="lg-guide" ref={guideRef} aria-labelledby="lg-guide-title">
-        <div className="lg-guide-copy">
-          <p>USE THEM ANYWHERE</p>
-          <h2 id="lg-guide-title">Tap. Save. Send.</h2>
-          <span>Lil Gwapz is built for phones first — download the PNG or open your device share sheet directly from any sticker.</span>
-        </div>
+      <section className="lg-guide" id="lg-guide" aria-labelledby="lg-guide-title">
+        <p className="lg-eyebrow">TAKE YOUR MOOD WITH YOU</p><h2 id="lg-guide-title">Tap. Save. Send.</h2>
         <div className="lg-guide-grid">
-          <article><b>01</b><strong>Pick a reaction</strong><span>Search by mood, phrase, or browse the male and female packs.</span></article>
-          <article><b>02</b><strong>Open the sticker</strong><span>Tap any card for a focused preview and quick actions.</span></article>
-          <article><b>03</b><strong>Save or share</strong><span>Keep the transparent PNG or send it through your phone’s native share sheet.</span></article>
+          <article><b>01</b><h3>Pick a reaction</h3><p>Find your mood and tap a sticker to open it.</p></article>
+          <article><b>02</b><h3>Save the PNG</h3><p>Download a transparent image to Files or Downloads on your phone or computer.</p></article>
+          <article><b>03</b><h3>Share the energy</h3><p>Use Share on supported devices, or attach the saved image in your favorite app.</p></article>
         </div>
+        <p className="lg-guide-note">Saving a PNG does not install a keyboard or an in-app sticker pack. Use your app’s image or sticker tools to add it.</p>
       </section>
-
-      <footer className="lg-footer">
-        <div>
-          <span className="lg-footer-crown">♛</span>
-          <strong>LIL GWAPZ</strong>
-          <small>REACTION PACK 01 · 152 STICKERS</small>
-        </div>
-        <button type="button" onClick={() => scrollToGallery("ALL")}>Browse collection <span>→</span></button>
-        <Link href="/">Back to GwapSpot</Link>
-      </footer>
-
-      {selected && (
-        <div className="lg-sheet-backdrop" role="presentation" onMouseDown={() => setSelected(null)}>
-          <section
-            className="lg-sheet"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="lg-sheet-title"
-            onMouseDown={(event) => event.stopPropagation()}
-          >
-            <span className="lg-sheet-handle" aria-hidden="true" />
-            <button type="button" className="lg-close" onClick={() => setSelected(null)} aria-label="Close sticker actions">×</button>
-            <div className="lg-sheet-preview">
-              <span className="lg-sheet-sprite" style={spriteStyle(selected.frame)} aria-hidden="true" />
-            </div>
-            <div className="lg-sheet-copy">
-              <p>REACTION · {selected.sex === "M" ? "MALE" : "FEMALE"}</p>
-              <h2 id="lg-sheet-title">{selected.reaction.reaction}</h2>
-              <span>{formatId(selected.reaction.id)} · {selected.reaction.emoji} {selected.reaction.keywords.join(" · ")}</span>
-            </div>
-            <button className="lg-sheet-primary" type="button" disabled={busy !== null} onClick={() => downloadSticker(selected)}>
-              {busy === "download" ? "Preparing PNG…" : "Download PNG"}
-            </button>
-            <button className="lg-sheet-secondary" type="button" disabled={busy !== null} onClick={() => shareSticker(selected)}>
-              {busy === "share" ? "Opening Share…" : "Share"}
-            </button>
-          </section>
-        </div>
-      )}
+      <footer className="lg-footer"><a className="lg-nav-brand" href="#lg-explore">Lil <b>Gwapz</b></a><p>An original GWAP collection.</p><Link href="/">Back to GwapSpot</Link></footer>
+      <nav className="lg-bottom-nav" aria-label="Quick navigation">
+        {(["explore", "packs", "guide"] as const).map((id) => <button key={id} type="button" aria-current={activeSection === id ? "location" : undefined} onClick={() => goTo(id === "explore" ? "gallery" : id)}><NavIcon kind={id} /><span>{id === "explore" ? "Explore" : id === "packs" ? "Packs" : "Guide"}</span></button>)}
+      </nav>
+      {selected && <dialog ref={dialogRef} className="lg-sheet" aria-labelledby="lg-sheet-title" onCancel={() => setSelected(null)} onClick={(event) => { if (event.target === event.currentTarget) { const rect = event.currentTarget.getBoundingClientRect(); if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) setSelected(null); } }}>
+        <button type="button" className="lg-close" onClick={() => setSelected(null)} aria-label="Close sticker actions" autoFocus>×</button>
+        <div className="lg-sheet-preview"><span className="lg-sheet-sprite" style={spriteStyle(selected.frame)} role="img" aria-label={`${selected.reaction.reaction}, ${selected.sex === "M" ? "male" : "female"} Lil Gwapz`} /></div>
+        <div className="lg-sheet-copy"><p>{selected.sex === "M" ? "MALE" : "FEMALE"} · REACTION PACK 01</p><h2 id="lg-sheet-title">{selected.reaction.reaction}</h2></div>
+        <button className="lg-sheet-primary" type="button" disabled={busy !== null} onClick={() => void downloadSticker(selected)}>{busy === "download" ? "Preparing PNG…" : "Download PNG"}</button>
+        <button className="lg-sheet-secondary" type="button" disabled={busy !== null} onClick={() => void shareSticker(selected)}>{busy === "share" ? "Opening Share…" : "Share"}</button>
+        {status && <p className="lg-action-status" role="status">{status}</p>}
+      </dialog>}
     </main>
   );
+}
+
+function Crown() { return <svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="m3 7 5 4 4-7 4 7 5-4-3 12H6L3 7Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /></svg>; }
+function Spark() { return <svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="m12 2 2.5 7.5L22 12l-7.5 2.5L12 22l-2.5-7.5L2 12l7.5-2.5L12 2Z" stroke="currentColor" strokeWidth="1.8" /></svg>; }
+function SearchIcon() { return <svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" strokeWidth="1.8" /><path d="m16 16 5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>; }
+function NavIcon({ kind }: { kind: "explore" | "packs" | "guide" }) {
+  const paths = { explore: "m3 10 9-7 9 7v10H3V10Zm5 10v-7h8v7", packs: "m12 3 9 5-9 5-9-5 9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5", guide: "M12 5c-4-2-8-2-10 0v15c3-2 7-2 10 0 3-2 7-2 10 0V5c-2-2-6-2-10 0Zm0 0v15" };
+  return <svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d={paths[kind]} stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" strokeLinecap="round" /></svg>;
 }
