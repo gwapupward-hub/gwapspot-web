@@ -18,21 +18,25 @@ function installReducedMotionScrollGuard() {
   const originalScrollTo = window.scrollTo;
   const originalScrollIntoView = Element.prototype.scrollIntoView;
 
-  window.scrollTo = ((...args: Parameters<typeof window.scrollTo>) => {
-    const [first, second] = args;
-    if (typeof first === "object" && first !== null) {
-      return originalScrollTo.call(window, { ...first, behavior: "auto" });
+  window.scrollTo = ((optionsOrX: ScrollToOptions | number, y?: number) => {
+    if (typeof optionsOrX === "number") {
+      Reflect.apply(originalScrollTo, window, [optionsOrX, y ?? window.scrollY]);
+      return;
     }
-    return originalScrollTo.call(window, first, second);
+    Reflect.apply(originalScrollTo, window, [
+      { ...optionsOrX, behavior: "auto" } satisfies ScrollToOptions,
+    ]);
   }) as typeof window.scrollTo;
 
   Element.prototype.scrollIntoView = function scrollIntoView(
     arg?: boolean | ScrollIntoViewOptions,
   ) {
     if (typeof arg === "object" && arg !== null) {
-      return originalScrollIntoView.call(this, { ...arg, behavior: "auto" });
+      return Reflect.apply(originalScrollIntoView, this, [
+        { ...arg, behavior: "auto" } satisfies ScrollIntoViewOptions,
+      ]);
     }
-    return originalScrollIntoView.call(this, arg);
+    return Reflect.apply(originalScrollIntoView, this, [arg]);
   };
 
   return () => {
