@@ -1,9 +1,6 @@
-// Lil Gwapz Reaction Pack 01 sticker cells for the GwapSpot homepage promo popup.
-//
-// Built from the canonical lil-gwapz-stickers.generated.json. A few canonical
-// frames point at artwork for a different sticker; the correction table below
-// maps those keys to the cell that actually holds their art (checked visually
-// against all four atlases). The canonical JSON itself is left untouched.
+// Lil Gwapz Reaction Pack 01 sticker cells for the GwapSpot homepage promo popup,
+// built from the canonical lil-gwapz-stickers.generated.json (the same data the
+// /lil-gwapz hub uses).
 
 export type LilGwapzAtlasId = "male-a" | "male-b" | "female-a" | "female-b";
 export type LilGwapzSex = "M" | "F";
@@ -50,32 +47,12 @@ export const LIL_GWAPZ_ATLAS_URLS: Readonly<Record<LilGwapzAtlasId, string>> = {
 export const LIL_GWAPZ_SITE_URL = "https://lilgwapz.xyz";
 export const LIL_GWAPZ_TELEGRAM_BOT_URL = "https://t.me/ThaLilGwapz_bot";
 
-type CellFrame = { atlas: LilGwapzAtlasId; col: number; row: number };
-
-/**
- * Canonical frames whose artwork belongs to another sticker, keyed `${id}-${sex}`.
- * `canonical` is the frame the generated JSON lists today; `actual` is the cell
- * that holds the right art. Tests fail if the canonical data changes, so this
- * table is removed once the source data is fixed.
- */
-export const LIL_GWAPZ_FRAME_CORRECTIONS: Readonly<Record<string, { canonical: CellFrame; actual: CellFrame }>> = {
-  // Heart Eyes (female) and Blowing a Kiss (male) point at each other's art.
-  "11-F": { canonical: { atlas: "female-a", col: 2, row: 1 }, actual: { atlas: "male-a", col: 3, row: 1 } },
-  "12-M": { canonical: { atlas: "male-a", col: 3, row: 1 }, actual: { atlas: "female-a", col: 2, row: 1 } },
-  // Much Love and Miss You have their male and female cells swapped.
-  "13-M": { canonical: { atlas: "male-a", col: 4, row: 1 }, actual: { atlas: "female-a", col: 4, row: 1 } },
-  "13-F": { canonical: { atlas: "female-a", col: 4, row: 1 }, actual: { atlas: "male-a", col: 4, row: 1 } },
-  "14-M": { canonical: { atlas: "male-a", col: 5, row: 1 }, actual: { atlas: "female-a", col: 5, row: 1 } },
-  "14-F": { canonical: { atlas: "female-a", col: 5, row: 1 }, actual: { atlas: "male-a", col: 5, row: 1 } },
-};
-
 const COLORS = new Set<string>(["GRN", "ORG", "PUR", "RED"]);
 const ATLASES = new Set<string>(LIL_GWAPZ_ATLAS_ORDER);
 
 function toCell(reaction: CanonicalLilGwapzReaction, sex: LilGwapzSex): LilGwapzCell {
   const key = `${reaction.id}-${sex}`;
-  const canonical = sex === "M" ? reaction.male : reaction.female;
-  const frame = LIL_GWAPZ_FRAME_CORRECTIONS[key]?.actual ?? canonical;
+  const frame = sex === "M" ? reaction.male : reaction.female;
   if (!ATLASES.has(frame.atlas)) throw new Error(`Unknown Lil Gwapz atlas "${frame.atlas}" for ${key}`);
   if (!COLORS.has(reaction.color)) throw new Error(`Unknown Lil Gwapz color "${reaction.color}" for ${key}`);
   return {
@@ -91,7 +68,7 @@ function toCell(reaction: CanonicalLilGwapzReaction, sex: LilGwapzSex): LilGwapz
   };
 }
 
-/** All 152 stickers (male then female per reaction), with art corrections applied. */
+/** All 152 stickers, male then female per reaction. */
 export function buildLilGwapzCells(reactions: readonly CanonicalLilGwapzReaction[]): LilGwapzCell[] {
   return reactions.flatMap((reaction) => [toCell(reaction, "M"), toCell(reaction, "F")]);
 }
