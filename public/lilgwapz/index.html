@@ -225,6 +225,10 @@
       box-shadow: 0 4px 0 rgba(9, 3, 18, 0.5);
     }
 
+    .tag.is-below {
+      transform: translate(-50%, var(--lift, 60px)) rotate(-3deg);
+    }
+
     /* ── UI layer ─────────────────────────────────────────────────────── */
     .ui {
       position: relative;
@@ -949,7 +953,10 @@
         t.style.top = `${parseFloat(el.style.top)}%`;
         t.style.setProperty("--bg", COLOR[cell.color][0]);
         t.style.setProperty("--fg", COLOR[cell.color][1]);
-        t.style.setProperty("--lift", `${el.getBoundingClientRect().height / 2 - 8}px`);
+        const rect = el.getBoundingClientRect();
+        t.style.setProperty("--lift", `${rect.height / 2 - 8}px`);
+        // Near the top edge the tag would leave the screen, so it hangs below instead.
+        if (rect.top < 56) t.classList.add("is-below");
         t.textContent = `${cell.emoji} ${cell.name}`;
         fx.appendChild(t);
         if (reduceMotion) {
