@@ -4,7 +4,6 @@ import test from "node:test";
 import {
   buildLilGwapzCells,
   LIL_GWAPZ_ATLAS_URLS,
-  LIL_GWAPZ_FRAME_CORRECTIONS,
   LIL_GWAPZ_SITE_URL,
   LIL_GWAPZ_TELEGRAM_BOT_URL,
 } from "./lil-gwapz-stickers.ts";
@@ -19,17 +18,6 @@ test("cells cover all 152 stickers with unique keys and unique atlas cells", () 
   assert.equal(cells.length, 152);
   assert.equal(new Set(cells.map((cell) => cell.key)).size, 152);
   assert.equal(new Set(cells.map((cell) => `${cell.atlas}:${cell.col}:${cell.row}`)).size, 152);
-});
-
-test("every art correction still replaces the frame the canonical data lists", () => {
-  // When the canonical JSON is fixed, this fails: delete the matching correction.
-  for (const [key, { canonical: expected }] of Object.entries(LIL_GWAPZ_FRAME_CORRECTIONS)) {
-    const [id, sex] = key.split("-");
-    const reaction = canonical.find((item) => item.id === Number(id));
-    assert.ok(reaction, `reaction ${id} exists`);
-    const frame = sex === "M" ? reaction.male : reaction.female;
-    assert.deepEqual({ atlas: frame.atlas, col: frame.col, row: frame.row }, expected, `${key} canonical frame`);
-  }
 });
 
 test("popup and hub use the same atlas artwork", () => {

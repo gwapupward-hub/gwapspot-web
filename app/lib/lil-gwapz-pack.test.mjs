@@ -24,3 +24,12 @@ test("Lil Gwapz atlas map yields exactly 152 unique sticker slots", () => {
   assert.equal(slots.length, 152);
   assert.equal(new Set(slots).size, 152);
 });
+
+test("Heart Eyes (female) and Blowing a Kiss (male) point at their own artwork", () => {
+  // These two cells were swapped in the original atlas map (fixed 2026-10-10).
+  const frame = ({ atlas, col, row }) => ({ atlas, col, row });
+  const heartEyes = data.find((item) => item.id === 11);
+  const blowingAKiss = data.find((item) => item.id === 12);
+  assert.deepEqual(frame(heartEyes.female), { atlas: "male-a", col: 3, row: 1 });
+  assert.deepEqual(frame(blowingAKiss.male), { atlas: "female-a", col: 2, row: 1 });
+});
