@@ -78,10 +78,6 @@ const telegramFrameProtection = [
 
 const gwapAppOrigin = "https://app.gwapspot.com";
 const gwapPublicHosts = ["gwapspot.com", "www.gwapspot.com"];
-// lilgwapz.xyz serves a standalone splash at "/" (public/lilgwapz/index.html)
-// plus its own assets under /lilgwapz/. Every other path goes to the hub.
-const gwapLilGwapzHosts = ["lilgwapz.xyz", "www.lilgwapz.xyz"];
-const gwapLilGwapzSplash = "/lilgwapz/index.html";
 const gwapAppOwnedRoutes = [
   { source: "/app", destination: "/app" },
   { source: "/app/:path*", destination: "/app/:path*" },
@@ -113,29 +109,13 @@ const nextConfig: NextConfig = {
         destination: "https://www.gwapspot.com/:path*",
         permanent: true,
       },
-      // Keep the splash's own assets and Vercel Analytics; send any other path to the hub.
-      ...gwapLilGwapzHosts.map((host) => ({
-        source: "/:path((?!lilgwapz/|_vercel/).+)",
-        has: [{ type: "host" as const, value: host }],
-        destination: "https://www.gwapspot.com/lil-gwapz",
-        permanent: false,
-      })),
     ];
   },
   async rewrites() {
-    return {
-      // beforeFiles runs ahead of the homepage route, so "/" on lilgwapz.xyz
-      // serves the static splash instead of the GwapSpot home.
-      beforeFiles: gwapLilGwapzHosts.map((host) => ({
-        source: "/",
-        has: [{ type: "host" as const, value: host }],
-        destination: gwapLilGwapzSplash,
-      })),
-      afterFiles: [
-        { source: "/logos/gns.png", destination: "/logos/gns.webp" },
-        { source: "/logos/occo.png", destination: "/logos/occo.webp" },
-      ],
-    };
+    return [
+      { source: "/logos/gns.png", destination: "/logos/gns.webp" },
+      { source: "/logos/occo.png", destination: "/logos/occo.webp" },
+    ];
   },
   async headers() {
     return [

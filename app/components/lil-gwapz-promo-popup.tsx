@@ -324,7 +324,7 @@ export default function LilGwapzPromoPopup({ onClose }: PopupProps) {
                   </span>
                   <span className={styles.tileText}>
                     <span className={styles.tileName}>lilgwapz.xyz</span>
-                    <span className={styles.tileNote}>Official site with the sticker wall</span>
+                    <span className={styles.tileNote}>Official site to download all 152</span>
                   </span>
                 </a>
               </li>

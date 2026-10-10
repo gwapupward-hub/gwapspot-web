@@ -1,6 +1,4 @@
-// Lil Gwapz Reaction Pack 01 sticker cells, shared by the lilgwapz.xyz splash
-// (public/lilgwapz/index.html embeds the output of buildLilGwapzCells) and the
-// GwapSpot homepage promo popup.
+// Lil Gwapz Reaction Pack 01 sticker cells for the GwapSpot homepage promo popup.
 //
 // Built from the canonical lil-gwapz-stickers.generated.json. A few canonical
 // frames point at artwork for a different sticker; the correction table below
@@ -51,7 +49,6 @@ export const LIL_GWAPZ_ATLAS_URLS: Readonly<Record<LilGwapzAtlasId, string>> = {
 
 export const LIL_GWAPZ_SITE_URL = "https://lilgwapz.xyz";
 export const LIL_GWAPZ_TELEGRAM_BOT_URL = "https://t.me/ThaLilGwapz_bot";
-export const LIL_GWAPZ_HUB_URL = "https://www.gwapspot.com/lil-gwapz";
 
 type CellFrame = { atlas: LilGwapzAtlasId; col: number; row: number };
 
@@ -97,27 +94,4 @@ function toCell(reaction: CanonicalLilGwapzReaction, sex: LilGwapzSex): LilGwapz
 /** All 152 stickers (male then female per reaction), with art corrections applied. */
 export function buildLilGwapzCells(reactions: readonly CanonicalLilGwapzReaction[]): LilGwapzCell[] {
   return reactions.flatMap((reaction) => [toCell(reaction, "M"), toCell(reaction, "F")]);
-}
-
-/**
- * Compact form embedded in the static splash page:
- * `[key, id, reaction, color, emoji, atlasIndex, col, row]`, where atlasIndex
- * indexes LIL_GWAPZ_ATLAS_ORDER.
- */
-export type LilGwapzSplashCell = [string, number, string, LilGwapzColor, string, number, number, number];
-
-export function toLilGwapzSplashData(cells: readonly LilGwapzCell[]) {
-  return {
-    atlases: LIL_GWAPZ_ATLAS_ORDER.map((atlas) => LIL_GWAPZ_ATLAS_URLS[atlas]),
-    cells: cells.map((cell): LilGwapzSplashCell => [
-      cell.key,
-      cell.id,
-      cell.reaction,
-      cell.color,
-      cell.emoji,
-      LIL_GWAPZ_ATLAS_ORDER.indexOf(cell.atlas),
-      cell.col,
-      cell.row,
-    ]),
-  };
 }

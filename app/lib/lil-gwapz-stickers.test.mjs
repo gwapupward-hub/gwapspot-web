@@ -5,20 +5,14 @@ import {
   buildLilGwapzCells,
   LIL_GWAPZ_ATLAS_URLS,
   LIL_GWAPZ_FRAME_CORRECTIONS,
-  LIL_GWAPZ_HUB_URL,
+  LIL_GWAPZ_SITE_URL,
   LIL_GWAPZ_TELEGRAM_BOT_URL,
-  toLilGwapzSplashData,
 } from "./lil-gwapz-stickers.ts";
 
 const canonical = JSON.parse(fs.readFileSync(new URL("./lil-gwapz-stickers.generated.json", import.meta.url), "utf8"));
-const splashHtml = fs.readFileSync(new URL("../../public/lilgwapz/index.html", import.meta.url), "utf8");
 const hubSource = fs.readFileSync(new URL("../lil-gwapz/lil-gwapz-experience.tsx", import.meta.url), "utf8");
-
-function embeddedSplashData() {
-  const match = splashHtml.match(/<script type="application\/json" id="lg-data">([\s\S]*?)<\/script>/);
-  assert.ok(match, "splash page embeds its sticker data");
-  return JSON.parse(match[1]);
-}
+const popupSource = fs.readFileSync(new URL("../components/lil-gwapz-promo-popup.tsx", import.meta.url), "utf8");
+const popupCss = fs.readFileSync(new URL("../components/lil-gwapz-promo-popup.module.css", import.meta.url), "utf8");
 
 test("cells cover all 152 stickers with unique keys and unique atlas cells", () => {
   const cells = buildLilGwapzCells(canonical);
@@ -38,22 +32,22 @@ test("every art correction still replaces the frame the canonical data lists", (
   }
 });
 
-test("the splash page embeds exactly the corrected sticker data", () => {
-  assert.deepEqual(embeddedSplashData(), toLilGwapzSplashData(buildLilGwapzCells(canonical)));
-});
-
-test("splash and hub use the same atlas artwork", () => {
+test("popup and hub use the same atlas artwork", () => {
   for (const url of Object.values(LIL_GWAPZ_ATLAS_URLS)) {
     assert.ok(hubSource.includes(url), `hub uses ${url}`);
   }
 });
 
-test("splash links to the official bot and the hub, and its assets exist", () => {
-  assert.ok(splashHtml.includes(`href="${LIL_GWAPZ_TELEGRAM_BOT_URL}"`));
-  assert.ok(splashHtml.includes(`href="${LIL_GWAPZ_HUB_URL}"`));
-  const assets = [...splashHtml.matchAll(/(?:href|src|content)="(?:https:\/\/lilgwapz\.xyz)?(\/lilgwapz\/[^"]+)"/g)].map((m) => m[1]);
-  assert.ok(assets.length >= 4, "references its own assets");
-  for (const asset of new Set(assets)) {
-    assert.ok(fs.existsSync(new URL(`../../public${asset}`, import.meta.url)), `${asset} exists`);
-  }
+test("popup links to the official site and Telegram bot", () => {
+  assert.equal(LIL_GWAPZ_SITE_URL, "https://lilgwapz.xyz");
+  assert.equal(LIL_GWAPZ_TELEGRAM_BOT_URL, "https://t.me/ThaLilGwapz_bot");
+  assert.ok(popupSource.includes("href={LIL_GWAPZ_SITE_URL}"));
+  assert.ok(popupSource.includes("href={LIL_GWAPZ_TELEGRAM_BOT_URL}"));
+});
+
+test("popup display font is self-hosted with its license", () => {
+  const match = popupCss.match(/url\("(\/brand\/lil-gwapz\/[^"]+\.woff2)"\)/);
+  assert.ok(match, "popup CSS loads the display font from /brand/lil-gwapz/");
+  assert.ok(fs.existsSync(new URL(`../../public${match[1]}`, import.meta.url)), `${match[1]} exists`);
+  assert.ok(fs.existsSync(new URL("../../public/brand/lil-gwapz/OFL.txt", import.meta.url)), "OFL license ships with the font");
 });
