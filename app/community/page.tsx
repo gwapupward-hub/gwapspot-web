@@ -40,7 +40,7 @@ export default function CommunityPage() {
       >
         <a
           className="primary-button"
-          href="https://t.me/thagwapspot"
+          href="https://t.me/GwapSpot_SupportBot"
           target="_blank"
           rel="noreferrer"
         >
@@ -77,7 +77,7 @@ export default function CommunityPage() {
       <section className="inner-section">
         <div className="community-card">
           <div>
-            <span className="eyebrow">
+            <span className="eyrow">
               <SparkIcon /> Official channels
             </span>
             <h2>Follow the build where it happens.</h2>
