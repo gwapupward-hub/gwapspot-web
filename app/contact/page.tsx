@@ -19,7 +19,7 @@ const contactPaths = [
     description:
       "Use Telegram for community questions, introductions, product feedback, and direct ecosystem discussion.",
     label: "Open Telegram",
-    href: "https://t.me/thagwapspot",
+    href: "https://t.me/GwapSpot_SupportBot",
   },
   {
     title: "Public announcements and media",
@@ -114,7 +114,7 @@ export default function ContactPage() {
           </div>
           <a
             className="primary-button"
-            href="https://t.me/thagwapspot"
+            href="https://t.me/GwapSpot_SupportBot"
             target="_blank"
             rel="noreferrer"
           >

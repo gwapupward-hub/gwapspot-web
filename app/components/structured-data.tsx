@@ -28,7 +28,7 @@ const structuredData = {
       sameAs: [
         "https://x.com/_gwapspot",
         "https://github.com/Gwapoholics",
-        "https://t.me/thagwapspot",
+        "https://t.me/GwapSpot_SupportBot",
       ],
     },
     {

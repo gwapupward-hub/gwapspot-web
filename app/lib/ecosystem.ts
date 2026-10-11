@@ -311,7 +311,7 @@ export const productBySlug = new Map(
 
 export const socialLinks = [
   { label: "X", href: "https://x.com/_gwapspot?s=21", description: "Public updates and announcements" },
-  { label: "Telegram", href: "https://t.me/thagwapspot", description: "Community discussion and direct updates" },
+  { label: "Telegram", href: "https://t.me/GwapSpot_SupportBot", description: "Community discussion and direct updates" },
   { label: "GitHub", href: "https://github.com/Gwapoholics", description: "Open development and repositories" },
   {
     label: "Instagram",
