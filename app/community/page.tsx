@@ -77,7 +77,7 @@ export default function CommunityPage() {
       <section className="inner-section">
         <div className="community-card">
           <div>
-            <span className="eyrow">
+            <span className="eyebrow">
               <SparkIcon /> Official channels
             </span>
             <h2>Follow the build where it happens.</h2>
