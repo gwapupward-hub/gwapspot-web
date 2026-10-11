@@ -1,5 +1,5 @@
-version: "1.0.0"
-updated_at: "2026-09-30"
+version: "1.1.0"
+updated_at: "2026-10-11"
 canonical_master: "gwapupward-hub/gwapspot-web/docs/master"
 
 repositories:
@@ -33,9 +33,16 @@ repositories:
 
   gwapscore:
     repo: "gwapupward-hub/GwapScore-Official-v1"
-    role: "GwapScore implementation reference"
-    master_direction: "GwapScore is social reputation; financial/on-chain identity belongs to GNS."
-    hard_rule: "Older scoring assumptions do not override current Founder product direction."
+    role: "social-reputation-first multidimensional reputation protocol"
+    local_authority:
+      - "GWAPSCORE_V2_FOUNDATION_FREEZE.md"
+      - "GWAPSCORE_REPUTATION_MODEL_V2.md"
+      - "GWAP-MASTER.md"
+      - "AGENTS.md"
+      - "gwap-score-full/reputation/"
+      - "gwap-score-full/__tests__/"
+    master_direction: "GwapScore owns social-first reputation scoring and may consume reputation-eligible Wallet Intelligence as a supporting dimension. GNS owns .gwap identity/naming/resolution. Wallet Exposure Risk and wallet wealth remain outside the reputation formula."
+    hard_rule: "The v2 foundation freeze and stronger repo-local scoring/security invariants remain authoritative unless superseded by an explicit Founder decision; older wallet-only, risk, and 0-100 scoring policies do not override v2."
 
   gwapmojis:
     repo: "gwapupward-hub/gwapmojis"

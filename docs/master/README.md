@@ -1,6 +1,6 @@
 # GWAP MASTER
 
-**Version:** 1.2.0  
+**Version:** 1.2.1  
 **Status:** ACTIVE  
 **Canonical location:** this directory
 
@@ -28,11 +28,28 @@ A cross-system MASTER rule does not weaken a stronger repo-local security or Fou
 | --- | --- |
 | GwapSpot / GwapOS | Public gateway, application orchestration, auth/wallet UX, integration |
 | GNS / GWAP Names | .gwap identity, naming, resolution, public profile identity |
-| GwapScore | Social reputation and social proof-of-control |
+| GwapScore | Social-reputation-first multidimensional reputation scoring, social proof-of-control, and interpretation of approved reputation-eligible Wallet Intelligence |
 | PPV | Proof, receipts, commerce evidence, contracts/invoices; custody remains separately gated |
 | Daily Ideas | Discovery, validation, projects/workspaces |
 | GwapMojis | Telegram-native gifting/collectibles and Forge protocol |
 | Marketplace | Economic discovery and future value-exchange layer |
+
+## GwapScore reputation boundary
+
+Founder decision `GWAP-REPUTATION-001` establishes GwapScore as a **social-reputation-first, multidimensional reputation system**.
+
+- Social Reputation remains the primary reputation surface.
+- Reputation-eligible Wallet Intelligence may materially contribute through an explicit Wallet Reputation dimension.
+- Wallet control must be proven before wallet evidence becomes reputation-eligible.
+- Wallet Exposure Risk, portfolio value, token-price volatility, concentration, drawdown, and net worth remain outside the reputation formula.
+- Missing evidence is not negative evidence and must not be silently imputed as zero or a neutral score.
+- Social, Wallet, Identity / Proof, and approved GWAP Ecosystem dimensions remain independently explainable.
+- Coverage, confidence, provenance, and model version remain separate from the headline score.
+- GwapScore must not consume another GwapScore as scoring evidence.
+
+The v2 architecture is frozen repo-locally by `GWAPSCORE-V2-FREEZE-001` in `gwapupward-hub/GwapScore-Official-v1`. Calibration parameters remain subject to regression evidence, representative-data analysis, and model-version review before production promotion.
+
+GNS continues to own `.gwap` identity/naming/resolution. PPV continues to own proof/commerce facts. GwapScore may interpret only explicitly approved reputation-eligible evidence from those systems; it does not take ownership of their underlying facts.
 
 ## Payment and value-moving boundaries
 

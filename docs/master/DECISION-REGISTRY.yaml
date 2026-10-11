@@ -1,5 +1,5 @@
-version: "1.2.0"
-updated_at: "2026-10-02"
+version: "1.2.1"
+updated_at: "2026-10-11"
 decisions:
   - id: GWAP-ARCH-001
     status: PRODUCTION
@@ -7,6 +7,13 @@ decisions:
     title: "Bounded ecosystem architecture"
     decision: "Keep identity, reputation, proof/commerce, payment rails, application orchestration, and digital assets as separate domains."
     review_trigger: "Explicit Founder architecture change."
+
+  - id: GWAP-REPUTATION-001
+    status: PILOT
+    owner: GWAPSCORE
+    title: "Social-first multidimensional GwapScore v2"
+    decision: "GwapScore remains social-reputation-first while allowing reputation-eligible Wallet Intelligence to materially contribute through a separate Wallet Reputation dimension. Preserve Social, Wallet, Identity/Proof, and approved GWAP Ecosystem dimensions; report coverage, confidence, provenance, and model version separately; exclude wallet wealth and Wallet Exposure Risk from reputation; require verified wallet control before wallet evidence contributes. The repo-local v2 architecture is frozen by GWAPSCORE-V2-FREEZE-001 while calibration remains open until representative-data and adversarial validation support production promotion."
+    review_trigger: "Explicit Founder reputation-boundary change or GwapScore v2 production model promotion."
 
   - id: GWAP-PROTO-001
     status: PRODUCTION
