@@ -57,6 +57,12 @@ Every variable is documented inline in [`.env.example`](.env.example). You only 
 | Avoid public RPC rate limits | `SOLANA_RPC_URL`, `NEXT_PUBLIC_SOLANA_RPC_URL` | Server-side and browser Solana RPC endpoints. |
 | Test against devnet | `GWAP_OS_RUNTIME_MODE=devnet` | Only applies to localhost/preview hosts. |
 
+GNS registration has a separate **devnet-only** boundary on every host, including
+`app.gwapspot.com`. `GNS_EXPECTED_NETWORK` cannot enable mainnet registration.
+The configured GNS RPC is checked against devnet's genesis before wallet signing;
+the ordinary wallet/portfolio runtime remains mainnet. See the
+[assessment remediation handoff](docs/ASSESSMENT_REMEDIATION_2026-10-12.md).
+
 Integrations such as Gwap Browser, GwapScore snapshots, Public Proof, PPV, developer billing, and Telegram/Daily Ideas are **off by default** behind explicit switches. Leave them off unless you are working on that feature; each section of `.env.example` explains what it needs.
 
 Never put secrets in `NEXT_PUBLIC_*` variables, and never commit `.env.local` (it is ignored by `.gitignore`).

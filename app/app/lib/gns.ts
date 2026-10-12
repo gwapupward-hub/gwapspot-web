@@ -6,6 +6,8 @@ import type { GwapScoreResult } from "../../lib/gwap-score";
 import {
   CANONICAL_GNS_PROGRAM_ID,
   CANONICAL_GNS_TREASURY,
+  GNS_REGISTRATION_NETWORK,
+  assertGnsRegistrationNetwork,
   type GnsNetwork,
   type GnsRegistrationConfig,
 } from "./gns-registration";
@@ -206,7 +208,18 @@ export class GnsApiError extends Error {
   }
 }
 
+export class GnsRegistrationConfigError extends GnsApiError {
+  constructor() {
+    super("GNS registration is unavailable until its devnet configuration is verified.", 503);
+    this.name = "GnsRegistrationConfigError";
+  }
+}
+
 export async function getGnsRegistrationConfig(): Promise<GnsRegistrationConfig> {
+  // An environment override cannot authorize a GNS mainnet release.
+  assertGnsRegistrationNetwork(
+    process.env.GNS_EXPECTED_NETWORK?.trim() || GNS_REGISTRATION_NETWORK,
+  );
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), GNS_CONFIG_TIMEOUT_MS);
 
@@ -228,9 +241,6 @@ export async function getGnsRegistrationConfig(): Promise<GnsRegistrationConfig>
     const expectedTreasury =
       process.env.GNS_EXPECTED_TREASURY_PUBKEY?.trim() ||
       CANONICAL_GNS_TREASURY;
-    const expectedNetwork = asNetwork(
-      process.env.GNS_EXPECTED_NETWORK?.trim() || "devnet",
-    );
 
     if (
       payload?.on_chain_mode !== true ||
@@ -239,12 +249,13 @@ export async function getGnsRegistrationConfig(): Promise<GnsRegistrationConfig>
       !network ||
       !feeLamports ||
       !Number.isSafeInteger(feeLamports) ||
+      feeLamports <= 0 ||
       feeLamports > 1_000_000_000 ||
       !isPublicKey(programId) ||
       !isPublicKey(treasury) ||
       programId !== expectedProgramId ||
       treasury !== expectedTreasury ||
-      network !== expectedNetwork
+      network !== GNS_REGISTRATION_NETWORK
     ) {
       throw new Error("GNS deployment configuration failed validation");
     }
@@ -271,6 +282,13 @@ export async function registerGnsIdentity({
   owner: string;
   txSignature: string;
 }) {
+  // Revalidate on receipt submission, including retries after config drift.
+  // Callers must not turn a configuration failure into recovered ownership.
+  try {
+    await getGnsRegistrationConfig();
+  } catch {
+    throw new GnsRegistrationConfigError();
+  }
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), GNS_REGISTER_TIMEOUT_MS);
 

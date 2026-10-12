@@ -2,10 +2,14 @@ import "server-only";
 
 import {
   GnsApiError,
+  GnsRegistrationConfigError,
   registerGnsIdentity,
   resolveGnsName,
 } from "../app/lib/gns";
-import type { GnsNetwork } from "../app/lib/gns-registration";
+import {
+  GNS_REGISTRATION_NETWORK,
+  type GnsNetwork,
+} from "../app/lib/gns-registration";
 import { updateGwapAccountGnsIdentity } from "./gwap-account";
 import { isGwapAccountId } from "./gwap-account-core";
 import { getPrivateStorageKey, getWorkspaceRedis } from "./redis";
@@ -83,7 +87,17 @@ function isRecord(value: unknown): value is GnsRegistrationSyncRecord {
 export async function getGnsRegistrationSync(accountId: string) {
   if (!isGwapAccountId(accountId)) return null;
   const value = await getWorkspaceRedis().get<unknown>(registrationKey(accountId));
-  return isRecord(value) && value.accountId === accountId ? value : null;
+  if (!isRecord(value) || value.accountId !== accountId) return null;
+  // Preserve old receipts for inspection without promoting another cluster
+  // to an active identity in the client-side recovery bridge.
+  if (value.network !== GNS_REGISTRATION_NETWORK) {
+    return {
+      ...value,
+      status: "failed" as const,
+      error: "GNS registration receipts must belong to Solana devnet.",
+    };
+  }
+  return value;
 }
 
 export async function trackGnsRegistrationSync(input: {
@@ -97,7 +111,7 @@ export async function trackGnsRegistrationSync(input: {
     !isGwapAccountId(input.accountId) ||
     !validName(input.name) ||
     !validSignature(input.txSignature) ||
-    !isNetwork(input.network)
+    input.network !== GNS_REGISTRATION_NETWORK
   ) {
     return null;
   }
@@ -152,6 +166,14 @@ async function activateRecord(record: GnsRegistrationSyncRecord, recovered: bool
 
 export async function reconcileGnsRegistrationSync(accountId: string) {
   const record = await getGnsRegistrationSync(accountId);
+  if (record && record.network !== GNS_REGISTRATION_NETWORK) {
+    return saveRecord({
+      ...record,
+      status: "failed",
+      updatedAt: new Date().toISOString(),
+      error: "GNS registration receipts must belong to Solana devnet.",
+    });
+  }
   if (!record || record.status === "active" || record.status === "failed") {
     return record;
   }
@@ -174,6 +196,13 @@ export async function reconcileGnsRegistrationSync(accountId: string) {
 
     return activateRecord(attempting, false);
   } catch (error) {
+    if (error instanceof GnsRegistrationConfigError) {
+      return saveRecord({
+        ...attempting,
+        updatedAt: new Date().toISOString(),
+        error: error.message,
+      });
+    }
     const resolved = await resolveGnsName(attempting.name);
     if (resolved?.found && resolved.owner === attempting.owner) {
       return activateRecord(attempting, true);

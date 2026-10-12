@@ -147,6 +147,11 @@ MASTER owns **cross-system architecture and evidence routing**.
 
 Each repository remains authoritative for its own frozen/local implementation contract where that contract is stronger and does not conflict with an explicit Founder decision. See [REPO-REGISTRY.yaml](./REPO-REGISTRY.yaml).
 
+GNS registration remains devnet-only independently of the production GwapOS
+wallet's mainnet runtime. Environment variables and the OS host mode cannot
+authorize a GNS mainnet release. See the
+[network-boundary evidence and sprint handoff](../ASSESSMENT_REMEDIATION_2026-10-12.md).
+
 ## Required decision fields
 
 Material decisions should record:
