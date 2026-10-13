@@ -7,6 +7,7 @@ import { getSafeRedirectPath } from "../../lib/safe-redirect";
 
 export const metadata: Metadata = {
   title: "Sign in to GWAP OS",
+  description: "Simple account access to your GWAP workspace. Start with email and connect a wallet only when you need blockchain features.",
   robots: { index: false, follow: false },
 };
 
@@ -34,11 +35,12 @@ export default async function SignInPage({
     <WalletAuthProvider>
       <main className="auth-page">
         <div className="auth-page-brand">
-          <span>GWAP OS / WALLET-FIRST ACCESS</span>
-          <h1>One Solana identity. Every GWAP product.</h1>
+          <span>GWAP OS / SECURE ACCOUNT ACCESS</span>
+          <h1>One account. Your identity, reputation, work, and proof.</h1>
           <p>
-            Your wallet signs you in and out. If you do not have one yet, create
-            an embedded Solana wallet with the email address you already use.
+            Start with the email you already use. GWAP keeps blockchain infrastructure
+            in the background until a feature actually needs it, and you can connect an
+            existing Solana wallet at any time.
           </p>
         </div>
         <WalletSignIn redirectPath={redirectPath} sessionIssue={sessionIssue} />
