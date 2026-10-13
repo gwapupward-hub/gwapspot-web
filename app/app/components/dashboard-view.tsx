@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
+import { GwapMojisPromo } from "../../components/gwapmojis-promo";
 import { PpvVerifiedActivity } from "../../components/ppv/ppv-verified-activity";
 import {
   GWAP_ENTRY_INTENTS,
@@ -352,6 +353,14 @@ export function DashboardView({
                 </div>
                 <strong>Change</strong>
               </Link>
+              <Link className="gwapos-pulse-row" href="/app/settings">
+                <span aria-hidden="true">⚙</span>
+                <div>
+                  <p>Account settings</p>
+                  <small>Manage account access, linked services, wallet context, and sign-out.</small>
+                </div>
+                <strong>Open</strong>
+              </Link>
             </div>
           </section>
         </div>
@@ -369,6 +378,8 @@ export function DashboardView({
           <WalletPortfolioCard />
         </div>
       </section>
+
+      <GwapMojisPromo surface="gwapos_home" variant="compact" />
     </div>
   );
 }
