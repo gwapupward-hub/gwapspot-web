@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { EntryIntentBridge } from "./components/entry-intent-bridge";
 import { PublicExperienceLayers } from "./components/public-experience-layers";
 import { StructuredData } from "./components/structured-data";
 import "./styles.css";
@@ -50,6 +51,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         </Script>
         <StructuredData />
         <PublicExperienceLayers />
+        <EntryIntentBridge />
         {children}
         <Analytics />
         <SpeedInsights />
