@@ -5,6 +5,7 @@ import {
 } from "./entry-intent";
 
 export const GWAP_ACTIVATION_STORAGE_KEY = "gwap-activation-progress-v1";
+export const GWAP_ACTIVATION_COOKIE_KEY = "gwap_activation_selection";
 
 export type ActivationProgress = {
   intent: GwapEntryIntent;
@@ -67,6 +68,20 @@ export function parseActivationProgress(value: unknown): ActivationProgress | nu
         ? candidate.baselineReputationScore
         : null,
   };
+}
+
+export function serializeActivationSelection(progress: Pick<ActivationProgress, "intent" | "selectedAt">) {
+  return `${progress.intent}.${Date.parse(progress.selectedAt)}`;
+}
+
+export function parseActivationSelection(value: string | null | undefined) {
+  if (!value) return null;
+  const [intentValue, timestampValue, ...rest] = value.split(".");
+  if (rest.length || !isGwapEntryIntent(intentValue || null)) return null;
+  const timestamp = Number(timestampValue);
+  if (!Number.isSafeInteger(timestamp) || timestamp <= 0) return null;
+  const selectedAt = new Date(timestamp).toISOString();
+  return { intent: intentValue, selectedAt } as const;
 }
 
 export function isActivationStartPath(intent: GwapEntryIntent, pathname: string) {
