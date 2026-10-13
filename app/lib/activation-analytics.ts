@@ -14,6 +14,7 @@ export type ActivationProgress = {
   resumedAt: string | null;
   baselineIdentityFound: boolean | null;
   baselineReputationScored: boolean | null;
+  baselineReputationScore: number | null;
 };
 
 export function createActivationProgress(
@@ -28,6 +29,7 @@ export function createActivationProgress(
     resumedAt: null,
     baselineIdentityFound: null,
     baselineReputationScored: null,
+    baselineReputationScore: null,
   };
 }
 
@@ -58,6 +60,11 @@ export function parseActivationProgress(value: unknown): ActivationProgress | nu
     baselineReputationScored:
       typeof candidate.baselineReputationScored === "boolean"
         ? candidate.baselineReputationScored
+        : null,
+    baselineReputationScore:
+      typeof candidate.baselineReputationScore === "number" &&
+      Number.isFinite(candidate.baselineReputationScore)
+        ? candidate.baselineReputationScore
         : null,
   };
 }
