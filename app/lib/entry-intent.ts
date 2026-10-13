@@ -1,4 +1,5 @@
 export const GWAP_ENTRY_INTENT_STORAGE_KEY = "gwap-entry-intent-v1";
+export const GWAP_ENTRY_INTENT_COOKIE_KEY = "gwap_entry_intent";
 
 export type GwapEntryIntent =
   | "build"
