@@ -1,12 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { GwapMojisPromo } from "../../components/gwapmojis-promo";
 import {
   GWAP_ENTRY_INTENTS,
-  GWAP_ENTRY_INTENT_STORAGE_KEY,
-  isGwapEntryIntent,
   type GwapEntryIntent,
 } from "../../lib/entry-intent";
 import type { EcosystemProduct } from "../../lib/ecosystem";
@@ -26,23 +24,12 @@ export function DashboardView({
 }) {
   const { account, gnsIdentity, state, syncStatus } = useGwapOs();
   const portfolio = useWalletPortfolio();
-  const [entryIntent, setEntryIntent] = useState<GwapEntryIntent | null>(initialIntent);
+  const entryIntent = initialIntent;
   const solBalance =
     portfolio.status === "ready" && portfolio.payload.sol.amount !== null
       ? `${portfolio.payload.sol.amount.toFixed(2)} SOL`
       : "—";
   const profileCompletion = getProfileCompletion(state.profile);
-
-  useEffect(() => {
-    if (initialIntent) return;
-
-    try {
-      const storedIntent = window.localStorage.getItem(GWAP_ENTRY_INTENT_STORAGE_KEY);
-      if (isGwapEntryIntent(storedIntent)) setEntryIntent(storedIntent);
-    } catch {
-      // Personalization gracefully falls back when browser storage is unavailable.
-    }
-  }, [initialIntent]);
 
   const identity = useMemo(
     () => gnsIdentity.fullName || shortenWalletAddress(account.verifiedWallet),
