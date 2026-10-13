@@ -1,8 +1,9 @@
 "use client";
 
-// Privy is the sole wallet connection and authentication owner here. External
-// Solana wallets authenticate through Privy's Wallet Standard connectors;
-// email OTP users receive/reuse a Privy embedded Solana wallet.
+// Privy owns authentication and wallet connectivity for GWAP OS. Email is the
+// default account entry path; Solana wallets remain available when a user wants
+// to connect one directly. Email users may receive/reuse a Privy embedded Solana
+// wallet in the background so blockchain features are ready when actually needed.
 import { PrivyProvider, type PrivyClientConfig } from "@privy-io/react-auth";
 import { toSolanaWalletConnectors } from "@privy-io/react-auth/solana";
 import { createSolanaRpc, createSolanaRpcSubscriptions } from "@solana/kit";
@@ -19,7 +20,7 @@ const ppvDevnetRpcUrl =
 const ppvDevnetWsUrl = ppvDevnetRpcUrl.replace(/^http/, "ws");
 
 const authConfig: PrivyClientConfig = {
-  loginMethods: ["wallet", "email"],
+  loginMethods: ["email", "wallet"],
   appearance: {
     theme: "dark",
     accentColor: "#13dd13",
@@ -32,13 +33,15 @@ const authConfig: PrivyClientConfig = {
       "backpack",
       "detected_solana_wallets",
     ],
-    showWalletLoginFirst: true,
+    showWalletLoginFirst: false,
   },
   externalWallets: {
     solana: { connectors: solanaConnectors },
   },
   embeddedWallets: {
     ethereum: { createOnLogin: "off" },
+    // Keep wallet provisioning as invisible infrastructure for account users.
+    // The onboarding surface does not require crypto knowledge or a wallet choice.
     solana: { createOnLogin: "users-without-wallets" },
   },
   solana: {

@@ -33,7 +33,7 @@ export function getWalletAuthErrorCode(error: unknown) {
   if (/origin.*(?:not allowed|unauthorized)|invalid origin/i.test(fingerprint)) {
     return "origin_not_allowed";
   }
-  if (/authenticated wallet session has no access token/i.test(fingerprint)) {
+  if (/authenticated (?:wallet|account) session has no access token/i.test(fingerprint)) {
     return "session_token_missing";
   }
   if (/sign.?message.*(?:unsupported|not supported)|does not support.*message/i.test(fingerprint)) {
@@ -42,6 +42,9 @@ export function getWalletAuthErrorCode(error: unknown) {
   if (/reject|cancel|declin|user denied|4001/i.test(fingerprint)) {
     return "signature_rejected";
   }
+  // Preserve the existing support/telemetry code even though email is now the
+  // default onboarding path. Changing this identifier would fragment existing
+  // diagnostics without improving the user-facing experience.
   return "wallet_login_failed";
 }
 
@@ -53,11 +56,11 @@ export function getWalletAuthErrorMessage(error: unknown) {
   }
 
   if (/origin.*(?:not allowed|unauthorized)|invalid origin/i.test(fingerprint)) {
-    return "GWAP OS wallet sign-in is not enabled for app.gwapspot.com in Privy.";
+    return "GWAP OS sign-in is not enabled for app.gwapspot.com in Privy.";
   }
 
-  if (/authenticated wallet session has no access token/i.test(fingerprint)) {
-    return "Your wallet signature was accepted, but Privy did not create the secure session. Check the production Privy client and cookie-domain configuration.";
+  if (/authenticated (?:wallet|account) session has no access token/i.test(fingerprint)) {
+    return "Your sign-in was accepted, but Privy did not create the secure session. Please retry.";
   }
 
   if (/sign.?message.*(?:unsupported|not supported)|does not support.*message/i.test(fingerprint)) {
@@ -68,5 +71,5 @@ export function getWalletAuthErrorMessage(error: unknown) {
     return "The signature request was cancelled. Nothing was changed.";
   }
 
-  return "Wallet authentication failed after connection. Check the reference below against the Privy production configuration, then retry.";
+  return "We couldn’t complete sign-in. Check the reference below and retry.";
 }

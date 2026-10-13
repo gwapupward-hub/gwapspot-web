@@ -5,13 +5,10 @@ import { WalletSignIn } from "./wallet-sign-in";
 
 // App-domain access surface.
 //
-// GWAP OS supports two first-class authentication paths:
-//   1. an existing Solana wallet; or
-//   2. email OTP, which provisions/reuses a Privy embedded Solana wallet.
-//
-// Do not gate this surface on injected-wallet detection. Email users must be
-// able to enter from an ordinary browser, and desktop users with wallet
-// extensions should let Privy discover those wallets directly.
+// Email OTP is the default GWAP OS entry path. Existing Solana wallet users may
+// still connect directly, while email users can enter without understanding or
+// choosing a wallet. Privy may provision an embedded Solana wallet in the
+// background so blockchain-backed features are available later when required.
 export function AppAccessColumn({
   redirectPath,
   sessionIssue = false,

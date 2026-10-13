@@ -143,14 +143,16 @@ test("app.gwapspot.com lets ordinary browsers reach wallet-or-email sign-in", ()
   assert.doesNotMatch(signInPage, /<WalletSignIn/);
 });
 
-test("the app variant exposes email OTP and embedded Solana onboarding", () => {
+test("the app variant is email-first while embedded Solana stays infrastructure", () => {
   const wallet = read("../components/wallet-sign-in.tsx");
   const provider = read("../components/wallet-auth-provider.tsx");
 
   assert.match(wallet, /login\(\{ loginMethods: \["email"\] \}\)/);
   assert.match(wallet, /Continue with email/);
-  assert.match(wallet, /embedded Solana wallet/);
-  assert.match(provider, /loginMethods: \["wallet", "email"\]/);
+  assert.match(wallet, /Use a Solana wallet instead/);
+  assert.doesNotMatch(wallet, /embedded Solana wallet/);
+  assert.match(provider, /loginMethods: \["email", "wallet"\]/);
+  assert.match(provider, /showWalletLoginFirst: false/);
   assert.match(provider, /solana: \{ createOnLogin: "users-without-wallets" \}/);
   assert.match(provider, /ethereum: \{ createOnLogin: "off" \}/);
 });
