@@ -37,9 +37,8 @@ export function createActivationProgress(
 export function parseActivationProgress(value: unknown): ActivationProgress | null {
   if (!value || typeof value !== "object") return null;
   const candidate = value as Partial<ActivationProgress>;
-  if (!isGwapEntryIntent(typeof candidate.intent === "string" ? candidate.intent : null)) {
-    return null;
-  }
+  const intent = typeof candidate.intent === "string" ? candidate.intent : null;
+  if (!isGwapEntryIntent(intent)) return null;
   if (
     typeof candidate.selectedAt !== "string" ||
     Number.isNaN(Date.parse(candidate.selectedAt))
@@ -49,7 +48,7 @@ export function parseActivationProgress(value: unknown): ActivationProgress | nu
   const safeDate = (date: unknown) =>
     typeof date === "string" && !Number.isNaN(Date.parse(date)) ? date : null;
   return {
-    intent: candidate.intent,
+    intent,
     selectedAt: candidate.selectedAt,
     startedAt: safeDate(candidate.startedAt),
     completedAt: safeDate(candidate.completedAt),
@@ -77,11 +76,12 @@ export function serializeActivationSelection(progress: Pick<ActivationProgress, 
 export function parseActivationSelection(value: string | null | undefined) {
   if (!value) return null;
   const [intentValue, timestampValue, ...rest] = value.split(".");
-  if (rest.length || !isGwapEntryIntent(intentValue || null)) return null;
+  const intent = intentValue || null;
+  if (rest.length || !isGwapEntryIntent(intent)) return null;
   const timestamp = Number(timestampValue);
   if (!Number.isSafeInteger(timestamp) || timestamp <= 0) return null;
   const selectedAt = new Date(timestamp).toISOString();
-  return { intent: intentValue, selectedAt } as const;
+  return { intent, selectedAt } as const;
 }
 
 export function isActivationStartPath(intent: GwapEntryIntent, pathname: string) {
