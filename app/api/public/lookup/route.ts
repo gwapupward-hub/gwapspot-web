@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import {
-  getGnsProfileUrl,
   resolveGnsIdentity,
   resolveGnsName,
 } from "../../../app/lib/gns";
 import { fetchGwapScore } from "../../../app/lib/gwap-score";
+import { buildUniversalTrustProfilePath } from "../../../lib/universal-trust-profile";
 import {
   getPublicLookupSubject,
   isPublicLookupMode,
@@ -88,7 +88,9 @@ export async function GET(request: Request) {
       fullName: lookup.fullName,
       available: !resolved.found,
       owner: resolved.found ? resolved.owner : null,
-      profileUrl: resolved.found ? getGnsProfileUrl(lookup.value) : null,
+      profileUrl: resolved.found
+        ? buildUniversalTrustProfilePath(lookup.value)
+        : null,
       score,
     });
   }
@@ -110,7 +112,10 @@ export async function GET(request: Request) {
       scoreStatus: identity.scoreStatus,
       scoreMessage: identity.scoreMessage,
       verified: identity.verified,
-      profileUrl: identity.profileUrl,
+      profileUrl:
+        identity.status === "found" && identity.name
+          ? buildUniversalTrustProfilePath(identity.name)
+          : null,
     },
   });
 }
