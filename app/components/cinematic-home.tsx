@@ -13,7 +13,6 @@ import { ecosystemProductGroups, ecosystemProductIndexBySlug, ecosystemProducts,
 import { roadmapPhases } from "../lib/roadmap";
 import { CountUp } from "./count-up";
 import { GwapEcosystemGraph } from "./gwap-ecosystem-graph";
-import { HomeUtility } from "./home-utility";
 
 type IconName = "arrow" | "search" | "menu" | "close" | "spark" | "shield" | "network";
 
@@ -189,12 +188,11 @@ export function CinematicHome({
       <section className="story-section hero-story is-active" id="top" data-story-section>
         <div className="hero-light" aria-hidden="true" />
         <div className="hero-content">
-          <span className="hero-pill"><i /> Identity + reputation, connected</span>
+          <span className="hero-pill"><i /> For builders, creators & entrepreneurs</span>
           <h1>Grind with<br /><em>a purpose.</em></h1>
-          <p>Turn your Solana wallet into a portable identity, understand your reputation, and carry that trust into the growing GWAP network.</p>
-          <HomeUtility />
-          <div className="hero-ctas"><GlassButton href="/app/identity" primary>Claim your .gwap identity</GlassButton><GlassButton href="/app">Enter GWAP OS</GlassButton></div>
-          <div className="hero-trust"><span><Icon name="shield" /> Check before signup</span><span><Icon name="network" /> GNS + GwapScore</span><span><Icon name="spark" /> One connected network</span></div>
+          <p>Build something real. Establish who you are. Prove what you have done. Protect the work when value moves—without needing to become a blockchain expert.</p>
+          <div className="hero-ctas"><GlassButton href="#overview" primary>Choose what I want to do</GlassButton><GlassButton href="/app">Open GWAP OS</GlassButton></div>
+          <div className="hero-trust"><span><Icon name="shield" /> No crypto expertise required</span><span><Icon name="network" /> Start with your goal</span><span><Icon name="spark" /> Solana powered underneath</span></div>
         </div>
 
         <div className="emblem-stage" aria-label="Animated GWAP ecosystem emblem">
@@ -214,49 +212,62 @@ export function CinematicHome({
         <div className="overview-layout">
           <div className="overview-copy">
             <span className="eyebrow-premium"><Icon name="spark" /> Your way into GWAP</span>
-            <h2>What brought you<br />to GWAP?</h2>
-            <p>You do not need to understand every product first. Start with identity, reputation, or your operating layer—the rest of the ecosystem can unfold from there.</p>
+            <h2>What are you<br />trying to do?</h2>
+            <p>You do not need to know which GWAP product you need. Pick the outcome and we will route you to the right place. Connect a wallet only when the action actually requires it.</p>
           </div>
           <div className="metrics-glass">
-            <div><strong><CountUp value={8} /></strong><span>Products</span><small>One connected ecosystem</small></div>
-            <div><strong><CountUp value={4} /></strong><span>Live</span><small>Working in public today</small></div>
-            <div><strong><CountUp value={300} suffix="–900" /></strong><span>Score range</span><small>Explainable wallet reputation</small></div>
-            <div><strong><CountUp value={1} suffix=" hub" /></strong><span>Gateway</span><small>GWAPSpot connects it all</small></div>
+            <div><strong><CountUp value={5} /></strong><span>Starting paths</span><small>Choose by outcome</small></div>
+            <div><strong><CountUp value={8} /></strong><span>Products</span><small>Connected behind the scenes</small></div>
+            <div><strong><CountUp value={1} /></strong><span>Identity</span><small>.gwap carries forward</small></div>
+            <div><strong><CountUp value={1} /></strong><span>Operating layer</span><small>GWAP OS connects it all</small></div>
           </div>
         </div>
 
-        <div className="overview-foundation" aria-label="Choose your GWAP starting point">
+        <div className="overview-foundation" aria-label="Choose what you want to do in GWAP">
+          <Link href="/app/ideas/lab" className="overview-foundation-card">
+            <span>01 / START A BUSINESS OR PROJECT</span>
+            <div><strong>Build something</strong></div>
+            <p>Turn a rough concept into an executable project with Daily Ideas 2.0 and Idea Lab.</p>
+            <small>Start building <Icon name="arrow" /></small>
+          </Link>
+          <Link href="/app/ideas" className="overview-foundation-card">
+            <span>02 / DEVELOP AN IDEA</span>
+            <div><strong>Validate an idea</strong></div>
+            <p>Research the problem, audience, opportunity, and next steps before spending time building the wrong thing.</p>
+            <small>Develop my idea <Icon name="arrow" /></small>
+          </Link>
           <Link href="/app/identity" className="overview-foundation-card">
-            <span>01 / BUILD MY IDENTITY</span>
-            <div><Image src="/logos/gns.webp" alt="" width={42} height={42} /><strong>GNS</strong></div>
-            <p>Claim a .gwap name and turn your wallet into a readable, portable identity.</p>
-            <small>Claim my identity <Icon name="arrow" /></small>
+            <span>03 / BUILD MY DIGITAL IDENTITY</span>
+            <div><Image src="/logos/gns.webp" alt="" width={42} height={42} /><strong>Own my identity</strong></div>
+            <p>Claim a .gwap name and create a portable identity that can connect your profile, projects, and activity.</p>
+            <small>Create my identity <Icon name="arrow" /></small>
           </Link>
-          <Link href="#top" className="overview-foundation-card">
-            <span>02 / CHECK REPUTATION</span>
-            <div><Image src="/logos/gwapscore.svg" alt="" width={42} height={42} /><strong>GwapScore</strong></div>
-            <p>Run a no-signup wallet check and see an explainable 300–900 reputation signal.</p>
-            <small>Check my wallet <Icon name="arrow" /></small>
+          <Link href="/app/score" className="overview-foundation-card">
+            <span>04 / BUILD MY REPUTATION</span>
+            <div><Image src="/logos/gwapscore.svg" alt="" width={42} height={42} /><strong>Prove my credibility</strong></div>
+            <p>Use social proof, verified activity, and optional wallet intelligence to understand and strengthen your GwapScore.</p>
+            <small>Build my reputation <Icon name="arrow" /></small>
           </Link>
-          <Link href="/app" className="overview-os-entry">
-            <span>03 / ENTER GWAP OS</span>
-            <strong>Manage your identity, reputation, apps, and activity in one operating layer.</strong>
-            <small>Open my GWAP OS <Icon name="arrow" /></small>
+          <Link href="/app/ppv" className="overview-foundation-card">
+            <span>05 / MAKE OR PROTECT A TRANSACTION</span>
+            <div><strong>Protect the deal</strong></div>
+            <p>Use Private Proof Vault for proofs, agreements, receipts, and protected economic activity when value starts moving.</p>
+            <small>Open PPV <Icon name="arrow" /></small>
           </Link>
         </div>
 
         <div className="depth-window">
           <div className="depth-grid" />
           <div className="depth-orbit"><div className="depth-core"><Image src="/logos/gwap-agent-clear.svg" alt="" width={90} height={90} /></div>{["IDENTITY", "REPUTATION", "COMMERCE", "CREATIVITY", "INTELLIGENCE"].map((label, index) => <span style={{ "--node-index": index } as CSSProperties} key={label}>{label}</span>)}</div>
-          <div className="depth-label"><small>CONNECTED INFRASTRUCTURE</small><strong>Build trust once.<br />Carry it forward.</strong></div>
+          <div className="depth-label"><small>CONNECTED INFRASTRUCTURE</small><strong>Build once.<br />Carry progress forward.</strong></div>
         </div>
       </section>
 
       <section className="story-section ecosystem-story" id="ecosystem" data-story-section>
         <div className="section-kicker"><span>02</span><p>Explore the product network.</p></div>
         <div className="premium-heading">
-          <div><span className="eyebrow-premium"><Icon name="network" /> GWAP ecosystem</span><h2>Your starting point<br /><em>opens the network.</em></h2></div>
-          <p>GNS establishes identity. GwapScore adds reputation. GWAP OS connects those signals to the broader ecosystem of commerce, creativity, intelligence, and community.</p>
+          <div><span className="eyebrow-premium"><Icon name="network" /> GWAP ecosystem</span><h2>Your goal<br /><em>opens the network.</em></h2></div>
+          <p>You do not need to learn the stack before getting value. GWAP OS connects identity, reputation, ideas, commerce, creativity, and intelligence behind the outcome you chose.</p>
         </div>
         <GwapEcosystemGraph />
         <div className="ecosystem-groups">
@@ -306,11 +317,11 @@ export function CinematicHome({
           <div className="trust-copy"><span className="eyebrow-premium"><Icon name="shield" /> Trust by design</span><h2>Premium on the surface.<br /><em>Practical underneath.</em></h2><p>The interface is only the front door. GWAP is building clear identity, explainable reputation, interoperable products, and infrastructure that rewards real participation.</p><GlassButton href="/about" primary>How GWAP works</GlassButton></div>
           <div className="layer-stack" aria-label="GWAP infrastructure layers">
             <article className="stack-card stack-one"><span>01 / IDENTITY</span><strong>GNS</strong><p>Human-readable names and portable profiles.</p><i /></article>
-            <article className="stack-card stack-two"><span>02 / REPUTATION</span><strong>GwapScore</strong><p>Transparent 300–900 wallet intelligence.</p><i /></article>
-            <article className="stack-card stack-three"><span>03 / TRANSACTIONS</span><strong>Marketplace</strong><p>Verified commerce across the ecosystem.</p><i /></article>
+            <article className="stack-card stack-two"><span>02 / REPUTATION</span><strong>GwapScore</strong><p>Social-first reputation supported by verified activity and optional wallet intelligence.</p><i /></article>
+            <article className="stack-card stack-three"><span>03 / TRANSACTIONS</span><strong>PPV</strong><p>Proofs, agreements, receipts, and protected economic activity.</p><i /></article>
           </div>
         </div>
-        <div className="principle-strip"><span>Purpose first.</span><span>Trust by design.</span><span>Expansion without chaos.</span><span>Built to interoperate.</span></div>
+        <div className="principle-strip"><span>Purpose first.</span><span>Identity you own.</span><span>Trust you can prove.</span><span>Value you can move.</span></div>
       </section>
 
       <section className="story-section roadmap-story" id="roadmap" data-story-section>
