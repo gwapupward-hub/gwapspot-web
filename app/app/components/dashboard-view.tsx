@@ -160,8 +160,12 @@ export function DashboardView({
   const recentProducts = useMemo(
     () =>
       state.recent
-        .map((item) => products.find((product) => product.slug === item.slug))
-        .filter((product): product is EcosystemProduct => Boolean(product))
+        .flatMap((item) => {
+          const product = products.find((candidate) => candidate.slug === item.slug);
+          return product
+            ? [{ product, href: product.internalUrl || "/app/apps" }]
+            : [];
+        })
         .slice(0, 3),
     [products, state.recent],
   );
@@ -246,7 +250,7 @@ export function DashboardView({
             </div>
             <PpvVerifiedActivity
               wallet={account.verifiedWallet}
-              domain={gnsIdentity.status === "found" ? gnsIdentity.name : undefined}
+              domain={gnsIdentity.status === "found" ? gnsIdentity.name || undefined : undefined}
               title="Recent verified activity"
               receiptHref={(id) => `/app/vault/receipts/${id}`}
             />
@@ -284,8 +288,8 @@ export function DashboardView({
 
             <div className="gwapos-pulse">
               {recentProducts.length ? (
-                recentProducts.map((product) => (
-                  <Link className="gwapos-pulse-row" href={product.href} key={product.slug}>
+                recentProducts.map(({ product, href }) => (
+                  <Link className="gwapos-pulse-row" href={href} key={product.slug}>
                     <span aria-hidden="true">✦</span>
                     <div>
                       <p>{product.name}</p>
