@@ -248,8 +248,7 @@ export function ActivationTelemetry() {
 
   useEffect(() => {
     const initial = progressRef.current;
-    if (!initial?.startedAt || initial.completedAt) return;
-    if (!(["build", "validate", "reputation", "transaction"] as const).includes(initial.intent as never)) {
+    if (!initial?.startedAt || initial.completedAt || initial.intent === "identity") {
       return;
     }
 
