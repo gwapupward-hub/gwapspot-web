@@ -17,10 +17,16 @@ import { GwapGradientLink } from "./gwap-gradient-button";
 import { useGwapOs } from "./os-provider";
 import { WalletPortfolioCard } from "./wallet-portfolio-card";
 
-export function DashboardView({ products }: { products: EcosystemProduct[] }) {
+export function DashboardView({
+  products,
+  initialIntent,
+}: {
+  products: EcosystemProduct[];
+  initialIntent: GwapEntryIntent | null;
+}) {
   const { account, gnsIdentity, state, syncStatus } = useGwapOs();
   const portfolio = useWalletPortfolio();
-  const [entryIntent, setEntryIntent] = useState<GwapEntryIntent | null>(null);
+  const [entryIntent, setEntryIntent] = useState<GwapEntryIntent | null>(initialIntent);
   const solBalance =
     portfolio.status === "ready" && portfolio.payload.sol.amount !== null
       ? `${portfolio.payload.sol.amount.toFixed(2)} SOL`
@@ -28,13 +34,15 @@ export function DashboardView({ products }: { products: EcosystemProduct[] }) {
   const profileCompletion = getProfileCompletion(state.profile);
 
   useEffect(() => {
+    if (initialIntent) return;
+
     try {
       const storedIntent = window.localStorage.getItem(GWAP_ENTRY_INTENT_STORAGE_KEY);
       if (isGwapEntryIntent(storedIntent)) setEntryIntent(storedIntent);
     } catch {
       // Personalization gracefully falls back when browser storage is unavailable.
     }
-  }, []);
+  }, [initialIntent]);
 
   const identity = useMemo(
     () => gnsIdentity.fullName || shortenWalletAddress(account.verifiedWallet),
