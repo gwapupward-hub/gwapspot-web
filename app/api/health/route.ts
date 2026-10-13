@@ -1,3 +1,4 @@
+import { GNS_REGISTRATION_NETWORK } from "../../app/lib/gns-registration";
 import { getWalletAuthConfigurationStatus } from "../../lib/auth-config";
 import { getWorkspaceRedis } from "../../lib/redis";
 
@@ -31,6 +32,14 @@ export async function GET() {
       timestamp: new Date().toISOString(),
       deployment: process.env.VERCEL_URL ?? null,
       commit: process.env.VERCEL_GIT_COMMIT_SHA ?? null,
+      gnsRegistration: {
+        allowedNetwork: GNS_REGISTRATION_NETWORK,
+        mainnetWritesEnabled: false,
+        expectedNetworkMatchesPolicy:
+          (process.env.GNS_EXPECTED_NETWORK?.trim() || GNS_REGISTRATION_NETWORK) ===
+          GNS_REGISTRATION_NETWORK,
+        rpcVerification: "genesis-before-signing",
+      },
       authentication: {
         provider: "privy-siws",
         configured,

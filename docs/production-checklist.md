@@ -15,6 +15,14 @@
 - The selected Redis credentials are scoped to the Vercel project and use a
   separate Preview database or namespace.
 - A dedicated Solana mainnet RPC is configured.
+- `/api/health` reports `gnsRegistration.allowedNetwork=devnet`,
+  `mainnetWritesEnabled=false`, and `expectedNetworkMatchesPolicy=true`.
+  This reports the deployed policy and environment consistency, not backend
+  reachability or completion of a signed registration.
+- GNS uses devnet/test SOL on `app.gwapspot.com`; an RPC with another genesis
+  fails before a wallet prompt. A verified devnet receipt can still sync after
+  a temporary indexing error. A conflicting backend config returns 503 and
+  cannot recover ownership through the fallback path.
 - External-wallet SIWS, email-created embedded wallet, session refresh, sign-out,
   wallet export, workspace reset, and account deletion pass smoke tests.
 - `gwapspot.com` permanently redirects to `www.gwapspot.com`.

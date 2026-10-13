@@ -6,10 +6,14 @@ import {
   CANONICAL_GNS_PROGRAM_ID,
   CANONICAL_GNS_TREASURY,
   GNS_REGISTER_DISCRIMINATOR,
+  GNS_REGISTRATION_GENESIS_HASH,
+  assertGnsRegistrationRpc,
   buildGnsRegistrationTransaction,
   deriveGnsRegistrationAccounts,
   encodeGnsSignature,
   getGnsExplorerUrl,
+  getGnsPrivyChain,
+  getGnsRpcUrl,
   isGnsRegistrationConfig,
   isValidGnsName,
   isValidSolanaSignature,
@@ -116,5 +120,45 @@ test("restores only a valid pending receipt for the authenticated wallet", () =>
       owner,
     ),
     null,
+  );
+});
+
+test("rejects non-devnet configuration before building a registration or selecting a signing chain", () => {
+  const owner = new PublicKey(Uint8Array.from({ length: 32 }, () => 7));
+  for (const network of ["mainnet-beta", "testnet", "mainnet", "unknown"]) {
+    const invalidConfig = { ...config, network };
+    assert.equal(isGnsRegistrationConfig(invalidConfig), false);
+    assert.throws(
+      () => buildGnsRegistrationTransaction({ config: invalidConfig, name: "builder", owner }),
+      /devnet configuration/,
+    );
+    assert.throws(() => getGnsPrivyChain(network), /only on Solana devnet/);
+    assert.throws(() => getGnsRpcUrl(network), /only on Solana devnet/);
+  }
+  assert.equal(getGnsPrivyChain("devnet"), "solana:devnet");
+});
+
+test("verifies the actual devnet genesis rather than trusting an RPC URL or cluster label", async () => {
+  await assert.doesNotReject(() => assertGnsRegistrationRpc({
+    getGenesisHash: async () => GNS_REGISTRATION_GENESIS_HASH,
+  }));
+  for (const genesisHash of [
+    "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d",
+    "4uhcVJyU9pJkvQyS88uRDiswHXSCkY3zQawwpjk2NsNY",
+    "unknown-genesis",
+  ]) {
+    await assert.rejects(
+      () => assertGnsRegistrationRpc({ getGenesisHash: async () => genesisHash }),
+      /RPC is not on Solana devnet/,
+    );
+  }
+});
+
+test("does not treat an unavailable RPC as verified devnet", async () => {
+  await assert.rejects(
+    () => assertGnsRegistrationRpc({ getGenesisHash: async () => {
+      throw new Error("RPC unavailable");
+    } }),
+    /RPC unavailable/,
   );
 });

@@ -6,8 +6,13 @@ import {
   Transaction,
   TransactionInstruction,
   clusterApiUrl,
+  type Connection,
 } from "@solana/web3.js";
 
+// GNS has its own release boundary, independent of the OS wallet runtime.
+export const GNS_REGISTRATION_NETWORK = "devnet";
+export const GNS_REGISTRATION_GENESIS_HASH =
+  "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG";
 export const CANONICAL_GNS_PROGRAM_ID =
   "6cDCrNYmasd1qmnvdLf8jyt9iFa3jW9VLzJhrb7X7SEH";
 export const CANONICAL_GNS_TREASURY =
@@ -19,6 +24,23 @@ export const GNS_NAME_PATTERN =
   /^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$/;
 
 export type GnsNetwork = "devnet" | "testnet" | "mainnet-beta";
+
+export function assertGnsRegistrationNetwork(network: unknown) {
+  if (network !== GNS_REGISTRATION_NETWORK) {
+    throw new Error("GNS registration is available only on Solana devnet.");
+  }
+}
+
+export async function assertGnsRegistrationRpc(
+  connection: Pick<Connection, "getGenesisHash">,
+) {
+  const genesisHash = await connection.getGenesisHash();
+  if (genesisHash !== GNS_REGISTRATION_GENESIS_HASH) {
+    throw new Error(
+      "GNS registration is paused because the RPC is not on Solana devnet. No wallet signature was requested.",
+    );
+  }
+}
 
 export type GnsRegistrationConfig = {
   feeLamports: number;
@@ -63,10 +85,7 @@ export function isGnsRegistrationConfig(
 ): value is GnsRegistrationConfig {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Partial<GnsRegistrationConfig>;
-  const validNetwork =
-    candidate.network === "devnet" ||
-    candidate.network === "testnet" ||
-    candidate.network === "mainnet-beta";
+  const validNetwork = candidate.network === GNS_REGISTRATION_NETWORK;
   const validFee =
     typeof candidate.feeLamports === "number" &&
     Number.isSafeInteger(candidate.feeLamports) &&
@@ -149,6 +168,9 @@ export function buildGnsRegistrationTransaction({
   name: string;
   owner: PublicKey;
 }) {
+  if (!isGnsRegistrationConfig(config)) {
+    throw new Error("GNS registration requires a valid Solana devnet configuration.");
+  }
   const normalizedName = normalizeGnsName(name);
   const { configPda, namePda, programId } = deriveGnsRegistrationAccounts(
     normalizedName,
@@ -186,15 +208,16 @@ export function buildGnsRegistrationTransaction({
 }
 
 export function getGnsRpcUrl(network: GnsNetwork) {
+  assertGnsRegistrationNetwork(network);
   const configured = process.env.NEXT_PUBLIC_GNS_SOLANA_RPC_URL?.trim();
   return configured || clusterApiUrl(network);
 }
 
 export function getGnsPrivyChain(
   network: GnsNetwork,
-): "solana:mainnet" | "solana:devnet" | "solana:testnet" {
-  if (network === "mainnet-beta") return "solana:mainnet";
-  return network === "devnet" ? "solana:devnet" : "solana:testnet";
+): "solana:devnet" {
+  assertGnsRegistrationNetwork(network);
+  return "solana:devnet";
 }
 
 export function encodeGnsSignature(signature: Uint8Array) {
