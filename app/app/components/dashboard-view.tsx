@@ -2,18 +2,24 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import { GwapMojisPromo } from "../../components/gwapmojis-promo";
+import { PpvVerifiedActivity } from "../../components/ppv/ppv-verified-activity";
 import {
   GWAP_ENTRY_INTENTS,
   type GwapEntryIntent,
 } from "../../lib/entry-intent";
 import type { EcosystemProduct } from "../../lib/ecosystem";
 import { getProfileCompletion } from "../lib/os-state";
-import { useWalletPortfolio } from "../lib/use-wallet-portfolio";
-import { shortenWalletAddress } from "../lib/wallet-format";
 import { GwapGradientLink } from "./gwap-gradient-button";
 import { useGwapOs } from "./os-provider";
 import { WalletPortfolioCard } from "./wallet-portfolio-card";
+
+type TrustFoundationItem = {
+  href: string;
+  icon: string;
+  title: string;
+  note: string;
+  status: string;
+};
 
 export function DashboardView({
   products,
@@ -23,19 +29,14 @@ export function DashboardView({
   initialIntent: GwapEntryIntent | null;
 }) {
   const { account, gnsIdentity, state, syncStatus } = useGwapOs();
-  const portfolio = useWalletPortfolio();
   const entryIntent = initialIntent;
-  const solBalance =
-    portfolio.status === "ready" && portfolio.payload.sol.amount !== null
-      ? `${portfolio.payload.sol.amount.toFixed(2)} SOL`
-      : "—";
   const profileCompletion = getProfileCompletion(state.profile);
 
-  const identity = useMemo(
-    () => gnsIdentity.fullName || shortenWalletAddress(account.verifiedWallet),
-    [account.verifiedWallet, gnsIdentity.fullName],
-  );
-
+  const identity =
+    gnsIdentity.fullName ||
+    gnsIdentity.name ||
+    account.displayName ||
+    "GWAP member";
   const intentConfig = entryIntent ? GWAP_ENTRY_INTENTS[entryIntent] : null;
 
   const nextAction = useMemo(() => {
@@ -48,7 +49,7 @@ export function DashboardView({
             href: "/app/profile",
             title: "Strengthen your digital identity",
             detail:
-              "Your .gwap identity is active. Complete the profile context that people and GWAP products can actually use.",
+              "Your .gwap identity is active. Add the profile context that helps people understand who they are dealing with.",
             label: "Complete profile",
           };
         }
@@ -57,7 +58,7 @@ export function DashboardView({
           href: "/app/identity",
           title: "Your identity foundation is active",
           detail:
-            "Review your .gwap identity, connected wallet, and profile details before carrying that identity into reputation and commerce.",
+            "Review the identity and account connections that carry your credibility across GWAP.",
           label: "Manage identity",
         };
       }
@@ -73,203 +74,182 @@ export function DashboardView({
     if (gnsIdentity.status === "none") {
       return {
         href: "/app/identity",
-        title: "Claim your GwapOS identity",
+        title: "Establish your digital identity",
         detail:
-          "Turn this wallet into a human-readable .gwap identity that can travel across the GWAP ecosystem.",
-        label: "Claim .gwap",
+          "Claim a recognizable .gwap identity so your profile, reputation, and verified activity can resolve to one place.",
+        label: "Create identity",
       };
     }
 
     if (profileCompletion < 67) {
       return {
         href: "/app/profile",
-        title: "Strengthen your identity",
+        title: "Give people useful context",
         detail:
-          "Complete your public profile so counterparties have useful context before they transact with you.",
-        label: "Complete profile",
+          "Complete your public profile so people can understand who you are before they work or transact with you.",
+        label: "Strengthen profile",
       };
     }
 
     if (gnsIdentity.scoreStatus !== "scored") {
       return {
         href: "/app/score",
-        title: "Activate your reputation layer",
+        title: "Build your reputation signal",
         detail:
-          "Review the trust signals available to GwapScore and see what is still missing.",
-        label: "Open GwapScore",
+          "Review the trust signals available to GwapScore and see which verified signals can strengthen your reputation.",
+        label: "Review reputation",
       };
     }
 
     return {
-      href: "/app/vault",
-      title: "Put your identity to work",
+      href: "/app/ppv",
+      title: "Turn trusted work into verified history",
       detail:
-        "Review the proof and exact-version agreement capabilities available through Private Proof Vault.",
-      label: "Open Vault",
+        "Use Private Proof Vault for proofs, agreements, and activity that can become durable evidence of what happened.",
+      label: "Open Private Proof Vault",
     };
   }, [entryIntent, gnsIdentity.scoreStatus, gnsIdentity.status, profileCompletion]);
 
-  const pulse = useMemo(() => {
-    const items = [
-      gnsIdentity.status === "found"
-        ? {
-            icon: "◎",
-            title: `${gnsIdentity.fullName ?? gnsIdentity.name} is active`,
-            note: "Primary GwapOS identity",
-            status: "Live",
-          }
-        : gnsIdentity.status === "none"
-          ? {
-              icon: "+",
-              title: "No .gwap identity yet",
-              note: "Claim one to make this wallet human-readable",
-              status: "Action",
-            }
-          : {
-              icon: "!",
-              title: "Identity registry unavailable",
-              note: "Wallet access still works while GNS recovers",
-              status: "Degraded",
-            },
-      gnsIdentity.scoreStatus === "scored"
-        ? {
-            icon: "↗",
-            title: `GwapScore ${gnsIdentity.score ?? "—"}`,
-            note: gnsIdentity.scoreTier || "Reputation signal active",
-            status: "Updated",
-          }
-        : {
-            icon: "↗",
-            title: "Reputation still developing",
-            note: gnsIdentity.scoreMessage,
-            status: "Review",
-          },
-      syncStatus === "saved"
-        ? {
-            icon: "✓",
-            title: "GwapOS state synced",
-            note: "Your workspace is current",
-            status: "Saved",
-          }
-        : {
-            icon: "•",
-            title: "Workspace sync in progress",
-            note: "Your wallet remains authenticated",
-            status: syncStatus,
-          },
-    ];
+  const trustFoundation = useMemo<TrustFoundationItem[]>(
+    () => [
+      {
+        href: "/app/identity",
+        icon: "◎",
+        title: "Identity",
+        note:
+          gnsIdentity.status === "found"
+            ? `${gnsIdentity.fullName || gnsIdentity.name} is your active .gwap identity.`
+            : gnsIdentity.status === "none"
+              ? "Create a recognizable identity that your GWAP activity can resolve to."
+              : "Identity status is temporarily unavailable.",
+        status:
+          gnsIdentity.status === "found"
+            ? "Verified"
+            : gnsIdentity.status === "none"
+              ? "Set up"
+              : "Check",
+      },
+      {
+        href: "/app/score",
+        icon: "↗",
+        title: "Reputation",
+        note:
+          gnsIdentity.scoreStatus === "scored"
+            ? `${gnsIdentity.scoreTier || "GwapScore"}${typeof gnsIdentity.score === "number" ? ` · ${gnsIdentity.score}` : ""}`
+            : gnsIdentity.scoreMessage || "Your reputation signal is still developing.",
+        status: gnsIdentity.scoreStatus === "scored" ? "Active" : "Build",
+      },
+      {
+        href: "/app/profile",
+        icon: "◇",
+        title: "Profile context",
+        note: `${profileCompletion}% complete · Give people useful context about who you are and what you do.`,
+        status: profileCompletion >= 67 ? "Strong" : "Improve",
+      },
+      {
+        href: "/app/ppv/activity",
+        icon: "✓",
+        title: "Verified activity",
+        note: "Proofs and completed protocol activity can become factual records people can inspect.",
+        status: "View",
+      },
+    ],
+    [gnsIdentity, profileCompletion],
+  );
 
-    if (entryIntent) {
-      const config = GWAP_ENTRY_INTENTS[entryIntent];
-      items.unshift({
-        icon: "→",
-        title: config.label,
-        note: "Your selected starting goal",
-        status: "Focus",
-      });
-    }
+  const recentProducts = useMemo(
+    () =>
+      state.recent
+        .map((item) => products.find((product) => product.slug === item.slug))
+        .filter((product): product is EcosystemProduct => Boolean(product))
+        .slice(0, 3),
+    [products, state.recent],
+  );
 
-    if (state.recent.length) {
-      const recentProduct = products.find(
-        (product) => product.slug === state.recent[0]?.slug,
-      );
-      if (recentProduct) {
-        items.push({
-          icon: "✦",
-          title: `Recent: ${recentProduct.name}`,
-          note: "Continue where you left off",
-          status: "Recent",
-        });
-      }
-    }
-
-    return items.slice(0, 4);
-  }, [entryIntent, gnsIdentity, products, state.recent, syncStatus]);
-
-  const heroTitle = intentConfig?.dashboardTitle ?? identity;
-  const heroDetail =
-    intentConfig?.dashboardDetail ??
-    `${shortenWalletAddress(account.verifiedWallet)} · Solana mainnet`;
+  const trustStatus =
+    gnsIdentity.status === "found" && gnsIdentity.scoreStatus === "scored"
+      ? "Trust foundation active"
+      : gnsIdentity.status === "found"
+        ? "Identity active · reputation developing"
+        : "Trust foundation needs setup";
 
   return (
     <div className="gwapos-home">
       <section className="gwapos-hero-card" aria-labelledby="gwapos-home-title">
         <div className="gwapos-identity-line">
           <div>
-            <p className="gwapos-kicker">{intentConfig ? "Your GWAP goal" : "GWAP OS"}</p>
-            <h1 id="gwapos-home-title">{heroTitle}</h1>
-            <p>{heroDetail}</p>
+            <p className="gwapos-kicker">GWAP TRUST HOME</p>
+            <h1 id="gwapos-home-title">{identity}</h1>
+            <p>
+              Build credibility, prove progress, and keep the identity, reputation,
+              and verified history people use to decide whether they can trust you.
+            </p>
           </div>
           <span className="gwapos-status-orb" aria-hidden="true" />
         </div>
 
         <div className="gwapos-balance-line">
           <div>
-            <small>AVAILABLE SOL</small>
-            <p>{solBalance}</p>
+            <small>TRUST STATUS</small>
+            <p>{trustStatus}</p>
           </div>
           <small>
-            {intentConfig?.label ??
-              (gnsIdentity.status === "found" ? ".gwap connected" : "wallet verified")}
+            {intentConfig?.label ?? `${profileCompletion}% profile complete`}
           </small>
         </div>
 
-        <div className="gwapos-wallet-actions" aria-label="Wallet actions">
-          <Link className="gwapos-glass-action" href="/app/send">
-            Send
+        <div className="gwapos-wallet-actions" aria-label="Trust actions">
+          <Link className="gwapos-glass-action" href="/app/trust">
+            Trust Graph
           </Link>
-          <Link className="gwapos-glass-action" href="/app/receive">
-            Receive
+          <Link className="gwapos-glass-action" href="/app/identity">
+            Identity
           </Link>
-          <button
-            className="gwapos-glass-action"
-            type="button"
-            disabled
-            title="Swap remains gated until the wallet transaction pass"
-          >
-            Swap
-          </button>
+          <Link className="gwapos-glass-action" href="/app/score">
+            Reputation
+          </Link>
         </div>
       </section>
 
-      <GwapMojisPromo surface="gwapos_home" variant="compact" />
-
       <div className="gwapos-home-grid">
         <div>
-          <section className="gwapos-section" aria-labelledby="pulse-title">
+          <section className="gwapos-section" aria-labelledby="trust-foundation-title">
             <div className="gwapos-section-head">
               <div>
-                <p className="gwapos-kicker">Your Pulse</p>
-                <h2 id="pulse-title">What matters right now</h2>
+                <p className="gwapos-kicker">Your Trust Foundation</p>
+                <h2 id="trust-foundation-title">What people can learn about you</h2>
               </div>
-              <p>{pulse.length} signals</p>
+              <Link href="/app/trust">Full Trust Graph →</Link>
             </div>
 
             <div className="gwapos-pulse">
-              {pulse.map((item) => (
-                <div className="gwapos-pulse-row" key={`${item.title}-${item.status}`}>
+              {trustFoundation.map((item) => (
+                <Link className="gwapos-pulse-row" href={item.href} key={item.title}>
                   <span aria-hidden="true">{item.icon}</span>
                   <div>
                     <p>{item.title}</p>
                     <small>{item.note}</small>
                   </div>
                   <strong>{item.status}</strong>
-                </div>
+                </Link>
               ))}
             </div>
           </section>
 
-          <section className="gwapos-section" aria-labelledby="portfolio-title">
+          <section className="gwapos-section" aria-labelledby="verified-activity-title">
             <div className="gwapos-section-head">
               <div>
-                <p className="gwapos-kicker">Wallet Context</p>
-                <h2 id="portfolio-title">Connected wallet snapshot</h2>
+                <p className="gwapos-kicker">Proof, Not Claims</p>
+                <h2 id="verified-activity-title">Your verified activity</h2>
               </div>
-              <p>Live wallet data</p>
+              <Link href="/app/ppv/activity">Open activity →</Link>
             </div>
-            <div className="gwapos-portfolio-shell">
-              <WalletPortfolioCard />
-            </div>
+            <PpvVerifiedActivity
+              wallet={account.verifiedWallet}
+              domain={gnsIdentity.status === "found" ? gnsIdentity.name : undefined}
+              title="Recent verified activity"
+              receiptHref={(id) => `/app/vault/receipts/${id}`}
+            />
           </section>
         </div>
 
@@ -277,9 +257,9 @@ export function DashboardView({
           <section className="gwapos-section" aria-labelledby="next-action-title">
             <div className="gwapos-section-head">
               <div>
-                <p className="gwapos-kicker">Next Action</p>
+                <p className="gwapos-kicker">Next Best Action</p>
                 <h2 id="next-action-title">
-                  {intentConfig ? "Recommended for your goal" : "Recommended for this account"}
+                  {intentConfig ? "Move your goal forward" : "Strengthen what matters next"}
                 </h2>
               </div>
             </div>
@@ -293,59 +273,98 @@ export function DashboardView({
             </article>
           </section>
 
-          <section className="gwapos-section" aria-labelledby="quick-tools-title">
+          <section className="gwapos-section" aria-labelledby="recent-work-title">
             <div className="gwapos-section-head">
               <div>
-                <p className="gwapos-kicker">Quick Tools</p>
-                <h2 id="quick-tools-title">Operate GWAP OS</h2>
+                <p className="gwapos-kicker">Your Work</p>
+                <h2 id="recent-work-title">Keep making progress</h2>
+              </div>
+              <p>{syncStatus === "saved" ? "Synced" : "Syncing"}</p>
+            </div>
+
+            <div className="gwapos-pulse">
+              {recentProducts.length ? (
+                recentProducts.map((product) => (
+                  <Link className="gwapos-pulse-row" href={product.href} key={product.slug}>
+                    <span aria-hidden="true">✦</span>
+                    <div>
+                      <p>{product.name}</p>
+                      <small>Continue where you left off</small>
+                    </div>
+                    <strong>Resume</strong>
+                  </Link>
+                ))
+              ) : (
+                <Link className="gwapos-pulse-row" href="/app/ideas">
+                  <span aria-hidden="true">+</span>
+                  <div>
+                    <p>Start making progress</p>
+                    <small>Develop an idea or begin a project in GWAP OS.</small>
+                  </div>
+                  <strong>Start</strong>
+                </Link>
+              )}
+            </div>
+          </section>
+
+          <section className="gwapos-section" aria-labelledby="quick-paths-title">
+            <div className="gwapos-section-head">
+              <div>
+                <p className="gwapos-kicker">Quick Paths</p>
+                <h2 id="quick-paths-title">What do you need right now?</h2>
               </div>
             </div>
 
             <div className="gwapos-pulse">
-              <Link className="gwapos-pulse-row" href="/#overview">
+              <Link className="gwapos-pulse-row" href="/app/ideas/lab">
                 <span aria-hidden="true">→</span>
                 <div>
-                  <p>Choose a different goal</p>
-                  <small>Return to the audience-first starting paths</small>
+                  <p>Build something</p>
+                  <small>Turn an idea into a real project.</small>
                 </div>
-                <strong>Change</strong>
+                <strong>Build</strong>
               </Link>
-              <Link className="gwapos-pulse-row" href="/app/vault">
+              <Link className="gwapos-pulse-row" href="/app/score">
+                <span aria-hidden="true">↗</span>
+                <div>
+                  <p>Strengthen reputation</p>
+                  <small>Review the signals behind your credibility.</small>
+                </div>
+                <strong>Review</strong>
+              </Link>
+              <Link className="gwapos-pulse-row" href="/app/ppv">
                 <span aria-hidden="true">◇</span>
                 <div>
-                  <p>Open Proof Vault</p>
-                  <small>Proof and agreement foundation</small>
+                  <p>Protect or prove work</p>
+                  <small>Create proofs, agreements, and inspect verified activity.</small>
                 </div>
                 <strong>Open</strong>
               </Link>
-              <Link className="gwapos-pulse-row" href="/app/identity">
+              <Link className="gwapos-pulse-row" href="/#overview">
                 <span aria-hidden="true">◎</span>
                 <div>
-                  <p>Manage identity</p>
-                  <small>.gwap, profile, and wallet</small>
+                  <p>Choose a different goal</p>
+                  <small>Change what GWAP should help you accomplish next.</small>
                 </div>
-                <strong>Open</strong>
-              </Link>
-              <Link className="gwapos-pulse-row" href="/app/apps">
-                <span aria-hidden="true">✦</span>
-                <div>
-                  <p>Open GWAP OS apps</p>
-                  <small>{products.length} ecosystem tools available</small>
-                </div>
-                <strong>View</strong>
-              </Link>
-              <Link className="gwapos-pulse-row" href="/app/settings">
-                <span aria-hidden="true">⚙</span>
-                <div>
-                  <p>Account settings</p>
-                  <small>Preferences, linked accounts, and sign-out</small>
-                </div>
-                <strong>Open</strong>
+                <strong>Change</strong>
               </Link>
             </div>
           </section>
         </div>
       </div>
+
+      <section className="gwapos-section" aria-labelledby="wallet-context-title">
+        <div className="gwapos-section-head">
+          <div>
+            <p className="gwapos-kicker">Supporting Infrastructure</p>
+            <h2 id="wallet-context-title">Wallet context</h2>
+          </div>
+          <p>Available when you need it</p>
+        </div>
+        <div className="gwapos-portfolio-shell">
+          <WalletPortfolioCard />
+        </div>
+      </section>
     </div>
   );
 }
