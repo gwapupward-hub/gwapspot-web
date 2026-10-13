@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   ...gwapOsAppMetadata,
   title: "GWAP OS",
   description:
-    "The wallet-native operating layer for GWAP identity, reputation, commerce, and proofs.",
+    "The connected operating layer for building ideas, digital identity, reputation, commerce, and proofs across GWAP.",
   robots: { index: false, follow: false },
 };
 
