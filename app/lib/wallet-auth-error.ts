@@ -42,7 +42,10 @@ export function getWalletAuthErrorCode(error: unknown) {
   if (/reject|cancel|declin|user denied|4001/i.test(fingerprint)) {
     return "signature_rejected";
   }
-  return "login_failed";
+  // Preserve the existing support/telemetry code even though email is now the
+  // default onboarding path. Changing this identifier would fragment existing
+  // diagnostics without improving the user-facing experience.
+  return "wallet_login_failed";
 }
 
 export function getWalletAuthErrorMessage(error: unknown) {
@@ -53,15 +56,15 @@ export function getWalletAuthErrorMessage(error: unknown) {
   }
 
   if (/origin.*(?:not allowed|unauthorized)|invalid origin/i.test(fingerprint)) {
-    return "GWAP OS sign-in is not enabled for this domain in Privy.";
+    return "GWAP OS sign-in is not enabled for app.gwapspot.com in Privy.";
   }
 
   if (/authenticated (?:wallet|account) session has no access token/i.test(fingerprint)) {
-    return "Your sign-in was accepted, but the secure GWAP session was not created. Please retry.";
+    return "Your sign-in was accepted, but Privy did not create the secure session. Please retry.";
   }
 
   if (/sign.?message.*(?:unsupported|not supported)|does not support.*message/i.test(fingerprint)) {
-    return "This wallet cannot sign the ownership message required for this wallet connection.";
+    return "This wallet cannot sign the ownership message required by GWAP OS.";
   }
 
   if (/reject|cancel|declin|user denied|4001/i.test(fingerprint)) {
