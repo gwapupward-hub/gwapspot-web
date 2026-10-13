@@ -11,6 +11,7 @@ import {
 } from "../lib/gwapos-app-metadata";
 import { getAuthenticatedWalletIdentityResult } from "../lib/privy-server";
 import { resolveGwapOsRuntime } from "../lib/gwapos-runtime";
+import { ActivationTelemetry } from "./components/activation-telemetry";
 import { GnsIdentityHydrationBridge } from "./components/gns-identity-hydration-bridge";
 import { GnsRegistrationSyncBridge } from "./components/gns-registration-sync-bridge";
 import { GwapOsProvider } from "./components/os-provider";
@@ -69,6 +70,7 @@ export default async function GwapOsLayout({ children }: { children: ReactNode }
         initialState={state}
         runtimeMode={runtime.mode}
       >
+        <ActivationTelemetry />
         <GnsIdentityHydrationBridge />
         <GnsRegistrationSyncBridge />
         <OsShell>{children}</OsShell>
