@@ -2,7 +2,7 @@ import {
   GWAP_ENTRY_INTENTS,
   isGwapEntryIntent,
   type GwapEntryIntent,
-} from "./entry-intent";
+} from "./entry-intent.ts";
 
 export const GWAP_ACTIVATION_STORAGE_KEY = "gwap-activation-progress-v1";
 export const GWAP_ACTIVATION_COOKIE_KEY = "gwap_activation_selection";
