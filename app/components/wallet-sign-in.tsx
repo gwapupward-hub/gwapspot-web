@@ -90,7 +90,7 @@ export function WalletSignIn({
       const token = await waitForAccessToken();
       if (!token) {
         reportAuthEvent("session_token_missing", "session_token_missing");
-        throw new Error("Authenticated wallet session has no access token");
+        throw new Error("Authenticated account session has no access token");
       }
       reportAuthEvent("session_ready");
       setPhase("opening");
@@ -123,13 +123,9 @@ export function WalletSignIn({
   });
 
   useEffect(() => {
-    // sessionIssue means the last automatic attempt to reach /app kept
-    // bouncing back here without ever landing. The wallet client may still
-    // believe it is authenticated - that stale belief is exactly what drove
-    // the bounce - so silently retrying the same path here would resume the
-    // loop instead of breaking it. Require an explicit wallet or email login,
-    // which forces a fresh authentication attempt rather than reusing state
-    // that was already shown not to work.
+    // A verified Privy session can continue once its Solana account context is
+    // ready. Email-first users do not need to understand or select that wallet;
+    // Privy provisions it in the background for features that need it later.
     if (
       !canContinueAuthenticatedSession({
         ready,
@@ -172,7 +168,7 @@ export function WalletSignIn({
     router.replace("/");
   }
 
-  function createWalletWithEmail() {
+  function continueWithEmail() {
     navigationStarted.current = false;
     setExplicitLoginCompleted(false);
     setPhase("idle");
@@ -185,10 +181,8 @@ export function WalletSignIn({
   if (!ready) {
     return (
       <section className="wallet-auth-card" aria-busy="true">
-        <span className="wallet-auth-eyebrow">
-          {isAppVariant ? "GWAP OS / SECURE ACCESS" : "SECURE WALLET SESSION"}
-        </span>
-        <h2>Preparing wallet access…</h2>
+        <span className="wallet-auth-eyebrow">SECURE ACCOUNT ACCESS</span>
+        <h2>Preparing your GWAP sign-in…</h2>
       </section>
     );
   }
@@ -197,7 +191,7 @@ export function WalletSignIn({
     <section className="wallet-auth-card">
       {isAppVariant ? (
         <nav className="wallet-auth-navigation" aria-label="Sign-in navigation">
-          <button type="button" onClick={goBack}>← Back to splash</button>
+          <button type="button" onClick={goBack}>← Back</button>
           <span className="wallet-auth-app-status">GWAP OS</span>
         </nav>
       ) : (
@@ -221,16 +215,12 @@ export function WalletSignIn({
         </div>
       )}
 
-      <span className="wallet-auth-eyebrow">
-        {isAppVariant ? "GWAP IDENTITY" : "SOLANA WALLET AUTHENTICATION"}
-      </span>
-      <h2>
-        {isAppVariant ? "Sign in with wallet or email." : "Your wallet is your GWAP sign-in."}
-      </h2>
+      <span className="wallet-auth-eyebrow">GWAP ACCOUNT</span>
+      <h2>{isAppVariant ? "Continue to your GWAP workspace." : "Sign in to GWAP OS."}</h2>
       <p>
         {isAppVariant
-          ? "Use an existing Solana wallet, or verify your email to create or reopen your GWAP embedded Solana wallet."
-          : "Connect a Solana wallet, then approve one message to prove ownership. This does not submit a transaction or cost SOL."}
+          ? "Start with your email. Connect a Solana wallet later only when a GWAP feature actually needs one."
+          : "Use email for simple account access. A Solana wallet is optional here and can be connected when you need blockchain features."}
       </p>
 
       <div className="wallet-auth-actions">
@@ -239,64 +229,40 @@ export function WalletSignIn({
           type="button"
           disabled={busy}
           aria-busy={busy}
+          onClick={continueWithEmail}
+        >
+          Continue with email
+        </button>
+        <small className="wallet-auth-app-hint">
+          One-time code. No password, crypto knowledge, or wallet setup required.
+        </small>
+
+        <div className="wallet-auth-divider">
+          <span>OR</span>
+        </div>
+
+        <button
+          className="wallet-auth-secondary"
+          type="button"
+          disabled={busy}
+          aria-busy={busy}
           onClick={openWalletSelector}
         >
-          {WALLET_SIGN_IN_LABEL[display]}
+          {display === "idle" ? "Use a Solana wallet instead" : WALLET_SIGN_IN_LABEL[display]}
         </button>
-
-        {isAppVariant ? (
-          <>
-            <small className="wallet-auth-app-hint">
-              Existing wallet: approve one ownership signature. No transaction
-              and no SOL fee.
-            </small>
-            <div className="wallet-auth-divider">
-              <span>OR</span>
-            </div>
-            <button
-              className="wallet-auth-secondary"
-              type="button"
-              disabled={busy}
-              onClick={createWalletWithEmail}
-            >
-              Continue with email
-            </button>
-            <small className="wallet-auth-app-hint">
-              Email uses a one-time code. If you do not already have a wallet,
-              GWAP creates a Privy embedded Solana wallet for your account.
-            </small>
-          </>
-        ) : (
-          <>
-            <div className="wallet-auth-divider">
-              <span>NO WALLET YET?</span>
-            </div>
-            <button
-              className="wallet-auth-secondary"
-              type="button"
-              disabled={busy}
-              onClick={createWalletWithEmail}
-            >
-              Create a Solana wallet with email
-            </button>
-            <small>
-              Use your existing email address. A self-custodial embedded Solana
-              wallet is created for this account—no password or browser
-              extension required.
-            </small>
-          </>
-        )}
+        <small className="wallet-auth-app-hint">
+          Already use Phantom, Jupiter, Solflare, Backpack, or another Solana wallet? You can connect it directly.
+        </small>
       </div>
 
       {sessionIssue ? (
         <p className="wallet-auth-error" role="status">
-          We couldn&rsquo;t finish your last sign-in automatically. Reconnect
-          your wallet to continue.
+          We couldn&rsquo;t finish your last sign-in automatically. Sign in again to continue.
         </p>
       ) : null}
       {authenticated && !hasSolanaWallet ? (
         <p className="wallet-auth-status" role="status">
-          Finishing your embedded Solana wallet setup…
+          Finishing your secure account setup…
         </p>
       ) : null}
       {error ? (
