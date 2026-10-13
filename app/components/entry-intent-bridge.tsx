@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import {
   getGwapEntryIntentForPath,
+  GWAP_ENTRY_INTENT_COOKIE_KEY,
   GWAP_ENTRY_INTENT_STORAGE_KEY,
 } from "../lib/entry-intent";
 
@@ -34,6 +35,12 @@ export function EntryIntentBridge() {
       } catch {
         // Storage can be unavailable in hardened/private browser contexts.
       }
+
+      const host = window.location.hostname.toLowerCase();
+      const sharedDomain = host === "gwapspot.com" || host.endsWith(".gwapspot.com");
+      const domain = sharedDomain ? "; Domain=.gwapspot.com" : "";
+      const secure = window.location.protocol === "https:" ? "; Secure" : "";
+      document.cookie = `${GWAP_ENTRY_INTENT_COOKIE_KEY}=${encodeURIComponent(intent)}; Path=/; Max-Age=2592000; SameSite=Lax${domain}${secure}`;
 
       event.preventDefault();
       window.location.assign("/app");
