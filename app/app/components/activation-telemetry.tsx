@@ -141,7 +141,10 @@ export function ActivationTelemetry() {
       }
     }
 
-    if (next) persist(next);
+    if (!next) return;
+    const initialProgress = next;
+    const timer = window.setTimeout(() => persist(initialProgress), 0);
+    return () => window.clearTimeout(timer);
   }, [persist]);
 
   useEffect(() => {
