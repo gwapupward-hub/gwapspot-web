@@ -24,6 +24,7 @@ import { getProfileCompletion } from "../lib/os-state";
 import { GwapGradientLink } from "./gwap-gradient-button";
 import { useGwapOs } from "./os-provider";
 import { TrustHomeActiveWork } from "./trust-home-active-work";
+import { TrustHomeOpportunityReadiness } from "./trust-home-opportunity-readiness";
 import { WalletPortfolioCard } from "./wallet-portfolio-card";
 
 type TrustFoundationItem = {
@@ -284,6 +285,8 @@ export function DashboardView({
             </div>
             <TrustHomeActiveWork key={account.verifiedWallet} />
           </section>
+
+          <TrustHomeOpportunityReadiness />
 
           <section className="gwapos-section" aria-labelledby="quick-paths-title">
             <div className="gwapos-section-head">
