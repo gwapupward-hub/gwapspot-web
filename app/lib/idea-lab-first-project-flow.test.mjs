@@ -25,9 +25,10 @@ test("direct project creation stays inside the canonical Daily Ideas workspace",
   assert.match(projects, /category: "general"/);
 });
 
-test("direct projects do not pretend unanswered work is complete", () => {
+test("build-first direct projects keep unanswered work blank by default", () => {
+  assert.match(projects, /targetCustomer: parsed\.targetCustomer \?\? ""/);
+  assert.match(projects, /validationPlan: parsed\.validationPlan \?\? \[\]/);
   for (const emptyField of [
-    "targetCustomer",
     "marketHypothesis",
     "businessModel",
     "technicalArchitecture",
@@ -37,9 +38,10 @@ test("direct projects do not pretend unanswered work is complete", () => {
   ]) {
     assert.match(projects, new RegExp(`${emptyField}: ""`));
   }
-  for (const emptyList of ["validationPlan", "mvpFeatures", "buildRoadmap", "risks"]) {
+  for (const emptyList of ["mvpFeatures", "buildRoadmap", "risks"]) {
     assert.match(projects, new RegExp(`${emptyList}: \\[\\]`));
   }
+  assert.doesNotMatch(startView, /targetCustomer|validationPlan/);
 });
 
 test("first-project UI resumes existing work and tracks no project identity", () => {
