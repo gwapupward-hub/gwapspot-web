@@ -46,6 +46,13 @@ test("creating a canonical Marketplace brief is an explicit Draft-only action", 
   assert.match(marketplace, /This action never publishes or matches anything/);
 });
 
+test("an existing same-project capability brief reopens unchanged with truthful UI", () => {
+  assert.match(marketplace, /existingBriefForSelection/);
+  assert.match(marketplace, /Open existing brief/);
+  assert.match(marketplace, /Existing \$\{existingBriefForSelection\.status\} brief will reopen unchanged/);
+  assert.match(provider, /if\(existing\)\{if\(c\.marketplaceIntents\[0\]\?\.id!==existing\.id\)commit\(\{\.\.\.c,marketplaceIntents:\[existing,\.\.\.c\.marketplaceIntents\.filter\(intent=>intent\.id!==existing\.id\)\]\}\);return existing\.id\}/);
+});
+
 test("the canonical bridge rejects synthetic IDs, archived projects, and unknown roles", () => {
   assert.match(provider, /const CANONICAL_PROJECT_ID=\/\^project_\[a-f0-9\]\{20\}\$\//);
   assert.match(provider, /const MARKETPLACE_ROLES=new Set<MarketplaceRole>/);
