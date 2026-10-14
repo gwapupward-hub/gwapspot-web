@@ -73,7 +73,8 @@ test("return-user activation signals are typed, intent-bound, and safe to parse"
 });
 
 test("activation begins only on the canonical intent surface", () => {
-  assert.equal(isActivationStartPath("build", "/app/ideas/lab"), true);
+  assert.equal(isActivationStartPath("build", "/app/ideas/lab/start"), true);
+  assert.equal(isActivationStartPath("build", "/app/ideas/lab"), false);
   assert.equal(isActivationStartPath("build", "/app"), false);
   assert.equal(isActivationStartPath("validate", "/app/ideas"), true);
   assert.equal(isActivationStartPath("identity", "/app/identity"), true);
