@@ -12,12 +12,16 @@ test("every audience entry path resolves to its canonical intent", () => {
   }
 });
 
-test("build entry preserves the public source while starting in first-project flow", () => {
+test("build and validate preserve public source paths while using focused first-value routes", () => {
   assert.equal(GWAP_ENTRY_INTENTS.build.sourcePath, "/app/ideas/lab");
   assert.equal(GWAP_ENTRY_INTENTS.build.actionHref, "/app/ideas/lab/start");
   assert.equal(GWAP_ENTRY_INTENTS.build.actionLabel, "Start my project");
 
-  for (const intent of ["validate", "identity", "reputation", "transaction"]) {
+  assert.equal(GWAP_ENTRY_INTENTS.validate.sourcePath, "/app/ideas");
+  assert.equal(GWAP_ENTRY_INTENTS.validate.actionHref, "/app/ideas/validate");
+  assert.equal(GWAP_ENTRY_INTENTS.validate.actionLabel, "Validate my idea");
+
+  for (const intent of ["identity", "reputation", "transaction"]) {
     const config = GWAP_ENTRY_INTENTS[intent];
     assert.equal(config.actionHref, config.sourcePath);
   }

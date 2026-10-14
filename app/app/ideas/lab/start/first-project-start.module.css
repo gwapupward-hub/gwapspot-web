@@ -172,6 +172,17 @@
   cursor: pointer;
 }
 
+.actions button.secondaryAction {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: transparent;
+  color: #839087;
+}
+
+.actions button.secondaryAction:hover {
+  border-color: rgba(19, 221, 19, 0.24);
+  color: #13dd13;
+}
+
 .actions button:disabled {
   cursor: progress;
   opacity: 0.62;
