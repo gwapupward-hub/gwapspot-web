@@ -4,7 +4,8 @@ import { track } from "@vercel/analytics";
 import { usePrivy } from "@privy-io/react-auth";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import type { FormEvent } from "react";
 import styles from "./first-project-start.module.css";
 
 type WorkspacePayload = {
