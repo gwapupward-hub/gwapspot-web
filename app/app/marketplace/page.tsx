@@ -1,7 +1,8 @@
 "use client";
 
+import { usePrivy } from "@privy-io/react-auth";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { PpvDeliverableAnchor } from "../../components/ppv/ppv-deliverable-anchor";
 import { buildMarketplaceCollaborationPacket } from "../../lib/marketplace-collaboration-packet";
 import "../../components/ppv/ppv.css";
@@ -17,6 +18,17 @@ const roleLabels: Record<MarketplaceRole, string> = {
 };
 
 type PacketActionStatus = "idle" | "copied" | "manual" | "shared" | "error";
+type ProjectLoadState = "loading" | "ready" | "error";
+type SharedProject = {
+  id: string;
+  title: string;
+  status: string;
+  problemDefinition: string;
+  targetCustomer: string;
+  technicalArchitecture: string;
+  estimatedCost: string;
+};
+type WorkspacePayload = { projects?: { items?: SharedProject[] }; error?: string };
 
 function compactWallet(wallet: string) {
   return `${wallet.slice(0, 4)}…${wallet.slice(-4)}`;
@@ -32,8 +44,10 @@ function isShareCancellation(error: unknown) {
 }
 
 export default function MarketplacePage() {
+  const { getAccessToken } = usePrivy();
   const {
     account,
+    createMarketplaceIntentFromProject,
     gnsIdentity,
     migrationAvailable,
     removeMarketplaceIntent,
@@ -43,17 +57,22 @@ export default function MarketplacePage() {
   } = useGwapOs();
   const [selectedId, setSelectedId] = useState(state.marketplaceIntents[0]?.id ?? "");
   const [packetActionStatus, setPacketActionStatus] = useState<PacketActionStatus>("idle");
+  const [workspaceProjects, setWorkspaceProjects] = useState<SharedProject[]>([]);
+  const [projectLoadState, setProjectLoadState] = useState<ProjectLoadState>("loading");
+  const [draftProjectId, setDraftProjectId] = useState("");
+  const [draftRole, setDraftRole] = useState<MarketplaceRole | "">("");
   const selected = useMemo(
     () => state.marketplaceIntents.find((intent) => intent.id === selectedId) ?? state.marketplaceIntents[0] ?? null,
     [selectedId, state.marketplaceIntents],
   );
   const project = selected ? state.ideaProjects.find((item) => item.id === selected.projectId) ?? null : null;
+  const selectedProjectTitle = selected?.projectTitle || project?.title || "Project collaboration";
   const owner = gnsIdentity.fullName || compactWallet(account.verifiedWallet);
   const collaborationPacket = useMemo(
     () => !migrationAvailable && selected
       ? buildMarketplaceCollaborationPacket({
           status: selected.status,
-          projectTitle: project?.title,
+          projectTitle: selected.projectTitle || project?.title,
           role: selected.role,
           brief: selected.brief,
           budget: selected.budget,
@@ -64,8 +83,55 @@ export default function MarketplacePage() {
     [gnsIdentity.name, gnsIdentity.status, migrationAvailable, project?.title, selected],
   );
 
+  const authenticatedFetch = useCallback(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const token = await getAccessToken();
+    const headers = new Headers(init?.headers);
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+    return fetch(input, { ...init, headers, credentials: "same-origin" });
+  }, [getAccessToken]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const response = await authenticatedFetch("/api/daily-ideas/workspace", { cache: "no-store" });
+        const payload = (await response.json()) as WorkspacePayload;
+        if (!response.ok) throw new Error(payload.error || "Daily Ideas projects could not load");
+        if (cancelled) return;
+        const projects = Array.isArray(payload.projects?.items)
+          ? payload.projects.items.filter((item) => item && item.status !== "archived" && item.id && item.title)
+          : [];
+        setWorkspaceProjects(projects);
+        setDraftProjectId((current) => current && projects.some((item) => item.id === current) ? current : projects[0]?.id ?? "");
+        setProjectLoadState("ready");
+      } catch {
+        if (!cancelled) setProjectLoadState("error");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [authenticatedFetch]);
+
   function resetPacketActionStatus() {
     window.setTimeout(() => setPacketActionStatus("idle"), 2200);
+  }
+
+  function preparePrivateDraft() {
+    if (migrationAvailable || !draftProjectId || !draftRole) return;
+    const source = workspaceProjects.find((item) => item.id === draftProjectId);
+    if (!source) return;
+    const intentId = createMarketplaceIntentFromProject({
+      id: source.id,
+      title: source.title,
+      problemDefinition: source.problemDefinition || "",
+      targetCustomer: source.targetCustomer || "",
+      technicalArchitecture: source.technicalArchitecture || "",
+      estimatedCost: source.estimatedCost || "",
+    }, draftRole);
+    if (!intentId) return;
+    setSelectedId(intentId);
+    setPacketActionStatus("idle");
   }
 
   async function copyCollaborationPacket() {
@@ -132,10 +198,39 @@ export default function MarketplacePage() {
                 aria-pressed={selected?.id === intent.id}
               >
                 <strong>{roleLabels[intent.role]}</strong><br />
-                <small>{intentProject?.title ?? "Project"} · {intent.status}</small>
+                <small>{intent.projectTitle || intentProject?.title || "Project"} · {intent.status}</small>
               </button>
             );
-          }) : <p>No collaboration briefs yet. Create one from an Idea Lab project.</p>}
+          }) : <p>No collaboration briefs yet. Prepare one from a canonical Daily Ideas project below.</p>}
+
+          <div className="os-console-chrome"><span>new.private.brief</span><span>DRAFT ONLY</span></div>
+          {migrationAvailable ? (
+            <p>Resolve workspace authority in the banner above before creating a new private Marketplace draft.</p>
+          ) : projectLoadState === "loading" ? (
+            <p>Loading canonical Daily Ideas projects…</p>
+          ) : projectLoadState === "error" ? (
+            <p>Daily Ideas projects are temporarily unavailable. Existing Marketplace briefs remain available.</p>
+          ) : workspaceProjects.length ? (
+            <>
+              <label>
+                Project
+                <select value={draftProjectId} onChange={(event) => setDraftProjectId(event.target.value)}>
+                  {workspaceProjects.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
+                </select>
+              </label>
+              <label>
+                Capability needed
+                <select value={draftRole} onChange={(event) => setDraftRole(event.target.value as MarketplaceRole | "")}>
+                  <option value="">Choose capability</option>
+                  {Object.entries(roleLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </select>
+              </label>
+              <button type="button" disabled={!draftProjectId || !draftRole} onClick={preparePrivateDraft}>Prepare private Draft</button>
+              <small>Uses the canonical Daily Ideas project as context. This action never publishes or matches anything.</small>
+            </>
+          ) : (
+            <p>No active Daily Ideas project is available yet. <Link href="/app/ideas/lab/start">Start a project</Link>.</p>
+          )}
 
           <div className="os-console-chrome"><span>brief.owner</span><span>{gnsIdentity.status.toUpperCase()}</span></div>
           <p><strong>{owner}</strong></p>
@@ -148,7 +243,7 @@ export default function MarketplacePage() {
             <>
               <div className="os-console-chrome"><span>marketplace.brief</span><span>{selected.status.toUpperCase()}</span></div>
               <p className="os-runtime-warning">This is a private GWAP OS project brief, not a live Marketplace listing.</p>
-              <h2>{project?.title ?? "Project collaboration"}</h2>
+              <h2>{selectedProjectTitle}</h2>
 
               <label>
                 Capability needed
@@ -254,8 +349,8 @@ export default function MarketplacePage() {
             <>
               <div className="os-console-chrome"><span>marketplace.brief</span><span>EMPTY</span></div>
               <h2>Build the requirement before the transaction.</h2>
-              <p>Idea Lab can create Developer, Designer, Marketer, Researcher, or Operations briefs and seed them from the project context.</p>
-              <Link href="/app/ideas/lab">Create a project brief</Link>
+              <p>Choose a canonical Daily Ideas project and capability in the New Private Brief panel. GWAP will seed a Draft from the project context for you to review.</p>
+              <Link href="/app/ideas/lab">Open Idea Lab</Link>
             </>
           )}
 
