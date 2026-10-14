@@ -5,7 +5,7 @@ export type RecentLaunch = { slug: string; openedAt: string };
 export type DailyIdea = { id: string; title: string; category: "web3" | "saas" | "ai" | "general"; summary: string; problem: string; opportunity: string; difficulty: "Starter" | "Intermediate" | "Advanced"; savedAt: string };
 export type IdeaProject = { id: string; ideaId: string; title: string; status: "Exploring" | "Validating" | "Building"; problem: string; targetUser: string; businessModel: string; technicalPlan: string; estimatedCost: string; mvpRoadmap: string; notes: string; createdAt: string; updatedAt: string };
 export type MarketplaceRole = "developer" | "designer" | "marketer" | "researcher" | "operations";
-export type MarketplaceIntent = { id: string; projectId: string; role: MarketplaceRole; brief: string; budget: string; timeline: string; status: "Draft" | "Ready"; createdAt: string; updatedAt: string };
+export type MarketplaceIntent = { id: string; projectId: string; projectTitle: string; role: MarketplaceRole; brief: string; budget: string; timeline: string; status: "Draft" | "Ready"; createdAt: string; updatedAt: string };
 export type GwapProfile = { displayName: string; handle: string; bio: string; primaryWallet: string; website: string; location: string; updatedAt: string };
 export type GwapPersona = "general" | "builder" | "freelancer" | "creator" | "investor" | "business";
 export type GwapSettings = { compactMode: boolean; reduceMotion: boolean; bootAnimation: boolean; productUpdates: boolean; communityUpdates: boolean; persona: GwapPersona };
@@ -61,6 +61,7 @@ function normalizeMarketplaceIntent(value: unknown): MarketplaceIntent | null {
   return {
     id,
     projectId,
+    projectTitle: safeText(intent.projectTitle, "", 120),
     role,
     brief: safeText(intent.brief, "", 1200),
     budget: safeText(intent.budget, "", 160),
