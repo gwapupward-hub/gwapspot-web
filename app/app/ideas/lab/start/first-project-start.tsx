@@ -33,6 +33,7 @@ export function FirstProjectStart() {
   const [title, setTitle] = useState("");
   const [problemDefinition, setProblemDefinition] = useState("");
   const [checking, setChecking] = useState(true);
+  const [workspaceReady, setWorkspaceReady] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -60,6 +61,7 @@ export function FirstProjectStart() {
           router.replace("/app/ideas/lab");
           return;
         }
+        setWorkspaceReady(true);
       } catch (cause) {
         if (active) {
           setError(cause instanceof Error ? cause.message : "Idea Lab could not load");
@@ -75,7 +77,7 @@ export function FirstProjectStart() {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (submitting) return;
+    if (submitting || !workspaceReady) return;
     const cleanTitle = title.trim();
     const cleanProblem = problemDefinition.trim();
     if (!cleanTitle || !cleanProblem) {
@@ -125,6 +127,13 @@ export function FirstProjectStart() {
 
         {checking ? (
           <div className={styles.status} aria-live="polite">Checking your workspace…</div>
+        ) : !workspaceReady ? (
+          <div className={styles.status} aria-live="polite">
+            <div>
+              <p className={styles.error} role="alert">{error || "Opening your existing Idea Lab project…"}</p>
+              {error ? <button type="button" onClick={() => window.location.reload()}>Retry workspace check</button> : null}
+            </div>
+          </div>
         ) : (
           <form className={styles.form} onSubmit={submit}>
             <label>
