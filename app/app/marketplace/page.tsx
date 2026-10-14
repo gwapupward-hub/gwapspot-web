@@ -16,7 +16,7 @@ const roleLabels: Record<MarketplaceRole, string> = {
   operations: "Operations",
 };
 
-type PacketCopyStatus = "idle" | "copied" | "manual" | "error";
+type PacketActionStatus = "idle" | "copied" | "manual" | "shared" | "error";
 
 function compactWallet(wallet: string) {
   return `${wallet.slice(0, 4)}…${wallet.slice(-4)}`;
@@ -33,7 +33,7 @@ export default function MarketplacePage() {
     updateMarketplaceIntent,
   } = useGwapOs();
   const [selectedId, setSelectedId] = useState(state.marketplaceIntents[0]?.id ?? "");
-  const [packetCopyStatus, setPacketCopyStatus] = useState<PacketCopyStatus>("idle");
+  const [packetActionStatus, setPacketActionStatus] = useState<PacketActionStatus>("idle");
   const selected = useMemo(
     () => state.marketplaceIntents.find((intent) => intent.id === selectedId) ?? state.marketplaceIntents[0] ?? null,
     [selectedId, state.marketplaceIntents],
@@ -55,21 +55,48 @@ export default function MarketplacePage() {
     [gnsIdentity.name, gnsIdentity.status, migrationAvailable, project?.title, selected],
   );
 
+  function resetPacketActionStatus() {
+    window.setTimeout(() => setPacketActionStatus("idle"), 2200);
+  }
+
   async function copyCollaborationPacket() {
     if (!collaborationPacket) return;
     try {
       if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
       await navigator.clipboard.writeText(collaborationPacket.text);
-      setPacketCopyStatus("copied");
+      setPacketActionStatus("copied");
     } catch {
       try {
         window.prompt("Copy collaboration packet", collaborationPacket.text);
-        setPacketCopyStatus("manual");
+        setPacketActionStatus("manual");
       } catch {
-        setPacketCopyStatus("error");
+        setPacketActionStatus("error");
       }
     }
-    window.setTimeout(() => setPacketCopyStatus("idle"), 2200);
+    resetPacketActionStatus();
+  }
+
+  async function shareCollaborationPacket() {
+    if (!collaborationPacket) return;
+    if (typeof navigator.share !== "function") {
+      await copyCollaborationPacket();
+      return;
+    }
+
+    try {
+      await navigator.share({
+        title: "GWAP Collaboration Packet",
+        text: collaborationPacket.text,
+      });
+      setPacketActionStatus("shared");
+      resetPacketActionStatus();
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") {
+        setPacketActionStatus("idle");
+        return;
+      }
+      await copyCollaborationPacket();
+    }
   }
 
   return (
@@ -91,7 +118,7 @@ export default function MarketplacePage() {
                 type="button"
                 onClick={() => {
                   setSelectedId(intent.id);
-                  setPacketCopyStatus("idle");
+                  setPacketActionStatus("idle");
                 }}
                 aria-pressed={selected?.id === intent.id}
               >
@@ -144,19 +171,26 @@ export default function MarketplacePage() {
               <section className="os-runtime-note" aria-label="Collaboration packet">
                 <span className="os-terminal-label">COLLABORATION PACKET</span>
                 <p>
-                  Explicitly copy the private brief details you choose to share. When a valid .gwap identity exists, the packet attaches only your public GWAP Trust Profile. Nothing is published or matched by this action.
+                  Explicitly copy or share the private brief details you choose to send. When a valid .gwap identity exists, the packet attaches only your public GWAP Trust Profile. Nothing is published or matched by either action.
                 </p>
                 {collaborationPacket ? (
                   <>
-                    <button type="button" onClick={() => void copyCollaborationPacket()}>
-                      {packetCopyStatus === "copied"
-                        ? "Packet copied"
-                        : packetCopyStatus === "manual"
-                          ? "Manual copy opened"
-                          : packetCopyStatus === "error"
-                            ? "Copy failed"
-                            : "Copy collaboration packet"}
-                    </button>
+                    <div>
+                      <button type="button" onClick={() => void copyCollaborationPacket()}>
+                        {packetActionStatus === "copied"
+                          ? "Packet copied"
+                          : packetActionStatus === "manual"
+                            ? "Manual copy opened"
+                            : packetActionStatus === "error"
+                              ? "Copy failed"
+                              : "Copy collaboration packet"}
+                      </button>{" "}
+                      <button type="button" onClick={() => void shareCollaborationPacket()}>
+                        {packetActionStatus === "shared"
+                          ? "Packet shared"
+                          : "Share collaboration packet"}
+                      </button>
+                    </div>
                     {collaborationPacket.trustProfileUrl ? (
                       <p>
                         <a href={collaborationPacket.trustProfileUrl} target="_blank" rel="noreferrer">
@@ -172,7 +206,7 @@ export default function MarketplacePage() {
                 ) : (
                   <p>
                     {migrationAvailable
-                      ? "Resolve workspace authority in the banner above before copying private brief details."
+                      ? "Resolve workspace authority in the banner above before copying or sharing private brief details."
                       : selected.status !== "Ready"
                         ? "Mark this brief Ready before creating a collaboration packet."
                         : "Add a non-empty scope before creating a collaboration packet."}
