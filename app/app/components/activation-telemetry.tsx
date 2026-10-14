@@ -310,6 +310,17 @@ export function ActivationTelemetry() {
           const projects = payload.projects?.items ?? [];
 
           if (current.intent === "build") {
+            const buildingProjects = projects.filter((project) =>
+              ["building", "launched"].includes(project.status),
+            );
+            if (
+              buildingProjects.some((project) =>
+                isAfterSelection(project.updatedAt, current.selectedAt),
+              )
+            ) {
+              markCompleted("build_started");
+              return;
+            }
             if (
               projects.some((project) =>
                 isAfterSelection(project.createdAt, current.selectedAt),
