@@ -28,7 +28,9 @@ export function TrustHomeOpportunityReadiness() {
   const reputationContext =
     gnsIdentity.scoreStatus === "scored"
       ? "Reputation active"
-      : "Reputation developing";
+      : gnsIdentity.scoreStatus === "unscored"
+        ? "Reputation developing"
+        : "Reputation unavailable";
   const profileContext =
     profileCompletion >= 67
       ? `Profile strong · ${profileCompletion}%`
@@ -114,7 +116,9 @@ export function TrustHomeOpportunityReadiness() {
           <span aria-hidden="true">◎</span>
           <div>
             <p>Trust context</p>
-            <small>{identityContext} · {reputationContext} · {profileContext}</small>
+            <small>
+              {identityContext} · {reputationContext} · {profileContext} · context only, not a matching decision
+            </small>
           </div>
           <strong>Review</strong>
         </Link>
