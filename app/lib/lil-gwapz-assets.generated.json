@@ -1,0 +1,1218 @@
+{
+  "LG-R01-001-M": {
+    "filename": "LG-R01-001-M-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1383758,
+    "sha256": "4967e69cb7846a0462b675fa227e25e134c411897328966b24fd91be915b1065",
+    "sourceArchiveMember": "male/LG-R01-001-M-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-001-F": {
+    "filename": "LG-R01-001-F-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1510017,
+    "sha256": "f17ef70237ec1b8df8b4920fcd836a7c837014d4432e74c3537c0cd4c4594b9f",
+    "sourceArchiveMember": "female/LG-R01-001-F-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-002-M": {
+    "filename": "LG-R01-002-M-ORG-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1176967,
+    "sha256": "a0ce56e86673083e83dd83ccef511cff0f581e55d9cfad4db3e435912d795f11",
+    "sourceArchiveMember": "male/LG-R01-002-M-ORG-v01-LOCKED.png"
+  },
+  "LG-R01-002-F": {
+    "filename": "LG-R01-002-F-ORG-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1496413,
+    "sha256": "d975cc4779f848235cd679801e981a57912de941b1ee50049752df2f1f881100",
+    "sourceArchiveMember": "female/LG-R01-002-F-ORG-v01-LOCKED.png"
+  },
+  "LG-R01-003-M": {
+    "filename": "LG-R01-003-M-PUR-v02-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1816946,
+    "sha256": "4703a54112cb21306b092b4559e7b88292968ad7db5fabc5bee099a474aff2ea",
+    "sourceArchiveMember": "male/LG-R01-003-M-PUR-v02-LOCKED.png"
+  },
+  "LG-R01-003-F": {
+    "filename": "LG-R01-003-F-PUR-v02-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1962614,
+    "sha256": "48ba230d5a7ba9d7f20756abc356583d2e9defdc2e065845e123ee3e5e54331f",
+    "sourceArchiveMember": "female/LG-R01-003-F-PUR-v02-LOCKED.png"
+  },
+  "LG-R01-004-M": {
+    "filename": "LG-R01-004-M-RED-v02-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1334262,
+    "sha256": "43ecf8c710dd954a6b97bbe1519189a9594f4eb627e4a83dd6cd51d830dccdab",
+    "sourceArchiveMember": "male/LG-R01-004-M-RED-v02-LOCKED.png"
+  },
+  "LG-R01-004-F": {
+    "filename": "LG-R01-004-F-RED-v02-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1451336,
+    "sha256": "791ee618ec5825847df30dc8052f572fba7f9dfead2d5079e54d71fde534ec2e",
+    "sourceArchiveMember": "female/LG-R01-004-F-RED-v02-LOCKED.png"
+  },
+  "LG-R01-005-M": {
+    "filename": "LG-R01-005-M-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1286157,
+    "sha256": "9980465685b78f76fe2b2a6b2a2265061515db84efd747353cc679898dd362fd",
+    "sourceArchiveMember": "male/LG-R01-005-M-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-005-F": {
+    "filename": "LG-R01-005-F-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1576831,
+    "sha256": "e3c116a11b9b3f844b53e15b629c646b3ee7773789d8874ddb01ec74e713404e",
+    "sourceArchiveMember": "female/LG-R01-005-F-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-006-M": {
+    "filename": "LG-R01-006-M-ORG-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1221176,
+    "sha256": "e1b681849fbe709c6cb348bb7767f670d74dcec6470baf83c10593098a8e4d55",
+    "sourceArchiveMember": "male/LG-R01-006-M-ORG-v01-LOCKED.png"
+  },
+  "LG-R01-006-F": {
+    "filename": "LG-R01-006-F-ORG-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1381496,
+    "sha256": "b79a8c3448f32dffec8445c173ab0a7d959350cc72ccbb94ab8eb121e18d1303",
+    "sourceArchiveMember": "female/LG-R01-006-F-ORG-v01-LOCKED.png"
+  },
+  "LG-R01-007-M": {
+    "filename": "LG-R01-007-M-PUR-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1273946,
+    "sha256": "bc862ddf307fd6f1bae612331971b6cfead85286009a6a0ae7ad2412b3a8f47e",
+    "sourceArchiveMember": "male/LG-R01-007-M-PUR-v01-LOCKED.png"
+  },
+  "LG-R01-007-F": {
+    "filename": "LG-R01-007-F-PUR-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1463982,
+    "sha256": "a1c2a5290e1231a50d43ca4ede0e7fef0f32461d85e1621d87ad2439e3b74792",
+    "sourceArchiveMember": "female/LG-R01-007-F-PUR-v01-LOCKED.png"
+  },
+  "LG-R01-008-M": {
+    "filename": "LG-R01-008-M-RED-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1026676,
+    "sha256": "30b0a826aea9fa0caaafc829a655faee2ae35608c7438be68087f78206ea86bd",
+    "sourceArchiveMember": "male/LG-R01-008-M-RED-v01-LOCKED.png"
+  },
+  "LG-R01-008-F": {
+    "filename": "LG-R01-008-F-RED-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1297106,
+    "sha256": "5a30875ca2ec151463fcd002bf9d40bd517908ff317cdc77e257b84424ccd6ac",
+    "sourceArchiveMember": "female/LG-R01-008-F-RED-v01-LOCKED.png"
+  },
+  "LG-R01-009-M": {
+    "filename": "LG-R01-009-M-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1454543,
+    "sha256": "f8f5eecc1f3a0b252685a7d23316b04277700a9e8938baa3b15797c52718925a",
+    "sourceArchiveMember": "male/LG-R01-009-M-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-009-F": {
+    "filename": "LG-R01-009-F-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1636990,
+    "sha256": "a82d28462b51690810b1d766f64cc992fe57a4f7741a85f1b5be7f1e952d1fa2",
+    "sourceArchiveMember": "female/LG-R01-009-F-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-010-M": {
+    "filename": "LG-R01-010-M-ORG-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1159291,
+    "sha256": "14a0c718e2e824ddf31cbf80c2c170367509724c7ad6ed5354c1b47e3c711dc7",
+    "sourceArchiveMember": "male/LG-R01-010-M-ORG-v01-LOCKED.png"
+  },
+  "LG-R01-010-F": {
+    "filename": "LG-R01-010-F-ORG-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1370909,
+    "sha256": "f2aabd8ddbdd9bb543db3bc14c229c53b9e8468c30f8becfc1bf625004cf7932",
+    "sourceArchiveMember": "female/LG-R01-010-F-ORG-v01-LOCKED.png"
+  },
+  "LG-R01-011-M": {
+    "filename": "LG-R01-011-M-PUR-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1637524,
+    "sha256": "497df328df666328f76eaca9a096b02d89f53deead4265cd6596dbfe05941669",
+    "sourceArchiveMember": "male/LG-R01-011-M-PUR-v01-LOCKED.png"
+  },
+  "LG-R01-011-F": {
+    "filename": "LG-R01-011-F-PUR-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 2093660,
+    "sha256": "52dd0a8b984b8a8542fe0c1243285a32a19947f696f1f51840edc990dd48d4db",
+    "sourceArchiveMember": "male/LG-R01-012-M-RED-v01-LOCKED.png"
+  },
+  "LG-R01-012-M": {
+    "filename": "LG-R01-012-M-RED-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1213777,
+    "sha256": "da2a34da78b955ee32a5023eb62a0013a3a5eecd294e345e4f7470777b8c0e76",
+    "sourceArchiveMember": "female/LG-R01-011-F-PUR-v01-LOCKED.png"
+  },
+  "LG-R01-012-F": {
+    "filename": "LG-R01-012-F-RED-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1410100,
+    "sha256": "5ef823fde2efd25a1d9f95cadcde8c6dd75b50e93ad32b35e252d967877f27de",
+    "sourceArchiveMember": "female/LG-R01-012-F-RED-v01-LOCKED.png"
+  },
+  "LG-R01-013-M": {
+    "filename": "LG-R01-013-M-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1306330,
+    "sha256": "16fef3268ba66eef3689c372dda36bb1d56452186b00788eb64ea36b8e76b038",
+    "sourceArchiveMember": "female/LG-R01-013-F-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-013-F": {
+    "filename": "LG-R01-013-F-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1458366,
+    "sha256": "0e64f1e4165b5d11059d65bd5e347b840e1b2adbf4519790e4de2ff863c37836",
+    "sourceArchiveMember": "male/LG-R01-013-M-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-014-M": {
+    "filename": "LG-R01-014-M-ORG-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1009704,
+    "sha256": "c369c1f938aaecb20d4ad53c95303f702d24b877babd36cd4d33f6989a3535cd",
+    "sourceArchiveMember": "female/LG-R01-014-F-ORG-v01-LOCKED.png"
+  },
+  "LG-R01-014-F": {
+    "filename": "LG-R01-014-F-ORG-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1343444,
+    "sha256": "d560599c130cde13febc53f5182e450d073712fbc8a195f4d1edf26885b3825d",
+    "sourceArchiveMember": "male/LG-R01-014-M-ORG-v01-LOCKED.png"
+  },
+  "LG-R01-015-M": {
+    "filename": "LG-R01-015-M-PUR-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1243729,
+    "sha256": "e510479e8141f4746ce3198ea326e2aab79174a2cd2debb5eb28a2d8d7651916",
+    "sourceArchiveMember": "male/LG-R01-015-M-PUR-v01-LOCKED.png"
+  },
+  "LG-R01-015-F": {
+    "filename": "LG-R01-015-F-PUR-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1561619,
+    "sha256": "e59cc0ddcdc33614475cd825837e8d2485d3ff146a244eaea7f3dd641caaea10",
+    "sourceArchiveMember": "female/LG-R01-015-F-PUR-v01-LOCKED.png"
+  },
+  "LG-R01-016-M": {
+    "filename": "LG-R01-016-M-RED-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1188321,
+    "sha256": "6c81623c1420edb2ca29aa0df7414b6d43acb1af6532a299a7658e3e0f3b9947",
+    "sourceArchiveMember": "male/LG-R01-016-M-RED-v01-LOCKED.png"
+  },
+  "LG-R01-016-F": {
+    "filename": "LG-R01-016-F-RED-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1329910,
+    "sha256": "49b28d7652ec6e77cf124a1eb61e16c076133dcdc6efcb211c3b6fec505e0a83",
+    "sourceArchiveMember": "female/LG-R01-016-F-RED-v01-LOCKED.png"
+  },
+  "LG-R01-017-M": {
+    "filename": "LG-R01-017-M-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1353473,
+    "sha256": "33cdd60154f897a3f626bd6fa4d0a3df18eefd99360500a612847168c76bb0b9",
+    "sourceArchiveMember": "male/LG-R01-017-M-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-017-F": {
+    "filename": "LG-R01-017-F-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1440135,
+    "sha256": "959fb10590085c7d7ef770dab72d6f84542c7e3682d22e3f832424f64c9ea1f9",
+    "sourceArchiveMember": "female/LG-R01-017-F-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-018-M": {
+    "filename": "LG-R01-018-M-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1251582,
+    "sha256": "c588e89c13d47350c697133e4db36dca39352f019e038fb639e7147a1dc843ec",
+    "sourceArchiveMember": "male/LG-R01-018-M-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-018-F": {
+    "filename": "LG-R01-018-F-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1508095,
+    "sha256": "7189ad31327974b8d0c10ded7ea07970a3003ace9e39c146e519e863045222ff",
+    "sourceArchiveMember": "female/LG-R01-018-F-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-019-M": {
+    "filename": "LG-R01-019-M-ORG-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1300111,
+    "sha256": "ab7ed4d145e54e0dc363fe2f2e2653b24e09cb035b59a96c8332a73532025388",
+    "sourceArchiveMember": "male/LG-R01-019-M-ORG-v01-LOCKED.png"
+  },
+  "LG-R01-019-F": {
+    "filename": "LG-R01-019-F-ORG-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1451011,
+    "sha256": "7a478acc80acd6b4b8f573f627723f7bb60bed09579658f344ab42fcd8387a5b",
+    "sourceArchiveMember": "female/LG-R01-019-F-ORG-v01-LOCKED.png"
+  },
+  "LG-R01-020-M": {
+    "filename": "LG-R01-020-M-PUR-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1337917,
+    "sha256": "48be46def3b8750ff1378c8d5891951dea9ce38624f5cd8fb14ae99d5a85b9a4",
+    "sourceArchiveMember": "male/LG-R01-020-M-PUR-v01-LOCKED.png"
+  },
+  "LG-R01-020-F": {
+    "filename": "LG-R01-020-F-PUR-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1606964,
+    "sha256": "0616259deedc97b6129a7e104558e9bdef5e40fe12dffbf2e5c2ab73191813f5",
+    "sourceArchiveMember": "female/LG-R01-020-F-PUR-v01-LOCKED.png"
+  },
+  "LG-R01-021-M": {
+    "filename": "LG-R01-021-M-RED-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1351707,
+    "sha256": "4cc8395ff14a3a1e40f45a858fac5417bf85083265211f713adc983e329cec09",
+    "sourceArchiveMember": "male/LG-R01-021-M-RED-v01-LOCKED.png"
+  },
+  "LG-R01-021-F": {
+    "filename": "LG-R01-021-F-RED-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1496342,
+    "sha256": "a92f7e7b98f009d2a80eb8883982e6bd3d43cc0789438c7a9b7d839758f18cb9",
+    "sourceArchiveMember": "female/LG-R01-021-F-RED-v01-LOCKED.png"
+  },
+  "LG-R01-022-M": {
+    "filename": "LG-R01-022-M-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1300135,
+    "sha256": "9cf6ce6e71bc5cb3dc39be6fbffae0f73cc060749f2d127dd69ec72e5d6b340a",
+    "sourceArchiveMember": "male/LG-R01-022-M-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-022-F": {
+    "filename": "LG-R01-022-F-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1506978,
+    "sha256": "7dc3d58ad25f426cde519e2ea0d63cc652aa7d5f281bc5f57c0e30d5eba3b46b",
+    "sourceArchiveMember": "female/LG-R01-022-F-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-023-M": {
+    "filename": "LG-R01-023-M-ORG-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1448525,
+    "sha256": "6ad7e2590c3e7cd4989b8f8229add44930643ddcec8e5406234a3347c03c288b",
+    "sourceArchiveMember": "male/LG-R01-023-M-ORG-v01-LOCKED.png"
+  },
+  "LG-R01-023-F": {
+    "filename": "LG-R01-023-F-ORG-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1601703,
+    "sha256": "e346759919f7fc2311bb273177101791fdfe573c9df41d73494f06767341d4ed",
+    "sourceArchiveMember": "female/LG-R01-023-F-ORG-v01-LOCKED.png"
+  },
+  "LG-R01-024-M": {
+    "filename": "LG-R01-024-M-PUR-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1439296,
+    "sha256": "356de50e430b38a1664aa0ac907e17194626b7ed6accd126ee49c9b492bb047a",
+    "sourceArchiveMember": "male/LG-R01-024-M-PUR-v01-LOCKED.png"
+  },
+  "LG-R01-024-F": {
+    "filename": "LG-R01-024-F-PUR-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1620843,
+    "sha256": "60e8c73407190c6148b49ab17fee898c2601526f4155e800fc3749a577be0cf1",
+    "sourceArchiveMember": "female/LG-R01-024-F-PUR-v01-LOCKED.png"
+  },
+  "LG-R01-025-M": {
+    "filename": "LG-R01-025-M-RED-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1229223,
+    "sha256": "b246e0124a28ae70bd1f7ce6980af615b7a9471676d8567c7770ef64783ea9d9",
+    "sourceArchiveMember": "male/LG-R01-025-M-RED-v01-LOCKED.png"
+  },
+  "LG-R01-025-F": {
+    "filename": "LG-R01-025-F-RED-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1384042,
+    "sha256": "414d2bc6bc00c5ef886f024ec39ea752e45fd98e3d5f038a2640e98cdc6d9082",
+    "sourceArchiveMember": "female/LG-R01-025-F-RED-v01-LOCKED.png"
+  },
+  "LG-R01-026-M": {
+    "filename": "LG-R01-026-M-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1234715,
+    "sha256": "78463b403f1598c977eed51bc59585fdb0cc872c20d93e2ac1c08ac4b37986cd",
+    "sourceArchiveMember": "male/LG-R01-026-M-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-026-F": {
+    "filename": "LG-R01-026-F-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1605803,
+    "sha256": "45c98cf7adc62edc5112e59275138f6979b98f65509507c5322e11d87535c133",
+    "sourceArchiveMember": "female/LG-R01-026-F-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-027-M": {
+    "filename": "LG-R01-027-M-ORG-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1263740,
+    "sha256": "ff82a71d000f0e7e70acbda120cbc8545083e59295da5b8bddac6466cc3d1f73",
+    "sourceArchiveMember": "male/LG-R01-027-M-ORG-v01-LOCKED.png"
+  },
+  "LG-R01-027-F": {
+    "filename": "LG-R01-027-F-ORG-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1521365,
+    "sha256": "7d2da43e686d62d85ccc238e3767155a9130ef969660f196fe1ee0b602048214",
+    "sourceArchiveMember": "female/LG-R01-027-F-ORG-v01-LOCKED.png"
+  },
+  "LG-R01-028-M": {
+    "filename": "LG-R01-028-M-PUR-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1370383,
+    "sha256": "c982735d3472483e7216724ee7a75e8495f3fc214de03d4a68ee74051b41fb57",
+    "sourceArchiveMember": "male/LG-R01-028-M-PUR-v01-LOCKED.png"
+  },
+  "LG-R01-028-F": {
+    "filename": "LG-R01-028-F-PUR-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1661170,
+    "sha256": "0f77a0835e682880ec712dfbc9fcb4dbe61b04cd99f04533ec8615514bf6ca40",
+    "sourceArchiveMember": "female/LG-R01-028-F-PUR-v01-LOCKED.png"
+  },
+  "LG-R01-029-M": {
+    "filename": "LG-R01-029-M-RED-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1314847,
+    "sha256": "0be9d25172c1544a6adae4f6d33668ddde7f37664486bd79796341d5f7633b3b",
+    "sourceArchiveMember": "male/LG-R01-029-M-RED-v01-LOCKED.png"
+  },
+  "LG-R01-029-F": {
+    "filename": "LG-R01-029-F-RED-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1490995,
+    "sha256": "b1b8d7cf1ee6eb6c54b2a949ca43c34da478e4a5b8516946781cbd857e60ee68",
+    "sourceArchiveMember": "female/LG-R01-029-F-RED-v01-LOCKED.png"
+  },
+  "LG-R01-030-M": {
+    "filename": "LG-R01-030-M-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1185745,
+    "sha256": "7882664ec19de88ae085bfc63ce15034d9643aff07b371e25ac2146e9386f625",
+    "sourceArchiveMember": "male/LG-R01-030-M-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-030-F": {
+    "filename": "LG-R01-030-F-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1374930,
+    "sha256": "d57e51d762b286eba2d72294fa625ef7c9a3a45e351c35fa079a26ad824d91f6",
+    "sourceArchiveMember": "female/LG-R01-030-F-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-031-M": {
+    "filename": "LG-R01-031-M-ORG-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1158452,
+    "sha256": "d9df5f8f71d687fe25d0e7e6c37fabc5fb43f3f2c6a7a6979c9f8a897363d4ba",
+    "sourceArchiveMember": "male/LG-R01-031-M-ORG-v01-LOCKED.png"
+  },
+  "LG-R01-031-F": {
+    "filename": "LG-R01-031-F-ORG-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1532538,
+    "sha256": "877676dd5faeb90b8d6c4e1950dfc5580fd18a6dd6f5c9c37ba0c41a8a265cfa",
+    "sourceArchiveMember": "female/LG-R01-031-F-ORG-v01-LOCKED.png"
+  },
+  "LG-R01-032-M": {
+    "filename": "LG-R01-032-M-PUR-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1326014,
+    "sha256": "67fb79fb8248c12a777e69db7e3235ab5ac138fe85565f13b89a6c99f7404b8d",
+    "sourceArchiveMember": "male/LG-R01-032-M-PUR-v01-LOCKED.png"
+  },
+  "LG-R01-032-F": {
+    "filename": "LG-R01-032-F-PUR-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1611423,
+    "sha256": "5b53074e3873c4551cc4c6f5be6d0df7c8f21b1e3d8154f6afbfa9cf07770ee1",
+    "sourceArchiveMember": "female/LG-R01-032-F-PUR-v01-LOCKED.png"
+  },
+  "LG-R01-033-M": {
+    "filename": "LG-R01-033-M-RED-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1143862,
+    "sha256": "c448108d206d32c9ba8d32f87ff682d2ba95bac110135c8c0f510abd4fdaf356",
+    "sourceArchiveMember": "male/LG-R01-033-M-RED-v01-LOCKED.png"
+  },
+  "LG-R01-033-F": {
+    "filename": "LG-R01-033-F-RED-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1496005,
+    "sha256": "5b0c2df17f2ea86b9df0ba3a42d367b0cb6dec81d5c12b413f2d42c393821c97",
+    "sourceArchiveMember": "female/LG-R01-033-F-RED-v01-LOCKED.png"
+  },
+  "LG-R01-034-M": {
+    "filename": "LG-R01-034-M-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1179488,
+    "sha256": "a765ba298ef8a26eae90f209f01e4a98540142bbf8cd383e5913565b4a20019b",
+    "sourceArchiveMember": "male/LG-R01-034-M-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-034-F": {
+    "filename": "LG-R01-034-F-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1431418,
+    "sha256": "3707bbaa51eb858f7fadd7ae9872e79dcb602bcc77c8d2015c7fef2908162064",
+    "sourceArchiveMember": "female/LG-R01-034-F-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-035-M": {
+    "filename": "LG-R01-035-M-ORG-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1326094,
+    "sha256": "5340c8e08a3a11ce1b77f1f87a7f0caacff143006feedca5adbc3974f0416e71",
+    "sourceArchiveMember": "male/LG-R01-035-M-ORG-v01-LOCKED.png"
+  },
+  "LG-R01-035-F": {
+    "filename": "LG-R01-035-F-ORG-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1518619,
+    "sha256": "5c9ac3e12b8c532afa830bb5157679c6747739b034f9a3aa62238fff8d40ca32",
+    "sourceArchiveMember": "female/LG-R01-035-F-ORG-v01-LOCKED.png"
+  },
+  "LG-R01-036-M": {
+    "filename": "LG-R01-036-M-PUR-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1440243,
+    "sha256": "13fd33fbd0bc23a90be88a5977d1d60b523da181d5593b69dc9576e0467be7b8",
+    "sourceArchiveMember": "male/LG-R01-036-M-PUR-v01-LOCKED.png"
+  },
+  "LG-R01-036-F": {
+    "filename": "LG-R01-036-F-PUR-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1625279,
+    "sha256": "7c14ebd1f14d3df5f5c6d0fa92f9ae033f63263138c81776b2433b18ba8e3aa2",
+    "sourceArchiveMember": "female/LG-R01-036-F-PUR-v01-LOCKED.png"
+  },
+  "LG-R01-037-M": {
+    "filename": "LG-R01-037-M-RED-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1274553,
+    "sha256": "93118075c439f03ae88c7f5e98bd6535cefce440a503048f1664aab42228f688",
+    "sourceArchiveMember": "male/LG-R01-037-M-RED-v01-LOCKED.png"
+  },
+  "LG-R01-037-F": {
+    "filename": "LG-R01-037-F-RED-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1552429,
+    "sha256": "1433898fa6250aed2059d5c291fc38dc7a4e75b4ca4d2a6c6fa945beacf92ce0",
+    "sourceArchiveMember": "female/LG-R01-037-F-RED-v01-LOCKED.png"
+  },
+  "LG-R01-038-M": {
+    "filename": "LG-R01-038-M-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1288325,
+    "sha256": "f94a5c23b6b4149139092285818bc03a8ca88d9dd869955f0f453acd28f223dc",
+    "sourceArchiveMember": "male/LG-R01-038-M-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-038-F": {
+    "filename": "LG-R01-038-F-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1523396,
+    "sha256": "91ed54d2aa6f68ea9e6804faf05b895696797a8a4409ce349c9d53e998f425a4",
+    "sourceArchiveMember": "female/LG-R01-038-F-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-039-M": {
+    "filename": "LG-R01-039-M-ORG-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1279064,
+    "sha256": "85319d7564287c0a7b926c140dd234508b35e7b0d6d16460f7beb5542dfda061",
+    "sourceArchiveMember": "male/LG-R01-039-M-ORG-v01-LOCKED.png"
+  },
+  "LG-R01-039-F": {
+    "filename": "LG-R01-039-F-ORG-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1536563,
+    "sha256": "034404d6e6092eba24f69aa99321dc86f3cd674b24163e94c0e144bc7efe44cf",
+    "sourceArchiveMember": "female/LG-R01-039-F-ORG-v01-LOCKED.png"
+  },
+  "LG-R01-040-M": {
+    "filename": "LG-R01-040-M-PUR-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1394249,
+    "sha256": "17fd1991f0c78797facdcc4be3e3ee444fdf760eba4d20cbc3fdc5cd4c0e97a3",
+    "sourceArchiveMember": "male/LG-R01-040-M-PUR-v01-LOCKED.png"
+  },
+  "LG-R01-040-F": {
+    "filename": "LG-R01-040-F-PUR-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1612387,
+    "sha256": "0e96f2b2176d431d886a70d61d97dd7af194651dee44fc2ef9d9798a9c749644",
+    "sourceArchiveMember": "female/LG-R01-040-F-PUR-v01-LOCKED.png"
+  },
+  "LG-R01-041-M": {
+    "filename": "LG-R01-041-M-RED-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1309914,
+    "sha256": "0f4463fb665c8cb3f5ba75db232969697c7efe7a28d6dd2a0f525e451c6ea689",
+    "sourceArchiveMember": "male/LG-R01-041-M-RED-v01-LOCKED.png"
+  },
+  "LG-R01-041-F": {
+    "filename": "LG-R01-041-F-RED-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1459524,
+    "sha256": "38d04cf7249660c5d3fb8a82a1ccc3b18a1e587cd7eb9b62e324b9b9c98f3120",
+    "sourceArchiveMember": "female/LG-R01-041-F-RED-v01-LOCKED.png"
+  },
+  "LG-R01-042-M": {
+    "filename": "LG-R01-042-M-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1327567,
+    "sha256": "0114207339ff61894a08b94b792e35ae643834cfb2871cc6638b4ecc135ababb",
+    "sourceArchiveMember": "male/LG-R01-042-M-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-042-F": {
+    "filename": "LG-R01-042-F-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1576483,
+    "sha256": "5dd50d4d769db6c7626d6906f413d7400be8c4d0b0273dca55809ac1cdc9460a",
+    "sourceArchiveMember": "female/LG-R01-042-F-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-043-M": {
+    "filename": "LG-R01-043-M-ORG-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1328728,
+    "sha256": "cde46f07514ad415c821f49690ab7eb67cb4ff684d5f10d9e53eba79aaf3d482",
+    "sourceArchiveMember": "male/LG-R01-043-M-ORG-v01-LOCKED.png"
+  },
+  "LG-R01-043-F": {
+    "filename": "LG-R01-043-F-ORG-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1482017,
+    "sha256": "9c022d2c98cd8cbed37cf5473fc187dca3d5aad5ff05373bb33ef9fd6b9bd4fb",
+    "sourceArchiveMember": "female/LG-R01-043-F-ORG-v01-LOCKED.png"
+  },
+  "LG-R01-044-M": {
+    "filename": "LG-R01-044-M-PUR-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1220797,
+    "sha256": "804a516a78f7ee423781d535de19c6fefacc5e2b4cc9a7d678506fc2d7d4ff5c",
+    "sourceArchiveMember": "male/LG-R01-044-M-PUR-v01-LOCKED.png"
+  },
+  "LG-R01-044-F": {
+    "filename": "LG-R01-044-F-PUR-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1514275,
+    "sha256": "2b38f24fadc336f78fcdba12f622b88463c9c42849b2d3f3f6e5ba43128a7c99",
+    "sourceArchiveMember": "female/LG-R01-044-F-PUR-v01-LOCKED.png"
+  },
+  "LG-R01-045-M": {
+    "filename": "LG-R01-045-M-RED-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1190860,
+    "sha256": "cd1432a94355dc2f41469f549c8c26686a674f659519d75ee54587b4eec6f55c",
+    "sourceArchiveMember": "male/LG-R01-045-M-RED-v01-LOCKED.png"
+  },
+  "LG-R01-045-F": {
+    "filename": "LG-R01-045-F-RED-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1499293,
+    "sha256": "9e2aae9e0cac01e14625e175417f27716a9c75e2fd768a4c828c4b0ad89c4075",
+    "sourceArchiveMember": "female/LG-R01-045-F-RED-v01-LOCKED.png"
+  },
+  "LG-R01-046-M": {
+    "filename": "LG-R01-046-M-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1243883,
+    "sha256": "d1953c6f71a044de5bab414168f8583b0be702268375e1233880df4fa45a2198",
+    "sourceArchiveMember": "male/LG-R01-046-M-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-046-F": {
+    "filename": "LG-R01-046-F-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1445721,
+    "sha256": "1e6ec0f66d77254a91a883300d9c9d1b319aab00ea9d0ad544429706af067053",
+    "sourceArchiveMember": "female/LG-R01-046-F-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-047-M": {
+    "filename": "LG-R01-047-M-ORG-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1297715,
+    "sha256": "31a4e1c71270173f6422c2cebc027b935fd669a384b24bcbbc32f96abe11a19f",
+    "sourceArchiveMember": "male/LG-R01-047-M-ORG-v01-LOCKED.png"
+  },
+  "LG-R01-047-F": {
+    "filename": "LG-R01-047-F-ORG-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1497662,
+    "sha256": "7c56993cab1b8f5f08f5414b68492c8057b34941b1184f5ab600c9535966550c",
+    "sourceArchiveMember": "female/LG-R01-047-F-ORG-v01-LOCKED.png"
+  },
+  "LG-R01-048-M": {
+    "filename": "LG-R01-048-M-PUR-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1455397,
+    "sha256": "e70019e91ca8c3734e45525dec9da86c1e5da7873b2b093babd0ce40de47651a",
+    "sourceArchiveMember": "male/LG-R01-048-M-PUR-v01-LOCKED.png"
+  },
+  "LG-R01-048-F": {
+    "filename": "LG-R01-048-F-PUR-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1583832,
+    "sha256": "715a41119c0bbf82bc808181c0a5c62e6e5475961f4ca42c6a38b75e38b09219",
+    "sourceArchiveMember": "female/LG-R01-048-F-PUR-v01-LOCKED.png"
+  },
+  "LG-R01-049-M": {
+    "filename": "LG-R01-049-M-RED-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1304055,
+    "sha256": "d61f6cf87dd325463cd85c9e680df517894ed5640ea2aa9019f7bc3b72ce36a9",
+    "sourceArchiveMember": "male/LG-R01-049-M-RED-v01-LOCKED.png"
+  },
+  "LG-R01-049-F": {
+    "filename": "LG-R01-049-F-RED-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1504206,
+    "sha256": "5c62cd65db4bb1797125790180ebf64d913606795c0b5da9acb17779bc73e99d",
+    "sourceArchiveMember": "female/LG-R01-049-F-RED-v01-LOCKED.png"
+  },
+  "LG-R01-050-M": {
+    "filename": "LG-R01-050-M-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1256415,
+    "sha256": "5fedd39946b5e2ee6117d0c4e0617409b44562d50baaaf89a3f7380bdf8a4b24",
+    "sourceArchiveMember": "male/LG-R01-050-M-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-050-F": {
+    "filename": "LG-R01-050-F-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1528317,
+    "sha256": "ba194c1479e8179e9ca1cff7e3d9d48938d73fb813bd45ba8f86b9523a33a5f4",
+    "sourceArchiveMember": "female/LG-R01-050-F-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-051-M": {
+    "filename": "LG-R01-051-M-ORG-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1224070,
+    "sha256": "8314fd888a4e78d3c27e4e6dfa7e29847232dcb25bd472265abaee9bc92a3f2a",
+    "sourceArchiveMember": "male/LG-R01-051-M-ORG-v01-LOCKED.png"
+  },
+  "LG-R01-051-F": {
+    "filename": "LG-R01-051-F-ORG-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1449273,
+    "sha256": "cdd4b68c29ba8d9a1d0ae531cf0f55d8e113236638969e70d2d0e1bf393b9638",
+    "sourceArchiveMember": "female/LG-R01-051-F-ORG-v01-LOCKED.png"
+  },
+  "LG-R01-052-M": {
+    "filename": "LG-R01-052-M-PUR-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1380489,
+    "sha256": "8e350f2336bfd76447b641fe922fb56e87a559fd63e9a2672b337c4f4715f983",
+    "sourceArchiveMember": "male/LG-R01-052-M-PUR-v01-LOCKED.png"
+  },
+  "LG-R01-052-F": {
+    "filename": "LG-R01-052-F-PUR-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1601468,
+    "sha256": "0d2d7e447bb9fcec15196f1e84c6d2ecf05efca4ba4eb9e1a938e1e1605b16c9",
+    "sourceArchiveMember": "female/LG-R01-052-F-PUR-v01-LOCKED.png"
+  },
+  "LG-R01-053-M": {
+    "filename": "LG-R01-053-M-RED-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1281056,
+    "sha256": "c28d4dcc8455fc6b983ec760defea9bfb0049c75e233725322beb80323beddc2",
+    "sourceArchiveMember": "male/LG-R01-053-M-RED-v01-LOCKED.png"
+  },
+  "LG-R01-053-F": {
+    "filename": "LG-R01-053-F-RED-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1527561,
+    "sha256": "22a69ce0f7845860a2635c493dc4d8f5e33a1e3f71fa6ab3f3fc0f7db635e5d1",
+    "sourceArchiveMember": "female/LG-R01-053-F-RED-v01-LOCKED.png"
+  },
+  "LG-R01-054-M": {
+    "filename": "LG-R01-054-M-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1201893,
+    "sha256": "97e2c3feaf011730f43d0d10197c6f9ab1b1a17277f258c515391ff4c4331373",
+    "sourceArchiveMember": "male/LG-R01-054-M-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-054-F": {
+    "filename": "LG-R01-054-F-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1406440,
+    "sha256": "72a3cb1a991d71eec1dee925c34cb65dfb0653859df440642bfae1829e904299",
+    "sourceArchiveMember": "female/LG-R01-054-F-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-055-M": {
+    "filename": "LG-R01-055-M-ORG-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1242363,
+    "sha256": "0f421a3d64179aac128f55446d5fbcc9932af24fe24f5031c380b82e1fa20430",
+    "sourceArchiveMember": "male/LG-R01-055-M-ORG-v01-LOCKED.png"
+  },
+  "LG-R01-055-F": {
+    "filename": "LG-R01-055-F-ORG-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1528155,
+    "sha256": "8b8d4c889fe710779ccbec2c0965ad976acd9e85de9ed16560b87d70b56ea8be",
+    "sourceArchiveMember": "female/LG-R01-055-F-ORG-v01-LOCKED.png"
+  },
+  "LG-R01-056-M": {
+    "filename": "LG-R01-056-M-PUR-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1373097,
+    "sha256": "6d970c2fddb62982d7de610948fac550db1e60826ab828d54234f453e94e21a5",
+    "sourceArchiveMember": "male/LG-R01-056-M-PUR-v01-LOCKED.png"
+  },
+  "LG-R01-056-F": {
+    "filename": "LG-R01-056-F-PUR-v02-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1614480,
+    "sha256": "d3abae9c9bd80bcdd3c7c9afc3601e254cea7b5cca8ba369895aed7d80d6226b",
+    "sourceArchiveMember": "female/LG-R01-056-F-PUR-v02-LOCKED.png"
+  },
+  "LG-R01-057-M": {
+    "filename": "LG-R01-057-M-RED-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1145853,
+    "sha256": "61679ad0bcdc978483913f04529e22d0125d0f6116a0e0ff052f7c74557a68d9",
+    "sourceArchiveMember": "male/LG-R01-057-M-RED-v01-LOCKED.png"
+  },
+  "LG-R01-057-F": {
+    "filename": "LG-R01-057-F-RED-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1508737,
+    "sha256": "fc7bf6955ecba388107b5482f9a0c1dac8ee7096491785a300c05571ed895213",
+    "sourceArchiveMember": "female/LG-R01-057-F-RED-v01-LOCKED.png"
+  },
+  "LG-R01-058-M": {
+    "filename": "LG-R01-058-M-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1336383,
+    "sha256": "824b7681a7a347ccaa2533456c13f492d09a8b1603c49c637ae1c9b6b4e1f9e0",
+    "sourceArchiveMember": "male/LG-R01-058-M-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-058-F": {
+    "filename": "LG-R01-058-F-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1520087,
+    "sha256": "1fc5e55b62eb793f63d2e51e44000bede08cc01b252e23f9226304a58a1cc929",
+    "sourceArchiveMember": "female/LG-R01-058-F-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-059-M": {
+    "filename": "LG-R01-059-M-ORG-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1407998,
+    "sha256": "6c49418a7f452e61950d7e2e993da286dc6fac60af732235ba47609793ee8c6a",
+    "sourceArchiveMember": "male/LG-R01-059-M-ORG-v01-LOCKED.png"
+  },
+  "LG-R01-059-F": {
+    "filename": "LG-R01-059-F-ORG-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1602965,
+    "sha256": "1c6d42a546477ac249386f5e6b0bea1052315fc07ed2f83f19c8ea6ddbe70241",
+    "sourceArchiveMember": "female/LG-R01-059-F-ORG-v01-LOCKED.png"
+  },
+  "LG-R01-060-M": {
+    "filename": "LG-R01-060-M-PUR-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1448526,
+    "sha256": "6f21630bd7ccbfabe1f125b4d248d4193ec984a1957f6d2911f64492ad58ddbb",
+    "sourceArchiveMember": "male/LG-R01-060-M-PUR-v01-LOCKED.png"
+  },
+  "LG-R01-060-F": {
+    "filename": "LG-R01-060-F-PUR-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1565042,
+    "sha256": "d879cd87848e0150e1d8876fbd9f09f871c81668c11a85665c9a6beab7b9a198",
+    "sourceArchiveMember": "female/LG-R01-060-F-PUR-v01-LOCKED.png"
+  },
+  "LG-R01-061-M": {
+    "filename": "LG-R01-061-M-RED-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1369318,
+    "sha256": "f87b733ac2647ca2addf0a74f5bc59ec3190106eaebe77877c03fee43891e5ee",
+    "sourceArchiveMember": "male/LG-R01-061-M-RED-v01-LOCKED.png"
+  },
+  "LG-R01-061-F": {
+    "filename": "LG-R01-061-F-RED-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1475727,
+    "sha256": "170fca67d2064141840d28885eb6c275e097e25cdce74218d8e4e000d729f666",
+    "sourceArchiveMember": "female/LG-R01-061-F-RED-v01-LOCKED.png"
+  },
+  "LG-R01-062-M": {
+    "filename": "LG-R01-062-M-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1387180,
+    "sha256": "aced2d13da7d3153a6f6abad27fa598b7d28fa48aed99d0b64324580b19fb862",
+    "sourceArchiveMember": "male/LG-R01-062-M-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-062-F": {
+    "filename": "LG-R01-062-F-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1584870,
+    "sha256": "3b910cd9bea86dfc7d435462bebb439973d9fc6476b1edc35b37f8062bbde52a",
+    "sourceArchiveMember": "female/LG-R01-062-F-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-063-M": {
+    "filename": "LG-R01-063-M-ORG-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1379632,
+    "sha256": "a024cef09acd8bc28d7973149b22b2eb4fe5d09606eee59df7cfb89c8cf94bec",
+    "sourceArchiveMember": "male/LG-R01-063-M-ORG-v01-LOCKED.png"
+  },
+  "LG-R01-063-F": {
+    "filename": "LG-R01-063-F-ORG-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1526875,
+    "sha256": "45211cdfb36742b6aca4b9f72e47397f3e65a5e3a139af309d36ed4163afe90e",
+    "sourceArchiveMember": "female/LG-R01-063-F-ORG-v01-LOCKED.png"
+  },
+  "LG-R01-064-M": {
+    "filename": "LG-R01-064-M-PUR-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1313037,
+    "sha256": "48ee17edd4ac08740068e2a6c25266d6d9dd2c79ddbb5053e82a912e5fbfa283",
+    "sourceArchiveMember": "male/LG-R01-064-M-PUR-v01-LOCKED.png"
+  },
+  "LG-R01-064-F": {
+    "filename": "LG-R01-064-F-PUR-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1567369,
+    "sha256": "33c800d61b43af6c122d616dd42655794656fc212abff36f954f782739488f14",
+    "sourceArchiveMember": "female/LG-R01-064-F-PUR-v01-LOCKED.png"
+  },
+  "LG-R01-065-M": {
+    "filename": "LG-R01-065-M-RED-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1377467,
+    "sha256": "60b881aaaf47737f64b3e21b379fc5283ac9b13798481ec368d8f99b38746e69",
+    "sourceArchiveMember": "male/LG-R01-065-M-RED-v01-LOCKED.png"
+  },
+  "LG-R01-065-F": {
+    "filename": "LG-R01-065-F-RED-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1547932,
+    "sha256": "2ee4d8ce779f85b86e2468a8a31e14d73cf5e6bff367bc3a1baf63ce153eec92",
+    "sourceArchiveMember": "female/LG-R01-065-F-RED-v01-LOCKED.png"
+  },
+  "LG-R01-066-M": {
+    "filename": "LG-R01-066-M-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1283904,
+    "sha256": "42da70be24b3fe5a7ad9abddc33d5f4ed67f6bdf101024e41e54a092913bf9a8",
+    "sourceArchiveMember": "male/LG-R01-066-M-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-066-F": {
+    "filename": "LG-R01-066-F-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1472738,
+    "sha256": "60ac5e0091b04f02ddf65fe68f58efae7b837b9865545d6dfd52b8821cc8319d",
+    "sourceArchiveMember": "female/LG-R01-066-F-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-067-M": {
+    "filename": "LG-R01-067-M-ORG-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1441013,
+    "sha256": "abd683f2487cc4dc1ec6a6a2cace2c8c61d65251b22a0f019975ff98bc3f7070",
+    "sourceArchiveMember": "male/LG-R01-067-M-ORG-v01-LOCKED.png"
+  },
+  "LG-R01-067-F": {
+    "filename": "LG-R01-067-F-ORG-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1656602,
+    "sha256": "a8f6872590ba92b00c7d20e21dfbd560f4250182886b4a8368f6ef12ead171b7",
+    "sourceArchiveMember": "female/LG-R01-067-F-ORG-v01-LOCKED.png"
+  },
+  "LG-R01-068-M": {
+    "filename": "LG-R01-068-M-PUR-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1361634,
+    "sha256": "2ee8baaa53e93975b9f4543956c0d6189ee6bd1158863fb98e0ab158a84b292b",
+    "sourceArchiveMember": "male/LG-R01-068-M-PUR-v01-LOCKED.png"
+  },
+  "LG-R01-068-F": {
+    "filename": "LG-R01-068-F-PUR-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1630646,
+    "sha256": "710b87dba48e5429616fd773c4f6f0e6cd94e17fe85d4f95e8c098b510c49264",
+    "sourceArchiveMember": "female/LG-R01-068-F-PUR-v01-LOCKED.png"
+  },
+  "LG-R01-069-M": {
+    "filename": "LG-R01-069-M-RED-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1297724,
+    "sha256": "3153eeb33aa5a540fb23e188ed08c2a31c3380233eb9711ee23a4461e24cb94f",
+    "sourceArchiveMember": "male/LG-R01-069-M-RED-v01-LOCKED.png"
+  },
+  "LG-R01-069-F": {
+    "filename": "LG-R01-069-F-RED-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1519908,
+    "sha256": "2e97efdc12555dcfe1bb2abd72b683011a2c2ebf6daeadf6e274c1f2bdd49965",
+    "sourceArchiveMember": "female/LG-R01-069-F-RED-v01-LOCKED.png"
+  },
+  "LG-R01-070-M": {
+    "filename": "LG-R01-070-M-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1245644,
+    "sha256": "d865472ab565b6bcb6a5d751b48406c5368fa94280763053e8c959eaa1212037",
+    "sourceArchiveMember": "male/LG-R01-070-M-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-070-F": {
+    "filename": "LG-R01-070-F-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1415724,
+    "sha256": "1fe54781ef8fe3811b25021b08bde97ee641658128ed7ae2da8a20e1440b5242",
+    "sourceArchiveMember": "female/LG-R01-070-F-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-071-M": {
+    "filename": "LG-R01-071-M-ORG-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1407292,
+    "sha256": "5b405a10b1107b711273a9be78b3d89e9a0e0ec0b4895d7fb2307fd011536169",
+    "sourceArchiveMember": "male/LG-R01-071-M-ORG-v01-LOCKED.png"
+  },
+  "LG-R01-071-F": {
+    "filename": "LG-R01-071-F-ORG-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1645652,
+    "sha256": "28e4c52007c23d39108d83584bab459cc532bb3d92db3e17101a5f891fbbdf62",
+    "sourceArchiveMember": "female/LG-R01-071-F-ORG-v01-LOCKED.png"
+  },
+  "LG-R01-072-M": {
+    "filename": "LG-R01-072-M-PUR-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1270640,
+    "sha256": "1671dc5de7e6706306cc4205c48ad083b40ce26c8d1ff7572b446c785a817f1a",
+    "sourceArchiveMember": "male/LG-R01-072-M-PUR-v01-LOCKED.png"
+  },
+  "LG-R01-072-F": {
+    "filename": "LG-R01-072-F-PUR-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1554243,
+    "sha256": "328cf2c2f2fa8fb05223ae9e158918c98535030681b260b3a785d9a36ac4fc97",
+    "sourceArchiveMember": "female/LG-R01-072-F-PUR-v01-LOCKED.png"
+  },
+  "LG-R01-073-M": {
+    "filename": "LG-R01-073-M-RED-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1179553,
+    "sha256": "e7518e610d6677cb282ee4ff449c1e49e45a037561d183ef8af9b6792a4c49da",
+    "sourceArchiveMember": "male/LG-R01-073-M-RED-v01-LOCKED.png"
+  },
+  "LG-R01-073-F": {
+    "filename": "LG-R01-073-F-RED-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1491847,
+    "sha256": "57ecb438170c551c333be9dda3ae8368b06d8ca93f4fc226bb91d9a8d6866fb0",
+    "sourceArchiveMember": "female/LG-R01-073-F-RED-v01-LOCKED.png"
+  },
+  "LG-R01-074-M": {
+    "filename": "LG-R01-074-M-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1478535,
+    "sha256": "c65dc41682e7145ab3fa8f1976646ff06456e6ebed78bb34dd44afa9cb40694d",
+    "sourceArchiveMember": "male/LG-R01-074-M-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-074-F": {
+    "filename": "LG-R01-074-F-GRN-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1541706,
+    "sha256": "4bc050d116bb59357ef0f891f19b174e976bd1a854814000f9a56ed22ddf3ce0",
+    "sourceArchiveMember": "female/LG-R01-074-F-GRN-v01-LOCKED.png"
+  },
+  "LG-R01-075-M": {
+    "filename": "LG-R01-075-M-ORG-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1290656,
+    "sha256": "e259cb1f1bcc49a18359b0a4fb0b2967f152cbd703ebc84f93b21b807800970d",
+    "sourceArchiveMember": "male/LG-R01-075-M-ORG-v01-LOCKED.png"
+  },
+  "LG-R01-075-F": {
+    "filename": "LG-R01-075-F-ORG-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1459341,
+    "sha256": "87c1834a164a7901e806654721901cf1e19b7e76c38a897d86acee1f5fad29e9",
+    "sourceArchiveMember": "female/LG-R01-075-F-ORG-v01-LOCKED.png"
+  },
+  "LG-R01-076-M": {
+    "filename": "LG-R01-076-M-PUR-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1248427,
+    "sha256": "b32ef0cec0f115a9956805d63c0c35491c449d9de7573649d4ac05be56f33139",
+    "sourceArchiveMember": "male/LG-R01-076-M-PUR-v01-LOCKED.png"
+  },
+  "LG-R01-076-F": {
+    "filename": "LG-R01-076-F-PUR-v01-LOCKED.png",
+    "width": 1254,
+    "height": 1254,
+    "bytes": 1509715,
+    "sha256": "a086c8a00922bfe6c7e47aa1f6c43697aae2760231af26b7092f0d286f56fa1a",
+    "sourceArchiveMember": "female/LG-R01-076-F-PUR-v01-LOCKED.png"
+  }
+}

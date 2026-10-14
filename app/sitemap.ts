@@ -10,6 +10,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/launch",
     "/gwapmojis",
     "/lil-gwapz",
+    "/lil-gwapz/browse",
     "/about",
     "/ecosystem",
     "/developers",
