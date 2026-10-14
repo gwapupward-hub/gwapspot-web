@@ -7,6 +7,7 @@ import {
 export const GWAP_ACTIVATION_STORAGE_KEY = "gwap-activation-progress-v1";
 export const GWAP_ACTIVATION_COOKIE_KEY = "gwap_activation_selection";
 export const GWAP_ACTIVATION_SIGNAL_COOKIE_KEY = "gwap_activation_signal";
+export const GWAP_ACTIVATION_SELECTED_EVENT = "gwap:activation-selected";
 
 export type ActivationProgress = {
   intent: GwapEntryIntent;
