@@ -4,9 +4,19 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { GwapMojisPromo } from "../../components/gwapmojis-promo";
 import { PpvVerifiedActivity } from "../../components/ppv/ppv-verified-activity";
-import type { ActivationSignal } from "../../lib/activation-analytics";
+import {
+  createActivationProgress,
+  GWAP_ACTIVATION_COOKIE_KEY,
+  GWAP_ACTIVATION_SELECTED_EVENT,
+  GWAP_ACTIVATION_SIGNAL_COOKIE_KEY,
+  GWAP_ACTIVATION_STORAGE_KEY,
+  serializeActivationSelection,
+  type ActivationSignal,
+} from "../../lib/activation-analytics";
 import {
   GWAP_ENTRY_INTENTS,
+  GWAP_ENTRY_INTENT_COOKIE_KEY,
+  GWAP_ENTRY_INTENT_STORAGE_KEY,
   type GwapEntryIntent,
 } from "../../lib/entry-intent";
 import type { EcosystemProduct } from "../../lib/ecosystem";
@@ -23,6 +33,34 @@ type TrustFoundationItem = {
   note: string;
   status: string;
 };
+
+function seedSuggestedActivation(intent: GwapEntryIntent) {
+  const progress = createActivationProgress(intent);
+  const selection = serializeActivationSelection(progress);
+
+  try {
+    window.localStorage.setItem(GWAP_ENTRY_INTENT_STORAGE_KEY, intent);
+    window.localStorage.setItem(
+      GWAP_ACTIVATION_STORAGE_KEY,
+      JSON.stringify(progress),
+    );
+  } catch {
+    // Browser storage is optional; the first-party cookies remain the fallback.
+  }
+
+  const host = window.location.hostname.toLowerCase();
+  const sharedDomain = host === "gwapspot.com" || host.endsWith(".gwapspot.com");
+  const domain = sharedDomain ? "; Domain=.gwapspot.com" : "";
+  const secure = window.location.protocol === "https:" ? "; Secure" : "";
+  const scope = `Path=/; SameSite=Lax${domain}${secure}`;
+  const persistent = `${scope}; Max-Age=2592000`;
+  document.cookie = `${GWAP_ACTIVATION_SIGNAL_COOKIE_KEY}=; ${scope}; Max-Age=0`;
+  document.cookie = `${GWAP_ENTRY_INTENT_COOKIE_KEY}=${encodeURIComponent(intent)}; ${persistent}`;
+  document.cookie = `${GWAP_ACTIVATION_COOKIE_KEY}=${encodeURIComponent(selection)}; ${persistent}`;
+  window.dispatchEvent(
+    new CustomEvent(GWAP_ACTIVATION_SELECTED_EVENT, { detail: selection }),
+  );
+}
 
 export function DashboardView({
   products,
@@ -61,6 +99,7 @@ export function DashboardView({
       profileCompletion,
     ],
   );
+  const advanceIntent = nextAction.nextIntent;
 
   const nextActionHeading =
     nextAction.mode === "advance"
@@ -237,7 +276,16 @@ export function DashboardView({
                 <h3>{nextAction.title}</h3>
                 <p>{nextAction.detail}</p>
               </div>
-              <GwapGradientLink href={nextAction.href}>{nextAction.label} →</GwapGradientLink>
+              <GwapGradientLink
+                href={nextAction.href}
+                onClick={
+                  advanceIntent
+                    ? () => seedSuggestedActivation(advanceIntent)
+                    : undefined
+                }
+              >
+                {nextAction.label} →
+              </GwapGradientLink>
             </article>
           </section>
 
