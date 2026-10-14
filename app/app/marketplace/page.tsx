@@ -92,6 +92,10 @@ export default function MarketplacePage() {
 
   useEffect(() => {
     let cancelled = false;
+    setProjectLoadState("loading");
+    setWorkspaceProjects([]);
+    setDraftProjectId("");
+    setDraftRole("");
     void (async () => {
       try {
         const response = await authenticatedFetch("/api/daily-ideas/workspace", { cache: "no-store" });
@@ -99,10 +103,10 @@ export default function MarketplacePage() {
         if (!response.ok) throw new Error(payload.error || "Daily Ideas projects could not load");
         if (cancelled) return;
         const projects = Array.isArray(payload.projects?.items)
-          ? payload.projects.items.filter((item) => item && item.status !== "archived" && item.id && item.title)
+          ? payload.projects.items.filter((item) => item && item.status !== "archived" && /^project_[a-f0-9]{20}$/.test(item.id) && item.title.trim().length > 0)
           : [];
         setWorkspaceProjects(projects);
-        setDraftProjectId((current) => current && projects.some((item) => item.id === current) ? current : projects[0]?.id ?? "");
+        setDraftProjectId(projects[0]?.id ?? "");
         setProjectLoadState("ready");
       } catch {
         if (!cancelled) setProjectLoadState("error");
@@ -111,7 +115,7 @@ export default function MarketplacePage() {
     return () => {
       cancelled = true;
     };
-  }, [authenticatedFetch]);
+  }, [account.verifiedWallet, authenticatedFetch]);
 
   function resetPacketActionStatus() {
     window.setTimeout(() => setPacketActionStatus("idle"), 2200);
@@ -124,6 +128,7 @@ export default function MarketplacePage() {
     const intentId = createMarketplaceIntentFromProject({
       id: source.id,
       title: source.title,
+      status: source.status,
       problemDefinition: source.problemDefinition || "",
       targetCustomer: source.targetCustomer || "",
       technicalArchitecture: source.technicalArchitecture || "",
