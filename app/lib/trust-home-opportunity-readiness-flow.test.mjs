@@ -38,11 +38,15 @@ test("private brief titles fail closed while workspace authority is unresolved",
   assert.match(readiness, /Choose which workspace state is authoritative/);
 });
 
-test("trust context remains guidance rather than an eligibility decision", () => {
+test("trust context preserves canonical availability states without becoming eligibility", () => {
   assert.match(readiness, /Trust context/);
   assert.match(readiness, /Identity active/);
+  assert.match(readiness, /Identity unavailable/);
   assert.match(readiness, /Reputation active/);
+  assert.match(readiness, /Reputation developing/);
+  assert.match(readiness, /Reputation unavailable/);
   assert.match(readiness, /Profile strong/);
+  assert.match(readiness, /context only, not a matching decision/);
   assert.doesNotMatch(readiness, /eligible|approved|qualified/);
 });
 
