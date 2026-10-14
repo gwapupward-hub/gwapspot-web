@@ -57,6 +57,14 @@ const ACTIVATION_MILESTONES_BY_INTENT = {
   transaction: ["existing_verified_activity", "verified_transaction_activity"],
 } as const satisfies Record<GwapEntryIntent, readonly ActivationMilestone[]>;
 
+function isoFromTimestamp(value: unknown) {
+  const timestamp = Number(value);
+  if (!Number.isSafeInteger(timestamp) || timestamp <= 0) return null;
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toISOString();
+}
+
 export function createActivationProgress(
   intent: GwapEntryIntent,
   selectedAt = new Date().toISOString(),
@@ -119,9 +127,8 @@ export function parseActivationSelection(value: string | null | undefined) {
   const [intentValue, timestampValue, ...rest] = value.split(".");
   const intent = intentValue || null;
   if (rest.length || !isGwapEntryIntent(intent)) return null;
-  const timestamp = Number(timestampValue);
-  if (!Number.isSafeInteger(timestamp) || timestamp <= 0) return null;
-  const selectedAt = new Date(timestamp).toISOString();
+  const selectedAt = isoFromTimestamp(timestampValue);
+  if (!selectedAt) return null;
   return { intent, selectedAt } as const;
 }
 
@@ -158,13 +165,13 @@ export function parseActivationSignal(value: string | null | undefined): Activat
   const intent = intentValue as GwapEntryIntent;
   const milestones = ACTIVATION_MILESTONES_BY_INTENT[intent] as readonly string[];
   if (!milestoneValue || !milestones.includes(milestoneValue)) return null;
-  const timestamp = Number(timestampValue);
-  if (!Number.isSafeInteger(timestamp) || timestamp <= 0) return null;
+  const occurredAt = isoFromTimestamp(timestampValue);
+  if (!occurredAt) return null;
   return {
     kind: kindValue,
     intent,
     milestone: milestoneValue as ActivationMilestone,
-    occurredAt: new Date(timestamp).toISOString(),
+    occurredAt,
   };
 }
 
