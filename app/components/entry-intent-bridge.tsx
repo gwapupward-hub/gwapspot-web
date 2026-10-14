@@ -5,6 +5,7 @@ import {
   activationSurface,
   createActivationProgress,
   GWAP_ACTIVATION_COOKIE_KEY,
+  GWAP_ACTIVATION_SIGNAL_COOKIE_KEY,
   GWAP_ACTIVATION_STORAGE_KEY,
   serializeActivationSelection,
 } from "../lib/activation-analytics";
@@ -67,9 +68,11 @@ export function EntryIntentBridge() {
       const sharedDomain = host === "gwapspot.com" || host.endsWith(".gwapspot.com");
       const domain = sharedDomain ? "; Domain=.gwapspot.com" : "";
       const secure = window.location.protocol === "https:" ? "; Secure" : "";
-      const common = `Path=/; Max-Age=2592000; SameSite=Lax${domain}${secure}`;
-      document.cookie = `${GWAP_ENTRY_INTENT_COOKIE_KEY}=${encodeURIComponent(intent)}; ${common}`;
-      document.cookie = `${GWAP_ACTIVATION_COOKIE_KEY}=${encodeURIComponent(serializeActivationSelection(progress))}; ${common}`;
+      const scope = `Path=/; SameSite=Lax${domain}${secure}`;
+      const persistent = `${scope}; Max-Age=2592000`;
+      document.cookie = `${GWAP_ACTIVATION_SIGNAL_COOKIE_KEY}=; ${scope}; Max-Age=0`;
+      document.cookie = `${GWAP_ENTRY_INTENT_COOKIE_KEY}=${encodeURIComponent(intent)}; ${persistent}`;
+      document.cookie = `${GWAP_ACTIVATION_COOKIE_KEY}=${encodeURIComponent(serializeActivationSelection(progress))}; ${persistent}`;
 
       event.preventDefault();
       window.location.assign("/app");
