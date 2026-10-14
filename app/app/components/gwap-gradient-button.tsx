@@ -1,7 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import type {
+  ButtonHTMLAttributes,
+  MouseEventHandler,
+  ReactNode,
+} from "react";
 
 type GwapGradientVariant = "primary" | "identity" | "warning";
 
@@ -15,6 +19,7 @@ type GwapGradientLinkProps = {
   href: string;
   className?: string;
   variant?: GwapGradientVariant;
+  onClick?: MouseEventHandler<HTMLAnchorElement>;
 };
 
 function classes(variant: GwapGradientVariant, className: string) {
@@ -40,9 +45,10 @@ export function GwapGradientLink({
   href,
   className = "",
   variant = "primary",
+  onClick,
 }: GwapGradientLinkProps) {
   return (
-    <Link href={href} className={classes(variant, className)}>
+    <Link href={href} className={classes(variant, className)} onClick={onClick}>
       <span>{children}</span>
     </Link>
   );
