@@ -23,8 +23,8 @@ export const GWAP_ENTRY_INTENTS = {
     dashboardTitle: "Build something real",
     dashboardDetail:
       "Turn the idea into a structured project, define what matters first, and move toward an executable build plan.",
-    actionHref: "/app/ideas/lab",
-    actionLabel: "Open Idea Lab",
+    actionHref: "/app/ideas/lab/start",
+    actionLabel: "Start my project",
     sourcePath: "/app/ideas/lab",
   },
   validate: {
