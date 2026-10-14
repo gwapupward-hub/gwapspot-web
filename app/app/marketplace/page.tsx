@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { PpvDeliverableAnchor } from "../../components/ppv/ppv-deliverable-anchor";
+import { buildMarketplaceCollaborationPacket } from "../../lib/marketplace-collaboration-packet";
 import "../../components/ppv/ppv.css";
 import { useGwapOs } from "../components/os-provider";
 import type { MarketplaceRole } from "../lib/os-state";
@@ -15,6 +16,8 @@ const roleLabels: Record<MarketplaceRole, string> = {
   operations: "Operations",
 };
 
+type PacketCopyStatus = "idle" | "copied" | "manual" | "error";
+
 function compactWallet(wallet: string) {
   return `${wallet.slice(0, 4)}…${wallet.slice(-4)}`;
 }
@@ -23,18 +26,51 @@ export default function MarketplacePage() {
   const {
     account,
     gnsIdentity,
+    migrationAvailable,
     removeMarketplaceIntent,
     state,
     syncStatus,
     updateMarketplaceIntent,
   } = useGwapOs();
   const [selectedId, setSelectedId] = useState(state.marketplaceIntents[0]?.id ?? "");
+  const [packetCopyStatus, setPacketCopyStatus] = useState<PacketCopyStatus>("idle");
   const selected = useMemo(
     () => state.marketplaceIntents.find((intent) => intent.id === selectedId) ?? state.marketplaceIntents[0] ?? null,
     [selectedId, state.marketplaceIntents],
   );
   const project = selected ? state.ideaProjects.find((item) => item.id === selected.projectId) ?? null : null;
   const owner = gnsIdentity.fullName || compactWallet(account.verifiedWallet);
+  const collaborationPacket = useMemo(
+    () => !migrationAvailable && selected
+      ? buildMarketplaceCollaborationPacket({
+          status: selected.status,
+          projectTitle: project?.title,
+          role: selected.role,
+          brief: selected.brief,
+          budget: selected.budget,
+          timeline: selected.timeline,
+          gnsName: gnsIdentity.status === "found" ? gnsIdentity.name : null,
+        })
+      : null,
+    [gnsIdentity.name, gnsIdentity.status, migrationAvailable, project?.title, selected],
+  );
+
+  async function copyCollaborationPacket() {
+    if (!collaborationPacket) return;
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
+      await navigator.clipboard.writeText(collaborationPacket.text);
+      setPacketCopyStatus("copied");
+    } catch {
+      try {
+        window.prompt("Copy collaboration packet", collaborationPacket.text);
+        setPacketCopyStatus("manual");
+      } catch {
+        setPacketCopyStatus("error");
+      }
+    }
+    window.setTimeout(() => setPacketCopyStatus("idle"), 2200);
+  }
 
   return (
     <div className="os-page os-runtime-page">
@@ -50,7 +86,15 @@ export default function MarketplacePage() {
           {state.marketplaceIntents.length ? state.marketplaceIntents.map((intent) => {
             const intentProject = state.ideaProjects.find((item) => item.id === intent.projectId);
             return (
-              <button key={intent.id} type="button" onClick={() => setSelectedId(intent.id)} aria-pressed={selected?.id === intent.id}>
+              <button
+                key={intent.id}
+                type="button"
+                onClick={() => {
+                  setSelectedId(intent.id);
+                  setPacketCopyStatus("idle");
+                }}
+                aria-pressed={selected?.id === intent.id}
+              >
                 <strong>{roleLabels[intent.role]}</strong><br />
                 <small>{intentProject?.title ?? "Project"} · {intent.status}</small>
               </button>
@@ -96,6 +140,46 @@ export default function MarketplacePage() {
                 </select>
               </label>
               <p><strong>Ready</strong> means the brief is prepared for the future Marketplace adapter; it does not publish anything yet.</p>
+
+              <section className="os-runtime-note" aria-label="Collaboration packet">
+                <span className="os-terminal-label">COLLABORATION PACKET</span>
+                <p>
+                  Explicitly copy the private brief details you choose to share. When a valid .gwap identity exists, the packet attaches only your public GWAP Trust Profile. Nothing is published or matched by this action.
+                </p>
+                {collaborationPacket ? (
+                  <>
+                    <button type="button" onClick={() => void copyCollaborationPacket()}>
+                      {packetCopyStatus === "copied"
+                        ? "Packet copied"
+                        : packetCopyStatus === "manual"
+                          ? "Manual copy opened"
+                          : packetCopyStatus === "error"
+                            ? "Copy failed"
+                            : "Copy collaboration packet"}
+                    </button>
+                    {collaborationPacket.trustProfileUrl ? (
+                      <p>
+                        <a href={collaborationPacket.trustProfileUrl} target="_blank" rel="noreferrer">
+                          Preview attached public Trust Profile ↗
+                        </a>
+                      </p>
+                    ) : (
+                      <p>
+                        No public Trust Profile is attached. <Link href="/app/identity">Set up .gwap identity</Link> if you want public trust context included.
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p>
+                    {migrationAvailable
+                      ? "Resolve workspace authority in the banner above before copying private brief details."
+                      : selected.status !== "Ready"
+                        ? "Mark this brief Ready before creating a collaboration packet."
+                        : "Add a non-empty scope before creating a collaboration packet."}
+                  </p>
+                )}
+              </section>
+
               <PpvDeliverableAnchor
                 sourceProduct="marketplace"
                 sourceObjectId={selected.id}
