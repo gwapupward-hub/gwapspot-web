@@ -27,8 +27,13 @@ test("Marketplace reads canonical Daily Ideas projects through the authenticated
   assert.match(marketplace, /\/\^project_\[a-f0-9\]\{20\}\$\//);
 });
 
-test("account switches clear prior project-picker state before refetch", () => {
-  assert.match(marketplace, /setProjectLoadState\("loading"\);\s*setWorkspaceProjects\(\[\]\);\s*setDraftProjectId\(""\);\s*setDraftRole\(""\);/);
+test("account switches mask prior project-picker state until the new authenticated fetch resolves", () => {
+  assert.match(marketplace, /workspaceOwnerWallet === account\.verifiedWallet/);
+  assert.match(marketplace, /projectPickerCurrent \? workspaceProjects : \[\]/);
+  assert.match(marketplace, /projectPickerCurrent \? projectLoadState : "loading"/);
+  assert.match(marketplace, /const walletAtRequest = account\.verifiedWallet/);
+  assert.match(marketplace, /setWorkspaceOwnerWallet\(walletAtRequest\)/);
+  assert.match(marketplace, /setDraftRole\(""\)/);
   assert.match(marketplace, /\[account\.verifiedWallet, authenticatedFetch\]/);
 });
 
@@ -36,7 +41,7 @@ test("creating a canonical Marketplace brief is an explicit Draft-only action", 
   assert.match(marketplace, /<option value="">Choose capability<\/option>/);
   assert.match(marketplace, /disabled=\{!draftProjectId \|\| !draftRole\}/);
   assert.match(marketplace, /Prepare private Draft/);
-  assert.match(marketplace, /if \(migrationAvailable \|\| !draftProjectId \|\| !draftRole\) return;/);
+  assert.match(marketplace, /if \(migrationAvailable \|\| !projectPickerCurrent \|\| !draftProjectId \|\| !draftRole\) return;/);
   assert.match(provider, /status:"Draft"/);
   assert.match(marketplace, /This action never publishes or matches anything/);
 });
