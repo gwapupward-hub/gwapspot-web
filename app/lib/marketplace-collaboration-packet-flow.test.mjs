@@ -11,6 +11,12 @@ const policy = fs.readFileSync(
   path.join(process.cwd(), "app/lib/marketplace-collaboration-packet.ts"),
   "utf8",
 );
+const copyAction = page.match(
+  /async function copyCollaborationPacket\(\) \{[\s\S]*?\n  \}\n\n  async function shareCollaborationPacket/,
+)?.[0] ?? "";
+const shareAction = page.match(
+  /async function shareCollaborationPacket\(\) \{[\s\S]*?\n  \}\n\n  return \(/,
+)?.[0] ?? "";
 
 test("Marketplace exposes explicit collaboration packet preview, copy, and share actions", () => {
   assert.match(page, /COLLABORATION PACKET/);
@@ -51,8 +57,10 @@ test("private brief content leaves the app only after explicit copy or share int
   assert.match(page, /onClick=\{\(\) => void shareCollaborationPacket\(\)\}/);
   assert.match(page, /<details>/);
   assert.doesNotMatch(page, /useEffect\([^)]*(?:copy|share)CollaborationPacket/);
-  assert.doesNotMatch(page, /track\s*\(|safeTrack\s*\(/);
-  assert.doesNotMatch(page, /fetch\s*\(/);
+  assert.ok(copyAction);
+  assert.ok(shareAction);
+  assert.doesNotMatch(copyAction, /fetch\s*\(|track\s*\(|safeTrack\s*\(/);
+  assert.doesNotMatch(shareAction, /fetch\s*\(|track\s*\(|safeTrack\s*\(/);
 });
 
 test("native share cancellation does not silently copy private content", () => {

@@ -28,6 +28,7 @@ export type TrustHomeOpportunitySummary = {
 type MarketplaceIntentLike = {
   id?: unknown;
   projectId?: unknown;
+  projectTitle?: unknown;
   role?: unknown;
   status?: unknown;
   updatedAt?: unknown;
@@ -67,11 +68,13 @@ function parseIntent(
   const intent = value as MarketplaceIntentLike;
   const id = typeof intent.id === "string" ? intent.id : "";
   const projectId = typeof intent.projectId === "string" ? intent.projectId : "";
+  const projectTitle = typeof intent.projectTitle === "string" ? intent.projectTitle.trim() : "";
   const role = typeof intent.role === "string" ? intent.role : "";
   const status = typeof intent.status === "string" ? intent.status : "";
   const updatedAt = typeof intent.updatedAt === "string" ? intent.updatedAt : "";
 
   if (!SAFE_ID.test(id) || !SAFE_ID.test(projectId)) return null;
+  if (projectTitle.length > 120) return null;
   if (!ROLES.has(role as TrustHomeOpportunityRole)) return null;
   if (!STATUSES.has(status as TrustHomeOpportunityBriefStatus)) return null;
   if (Number.isNaN(Date.parse(updatedAt))) return null;
@@ -80,7 +83,7 @@ function parseIntent(
   return {
     id,
     projectId,
-    projectTitle: projectTitles.get(projectId) || "Project collaboration",
+    projectTitle: projectTitle || projectTitles.get(projectId) || "Project collaboration",
     role: safeRole,
     roleLabel: ROLE_LABELS[safeRole],
     status: status as TrustHomeOpportunityBriefStatus,

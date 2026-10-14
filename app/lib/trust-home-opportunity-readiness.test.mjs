@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { getTrustHomeOpportunityReadiness } from "./trust-home-opportunity-readiness.ts";
 
-function intent(id, projectId, role, status, updatedAt) {
-  return { id, projectId, role, status, updatedAt };
+function intent(id, projectId, role, status, updatedAt, projectTitle = undefined) {
+  return { id, projectId, role, status, updatedAt, projectTitle };
 }
 
 function project(id, title) {
@@ -32,6 +32,16 @@ test("opportunity readiness summarizes only valid private brief state", () => {
   assert.deepEqual(summary.briefs.map((brief) => brief.id), ["brief_b", "brief_c"]);
   assert.equal(summary.briefs[0].projectTitle, "Creator storefront");
   assert.equal(summary.briefs[0].roleLabel, "Designer");
+});
+
+test("canonical project-title snapshots work without duplicating the project into legacy state", () => {
+  const summary = getTrustHomeOpportunityReadiness(
+    [intent("brief_a", "project_0123456789abcdefabcd", "developer", "Draft", "2026-10-13T20:00:00.000Z", "Canonical Idea Lab Project")],
+    [],
+  );
+
+  assert.equal(summary.total, 1);
+  assert.equal(summary.briefs[0].projectTitle, "Canonical Idea Lab Project");
 });
 
 test("brief status never becomes publishing or matching state", () => {
