@@ -63,6 +63,25 @@
   font-size: 10px;
 }
 
+.status > div {
+  display: grid;
+  gap: 10px;
+}
+
+.status button {
+  width: fit-content;
+  min-height: 38px;
+  padding: 0 13px;
+  border: 1px solid rgba(19, 221, 19, 0.25);
+  border-radius: 10px;
+  background: rgba(19, 221, 19, 0.06);
+  color: #13dd13;
+  cursor: pointer;
+  font: inherit;
+  font-size: 9px;
+  font-weight: 900;
+}
+
 .form {
   display: grid;
   gap: 15px;
