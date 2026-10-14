@@ -42,6 +42,16 @@ function completedAction(signal: ActivationSignal): NextBestAction | null {
         mode: "advance",
         nextIntent: "build",
       };
+    case "build_started":
+      return {
+        href: "/app/identity",
+        title: "Give the work an identity people can recognize",
+        detail:
+          "Your project has moved into build. Connect that progress to a durable .gwap identity before reputation and transactions compound around it.",
+        label: "Build identity",
+        mode: "advance",
+        nextIntent: "identity",
+      };
     case "identity_established":
     case "identity_strengthened":
       return {
