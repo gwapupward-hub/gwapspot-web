@@ -22,6 +22,15 @@ function compactWallet(wallet: string) {
   return `${wallet.slice(0, 4)}…${wallet.slice(-4)}`;
 }
 
+function isShareCancellation(error: unknown) {
+  return Boolean(
+    error &&
+      typeof error === "object" &&
+      "name" in error &&
+      (error as { name?: unknown }).name === "AbortError",
+  );
+}
+
 export default function MarketplacePage() {
   const {
     account,
@@ -91,7 +100,7 @@ export default function MarketplacePage() {
       setPacketActionStatus("shared");
       resetPacketActionStatus();
     } catch (error) {
-      if (error instanceof Error && error.name === "AbortError") {
+      if (isShareCancellation(error)) {
         setPacketActionStatus("idle");
         return;
       }
