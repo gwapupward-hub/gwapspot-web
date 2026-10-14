@@ -26,6 +26,7 @@ export default function MarketplacePage() {
   const {
     account,
     gnsIdentity,
+    migrationAvailable,
     removeMarketplaceIntent,
     state,
     syncStatus,
@@ -40,7 +41,7 @@ export default function MarketplacePage() {
   const project = selected ? state.ideaProjects.find((item) => item.id === selected.projectId) ?? null : null;
   const owner = gnsIdentity.fullName || compactWallet(account.verifiedWallet);
   const collaborationPacket = useMemo(
-    () => selected
+    () => !migrationAvailable && selected
       ? buildMarketplaceCollaborationPacket({
           status: selected.status,
           projectTitle: project?.title,
@@ -48,10 +49,10 @@ export default function MarketplacePage() {
           brief: selected.brief,
           budget: selected.budget,
           timeline: selected.timeline,
-          gnsName: gnsIdentity.name,
+          gnsName: gnsIdentity.status === "found" ? gnsIdentity.name : null,
         })
       : null,
-    [gnsIdentity.name, project?.title, selected],
+    [gnsIdentity.name, gnsIdentity.status, migrationAvailable, project?.title, selected],
   );
 
   async function copyCollaborationPacket() {
@@ -170,9 +171,11 @@ export default function MarketplacePage() {
                   </>
                 ) : (
                   <p>
-                    {selected.status !== "Ready"
-                      ? "Mark this brief Ready before creating a collaboration packet."
-                      : "Add a non-empty scope before creating a collaboration packet."}
+                    {migrationAvailable
+                      ? "Resolve workspace authority in the banner above before copying private brief details."
+                      : selected.status !== "Ready"
+                        ? "Mark this brief Ready before creating a collaboration packet."
+                        : "Add a non-empty scope before creating a collaboration packet."}
                   </p>
                 )}
               </section>
