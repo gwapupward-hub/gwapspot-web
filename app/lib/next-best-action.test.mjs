@@ -91,14 +91,19 @@ test("existing progress resumes rather than creating duplicate work", () => {
   assert.equal(verification.href, "/app/score");
 });
 
-test("a new selected goal outranks a stale resume signal from another intent", () => {
-  const action = getNextBestAction({
-    ...base,
-    entryIntent: "transaction",
-    signal: signal("resumed", "build", "existing_project"),
-  });
-  assert.equal(action.mode, "intent");
-  assert.equal(action.href, "/app/ppv");
+test("a new selected goal outranks stale signals from another intent", () => {
+  for (const staleSignal of [
+    signal("resumed", "build", "existing_project"),
+    signal("completed", "build", "project_created"),
+  ]) {
+    const action = getNextBestAction({
+      ...base,
+      entryIntent: "transaction",
+      signal: staleSignal,
+    });
+    assert.equal(action.mode, "intent");
+    assert.equal(action.href, "/app/ppv");
+  }
 });
 
 test("identity intent remains state-aware before completion", () => {
