@@ -179,6 +179,9 @@ export function isActivationStartPath(intent: GwapEntryIntent, pathname: string)
   if (intent === "build") {
     return pathname === "/app/ideas/lab/start" || pathname === "/app/ideas/lab";
   }
+  if (intent === "validate") {
+    return pathname === "/app/ideas" || pathname === "/app/ideas/lab";
+  }
   if (intent === "identity") {
     return pathname === "/app/identity" || pathname === "/app/profile";
   }
