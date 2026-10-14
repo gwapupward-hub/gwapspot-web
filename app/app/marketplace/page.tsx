@@ -72,6 +72,9 @@ export default function MarketplacePage() {
   const projectPickerCurrent = workspaceOwnerWallet === account.verifiedWallet;
   const visibleWorkspaceProjects = projectPickerCurrent ? workspaceProjects : [];
   const visibleProjectLoadState: ProjectLoadState = projectPickerCurrent ? projectLoadState : "loading";
+  const existingBriefForSelection = draftProjectId && draftRole
+    ? state.marketplaceIntents.find((intent) => intent.projectId === draftProjectId && intent.role === draftRole) ?? null
+    : null;
   const collaborationPacket = useMemo(
     () => !migrationAvailable && selected
       ? buildMarketplaceCollaborationPacket({
@@ -239,8 +242,14 @@ export default function MarketplacePage() {
                   {Object.entries(roleLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                 </select>
               </label>
-              <button type="button" disabled={!draftProjectId || !draftRole} onClick={preparePrivateDraft}>Prepare private Draft</button>
-              <small>Uses the canonical Daily Ideas project as context. This action never publishes or matches anything.</small>
+              <button type="button" disabled={!draftProjectId || !draftRole} onClick={preparePrivateDraft}>
+                {existingBriefForSelection ? "Open existing brief" : "Prepare private Draft"}
+              </button>
+              <small>
+                {existingBriefForSelection
+                  ? `Existing ${existingBriefForSelection.status} brief will reopen unchanged. Review it before any disclosure.`
+                  : "Uses the canonical Daily Ideas project as context. This action never publishes or matches anything."}
+              </small>
             </>
           ) : (
             <p>No active Daily Ideas project is available yet. <Link href="/app/ideas/lab/start">Start a project</Link>.</p>
