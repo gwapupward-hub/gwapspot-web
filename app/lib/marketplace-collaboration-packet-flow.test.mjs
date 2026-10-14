@@ -45,8 +45,9 @@ test("private brief content leaves the app only after explicit user interaction"
 });
 
 test("native share cancellation does not silently copy private content", () => {
-  assert.match(page, /error instanceof Error && error\.name === "AbortError"/);
-  assert.match(page, /setPacketActionStatus\("idle"\);\s*return;/);
+  assert.match(page, /function isShareCancellation\(error: unknown\)/);
+  assert.match(page, /\(error as \{ name\?: unknown \}\)\.name === "AbortError"/);
+  assert.match(page, /if \(isShareCancellation\(error\)\) \{\s*setPacketActionStatus\("idle"\);\s*return;/);
 });
 
 test("unsupported native sharing falls back to the existing copy path", () => {
