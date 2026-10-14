@@ -29,6 +29,7 @@ test("copying a packet never becomes Marketplace publishing or matching", () => 
 test("the packet attaches only canonical public trust context", () => {
   assert.match(policy, /https:\/\/www\.gwapspot\.com/);
   assert.match(policy, /\/profile\//);
+  assert.match(page, /gnsIdentity\.status === "found"/);
   assert.match(page, /Preview attached public Trust Profile/);
   assert.doesNotMatch(policy, /wallet|score|email|signature/i);
 });
@@ -38,6 +39,12 @@ test("private brief content is copied only after explicit user interaction", () 
   assert.doesNotMatch(page, /useEffect\([^)]*copyCollaborationPacket/);
   assert.doesNotMatch(page, /track\s*\(|safeTrack\s*\(/);
   assert.doesNotMatch(page, /fetch\s*\(/);
+});
+
+test("unresolved workspace migration fails closed before private copy", () => {
+  assert.match(page, /migrationAvailable/);
+  assert.match(page, /!migrationAvailable && selected/);
+  assert.match(page, /Resolve workspace authority in the banner above before copying private brief details/);
 });
 
 test("Draft and empty-scope states remain visibly gated", () => {
