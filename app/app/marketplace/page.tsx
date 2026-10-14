@@ -58,6 +58,7 @@ export default function MarketplacePage() {
   const [selectedId, setSelectedId] = useState(state.marketplaceIntents[0]?.id ?? "");
   const [packetActionStatus, setPacketActionStatus] = useState<PacketActionStatus>("idle");
   const [workspaceProjects, setWorkspaceProjects] = useState<SharedProject[]>([]);
+  const [workspaceOwnerWallet, setWorkspaceOwnerWallet] = useState("");
   const [projectLoadState, setProjectLoadState] = useState<ProjectLoadState>("loading");
   const [draftProjectId, setDraftProjectId] = useState("");
   const [draftRole, setDraftRole] = useState<MarketplaceRole | "">("");
@@ -68,6 +69,9 @@ export default function MarketplacePage() {
   const project = selected ? state.ideaProjects.find((item) => item.id === selected.projectId) ?? null : null;
   const selectedProjectTitle = selected?.projectTitle || project?.title || "Project collaboration";
   const owner = gnsIdentity.fullName || compactWallet(account.verifiedWallet);
+  const projectPickerCurrent = workspaceOwnerWallet === account.verifiedWallet;
+  const visibleWorkspaceProjects = projectPickerCurrent ? workspaceProjects : [];
+  const visibleProjectLoadState: ProjectLoadState = projectPickerCurrent ? projectLoadState : "loading";
   const collaborationPacket = useMemo(
     () => !migrationAvailable && selected
       ? buildMarketplaceCollaborationPacket({
@@ -92,10 +96,7 @@ export default function MarketplacePage() {
 
   useEffect(() => {
     let cancelled = false;
-    setProjectLoadState("loading");
-    setWorkspaceProjects([]);
-    setDraftProjectId("");
-    setDraftRole("");
+    const walletAtRequest = account.verifiedWallet;
     void (async () => {
       try {
         const response = await authenticatedFetch("/api/daily-ideas/workspace", { cache: "no-store" });
@@ -105,11 +106,19 @@ export default function MarketplacePage() {
         const projects = Array.isArray(payload.projects?.items)
           ? payload.projects.items.filter((item) => item && item.status !== "archived" && /^project_[a-f0-9]{20}$/.test(item.id) && item.title.trim().length > 0)
           : [];
+        setWorkspaceOwnerWallet(walletAtRequest);
         setWorkspaceProjects(projects);
         setDraftProjectId(projects[0]?.id ?? "");
+        setDraftRole("");
         setProjectLoadState("ready");
       } catch {
-        if (!cancelled) setProjectLoadState("error");
+        if (!cancelled) {
+          setWorkspaceOwnerWallet(walletAtRequest);
+          setWorkspaceProjects([]);
+          setDraftProjectId("");
+          setDraftRole("");
+          setProjectLoadState("error");
+        }
       }
     })();
     return () => {
@@ -122,8 +131,8 @@ export default function MarketplacePage() {
   }
 
   function preparePrivateDraft() {
-    if (migrationAvailable || !draftProjectId || !draftRole) return;
-    const source = workspaceProjects.find((item) => item.id === draftProjectId);
+    if (migrationAvailable || !projectPickerCurrent || !draftProjectId || !draftRole) return;
+    const source = visibleWorkspaceProjects.find((item) => item.id === draftProjectId);
     if (!source) return;
     const intentId = createMarketplaceIntentFromProject({
       id: source.id,
@@ -211,16 +220,16 @@ export default function MarketplacePage() {
           <div className="os-console-chrome"><span>new.private.brief</span><span>DRAFT ONLY</span></div>
           {migrationAvailable ? (
             <p>Resolve workspace authority in the banner above before creating a new private Marketplace draft.</p>
-          ) : projectLoadState === "loading" ? (
+          ) : visibleProjectLoadState === "loading" ? (
             <p>Loading canonical Daily Ideas projects…</p>
-          ) : projectLoadState === "error" ? (
+          ) : visibleProjectLoadState === "error" ? (
             <p>Daily Ideas projects are temporarily unavailable. Existing Marketplace briefs remain available.</p>
-          ) : workspaceProjects.length ? (
+          ) : visibleWorkspaceProjects.length ? (
             <>
               <label>
                 Project
                 <select value={draftProjectId} onChange={(event) => setDraftProjectId(event.target.value)}>
-                  {workspaceProjects.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
+                  {visibleWorkspaceProjects.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
                 </select>
               </label>
               <label>
