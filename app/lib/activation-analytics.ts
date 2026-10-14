@@ -30,6 +30,7 @@ export type ActivationMilestone =
   | "existing_verified_activity"
   | "project_created"
   | "validation_started"
+  | "build_started"
   | "identity_established"
   | "identity_strengthened"
   | "reputation_scored"
@@ -44,7 +45,7 @@ export type ActivationSignal = {
 };
 
 const ACTIVATION_MILESTONES_BY_INTENT = {
-  build: ["existing_project", "project_created"],
+  build: ["existing_project", "project_created", "build_started"],
   validate: ["existing_validation_project", "validation_started"],
   identity: ["existing_identity", "identity_established", "identity_strengthened"],
   reputation: [
