@@ -9,6 +9,16 @@ import {
 test("every audience entry path resolves to its canonical intent", () => {
   for (const [intent, config] of Object.entries(GWAP_ENTRY_INTENTS)) {
     assert.equal(getGwapEntryIntentForPath(config.sourcePath), intent);
+  }
+});
+
+test("build entry preserves the public source while starting in first-project flow", () => {
+  assert.equal(GWAP_ENTRY_INTENTS.build.sourcePath, "/app/ideas/lab");
+  assert.equal(GWAP_ENTRY_INTENTS.build.actionHref, "/app/ideas/lab/start");
+  assert.equal(GWAP_ENTRY_INTENTS.build.actionLabel, "Start my project");
+
+  for (const intent of ["validate", "identity", "reputation", "transaction"]) {
+    const config = GWAP_ENTRY_INTENTS[intent];
     assert.equal(config.actionHref, config.sourcePath);
   }
 });
