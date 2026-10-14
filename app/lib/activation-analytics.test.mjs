@@ -77,6 +77,7 @@ test("activation begins only on canonical intent surfaces", () => {
   assert.equal(isActivationStartPath("build", "/app/ideas/lab"), true);
   assert.equal(isActivationStartPath("build", "/app"), false);
   assert.equal(isActivationStartPath("validate", "/app/ideas"), true);
+  assert.equal(isActivationStartPath("validate", "/app/ideas/lab"), true);
   assert.equal(isActivationStartPath("identity", "/app/identity"), true);
   assert.equal(isActivationStartPath("identity", "/app/profile"), true);
   assert.equal(isActivationStartPath("reputation", "/app/score"), true);
