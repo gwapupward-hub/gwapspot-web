@@ -9,6 +9,7 @@ export type NextBestAction = {
   detail: string;
   label: string;
   mode: NextBestActionMode;
+  nextIntent?: GwapEntryIntent;
 };
 
 type NextBestActionInput = {
@@ -29,6 +30,7 @@ function completedAction(signal: ActivationSignal): NextBestAction | null {
           "Your project exists. Pressure-test the problem, target customer, and assumptions before committing deeper build time.",
         label: "Start validation",
         mode: "advance",
+        nextIntent: "validate",
       };
     case "validation_started":
       return {
@@ -38,6 +40,7 @@ function completedAction(signal: ActivationSignal): NextBestAction | null {
           "You have moved into validation. Use the evidence you collect to decide what deserves to be built next.",
         label: "Continue to build",
         mode: "advance",
+        nextIntent: "build",
       };
     case "identity_established":
     case "identity_strengthened":
@@ -48,6 +51,7 @@ function completedAction(signal: ActivationSignal): NextBestAction | null {
           "Your identity foundation is in place. Add verifiable reputation signals so people can evaluate more than a profile.",
         label: "Review GwapScore",
         mode: "advance",
+        nextIntent: "reputation",
       };
     case "reputation_scored":
     case "proof_of_control_verified":
@@ -58,6 +62,7 @@ function completedAction(signal: ActivationSignal): NextBestAction | null {
           "Your reputation layer has meaningful signal. Use Private Proof Vault when agreements, proofs, or economic activity begin.",
         label: "Open Private Proof Vault",
         mode: "advance",
+        nextIntent: "transaction",
       };
     case "verified_transaction_activity":
       return {
