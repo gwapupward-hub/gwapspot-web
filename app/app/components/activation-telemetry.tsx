@@ -6,15 +6,21 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   activationElapsedBucket,
   activationSurface,
+  chooseActivationProgress,
   createActivationProgress,
   GWAP_ACTIVATION_COOKIE_KEY,
+  GWAP_ACTIVATION_SELECTED_EVENT,
+  GWAP_ACTIVATION_SIGNAL_COOKIE_KEY,
   GWAP_ACTIVATION_STORAGE_KEY,
   isActivationStartPath,
   isAfterSelection,
   parseActivationProgress,
   parseActivationSelection,
+  serializeActivationSignal,
+  type ActivationMilestone,
   type ActivationProgress,
 } from "../../lib/activation-analytics";
+import { GWAP_ENTRY_INTENT_COOKIE_KEY } from "../../lib/entry-intent";
 import { useGwapOs } from "./os-provider";
 
 const POLL_INTERVAL_MS = 10_000;
@@ -57,12 +63,31 @@ function readCookie(name: string) {
   }
 }
 
-function expireActivationCookie() {
+function cookieScope() {
   const host = window.location.hostname.toLowerCase();
   const sharedDomain = host === "gwapspot.com" || host.endsWith(".gwapspot.com");
   const domain = sharedDomain ? "; Domain=.gwapspot.com" : "";
   const secure = window.location.protocol === "https:" ? "; Secure" : "";
-  document.cookie = `${GWAP_ACTIVATION_COOKIE_KEY}=; Path=/; Max-Age=0; SameSite=Lax${domain}${secure}`;
+  return `${domain}${secure}`;
+}
+
+function expireCookie(name: string) {
+  document.cookie = `${name}=; Path=/; Max-Age=0; SameSite=Lax${cookieScope()}`;
+}
+
+function writeActivationSignal(
+  kind: "resumed" | "completed",
+  progress: ActivationProgress,
+  milestone: ActivationMilestone,
+  occurredAt: string,
+) {
+  const value = serializeActivationSignal({
+    kind,
+    intent: progress.intent,
+    milestone,
+    occurredAt,
+  });
+  document.cookie = `${GWAP_ACTIVATION_SIGNAL_COOKIE_KEY}=${encodeURIComponent(value)}; Path=/; Max-Age=2592000; SameSite=Lax${cookieScope()}`;
 }
 
 export function ActivationTelemetry() {
@@ -78,7 +103,7 @@ export function ActivationTelemetry() {
     try {
       window.localStorage.setItem(GWAP_ACTIVATION_STORAGE_KEY, JSON.stringify(next));
     } catch {
-      // Analytics state is optional and must never block product use.
+      // Activation state is optional and must never block product use.
     }
   }, []);
 
@@ -93,11 +118,13 @@ export function ActivationTelemetry() {
   );
 
   const markResumed = useCallback(
-    (milestone: string) => {
+    (milestone: ActivationMilestone) => {
       const current = progressRef.current;
       if (!current || !current.startedAt || current.resumedAt || current.completedAt) return;
       const now = new Date().toISOString();
-      persist({ ...current, resumedAt: now });
+      const next = { ...current, resumedAt: now };
+      persist(next);
+      writeActivationSignal("resumed", next, milestone, now);
       safeTrack("activation_resumed", {
         intent: current.intent,
         milestone,
@@ -108,12 +135,15 @@ export function ActivationTelemetry() {
   );
 
   const markCompleted = useCallback(
-    (milestone: string) => {
+    (milestone: ActivationMilestone) => {
       const current = progressRef.current;
       if (!current || !current.startedAt || current.completedAt) return;
       const now = new Date().toISOString();
-      persist({ ...current, completedAt: now });
-      expireActivationCookie();
+      const next = { ...current, completedAt: now };
+      persist(next);
+      writeActivationSignal("completed", next, milestone, now);
+      expireCookie(GWAP_ACTIVATION_COOKIE_KEY);
+      expireCookie(GWAP_ENTRY_INTENT_COOKIE_KEY);
       safeTrack("activation_completed", {
         completion_kind: "new_milestone",
         elapsed_bucket: activationElapsedBucket(current.selectedAt, now),
@@ -126,25 +156,32 @@ export function ActivationTelemetry() {
   );
 
   useEffect(() => {
-    let next: ActivationProgress | null = null;
+    let stored: ActivationProgress | null = null;
     try {
       const raw = window.localStorage.getItem(GWAP_ACTIVATION_STORAGE_KEY);
-      if (raw) next = parseActivationProgress(JSON.parse(raw) as unknown);
+      if (raw) stored = parseActivationProgress(JSON.parse(raw) as unknown);
     } catch {
-      next = null;
+      stored = null;
     }
 
-    if (!next) {
-      const selection = parseActivationSelection(readCookie(GWAP_ACTIVATION_COOKIE_KEY));
-      if (selection) {
-        next = createActivationProgress(selection.intent, selection.selectedAt);
-      }
-    }
-
+    const selection = parseActivationSelection(readCookie(GWAP_ACTIVATION_COOKIE_KEY));
+    const next = chooseActivationProgress(stored, selection);
     if (!next) return;
-    const initialProgress = next;
-    const timer = window.setTimeout(() => persist(initialProgress), 0);
+
+    const timer = window.setTimeout(() => persist(next), 0);
     return () => window.clearTimeout(timer);
+  }, [persist]);
+
+  useEffect(() => {
+    const onSelected = (event: Event) => {
+      if (!(event instanceof CustomEvent) || typeof event.detail !== "string") return;
+      const selection = parseActivationSelection(event.detail);
+      if (!selection) return;
+      persist(createActivationProgress(selection.intent, selection.selectedAt));
+    };
+
+    window.addEventListener(GWAP_ACTIVATION_SELECTED_EVENT, onSelected);
+    return () => window.removeEventListener(GWAP_ACTIVATION_SELECTED_EVENT, onSelected);
   }, [persist]);
 
   useEffect(() => {
@@ -273,6 +310,17 @@ export function ActivationTelemetry() {
           const projects = payload.projects?.items ?? [];
 
           if (current.intent === "build") {
+            const buildingProjects = projects.filter((project) =>
+              ["building", "launched"].includes(project.status),
+            );
+            if (
+              buildingProjects.some((project) =>
+                isAfterSelection(project.updatedAt, current.selectedAt),
+              )
+            ) {
+              markCompleted("build_started");
+              return;
+            }
             if (
               projects.some((project) =>
                 isAfterSelection(project.createdAt, current.selectedAt),
@@ -351,7 +399,7 @@ export function ActivationTelemetry() {
           if (items.length) markResumed("existing_verified_activity");
         }
       } catch {
-        // Analytics checks fail closed and never interfere with the product.
+        // Activation checks fail closed and never interfere with the product.
       }
     };
 

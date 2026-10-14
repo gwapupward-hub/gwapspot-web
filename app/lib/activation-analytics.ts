@@ -6,6 +6,8 @@ import {
 
 export const GWAP_ACTIVATION_STORAGE_KEY = "gwap-activation-progress-v1";
 export const GWAP_ACTIVATION_COOKIE_KEY = "gwap_activation_selection";
+export const GWAP_ACTIVATION_SIGNAL_COOKIE_KEY = "gwap_activation_signal";
+export const GWAP_ACTIVATION_SELECTED_EVENT = "gwap:activation-selected";
 
 export type ActivationProgress = {
   intent: GwapEntryIntent;
@@ -17,6 +19,51 @@ export type ActivationProgress = {
   baselineReputationScored: boolean | null;
   baselineReputationScore: number | null;
 };
+
+export type ActivationSignalKind = "resumed" | "completed";
+export type ActivationMilestone =
+  | "existing_project"
+  | "existing_validation_project"
+  | "existing_identity"
+  | "existing_reputation"
+  | "existing_social_verification"
+  | "existing_verified_activity"
+  | "project_created"
+  | "validation_started"
+  | "build_started"
+  | "identity_established"
+  | "identity_strengthened"
+  | "reputation_scored"
+  | "proof_of_control_verified"
+  | "verified_transaction_activity";
+
+export type ActivationSignal = {
+  kind: ActivationSignalKind;
+  intent: GwapEntryIntent;
+  milestone: ActivationMilestone;
+  occurredAt: string;
+};
+
+const ACTIVATION_MILESTONES_BY_INTENT = {
+  build: ["existing_project", "project_created", "build_started"],
+  validate: ["existing_validation_project", "validation_started"],
+  identity: ["existing_identity", "identity_established", "identity_strengthened"],
+  reputation: [
+    "existing_reputation",
+    "existing_social_verification",
+    "reputation_scored",
+    "proof_of_control_verified",
+  ],
+  transaction: ["existing_verified_activity", "verified_transaction_activity"],
+} as const satisfies Record<GwapEntryIntent, readonly ActivationMilestone[]>;
+
+function isoFromTimestamp(value: unknown) {
+  const timestamp = Number(value);
+  if (!Number.isSafeInteger(timestamp) || timestamp <= 0) return null;
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toISOString();
+}
 
 export function createActivationProgress(
   intent: GwapEntryIntent,
@@ -69,7 +116,9 @@ export function parseActivationProgress(value: unknown): ActivationProgress | nu
   };
 }
 
-export function serializeActivationSelection(progress: Pick<ActivationProgress, "intent" | "selectedAt">) {
+export function serializeActivationSelection(
+  progress: Pick<ActivationProgress, "intent" | "selectedAt">,
+) {
   return `${progress.intent}.${Date.parse(progress.selectedAt)}`;
 }
 
@@ -78,10 +127,52 @@ export function parseActivationSelection(value: string | null | undefined) {
   const [intentValue, timestampValue, ...rest] = value.split(".");
   const intent = intentValue || null;
   if (rest.length || !isGwapEntryIntent(intent)) return null;
-  const timestamp = Number(timestampValue);
-  if (!Number.isSafeInteger(timestamp) || timestamp <= 0) return null;
-  const selectedAt = new Date(timestamp).toISOString();
+  const selectedAt = isoFromTimestamp(timestampValue);
+  if (!selectedAt) return null;
   return { intent, selectedAt } as const;
+}
+
+export function chooseActivationProgress(
+  stored: ActivationProgress | null,
+  selection: ReturnType<typeof parseActivationSelection>,
+) {
+  if (!selection) return stored;
+  if (!stored) return createActivationProgress(selection.intent, selection.selectedAt);
+
+  const selectedAt = Date.parse(selection.selectedAt);
+  const storedAt = Date.parse(stored.selectedAt);
+  if (selection.intent !== stored.intent || selectedAt > storedAt) {
+    return createActivationProgress(selection.intent, selection.selectedAt);
+  }
+  return stored;
+}
+
+export function serializeActivationSignal(signal: ActivationSignal) {
+  return [
+    signal.kind,
+    signal.intent,
+    signal.milestone,
+    Date.parse(signal.occurredAt),
+  ].join(".");
+}
+
+export function parseActivationSignal(value: string | null | undefined): ActivationSignal | null {
+  if (!value) return null;
+  const [kindValue, intentValue, milestoneValue, timestampValue, ...rest] = value.split(".");
+  if (rest.length) return null;
+  if (kindValue !== "resumed" && kindValue !== "completed") return null;
+  if (!isGwapEntryIntent(intentValue || null)) return null;
+  const intent = intentValue as GwapEntryIntent;
+  const milestones = ACTIVATION_MILESTONES_BY_INTENT[intent] as readonly string[];
+  if (!milestoneValue || !milestones.includes(milestoneValue)) return null;
+  const occurredAt = isoFromTimestamp(timestampValue);
+  if (!occurredAt) return null;
+  return {
+    kind: kindValue,
+    intent,
+    milestone: milestoneValue as ActivationMilestone,
+    occurredAt,
+  };
 }
 
 export function isActivationStartPath(intent: GwapEntryIntent, pathname: string) {
