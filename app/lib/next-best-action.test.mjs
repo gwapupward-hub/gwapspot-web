@@ -32,30 +32,44 @@ test("completed milestones advance instead of repeating the completed step", () 
         "Your project exists. Pressure-test the problem, target customer, and assumptions before committing deeper build time.",
       label: "Start validation",
       mode: "advance",
+      nextIntent: "validate",
     },
   );
 
-  assert.equal(
-    getNextBestAction({
-      ...base,
-      signal: signal("completed", "identity", "identity_strengthened"),
-    }).href,
-    "/app/score",
-  );
-  assert.equal(
-    getNextBestAction({
-      ...base,
-      signal: signal("completed", "reputation", "proof_of_control_verified"),
-    }).href,
-    "/app/ppv",
-  );
-  assert.equal(
-    getNextBestAction({
-      ...base,
-      signal: signal("completed", "transaction", "verified_transaction_activity"),
-    }).href,
-    "/#overview",
-  );
+  const validation = getNextBestAction({
+    ...base,
+    signal: signal("completed", "validate", "validation_started"),
+  });
+  assert.equal(validation.nextIntent, "build");
+  assert.equal(validation.href, "/app/ideas/lab");
+
+  const building = getNextBestAction({
+    ...base,
+    signal: signal("completed", "build", "build_started"),
+  });
+  assert.equal(building.nextIntent, "identity");
+  assert.equal(building.href, "/app/identity");
+
+  const identity = getNextBestAction({
+    ...base,
+    signal: signal("completed", "identity", "identity_strengthened"),
+  });
+  assert.equal(identity.href, "/app/score");
+  assert.equal(identity.nextIntent, "reputation");
+
+  const reputation = getNextBestAction({
+    ...base,
+    signal: signal("completed", "reputation", "proof_of_control_verified"),
+  });
+  assert.equal(reputation.href, "/app/ppv");
+  assert.equal(reputation.nextIntent, "transaction");
+
+  const transaction = getNextBestAction({
+    ...base,
+    signal: signal("completed", "transaction", "verified_transaction_activity"),
+  });
+  assert.equal(transaction.href, "/#overview");
+  assert.equal(transaction.nextIntent, undefined);
 });
 
 test("existing progress resumes rather than creating duplicate work", () => {
