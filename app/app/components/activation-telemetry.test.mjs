@@ -11,6 +11,10 @@ const telemetry = fs.readFileSync(
   path.join(process.cwd(), "app/app/components/activation-telemetry.tsx"),
   "utf8",
 );
+const dashboard = fs.readFileSync(
+  path.join(process.cwd(), "app/app/components/dashboard-view.tsx"),
+  "utf8",
+);
 const layout = fs.readFileSync(
   path.join(process.cwd(), "app/app/layout.tsx"),
   "utf8",
@@ -49,6 +53,7 @@ test("completion milestones represent real product outcomes", () => {
   for (const milestone of [
     "project_created",
     "validation_started",
+    "build_started",
     "identity_established",
     "identity_strengthened",
     "reputation_scored",
@@ -60,4 +65,11 @@ test("completion milestones represent real product outcomes", () => {
   assert.match(telemetry, /\/api\/daily-ideas\/workspace/);
   assert.match(telemetry, /\/api\/gwapscore\/social-verification/);
   assert.match(telemetry, /\/api\/ppv\/activity/);
+});
+
+test("completion-aware advances reseed telemetry in the same browser session", () => {
+  assert.match(dashboard, /GWAP_ACTIVATION_SELECTED_EVENT/);
+  assert.match(dashboard, /new CustomEvent\(GWAP_ACTIVATION_SELECTED_EVENT/);
+  assert.match(telemetry, /addEventListener\(GWAP_ACTIVATION_SELECTED_EVENT/);
+  assert.match(telemetry, /createActivationProgress\(selection\.intent, selection\.selectedAt\)/);
 });
