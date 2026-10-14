@@ -180,10 +180,22 @@ export default function MarketplacePage() {
               <section className="os-runtime-note" aria-label="Collaboration packet">
                 <span className="os-terminal-label">COLLABORATION PACKET</span>
                 <p>
-                  Explicitly copy or share the private brief details you choose to send. When a valid .gwap identity exists, the packet attaches only your public GWAP Trust Profile. Nothing is published or matched by either action.
+                  Preview the exact bounded packet before you copy or share private brief details. When a valid .gwap identity exists, the packet attaches only your public GWAP Trust Profile. Nothing is published or matched by these actions.
                 </p>
                 {collaborationPacket ? (
                   <>
+                    <details>
+                      <summary>Preview exact packet text</summary>
+                      <p>
+                        This is the exact text Copy and Share use. Opening this preview does not publish or transmit anything.
+                      </p>
+                      <textarea
+                        aria-label="Collaboration packet preview"
+                        value={collaborationPacket.text}
+                        readOnly
+                        rows={12}
+                      />
+                    </details>
                     <div>
                       <button type="button" onClick={() => void copyCollaborationPacket()}>
                         {packetActionStatus === "copied"
@@ -215,7 +227,7 @@ export default function MarketplacePage() {
                 ) : (
                   <p>
                     {migrationAvailable
-                      ? "Resolve workspace authority in the banner above before copying or sharing private brief details."
+                      ? "Resolve workspace authority in the banner above before previewing, copying, or sharing private brief details."
                       : selected.status !== "Ready"
                         ? "Mark this brief Ready before creating a collaboration packet."
                         : "Add a non-empty scope before creating a collaboration packet."}
