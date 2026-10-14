@@ -282,7 +282,7 @@ export function DashboardView({
               </div>
               <Link href="/app/ideas/lab">Open Idea Lab →</Link>
             </div>
-            <TrustHomeActiveWork key={account.id} />
+            <TrustHomeActiveWork key={account.verifiedWallet} />
           </section>
 
           <section className="gwapos-section" aria-labelledby="quick-paths-title">
