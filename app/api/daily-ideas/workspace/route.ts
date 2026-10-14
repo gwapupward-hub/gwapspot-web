@@ -116,8 +116,10 @@ export async function POST(request: Request) {
       const result = await startCustomDailyIdeaProject(subject, {
         title: body.title,
         problemDefinition: body.problemDefinition,
+        targetCustomer: body.targetCustomer,
+        validationPlan: body.validationPlan,
       });
-      if (!result.ok) return NextResponse.json({ error: "Project name and problem are required" }, { status: 400 });
+      if (!result.ok) return NextResponse.json({ error: "Project details are invalid" }, { status: 400 });
       auditAuthEvent("daily-ideas.project-create", identity.userId, "success");
       return NextResponse.json({ created: true, project: result.project }, { status: 201 });
     }
