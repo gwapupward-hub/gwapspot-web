@@ -1,6 +1,5 @@
 import { cookies } from "next/headers";
 import { DashboardView } from "./components/dashboard-view";
-import { ecosystemProducts } from "../lib/ecosystem";
 import {
   GWAP_ACTIVATION_SIGNAL_COOKIE_KEY,
   parseActivationSignal,
@@ -19,7 +18,6 @@ export default async function GwapOsPage() {
 
   return (
     <DashboardView
-      products={ecosystemProducts}
       initialIntent={initialIntent}
       initialSignal={initialSignal}
     />
