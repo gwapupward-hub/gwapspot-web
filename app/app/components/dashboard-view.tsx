@@ -4,11 +4,13 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { GwapMojisPromo } from "../../components/gwapmojis-promo";
 import { PpvVerifiedActivity } from "../../components/ppv/ppv-verified-activity";
+import type { ActivationSignal } from "../../lib/activation-analytics";
 import {
   GWAP_ENTRY_INTENTS,
   type GwapEntryIntent,
 } from "../../lib/entry-intent";
 import type { EcosystemProduct } from "../../lib/ecosystem";
+import { getNextBestAction } from "../../lib/next-best-action";
 import { getProfileCompletion } from "../lib/os-state";
 import { GwapGradientLink } from "./gwap-gradient-button";
 import { useGwapOs } from "./os-provider";
@@ -25,9 +27,11 @@ type TrustFoundationItem = {
 export function DashboardView({
   products,
   initialIntent,
+  initialSignal,
 }: {
   products: EcosystemProduct[];
   initialIntent: GwapEntryIntent | null;
+  initialSignal: ActivationSignal | null;
 }) {
   const { account, gnsIdentity, state, syncStatus } = useGwapOs();
   const entryIntent = initialIntent;
@@ -40,76 +44,32 @@ export function DashboardView({
     "GWAP member";
   const intentConfig = entryIntent ? GWAP_ENTRY_INTENTS[entryIntent] : null;
 
-  const nextAction = useMemo(() => {
-    if (entryIntent) {
-      const config = GWAP_ENTRY_INTENTS[entryIntent];
+  const nextAction = useMemo(
+    () =>
+      getNextBestAction({
+        entryIntent,
+        signal: initialSignal,
+        identityStatus: gnsIdentity.status,
+        profileCompletion,
+        scoreStatus: gnsIdentity.scoreStatus,
+      }),
+    [
+      entryIntent,
+      gnsIdentity.scoreStatus,
+      gnsIdentity.status,
+      initialSignal,
+      profileCompletion,
+    ],
+  );
 
-      if (entryIntent === "identity" && gnsIdentity.status === "found") {
-        if (profileCompletion < 67) {
-          return {
-            href: "/app/profile",
-            title: "Strengthen your digital identity",
-            detail:
-              "Your .gwap identity is active. Add the profile context that helps people understand who they are dealing with.",
-            label: "Complete profile",
-          };
-        }
-
-        return {
-          href: "/app/identity",
-          title: "Your identity foundation is active",
-          detail:
-            "Review the identity and account connections that carry your credibility across GWAP.",
-          label: "Manage identity",
-        };
-      }
-
-      return {
-        href: config.actionHref,
-        title: config.dashboardTitle,
-        detail: config.dashboardDetail,
-        label: config.actionLabel,
-      };
-    }
-
-    if (gnsIdentity.status === "none") {
-      return {
-        href: "/app/identity",
-        title: "Establish your digital identity",
-        detail:
-          "Claim a recognizable .gwap identity so your profile, reputation, and verified activity can resolve to one place.",
-        label: "Create identity",
-      };
-    }
-
-    if (profileCompletion < 67) {
-      return {
-        href: "/app/profile",
-        title: "Give people useful context",
-        detail:
-          "Complete your public profile so people can understand who you are before they work or transact with you.",
-        label: "Strengthen profile",
-      };
-    }
-
-    if (gnsIdentity.scoreStatus !== "scored") {
-      return {
-        href: "/app/score",
-        title: "Build your reputation signal",
-        detail:
-          "Review the trust signals available to GwapScore and see which verified signals can strengthen your reputation.",
-        label: "Review reputation",
-      };
-    }
-
-    return {
-      href: "/app/ppv",
-      title: "Turn trusted work into verified history",
-      detail:
-        "Use Private Proof Vault for proofs, agreements, and activity that can become durable evidence of what happened.",
-      label: "Open Private Proof Vault",
-    };
-  }, [entryIntent, gnsIdentity.scoreStatus, gnsIdentity.status, profileCompletion]);
+  const nextActionHeading =
+    nextAction.mode === "advance"
+      ? "Advance from your last milestone"
+      : nextAction.mode === "resume"
+        ? "Resume what is already in motion"
+        : intentConfig
+          ? "Move your goal forward"
+          : "Strengthen what matters next";
 
   const trustFoundation = useMemo<TrustFoundationItem[]>(
     () => [
@@ -178,6 +138,13 @@ export function DashboardView({
         ? "Identity active · reputation developing"
         : "Trust foundation needs setup";
 
+  const goalStatus =
+    initialSignal?.kind === "completed"
+      ? "Milestone complete · next step ready"
+      : initialSignal?.kind === "resumed"
+        ? "Existing progress detected"
+        : intentConfig?.label ?? `${profileCompletion}% profile complete`;
+
   return (
     <div className="gwapos-home">
       <section className="gwapos-hero-card" aria-labelledby="gwapos-home-title">
@@ -198,9 +165,7 @@ export function DashboardView({
             <small>TRUST STATUS</small>
             <p>{trustStatus}</p>
           </div>
-          <small>
-            {intentConfig?.label ?? `${profileCompletion}% profile complete`}
-          </small>
+          <small>{goalStatus}</small>
         </div>
 
         <div className="gwapos-wallet-actions" aria-label="Trust actions">
@@ -263,9 +228,7 @@ export function DashboardView({
             <div className="gwapos-section-head">
               <div>
                 <p className="gwapos-kicker">Next Best Action</p>
-                <h2 id="next-action-title">
-                  {intentConfig ? "Move your goal forward" : "Strengthen what matters next"}
-                </h2>
+                <h2 id="next-action-title">{nextActionHeading}</h2>
               </div>
             </div>
 
