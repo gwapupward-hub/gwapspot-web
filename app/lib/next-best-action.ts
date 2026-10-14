@@ -154,16 +154,17 @@ function resumedAction(
   }
 }
 
+function signalMatchesActiveIntent(input: NextBestActionInput) {
+  return !input.entryIntent || input.entryIntent === input.signal?.intent;
+}
+
 export function getNextBestAction(input: NextBestActionInput): NextBestAction {
-  if (input.signal?.kind === "completed") {
+  if (input.signal?.kind === "completed" && signalMatchesActiveIntent(input)) {
     const action = completedAction(input.signal);
     if (action) return action;
   }
 
-  if (
-    input.signal?.kind === "resumed" &&
-    (!input.entryIntent || input.entryIntent === input.signal.intent)
-  ) {
+  if (input.signal?.kind === "resumed" && signalMatchesActiveIntent(input)) {
     const action = resumedAction(input.signal, input);
     if (action) return action;
   }
