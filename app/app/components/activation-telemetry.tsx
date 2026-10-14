@@ -7,7 +7,9 @@ import {
   activationElapsedBucket,
   activationSurface,
   chooseActivationProgress,
+  createActivationProgress,
   GWAP_ACTIVATION_COOKIE_KEY,
+  GWAP_ACTIVATION_SELECTED_EVENT,
   GWAP_ACTIVATION_SIGNAL_COOKIE_KEY,
   GWAP_ACTIVATION_STORAGE_KEY,
   isActivationStartPath,
@@ -168,6 +170,18 @@ export function ActivationTelemetry() {
 
     const timer = window.setTimeout(() => persist(next), 0);
     return () => window.clearTimeout(timer);
+  }, [persist]);
+
+  useEffect(() => {
+    const onSelected = (event: Event) => {
+      if (!(event instanceof CustomEvent) || typeof event.detail !== "string") return;
+      const selection = parseActivationSelection(event.detail);
+      if (!selection) return;
+      persist(createActivationProgress(selection.intent, selection.selectedAt));
+    };
+
+    window.addEventListener(GWAP_ACTIVATION_SELECTED_EVENT, onSelected);
+    return () => window.removeEventListener(GWAP_ACTIVATION_SELECTED_EVENT, onSelected);
   }, [persist]);
 
   useEffect(() => {
