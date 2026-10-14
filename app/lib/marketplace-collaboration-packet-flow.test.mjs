@@ -1,0 +1,46 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import test from "node:test";
+
+const page = fs.readFileSync(
+  path.join(process.cwd(), "app/app/marketplace/page.tsx"),
+  "utf8",
+);
+const policy = fs.readFileSync(
+  path.join(process.cwd(), "app/lib/marketplace-collaboration-packet.ts"),
+  "utf8",
+);
+
+test("Marketplace exposes an explicit collaboration packet copy action", () => {
+  assert.match(page, /COLLABORATION PACKET/);
+  assert.match(page, /Copy collaboration packet/);
+  assert.match(page, /navigator\.clipboard/);
+  assert.match(page, /buildMarketplaceCollaborationPacket/);
+});
+
+test("copying a packet never becomes Marketplace publishing or matching", () => {
+  assert.match(page, /Nothing is published or matched by this action/);
+  assert.match(policy, /does not publish or match this brief in GWAP Marketplace/);
+  assert.doesNotMatch(page, /publishMarketplace|matchProvider|createListing/);
+  assert.doesNotMatch(policy, /Published|Matched|Funded|Escrow/);
+});
+
+test("the packet attaches only canonical public trust context", () => {
+  assert.match(policy, /https:\/\/www\.gwapspot\.com/);
+  assert.match(policy, /\/profile\//);
+  assert.match(page, /Preview attached public Trust Profile/);
+  assert.doesNotMatch(policy, /wallet|score|email|signature/i);
+});
+
+test("private brief content is copied only after explicit user interaction", () => {
+  assert.match(page, /onClick=\{\(\) => void copyCollaborationPacket\(\)\}/);
+  assert.doesNotMatch(page, /useEffect\([^)]*copyCollaborationPacket/);
+  assert.doesNotMatch(page, /track\s*\(|safeTrack\s*\(/);
+  assert.doesNotMatch(page, /fetch\s*\(/);
+});
+
+test("Draft and empty-scope states remain visibly gated", () => {
+  assert.match(page, /Mark this brief Ready before creating a collaboration packet/);
+  assert.match(page, /Add a non-empty scope before creating a collaboration packet/);
+});
