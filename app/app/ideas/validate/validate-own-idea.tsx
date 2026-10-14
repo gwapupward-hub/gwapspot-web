@@ -153,7 +153,7 @@ export function ValidateOwnIdea() {
               <span>Resume the existing Idea Lab work first, or explicitly start validation for a different idea.</span>
               <div className={styles.actions}>
                 <button type="button" onClick={() => router.push("/app/ideas/lab")}>Resume in Idea Lab</button>
-                <button type="button" onClick={() => setShowForm(true)}>Validate a different idea</button>
+                <button className={styles.secondaryAction} type="button" onClick={() => setShowForm(true)}>Validate a different idea</button>
               </div>
             </div>
           </div>
