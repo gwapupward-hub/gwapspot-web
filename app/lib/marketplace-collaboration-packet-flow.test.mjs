@@ -12,15 +12,17 @@ const policy = fs.readFileSync(
   "utf8",
 );
 
-test("Marketplace exposes an explicit collaboration packet copy action", () => {
+test("Marketplace exposes explicit collaboration packet copy and share actions", () => {
   assert.match(page, /COLLABORATION PACKET/);
   assert.match(page, /Copy collaboration packet/);
+  assert.match(page, /Share collaboration packet/);
   assert.match(page, /navigator\.clipboard/);
+  assert.match(page, /navigator\.share/);
   assert.match(page, /buildMarketplaceCollaborationPacket/);
 });
 
-test("copying a packet never becomes Marketplace publishing or matching", () => {
-  assert.match(page, /Nothing is published or matched by this action/);
+test("copying or sharing a packet never becomes Marketplace publishing or matching", () => {
+  assert.match(page, /Nothing is published or matched by either action/);
   assert.match(policy, /does not publish or match this brief in GWAP Marketplace/);
   assert.doesNotMatch(page, /publishMarketplace|matchProvider|createListing/);
   assert.doesNotMatch(policy, /Published|Matched|Funded|Escrow/);
@@ -34,17 +36,29 @@ test("the packet attaches only canonical public trust context", () => {
   assert.doesNotMatch(policy, /wallet|score|email|signature/i);
 });
 
-test("private brief content is copied only after explicit user interaction", () => {
+test("private brief content leaves the app only after explicit user interaction", () => {
   assert.match(page, /onClick=\{\(\) => void copyCollaborationPacket\(\)\}/);
-  assert.doesNotMatch(page, /useEffect\([^)]*copyCollaborationPacket/);
+  assert.match(page, /onClick=\{\(\) => void shareCollaborationPacket\(\)\}/);
+  assert.doesNotMatch(page, /useEffect\([^)]*(?:copy|share)CollaborationPacket/);
   assert.doesNotMatch(page, /track\s*\(|safeTrack\s*\(/);
   assert.doesNotMatch(page, /fetch\s*\(/);
 });
 
-test("unresolved workspace migration fails closed before private copy", () => {
+test("native share cancellation does not silently copy private content", () => {
+  assert.match(page, /function isShareCancellation\(error: unknown\)/);
+  assert.match(page, /\(error as \{ name\?: unknown \}\)\.name === "AbortError"/);
+  assert.match(page, /if \(isShareCancellation\(error\)\) \{\s*setPacketActionStatus\("idle"\);\s*return;/);
+});
+
+test("unsupported native sharing falls back to the existing copy path", () => {
+  assert.match(page, /typeof navigator\.share !== "function"/);
+  assert.match(page, /await copyCollaborationPacket\(\);\s*return;/);
+});
+
+test("unresolved workspace migration fails closed before private copy or share", () => {
   assert.match(page, /migrationAvailable/);
   assert.match(page, /!migrationAvailable && selected/);
-  assert.match(page, /Resolve workspace authority in the banner above before copying private brief details/);
+  assert.match(page, /Resolve workspace authority in the banner above before copying or sharing private brief details/);
 });
 
 test("Draft and empty-scope states remain visibly gated", () => {
