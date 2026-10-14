@@ -21,7 +21,7 @@ const page = fs.readFileSync(
 );
 
 test("Trust Home Active Work is backed by the canonical Daily Ideas workspace", () => {
-  assert.match(dashboard, /<TrustHomeActiveWork key=\{account\.id\} \/>/);
+  assert.match(dashboard, /<TrustHomeActiveWork key=\{account\.verifiedWallet\} \/>/);
   assert.match(activeWork, /\/api\/daily-ideas\/workspace/);
   assert.match(activeWork, /getTrustHomeActiveWork\(payload\.projects\?\.items\)/);
   assert.doesNotMatch(dashboard, /recentProducts|state\.recent/);
