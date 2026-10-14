@@ -19,11 +19,11 @@ import {
   GWAP_ENTRY_INTENT_STORAGE_KEY,
   type GwapEntryIntent,
 } from "../../lib/entry-intent";
-import type { EcosystemProduct } from "../../lib/ecosystem";
 import { getNextBestAction } from "../../lib/next-best-action";
 import { getProfileCompletion } from "../lib/os-state";
 import { GwapGradientLink } from "./gwap-gradient-button";
 import { useGwapOs } from "./os-provider";
+import { TrustHomeActiveWork } from "./trust-home-active-work";
 import { WalletPortfolioCard } from "./wallet-portfolio-card";
 
 type TrustFoundationItem = {
@@ -63,15 +63,13 @@ function seedSuggestedActivation(intent: GwapEntryIntent) {
 }
 
 export function DashboardView({
-  products,
   initialIntent,
   initialSignal,
 }: {
-  products: EcosystemProduct[];
   initialIntent: GwapEntryIntent | null;
   initialSignal: ActivationSignal | null;
 }) {
-  const { account, gnsIdentity, state, syncStatus } = useGwapOs();
+  const { account, gnsIdentity, state } = useGwapOs();
   const entryIntent = initialIntent;
   const profileCompletion = getProfileCompletion(state.profile);
 
@@ -155,19 +153,6 @@ export function DashboardView({
       },
     ],
     [gnsIdentity, profileCompletion],
-  );
-
-  const recentProducts = useMemo(
-    () =>
-      state.recent
-        .flatMap((item) => {
-          const product = products.find((candidate) => candidate.slug === item.slug);
-          return product
-            ? [{ product, href: product.internalUrl || "/app/apps" }]
-            : [];
-        })
-        .slice(0, 3),
-    [products, state.recent],
   );
 
   const trustStatus =
@@ -289,38 +274,15 @@ export function DashboardView({
             </article>
           </section>
 
-          <section className="gwapos-section" aria-labelledby="recent-work-title">
+          <section className="gwapos-section" aria-labelledby="active-work-title">
             <div className="gwapos-section-head">
               <div>
-                <p className="gwapos-kicker">Your Work</p>
-                <h2 id="recent-work-title">Keep making progress</h2>
+                <p className="gwapos-kicker">Active Work</p>
+                <h2 id="active-work-title">What you are actually building</h2>
               </div>
-              <p>{syncStatus === "saved" ? "Synced" : "Syncing"}</p>
+              <Link href="/app/ideas/lab">Open Idea Lab →</Link>
             </div>
-
-            <div className="gwapos-pulse">
-              {recentProducts.length ? (
-                recentProducts.map(({ product, href }) => (
-                  <Link className="gwapos-pulse-row" href={href} key={product.slug}>
-                    <span aria-hidden="true">✦</span>
-                    <div>
-                      <p>{product.name}</p>
-                      <small>Continue where you left off</small>
-                    </div>
-                    <strong>Resume</strong>
-                  </Link>
-                ))
-              ) : (
-                <Link className="gwapos-pulse-row" href="/app/ideas">
-                  <span aria-hidden="true">+</span>
-                  <div>
-                    <p>Start making progress</p>
-                    <small>Develop an idea or begin a project in GWAP OS.</small>
-                  </div>
-                  <strong>Start</strong>
-                </Link>
-              )}
-            </div>
+            <TrustHomeActiveWork />
           </section>
 
           <section className="gwapos-section" aria-labelledby="quick-paths-title">
