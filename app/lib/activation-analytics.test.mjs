@@ -22,6 +22,7 @@ test("activation selection survives a cross-subdomain cookie round trip", () => 
   });
   assert.equal(parseActivationSelection("wallet.123"), null);
   assert.equal(parseActivationSelection("build.not-a-time"), null);
+  assert.equal(parseActivationSelection("build.9007199254740991"), null);
 });
 
 test("a newer cross-subdomain selection replaces stale completed app-origin progress", () => {
@@ -51,7 +52,7 @@ test("same activation keeps its app-origin progress", () => {
   assert.equal(chooseActivationProgress(stored, selection), stored);
 });
 
-test("return-user activation signals are typed and intent-bound", () => {
+test("return-user activation signals are typed, intent-bound, and safe to parse", () => {
   const signal = {
     kind: "completed",
     intent: "reputation",
@@ -65,6 +66,10 @@ test("return-user activation signals are typed and intent-bound", () => {
     null,
   );
   assert.equal(parseActivationSignal("completed.build.wallet.1791930000000"), null);
+  assert.equal(
+    parseActivationSignal("completed.build.project_created.9007199254740991"),
+    null,
+  );
 });
 
 test("activation begins only on the canonical intent surface", () => {
