@@ -31,9 +31,9 @@ export const GWAP_ENTRY_INTENTS = {
     label: "Develop and validate an idea",
     dashboardTitle: "Validate before you build",
     dashboardDetail:
-      "Research the problem, audience, opportunity, and next move before committing time or money to execution.",
-    actionHref: "/app/ideas",
-    actionLabel: "Open Daily Ideas",
+      "Turn your idea into a focused validation project, define who has the problem, and test the riskiest assumption before committing time or money to execution.",
+    actionHref: "/app/ideas/validate",
+    actionLabel: "Validate my idea",
     sourcePath: "/app/ideas",
   },
   identity: {
