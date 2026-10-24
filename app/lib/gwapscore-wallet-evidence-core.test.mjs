@@ -25,6 +25,7 @@ test("wallet evidence payload keeps canonical GWAP subject separate from wallet"
     evidence: {
       walletAgeDays: 400,
       txCount: 700,
+      evidenceCompleteForScoring: true,
     },
   });
 
@@ -95,7 +96,7 @@ test("refuses to call a truncated scan complete when age evidence is unresolved"
   assert.equal(result.stopReason, "scan_budget_exhausted");
 });
 
-test("ignores missing block times without inventing wallet age", async () => {
+test("fails closed when every transaction timestamp is missing", async () => {
   const result = await collectWalletHistoryEvidence(
     async () => [
       { signature: "sig-1", blockTime: null },
@@ -105,6 +106,63 @@ test("ignores missing block times without inventing wallet age", async () => {
   );
 
   assert.equal(result.txCount, 2);
-  assert.equal(result.walletAgeDays, 0);
+  assert.equal(result.walletAgeDays, null);
+  assert.equal(result.historyExhausted, true);
+  assert.equal(result.evidenceCompleteForScoring, false);
+  assert.throws(() => buildGwapScoreWalletEvidencePayload({
+    subjectId: "gwap_canonicalAccount123",
+    verifiedWallet: "11111111111111111111111111111111111111111111",
+    evidence: result,
+  }), /incomplete or unavailable wallet age/);
+});
+
+test("partial timestamp coverage cannot prove complete wallet age", async () => {
+  const result = await collectWalletHistoryEvidence(
+    async () => [
+      signature(1, 90),
+      { signature: "sig-2", blockTime: null },
+    ],
+    { nowMs: NOW_MS, pageSize: 100 },
+  );
+
+  assert.equal(result.txCount, 2);
+  assert.equal(result.walletAgeDays, 90);
+  assert.equal(result.historyExhausted, true);
+  assert.equal(result.evidenceCompleteForScoring, false);
+  assert.throws(() => buildGwapScoreWalletEvidencePayload({
+    subjectId: "gwap_canonicalAccount123",
+    verifiedWallet: "11111111111111111111111111111111111111111111",
+    evidence: result,
+  }), /incomplete or unavailable wallet age/);
+});
+
+test("no on-chain history is unavailable wallet age, not zero", async () => {
+  const result = await collectWalletHistoryEvidence(async () => [], {
+    nowMs: NOW_MS, pageSize: 100,
+  });
+
+  assert.equal(result.txCount, 0);
+  assert.equal(result.walletAgeDays, null);
+  assert.equal(result.historyExhausted, true);
+  assert.equal(result.evidenceCompleteForScoring, false);
+});
+
+test("a missing timestamp is safe once both scoring caps are proven", async () => {
+  let calls = 0;
+  const result = await collectWalletHistoryEvidence(
+    async ({ limit }) => {
+      calls += 1;
+      return Array.from({ length: limit }, (_, index) =>
+        index === 0
+          ? { signature: "missing-time", blockTime: null }
+          : signature(index, 800),
+      );
+    },
+    { nowMs: NOW_MS, pageSize: 1000, maxSignatures: 2000 },
+  );
+
+  assert.equal(calls, 1);
+  assert.equal(result.scoringBoundsSatisfied, true);
   assert.equal(result.evidenceCompleteForScoring, true);
+  assert.ok(result.walletAgeDays >= GWAPSCORE_WALLET_AGE_CAP_DAYS);
 });
