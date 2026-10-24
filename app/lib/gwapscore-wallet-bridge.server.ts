@@ -118,8 +118,8 @@ export async function syncVerifiedWalletEvidenceToGwapScore(input: {
   subjectId: string;
   verifiedWallet: string;
 }): Promise<WalletHistoryEvidence> {
-  const evidence = await deriveVerifiedWalletHistoryEvidence(input.verifiedWallet);
   const config = getGwapScoreConfig();
+  const evidence = await deriveVerifiedWalletHistoryEvidence(input.verifiedWallet);
   const payload = buildGwapScoreWalletEvidencePayload({
     subjectId: input.subjectId,
     verifiedWallet: input.verifiedWallet,
