@@ -79,12 +79,12 @@ Current scan budget:
 
 Evidence is accepted for sync only when either:
 
-1. wallet history is exhausted, making observed age/count complete; or
+1. wallet history is exhausted, **at least one transaction has a timestamp, and all observed signatures have valid timestamps**; or
 2. both score-relevant saturation bounds are proven.
 
 If the scan budget is exhausted before either condition is true, sync fails closed with `WALLET_HISTORY_INCOMPLETE` rather than submitting evidence that could unfairly understate the user's Wallet Reputation.
 
-Missing `blockTime` values do not create synthetic age.
+Missing `blockTime` values leave wallet age unavailable when none are observed. Even if some timestamps exist, history exhaustion does not prove the oldest age when any timestamp is missing. Such evidence is not submitted unless both scoring saturation bounds have already been proven. A wallet with no observed transactions likewise has no established history age and is not submitted as an invented zero.
 
 ## GwapScore adapter payload
 
@@ -94,8 +94,8 @@ GwapOS sends only server-derived values:
 {
   "subjectId": "gwap_<canonical-account-id>",
   "walletAddress": "<verified-solana-wallet>",
-  "walletAgeDays": 0,
-  "txCount": 0,
+  "walletAgeDays": 365,
+  "txCount": 450,
   "ownershipVerified": true
 }
 ```
@@ -131,7 +131,7 @@ The bridge fails closed for:
 - missing GwapScore service configuration;
 - GwapScore service failure.
 
-No failure path silently marks a wallet as verified or writes guessed evidence.
+No failure path silently marks a wallet as verified or writes guessed evidence. A missing or partially unresolved transaction timestamp returns `WALLET_HISTORY_INCOMPLETE` rather than contributing a misleading age of zero.
 
 ## Production gates still open
 
