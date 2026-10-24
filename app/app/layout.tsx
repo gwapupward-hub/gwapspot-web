@@ -11,6 +11,7 @@ import {
 } from "../lib/gwapos-app-metadata";
 import { getAuthenticatedWalletIdentityResult } from "../lib/privy-server";
 import { resolveGwapOsRuntime } from "../lib/gwapos-runtime";
+import { ActivationTelemetry } from "./components/activation-telemetry";
 import { GnsIdentityHydrationBridge } from "./components/gns-identity-hydration-bridge";
 import { GnsRegistrationSyncBridge } from "./components/gns-registration-sync-bridge";
 import { GwapOsProvider } from "./components/os-provider";
@@ -29,7 +30,7 @@ export const metadata: Metadata = {
   ...gwapOsAppMetadata,
   title: "GWAP OS",
   description:
-    "The wallet-native operating layer for GWAP identity, reputation, commerce, and proofs.",
+    "The connected operating layer for building ideas, digital identity, reputation, commerce, and proofs across GWAP.",
   robots: { index: false, follow: false },
 };
 
@@ -69,6 +70,7 @@ export default async function GwapOsLayout({ children }: { children: ReactNode }
         initialState={state}
         runtimeMode={runtime.mode}
       >
+        <ActivationTelemetry />
         <GnsIdentityHydrationBridge />
         <GnsRegistrationSyncBridge />
         <OsShell>{children}</OsShell>

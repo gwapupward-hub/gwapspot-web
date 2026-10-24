@@ -2,9 +2,14 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { PpvVerifiedActivity } from "../../components/ppv/ppv-verified-activity";
 import { ecosystemProducts } from "../../lib/ecosystem";
 import { useGwapOs } from "../components/os-provider";
-import { readWalletActivity, subscribeWalletActivity, type WalletActivityRecord } from "../lib/wallet-activity";
+import {
+  readWalletActivity,
+  subscribeWalletActivity,
+  type WalletActivityRecord,
+} from "../lib/wallet-activity";
 import { shortenWalletAddress } from "../lib/wallet-format";
 import styles from "./activity.module.css";
 
@@ -21,8 +26,8 @@ type ActivityEvent = {
 };
 
 const filters: Array<{ key: ActivityFilter; label: string }> = [
-  { key: "all", label: "All" },
-  { key: "wallet", label: "Wallet" },
+  { key: "all", label: "All progress" },
+  { key: "wallet", label: "Wallet context" },
   { key: "identity", label: "Identity" },
   { key: "apps", label: "Apps" },
   { key: "ideas", label: "Ideas" },
@@ -37,7 +42,9 @@ function formatTime(value: string | null) {
 }
 
 function signatureLabel(signature: string) {
-  return signature.length > 16 ? `${signature.slice(0, 7)}…${signature.slice(-7)}` : signature;
+  return signature.length > 16
+    ? `${signature.slice(0, 7)}…${signature.slice(-7)}`
+    : signature;
 }
 
 export default function ActivityPage() {
@@ -46,20 +53,21 @@ export default function ActivityPage() {
   const [walletActivity, setWalletActivity] = useState<WalletActivityRecord[]>([]);
 
   useEffect(() => {
-    const refresh = () => setWalletActivity(readWalletActivity(account.verifiedWallet));
+    const refresh = () =>
+      setWalletActivity(readWalletActivity(account.verifiedWallet));
     refresh();
     return subscribeWalletActivity(refresh);
   }, [account.verifiedWallet]);
 
-  const events = useMemo<ActivityEvent[]>(() => {
+  const privateEvents = useMemo<ActivityEvent[]>(() => {
     const items: ActivityEvent[] = [
       {
         id: "wallet-session",
         category: "identity",
         icon: "✓",
-        title: "Wallet authenticated",
-        detail: shortenWalletAddress(account.verifiedWallet),
-        label: "Wallet",
+        title: "Current session authenticated",
+        detail: `${shortenWalletAddress(account.verifiedWallet)} · session context only`,
+        label: "Session",
         timestamp: null,
       },
     ];
@@ -70,8 +78,8 @@ export default function ActivityPage() {
         category: "wallet",
         icon: "↗",
         title: `Sent ${record.amountSol} SOL`,
-        detail: `To ${record.recipientLabel} · ${signatureLabel(record.signature)}`,
-        label: "Confirmed",
+        detail: `Device-cached confirmation · ${record.recipientLabel} · ${signatureLabel(record.signature)}`,
+        label: "Local",
         timestamp: record.createdAt,
       });
     });
@@ -82,8 +90,8 @@ export default function ActivityPage() {
         category: "identity",
         icon: "◎",
         title: gnsIdentity.fullName || "Primary .gwap identity",
-        detail: "Primary GwapOS identity resolved",
-        label: "Identity",
+        detail: "Current identity context loaded into GWAP OS",
+        label: "Context",
         timestamp: gnsIdentity.updatedAt,
         href: "/app/identity",
       });
@@ -94,9 +102,10 @@ export default function ActivityPage() {
         id: "profile-update",
         category: "identity",
         icon: "◇",
-        title: "GwapOS profile updated",
-        detail: state.profile.displayName || state.profile.handle || "Profile saved",
-        label: "Profile",
+        title: "Profile updated",
+        detail:
+          state.profile.displayName || state.profile.handle || "Profile saved",
+        label: "Private",
         timestamp: state.profile.updatedAt,
         href: "/app/identity",
       });
@@ -109,8 +118,8 @@ export default function ActivityPage() {
         category: "apps",
         icon: "✦",
         title: product?.name || item.slug,
-        detail: "Opened in GwapOS",
-        label: "App",
+        detail: "Opened in GWAP OS · resume context",
+        label: "Private",
         timestamp: item.openedAt,
         href: product?.internalUrl || "/app/apps",
       });
@@ -123,7 +132,7 @@ export default function ActivityPage() {
         icon: "✧",
         title: idea.title,
         detail: `${idea.category.toUpperCase()} · ${idea.difficulty}`,
-        label: "Saved",
+        label: "Private",
         timestamp: idea.savedAt,
         href: "/app/ideas",
       });
@@ -136,7 +145,7 @@ export default function ActivityPage() {
         icon: "◆",
         title: project.title,
         detail: `Project · ${project.status}`,
-        label: "Project",
+        label: "Private",
         timestamp: project.updatedAt,
         href: "/app/ideas/lab",
       });
@@ -149,7 +158,7 @@ export default function ActivityPage() {
         icon: "↗",
         title: `${intent.role[0].toUpperCase()}${intent.role.slice(1)} request`,
         detail: `Marketplace · ${intent.status}`,
-        label: "Work",
+        label: "Private",
         timestamp: intent.updatedAt,
         href: "/app/marketplace",
       });
@@ -162,78 +171,152 @@ export default function ActivityPage() {
     });
   }, [account.verifiedWallet, gnsIdentity, state, walletActivity]);
 
-  const visibleEvents = filter === "all" ? events : events.filter((event) => event.category === filter);
-  const nonSessionEvents = events.filter((event) => event.id !== "wallet-session");
+  const visibleEvents =
+    filter === "all"
+      ? privateEvents
+      : privateEvents.filter((event) => event.category === filter);
+  const nonSessionEvents = privateEvents.filter(
+    (event) => event.id !== "wallet-session",
+  );
+  const profileHref =
+    gnsIdentity.status === "found" && gnsIdentity.name
+      ? `/profile/${encodeURIComponent(gnsIdentity.name)}`
+      : null;
 
   return (
     <div className={styles.page}>
       <header className={styles.header}>
         <div>
-          <p className={styles.kicker}>Activity</p>
-          <h1>Your GwapOS timeline</h1>
-          <p>Wallet, identity, apps, ideas and work in one place.</p>
+          <p className={styles.kicker}>Verified Activity</p>
+          <h1>Evidence first. Progress second.</h1>
+          <p>
+            GWAP separates facts it can verify from private activity that helps
+            you keep moving.
+          </p>
         </div>
         <span className={styles.sync}>{syncStatus}</span>
       </header>
 
-      <section className={styles.summary} aria-label="Activity summary">
+      <section className={styles.summary} aria-label="Activity model">
         <div className={styles.summaryCard}>
-          <span>Events</span>
+          <span>Trust identity</span>
+          <strong className={styles.green}>
+            {gnsIdentity.status === "found"
+              ? gnsIdentity.fullName
+              : "Not established"}
+          </strong>
+        </div>
+        <div className={styles.summaryCard}>
+          <span>Evidence source</span>
+          <strong>PPV receipts</strong>
+        </div>
+        <div className={styles.summaryCard}>
+          <span>Private progress</span>
           <strong>{nonSessionEvents.length}</strong>
-        </div>
-        <div className={styles.summaryCard}>
-          <span>Identity</span>
-          <strong className={styles.green}>{gnsIdentity.status === "found" ? gnsIdentity.fullName : "Wallet"}</strong>
-        </div>
-        <div className={styles.summaryCard}>
-          <span>Confirmed sends</span>
-          <strong>{walletActivity.length}</strong>
         </div>
       </section>
 
-      <nav className={styles.filters} aria-label="Filter activity">
-        {filters.map((item) => (
-          <button
-            className={`${styles.filter} ${filter === item.key ? styles.filterActive : ""}`}
-            key={item.key}
-            onClick={() => setFilter(item.key)}
-            type="button"
-            aria-pressed={filter === item.key}
-          >
-            {item.label}
-          </button>
-        ))}
-      </nav>
+      <section className={styles.evidenceIntro} aria-labelledby="verified-evidence-title">
+        <div>
+          <p className={styles.kicker}>Verified Evidence</p>
+          <h2 id="verified-evidence-title">What GWAP can actually prove</h2>
+          <p>
+            This layer is limited to identity-bound PPV records that pass the
+            existing attribution and environment checks. A receipt proves a
+            recorded event; it does not guarantee future behavior.
+          </p>
+        </div>
+        {profileHref ? (
+          <Link className={styles.profileLink} href={profileHref}>
+            Open public trust profile →
+          </Link>
+        ) : (
+          <Link className={styles.profileLink} href="/app/identity">
+            Establish public identity →
+          </Link>
+        )}
+      </section>
 
-      <section className={styles.timeline} aria-label="GwapOS activity timeline">
-        {visibleEvents.map((event) => {
-          const content = (
-            <>
-              <span className={styles.icon} aria-hidden="true">{event.icon}</span>
-              <div className={styles.body}>
-                <p>{event.title}</p>
-                <small>{event.detail}</small>
-              </div>
-              <div className={styles.meta}>
-                <strong>{event.label}</strong>
-                <time>{formatTime(event.timestamp)}</time>
-              </div>
-            </>
-          );
+      <div className={styles.verifiedShell}>
+        <PpvVerifiedActivity
+          wallet={account.verifiedWallet}
+          domain={
+            gnsIdentity.status === "found"
+              ? gnsIdentity.name || undefined
+              : undefined
+          }
+          title="Verified evidence feed"
+          receiptHref={(id) => `/app/vault/receipts/${id}`}
+        />
+      </div>
 
-          return event.href ? (
-            <Link className={styles.row} href={event.href} key={event.id}>{content}</Link>
-          ) : (
-            <div className={styles.row} key={event.id}>{content}</div>
-          );
-        })}
-
-        {!visibleEvents.length ? (
-          <div className={styles.empty}>
-            <strong>No activity in this category yet.</strong>
-            <p>Confirmed sends are cached on this device for the currently authenticated wallet only. GwapOS does not invent pending or failed wallet history.</p>
+      <section className={styles.privateSection} aria-labelledby="private-progress-title">
+        <div className={styles.privateHeading}>
+          <div>
+            <p className={styles.kicker}>Private Progress</p>
+            <h2 id="private-progress-title">Useful history, not trust evidence</h2>
+            <p>
+              App opens, saved ideas, project state, profile edits, and local
+              wallet history help you resume work. They are not presented as
+              reputation evidence merely because they happened inside GWAP OS.
+            </p>
           </div>
-        ) : null}
+          <span className={styles.privateBadge}>Private / contextual</span>
+        </div>
+
+        <nav className={styles.filters} aria-label="Filter private progress">
+          {filters.map((item) => (
+            <button
+              className={`${styles.filter} ${filter === item.key ? styles.filterActive : ""}`}
+              key={item.key}
+              onClick={() => setFilter(item.key)}
+              type="button"
+              aria-pressed={filter === item.key}
+            >
+              {item.label}
+            </button>
+          ))}
+        </nav>
+
+        <section className={styles.timeline} aria-label="Private GWAP OS progress">
+          {visibleEvents.map((event) => {
+            const content = (
+              <>
+                <span className={styles.icon} aria-hidden="true">
+                  {event.icon}
+                </span>
+                <div className={styles.body}>
+                  <p>{event.title}</p>
+                  <small>{event.detail}</small>
+                </div>
+                <div className={styles.meta}>
+                  <strong>{event.label}</strong>
+                  <time>{formatTime(event.timestamp)}</time>
+                </div>
+              </>
+            );
+
+            return event.href ? (
+              <Link className={styles.row} href={event.href} key={event.id}>
+                {content}
+              </Link>
+            ) : (
+              <div className={styles.row} key={event.id}>
+                {content}
+              </div>
+            );
+          })}
+
+          {!visibleEvents.length ? (
+            <div className={styles.empty}>
+              <strong>No private progress in this category yet.</strong>
+              <p>
+                GWAP OS keeps this section separate from verified evidence so
+                routine product activity cannot masquerade as reputation.
+              </p>
+            </div>
+          ) : null}
+        </section>
       </section>
     </div>
   );

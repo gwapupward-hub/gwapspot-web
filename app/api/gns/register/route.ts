@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   GnsApiError,
+  GnsRegistrationConfigError,
   getGnsRegistrationConfig,
   registerGnsIdentity,
   resolveGnsName,
@@ -34,7 +35,11 @@ export async function GET(request: Request) {
   try {
     const config = await getGnsRegistrationConfig();
     return NextResponse.json(config, {
-      headers: { "Cache-Control": "no-store" },
+      headers: {
+        "Cache-Control": "no-store",
+        "X-GNS-Network": config.network,
+        "X-GNS-Mainnet-Writes": "disabled",
+      },
     });
   } catch {
     return NextResponse.json(
@@ -109,6 +114,10 @@ export async function POST(request: Request) {
         txSignature,
       });
     } catch (error) {
+      if (error instanceof GnsRegistrationConfigError) {
+        auditAuthEvent("gns.register", identity.userId, "rejected");
+        return NextResponse.json({ error: error.message }, { status: 503 });
+      }
       const resolved = await resolveGnsName(name);
       if (resolved?.found && resolved.owner === identity.verifiedWallet) {
         auditAuthEvent("gns.register", identity.userId, "success");

@@ -1,7 +1,7 @@
-/* Chapter 01 foundation bridge and GWAP OS handoff. */
+/* Chapter 01 audience-first foundation bridge and GWAP OS handoff. */
 .overview-foundation {
   display: grid;
-  grid-template-columns: 1fr 1fr 1.12fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   margin-top: 44px;
 }
@@ -19,6 +19,15 @@
   background: linear-gradient(145deg, rgba(255,255,255,.052), rgba(255,255,255,.015));
   box-shadow: inset 0 1px rgba(255,255,255,.08), 0 22px 55px rgba(0,0,0,.2);
   transition: transform .28s ease, border-color .28s ease, box-shadow .28s ease;
+}
+
+.overview-foundation > a:last-child {
+  grid-column: 1 / -1;
+  min-height: 156px;
+  border-color: rgba(19,221,19,.2);
+  background:
+    radial-gradient(circle at 88% 18%, rgba(19,221,19,.1), transparent 34%),
+    linear-gradient(145deg, rgba(19,221,19,.055), rgba(5,12,7,.72));
 }
 
 .overview-foundation > a:hover {
@@ -63,11 +72,12 @@
 
 .overview-foundation-card > div strong {
   font-size: 26px;
+  line-height: 1.04;
   letter-spacing: -.04em;
 }
 
 .overview-foundation-card p {
-  max-width: 300px;
+  max-width: 520px;
   margin: 12px 0 0;
   color: var(--premium-muted);
   font-size: 11px;
@@ -159,6 +169,10 @@
     min-height: 156px !important;
     padding: 17px;
     border-radius: 17px;
+  }
+
+  .overview-foundation > a:last-child {
+    grid-column: 1;
   }
 
   .overview-foundation-card > div strong {

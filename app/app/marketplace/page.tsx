@@ -1,8 +1,10 @@
 "use client";
 
+import { usePrivy } from "@privy-io/react-auth";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { PpvDeliverableAnchor } from "../../components/ppv/ppv-deliverable-anchor";
+import { buildMarketplaceCollaborationPacket } from "../../lib/marketplace-collaboration-packet";
 import "../../components/ppv/ppv.css";
 import { useGwapOs } from "../components/os-provider";
 import type { MarketplaceRole } from "../lib/os-state";
@@ -15,26 +17,179 @@ const roleLabels: Record<MarketplaceRole, string> = {
   operations: "Operations",
 };
 
+type PacketActionStatus = "idle" | "copied" | "manual" | "shared" | "error";
+type ProjectLoadState = "loading" | "ready" | "error";
+type SharedProject = {
+  id: string;
+  title: string;
+  status: string;
+  problemDefinition: string;
+  targetCustomer: string;
+  technicalArchitecture: string;
+  estimatedCost: string;
+};
+type WorkspacePayload = { projects?: { items?: SharedProject[] }; error?: string };
+
 function compactWallet(wallet: string) {
   return `${wallet.slice(0, 4)}…${wallet.slice(-4)}`;
 }
 
+function isShareCancellation(error: unknown) {
+  return Boolean(
+    error &&
+      typeof error === "object" &&
+      "name" in error &&
+      (error as { name?: unknown }).name === "AbortError",
+  );
+}
+
 export default function MarketplacePage() {
+  const { getAccessToken } = usePrivy();
   const {
     account,
+    createMarketplaceIntentFromProject,
     gnsIdentity,
+    migrationAvailable,
     removeMarketplaceIntent,
     state,
     syncStatus,
     updateMarketplaceIntent,
   } = useGwapOs();
   const [selectedId, setSelectedId] = useState(state.marketplaceIntents[0]?.id ?? "");
+  const [packetActionStatus, setPacketActionStatus] = useState<PacketActionStatus>("idle");
+  const [workspaceProjects, setWorkspaceProjects] = useState<SharedProject[]>([]);
+  const [workspaceOwnerWallet, setWorkspaceOwnerWallet] = useState("");
+  const [projectLoadState, setProjectLoadState] = useState<ProjectLoadState>("loading");
+  const [draftProjectId, setDraftProjectId] = useState("");
+  const [draftRole, setDraftRole] = useState<MarketplaceRole | "">("");
   const selected = useMemo(
     () => state.marketplaceIntents.find((intent) => intent.id === selectedId) ?? state.marketplaceIntents[0] ?? null,
     [selectedId, state.marketplaceIntents],
   );
   const project = selected ? state.ideaProjects.find((item) => item.id === selected.projectId) ?? null : null;
+  const selectedProjectTitle = selected?.projectTitle || project?.title || "Project collaboration";
   const owner = gnsIdentity.fullName || compactWallet(account.verifiedWallet);
+  const projectPickerCurrent = workspaceOwnerWallet === account.verifiedWallet;
+  const visibleWorkspaceProjects = projectPickerCurrent ? workspaceProjects : [];
+  const visibleProjectLoadState: ProjectLoadState = projectPickerCurrent ? projectLoadState : "loading";
+  const existingBriefForSelection = draftProjectId && draftRole
+    ? state.marketplaceIntents.find((intent) => intent.projectId === draftProjectId && intent.role === draftRole) ?? null
+    : null;
+  const collaborationPacket = useMemo(
+    () => !migrationAvailable && selected
+      ? buildMarketplaceCollaborationPacket({
+          status: selected.status,
+          projectTitle: selected.projectTitle || project?.title,
+          role: selected.role,
+          brief: selected.brief,
+          budget: selected.budget,
+          timeline: selected.timeline,
+          gnsName: gnsIdentity.status === "found" ? gnsIdentity.name : null,
+        })
+      : null,
+    [gnsIdentity.name, gnsIdentity.status, migrationAvailable, project?.title, selected],
+  );
+
+  const authenticatedFetch = useCallback(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const token = await getAccessToken();
+    const headers = new Headers(init?.headers);
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+    return fetch(input, { ...init, headers, credentials: "same-origin" });
+  }, [getAccessToken]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const walletAtRequest = account.verifiedWallet;
+    void (async () => {
+      try {
+        const response = await authenticatedFetch("/api/daily-ideas/workspace", { cache: "no-store" });
+        const payload = (await response.json()) as WorkspacePayload;
+        if (!response.ok) throw new Error(payload.error || "Daily Ideas projects could not load");
+        if (cancelled) return;
+        const projects = Array.isArray(payload.projects?.items)
+          ? payload.projects.items.filter((item) => item && item.status !== "archived" && /^project_[a-f0-9]{20}$/.test(item.id) && item.title.trim().length > 0)
+          : [];
+        setWorkspaceOwnerWallet(walletAtRequest);
+        setWorkspaceProjects(projects);
+        setDraftProjectId(projects[0]?.id ?? "");
+        setDraftRole("");
+        setProjectLoadState("ready");
+      } catch {
+        if (!cancelled) {
+          setWorkspaceOwnerWallet(walletAtRequest);
+          setWorkspaceProjects([]);
+          setDraftProjectId("");
+          setDraftRole("");
+          setProjectLoadState("error");
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [account.verifiedWallet, authenticatedFetch]);
+
+  function resetPacketActionStatus() {
+    window.setTimeout(() => setPacketActionStatus("idle"), 2200);
+  }
+
+  function preparePrivateDraft() {
+    if (migrationAvailable || !projectPickerCurrent || !draftProjectId || !draftRole) return;
+    const source = visibleWorkspaceProjects.find((item) => item.id === draftProjectId);
+    if (!source) return;
+    const intentId = createMarketplaceIntentFromProject({
+      id: source.id,
+      title: source.title,
+      status: source.status,
+      problemDefinition: source.problemDefinition || "",
+      targetCustomer: source.targetCustomer || "",
+      technicalArchitecture: source.technicalArchitecture || "",
+      estimatedCost: source.estimatedCost || "",
+    }, draftRole);
+    if (!intentId) return;
+    setSelectedId(intentId);
+    setPacketActionStatus("idle");
+  }
+
+  async function copyCollaborationPacket() {
+    if (!collaborationPacket) return;
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
+      await navigator.clipboard.writeText(collaborationPacket.text);
+      setPacketActionStatus("copied");
+    } catch {
+      try {
+        window.prompt("Copy collaboration packet", collaborationPacket.text);
+        setPacketActionStatus("manual");
+      } catch {
+        setPacketActionStatus("error");
+      }
+    }
+    resetPacketActionStatus();
+  }
+
+  async function shareCollaborationPacket() {
+    if (!collaborationPacket) return;
+    if (typeof navigator.share !== "function") {
+      await copyCollaborationPacket();
+      return;
+    }
+
+    try {
+      await navigator.share({
+        title: "GWAP Collaboration Packet",
+        text: collaborationPacket.text,
+      });
+      setPacketActionStatus("shared");
+      resetPacketActionStatus();
+    } catch (error) {
+      if (isShareCancellation(error)) {
+        setPacketActionStatus("idle");
+        return;
+      }
+      await copyCollaborationPacket();
+    }
+  }
 
   return (
     <div className="os-page os-runtime-page">
@@ -50,12 +205,55 @@ export default function MarketplacePage() {
           {state.marketplaceIntents.length ? state.marketplaceIntents.map((intent) => {
             const intentProject = state.ideaProjects.find((item) => item.id === intent.projectId);
             return (
-              <button key={intent.id} type="button" onClick={() => setSelectedId(intent.id)} aria-pressed={selected?.id === intent.id}>
+              <button
+                key={intent.id}
+                type="button"
+                onClick={() => {
+                  setSelectedId(intent.id);
+                  setPacketActionStatus("idle");
+                }}
+                aria-pressed={selected?.id === intent.id}
+              >
                 <strong>{roleLabels[intent.role]}</strong><br />
-                <small>{intentProject?.title ?? "Project"} · {intent.status}</small>
+                <small>{intent.projectTitle || intentProject?.title || "Project"} · {intent.status}</small>
               </button>
             );
-          }) : <p>No collaboration briefs yet. Create one from an Idea Lab project.</p>}
+          }) : <p>No collaboration briefs yet. Prepare one from a canonical Daily Ideas project below.</p>}
+
+          <div className="os-console-chrome"><span>new.private.brief</span><span>DRAFT ONLY</span></div>
+          {migrationAvailable ? (
+            <p>Resolve workspace authority in the banner above before creating a new private Marketplace draft.</p>
+          ) : visibleProjectLoadState === "loading" ? (
+            <p>Loading canonical Daily Ideas projects…</p>
+          ) : visibleProjectLoadState === "error" ? (
+            <p>Daily Ideas projects are temporarily unavailable. Existing Marketplace briefs remain available.</p>
+          ) : visibleWorkspaceProjects.length ? (
+            <>
+              <label>
+                Project
+                <select value={draftProjectId} onChange={(event) => setDraftProjectId(event.target.value)}>
+                  {visibleWorkspaceProjects.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
+                </select>
+              </label>
+              <label>
+                Capability needed
+                <select value={draftRole} onChange={(event) => setDraftRole(event.target.value as MarketplaceRole | "")}>
+                  <option value="">Choose capability</option>
+                  {Object.entries(roleLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </select>
+              </label>
+              <button type="button" disabled={!draftProjectId || !draftRole} onClick={preparePrivateDraft}>
+                {existingBriefForSelection ? "Open existing brief" : "Prepare private Draft"}
+              </button>
+              <small>
+                {existingBriefForSelection
+                  ? `Existing ${existingBriefForSelection.status} brief will reopen unchanged. Review it before any disclosure.`
+                  : "Uses the canonical Daily Ideas project as context. This action never publishes or matches anything."}
+              </small>
+            </>
+          ) : (
+            <p>No active Daily Ideas project is available yet. <Link href="/app/ideas/lab/start">Start a project</Link>.</p>
+          )}
 
           <div className="os-console-chrome"><span>brief.owner</span><span>{gnsIdentity.status.toUpperCase()}</span></div>
           <p><strong>{owner}</strong></p>
@@ -68,7 +266,7 @@ export default function MarketplacePage() {
             <>
               <div className="os-console-chrome"><span>marketplace.brief</span><span>{selected.status.toUpperCase()}</span></div>
               <p className="os-runtime-warning">This is a private GWAP OS project brief, not a live Marketplace listing.</p>
-              <h2>{project?.title ?? "Project collaboration"}</h2>
+              <h2>{selectedProjectTitle}</h2>
 
               <label>
                 Capability needed
@@ -96,6 +294,65 @@ export default function MarketplacePage() {
                 </select>
               </label>
               <p><strong>Ready</strong> means the brief is prepared for the future Marketplace adapter; it does not publish anything yet.</p>
+
+              <section className="os-runtime-note" aria-label="Collaboration packet">
+                <span className="os-terminal-label">COLLABORATION PACKET</span>
+                <p>
+                  Preview the exact bounded packet before you copy or share private brief details. When a valid .gwap identity exists, the packet attaches only your public GWAP Trust Profile. Nothing is published or matched by these actions.
+                </p>
+                {collaborationPacket ? (
+                  <>
+                    <details>
+                      <summary>Preview exact packet text</summary>
+                      <p>
+                        This is the exact text Copy and Share use. Opening this preview does not publish or transmit anything.
+                      </p>
+                      <textarea
+                        aria-label="Collaboration packet preview"
+                        value={collaborationPacket.text}
+                        readOnly
+                        rows={12}
+                      />
+                    </details>
+                    <div>
+                      <button type="button" onClick={() => void copyCollaborationPacket()}>
+                        {packetActionStatus === "copied"
+                          ? "Packet copied"
+                          : packetActionStatus === "manual"
+                            ? "Manual copy opened"
+                            : packetActionStatus === "error"
+                              ? "Copy failed"
+                              : "Copy collaboration packet"}
+                      </button>{" "}
+                      <button type="button" onClick={() => void shareCollaborationPacket()}>
+                        {packetActionStatus === "shared"
+                          ? "Packet shared"
+                          : "Share collaboration packet"}
+                      </button>
+                    </div>
+                    {collaborationPacket.trustProfileUrl ? (
+                      <p>
+                        <a href={collaborationPacket.trustProfileUrl} target="_blank" rel="noreferrer">
+                          Preview attached public Trust Profile ↗
+                        </a>
+                      </p>
+                    ) : (
+                      <p>
+                        No public Trust Profile is attached. <Link href="/app/identity">Set up .gwap identity</Link> if you want public trust context included.
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p>
+                    {migrationAvailable
+                      ? "Resolve workspace authority in the banner above before previewing, copying, or sharing private brief details."
+                      : selected.status !== "Ready"
+                        ? "Mark this brief Ready before creating a collaboration packet."
+                        : "Add a non-empty scope before creating a collaboration packet."}
+                  </p>
+                )}
+              </section>
+
               <PpvDeliverableAnchor
                 sourceProduct="marketplace"
                 sourceObjectId={selected.id}
@@ -115,8 +372,8 @@ export default function MarketplacePage() {
             <>
               <div className="os-console-chrome"><span>marketplace.brief</span><span>EMPTY</span></div>
               <h2>Build the requirement before the transaction.</h2>
-              <p>Idea Lab can create Developer, Designer, Marketer, Researcher, or Operations briefs and seed them from the project context.</p>
-              <Link href="/app/ideas/lab">Create a project brief</Link>
+              <p>Choose a canonical Daily Ideas project and capability in the New Private Brief panel. GWAP will seed a Draft from the project context for you to review.</p>
+              <Link href="/app/ideas/lab">Open Idea Lab</Link>
             </>
           )}
 

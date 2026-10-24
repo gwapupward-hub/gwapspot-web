@@ -19,6 +19,7 @@ import { GwapScoreDisplay } from "../../components/gwap-score-display";
 import type { GwapScoreResult } from "../../lib/gwap-score";
 import {
   GNS_PENDING_REGISTRATION_STORAGE_KEY,
+  assertGnsRegistrationRpc,
   buildGnsRegistrationTransaction,
   encodeGnsSignature,
   getGnsExplorerUrl,
@@ -44,6 +45,7 @@ type SearchState =
 type RegistrationState = {
   status:
     | "idle"
+    | "checking-network"
     | "signing"
     | "confirming"
     | "recording"
@@ -329,8 +331,14 @@ export function IdentityView() {
     let transactionFailed = false;
 
     try {
+      setRegistration({
+        status: "checking-network",
+        message: "Verifying Solana devnet before requesting a wallet signature…",
+        name: registrationName,
+      });
       const owner = new PublicKey(account.verifiedWallet);
       const connection = new Connection(getGnsRpcUrl(config.network), "confirmed");
+      await assertGnsRegistrationRpc(connection);
       const transaction = buildGnsRegistrationTransaction({
         config,
         name: registrationName,
@@ -511,12 +519,15 @@ export function IdentityView() {
   }
 
   const isBusy =
+    registration.status === "checking-network" ||
     registration.status === "signing" ||
     registration.status === "confirming" ||
     registration.status === "recording";
   const nameLocked = isBusy || Boolean(registration.signature);
   const registerLabel =
-    registration.status === "signing"
+    registration.status === "checking-network"
+      ? "Verifying devnet…"
+      : registration.status === "signing"
       ? "Waiting for wallet…"
       : registration.status === "confirming"
         ? "Confirming on Solana…"
@@ -570,6 +581,7 @@ export function IdentityView() {
 
           {search.status === "available" && config ? (
             <div className="os-gns-transaction">
+              <p>GNS registration uses Solana devnet and test SOL.</p>
               <dl className="os-gns-config">
                 <div><dt>Registration fee</dt><dd>{config.feeSol} SOL</dd></div>
                 <div><dt>Network</dt><dd>{config.network}</dd></div>

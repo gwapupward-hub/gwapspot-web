@@ -24,11 +24,11 @@ const structuredData = {
         height: 512,
       },
       description:
-        "GWAP builds portable on-chain identity and reputation infrastructure on Solana.",
+        "GWAP builds connected tools for builders, creators, freelancers, and entrepreneurs to develop ideas, establish digital identity, grow verifiable reputation, and protect economic activity.",
       sameAs: [
         "https://x.com/_gwapspot",
         "https://github.com/Gwapoholics",
-        "https://t.me/thagwapspot",
+        "https://t.me/GwapSpot_SupportBot",
       ],
     },
     {
@@ -37,19 +37,19 @@ const structuredData = {
       url: SITE_URL,
       name: "GWAP",
       description:
-        "Turn your Solana wallet into a portable .gwap identity, understand your reputation with GwapScore, and carry that trust through the GWAP network.",
+        "Start with your goal: build an idea, establish a .gwap identity, grow verifiable reputation, or protect digital work and transactions through the connected GWAP ecosystem.",
       publisher: { "@id": `${SITE_URL}/#organization` },
       inLanguage: "en",
     },
     {
       "@type": "SoftwareApplication",
       "@id": `${SITE_URL}/#software`,
-      name: "GWAP",
-      applicationCategory: "FinanceApplication",
+      name: "GWAP OS",
+      applicationCategory: "BusinessApplication",
       operatingSystem: "Web",
-      url: SITE_URL,
+      url: `${SITE_URL}/app`,
       description:
-        "Build a portable .gwap identity, check wallet reputation with GwapScore, and enter the connected GWAP network.",
+        "A connected operating layer for building ideas, managing digital identity, understanding reputation, and accessing GWAP products from one place.",
       publisher: { "@id": `${SITE_URL}/#organization` },
       offers: {
         "@type": "Offer",

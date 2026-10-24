@@ -40,7 +40,7 @@ export default function CommunityPage() {
       >
         <a
           className="primary-button"
-          href="https://t.me/thagwapspot"
+          href="https://t.me/GwapSpot_SupportBot"
           target="_blank"
           rel="noreferrer"
         >

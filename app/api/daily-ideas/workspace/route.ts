@@ -11,6 +11,7 @@ import { getDailyIdeasPreferences, updateDailyIdeasPreferences } from "../../../
 import {
   archiveDailyIdeaProject,
   listDailyIdeaProjects,
+  startCustomDailyIdeaProject,
   startDailyIdeaProject,
   transitionDailyIdeaProject,
   updateDailyIdeaProject,
@@ -110,6 +111,17 @@ export async function POST(request: Request) {
       if (!result.ok) return NextResponse.json({ error: "Idea not found" }, { status: 404 });
       auditAuthEvent("daily-ideas.develop", identity.userId, "success");
       return NextResponse.json({ created: result.created, project: result.project }, { status: result.created ? 201 : 200 });
+    }
+    if (body.action === "create-project") {
+      const result = await startCustomDailyIdeaProject(subject, {
+        title: body.title,
+        problemDefinition: body.problemDefinition,
+        targetCustomer: body.targetCustomer,
+        validationPlan: body.validationPlan,
+      });
+      if (!result.ok) return NextResponse.json({ error: "Project details are invalid" }, { status: 400 });
+      auditAuthEvent("daily-ideas.project-create", identity.userId, "success");
+      return NextResponse.json({ created: true, project: result.project }, { status: 201 });
     }
     if (body.action === "update-project") {
       const projectId = typeof body.projectId === "string" ? body.projectId.trim() : "";

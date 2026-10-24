@@ -131,7 +131,7 @@ const graphRelations = [
     from: "gwapscore",
     to: "occo",
     label: "Reputation + credit context",
-    detail: "Wallet reputation can contribute to broader credit-intelligence and risk interpretation workflows.",
+    detail: "Reputation-eligible wallet intelligence can support broader credit-intelligence and risk interpretation without making wallet wealth a reputation signal.",
     channels: ["trust", "intelligence"],
   },
   {

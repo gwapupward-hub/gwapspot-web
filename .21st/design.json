@@ -1,0 +1,103 @@
+{
+  "version": 1,
+  "project": {
+    "name": "gwapspot-web",
+    "productType": null,
+    "stack": [
+      "nextjs",
+      "react",
+      "tailwind-v4"
+    ]
+  },
+  "sources": {
+    "tokens": [
+      "app/globals.css",
+      "app/lil-gwapz/lil-gwapz-page.css"
+    ],
+    "components": [],
+    "assets": [
+      "public/brand"
+    ],
+    "instructions": [
+      "AGENTS.md",
+      "CLAUDE.md"
+    ]
+  },
+  "design": {
+    "colorMode": "light",
+    "colors": {
+      "--muted": {
+        "value": "#9aa39c",
+        "source": "app/globals.css"
+      }
+    },
+    "typography": {
+      "--text": {
+        "value": "#f4f6f4",
+        "source": "app/globals.css"
+      }
+    },
+    "spacing": {},
+    "radius": {},
+    "shadows": {},
+    "motion": {},
+    "density": "unknown"
+  },
+  "components": {
+    "installed": [],
+    "preferredPrimitives": [],
+    "patterns": []
+  },
+  "constraints": {
+    "must": [],
+    "avoid": []
+  },
+  "decisions": [
+    {
+      "id": "lil-gwapz-playground",
+      "route": "/lil-gwapz",
+      "direction": "Option 3 \u2014 The Playground",
+      "approved_by": "Founder",
+      "date": "2026-10-08",
+      "details": "Purple mobile-first hub, Green/Orange/Red/Purple accents, mood browsing and bottom navigation, with search and male/female filters from Option 2. Reuses the existing approved atlas artwork. No additional 21st AI runs.",
+      "palette": {
+        "green": "#13DD13",
+        "purple": "#9955FF",
+        "orange": "#FF8A19",
+        "red": "#FF3158",
+        "background": "#130820"
+      }
+    }
+  ],
+  "evidence": [
+    {
+      "fact": "design.colorMode:light",
+      "source": "app/globals.css"
+    },
+    {
+      "fact": "design.tokens",
+      "source": "app/globals.css"
+    },
+    {
+      "fact": "project.instructions",
+      "source": "AGENTS.md"
+    },
+    {
+      "fact": "project.instructions",
+      "source": "CLAUDE.md"
+    },
+    {
+      "fact": "project.stack:nextjs",
+      "source": "package.json"
+    },
+    {
+      "fact": "project.stack:react",
+      "source": "package.json"
+    },
+    {
+      "fact": "project.stack:tailwind-v4",
+      "source": "package.json"
+    }
+  ],
+  "generatedAt": "2026-10-08T04:43:46.067Z"
+}

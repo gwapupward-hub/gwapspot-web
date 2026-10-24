@@ -12,7 +12,7 @@ import styles from "./gateway.module.css";
 export const metadata: Metadata = {
   ...gwapOsAppMetadata,
   title: "Enter GWAP OS",
-  description: "Secure wallet or email access to GWAP OS.",
+  description: "Simple account access to your GWAP workspace. Start with email; connect a wallet only when needed.",
   robots: { index: false, follow: false },
 };
 
@@ -56,24 +56,24 @@ export default async function GwapOsSignInPage({
           </span>
           <span className={styles.brandCopy}>
             <strong>GWAP OS</strong>
-            <small>DIRECT APPLICATION ACCESS</small>
+            <small>YOUR TRUST WORKSPACE</small>
           </span>
         </div>
 
-        <span className={styles.kicker}>IDENTITY GATEWAY</span>
-        <h1 id="gwap-os-gateway-title">Enter your GWAP workspace.</h1>
+        <span className={styles.kicker}>BUILD TRUST. PROVE PROGRESS.</span>
+        <h1 id="gwap-os-gateway-title">Everything you build should strengthen your credibility.</h1>
         <p>
-          Use your existing Solana wallet or verify your email to enter your
-          identity, applications, activity, and GWAP workspace. Email users receive
-          an embedded Solana wallet when needed.
+          GWAP brings your identity, reputation, projects, and proof into one place.
+          Start with email and get to work. Connect a wallet later only when you need
+          blockchain-backed identity, reputation signals, or transactions.
         </p>
 
         <div className={styles.securityLine} aria-label="Authentication details">
-          <span>WALLET OR EMAIL</span>
+          <span>EMAIL FIRST</span>
           <i aria-hidden="true" />
-          <span>OTP / SIGNATURE</span>
+          <span>SECURE OTP</span>
           <i aria-hidden="true" />
-          <span>NO SOL FEE</span>
+          <span>WALLET OPTIONAL</span>
         </div>
       </section>
 

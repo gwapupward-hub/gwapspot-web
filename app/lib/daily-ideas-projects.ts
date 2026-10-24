@@ -1,7 +1,11 @@
 import "server-only";
 
-import { createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import type { DailyIdeaCategory } from "./daily-ideas-core";
+import {
+  customDailyIdeaProjectSummary,
+  parseCustomDailyIdeaProjectInput,
+} from "./daily-ideas-custom-project";
 import { getStoredDailyIdea } from "./daily-ideas-inventory";
 import { getPrivateStorageKey, getWorkspaceRedis } from "./redis";
 
@@ -93,6 +97,41 @@ export async function startDailyIdeaProject(subject: string, ideaId: string) {
   const prior = existing.find((project) => project.ideaId === idea.id);
   if (prior) return { ok: true as const, created: false, project: prior };
   const project = seedProject(idea);
+  await redis.set(projectsKey(subject), [project, ...existing].slice(0, MAX_PROJECTS));
+  return { ok: true as const, created: true, project };
+}
+
+export async function startCustomDailyIdeaProject(subject: string, input: unknown) {
+  const parsed = parseCustomDailyIdeaProjectInput(input);
+  if (!parsed) return { ok: false as const, reason: "invalid_input" as const };
+
+  const ideaId = `custom_${randomBytes(12).toString("hex")}`;
+  const now = new Date().toISOString();
+  const project: DailyIdeaProject = {
+    id: projectIdFor(ideaId),
+    ideaId,
+    title: parsed.title,
+    summary: customDailyIdeaProjectSummary(parsed.problemDefinition),
+    category: "general",
+    status: "developing",
+    problemDefinition: parsed.problemDefinition,
+    targetCustomer: parsed.targetCustomer ?? "",
+    marketHypothesis: "",
+    businessModel: "",
+    validationPlan: parsed.validationPlan ?? [],
+    mvpFeatures: [],
+    technicalArchitecture: "",
+    estimatedCost: "",
+    buildRoadmap: [],
+    goToMarket: "",
+    risks: [],
+    firstAction: "",
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  const redis = getWorkspaceRedis();
+  const existing = normalizeProjects(await redis.get<DailyIdeaProject[]>(projectsKey(subject)));
   await redis.set(projectsKey(subject), [project, ...existing].slice(0, MAX_PROJECTS));
   return { ok: true as const, created: true, project };
 }
