@@ -15,7 +15,7 @@ export type WalletSignaturePageFetcher = (input: {
 
 export type WalletHistoryEvidence = {
   txCount: number;
-  walletAgeDays: number;
+  walletAgeDays: number | null;
   scannedSignatures: number;
   oldestObservedBlockTime: number | null;
   historyExhausted: boolean;
@@ -35,19 +35,23 @@ export type GwapScoreWalletEvidencePayload = {
 export function buildGwapScoreWalletEvidencePayload(input: {
   subjectId: string;
   verifiedWallet: string;
-  evidence: Pick<WalletHistoryEvidence, "walletAgeDays" | "txCount">;
+  evidence: Pick<WalletHistoryEvidence, "walletAgeDays" | "txCount" | "evidenceCompleteForScoring">;
 }): GwapScoreWalletEvidencePayload {
+  const walletAgeDays = input.evidence.walletAgeDays;
+  if (!input.evidence.evidenceCompleteForScoring || walletAgeDays === null) {
+    throw new Error("Cannot submit incomplete or unavailable wallet age evidence to GwapScore.");
+  }
   return {
     subjectId: input.subjectId,
     walletAddress: input.verifiedWallet,
-    walletAgeDays: input.evidence.walletAgeDays,
+    walletAgeDays,
     txCount: input.evidence.txCount,
     ownershipVerified: true,
   };
 }
 
-function ageDaysFromBlockTime(blockTime: number | null, nowMs: number) {
-  if (blockTime === null || !Number.isFinite(blockTime)) return 0;
+function ageDaysFromBlockTime(blockTime: number | null, nowMs: number): number | null {
+  if (blockTime === null || !Number.isFinite(blockTime)) return null;
   return Math.max(0, Math.floor((nowMs - blockTime * 1_000) / 86_400_000));
 }
 
@@ -56,7 +60,8 @@ function ageDaysFromBlockTime(blockTime: number | null, nowMs: number) {
  * alpha wallet model.
  *
  * Evidence is complete for scoring when either:
- * 1. the RPC history is exhausted, so observed tx count/age are complete; or
+ * 1. the RPC history is exhausted with at least one transaction and every
+ *    signature has a timestamp, so observed tx count/age are complete; or
  * 2. both scoring saturation bounds are proven (>=1,000 tx and >=730 days).
  *
  * If the scan budget is exhausted first, callers must not submit the partial
@@ -76,6 +81,7 @@ export async function collectWalletHistoryEvidence(
 
   let before: string | undefined;
   let scannedSignatures = 0;
+  let missingBlockTimes = 0;
   let oldestObservedBlockTime: number | null = null;
 
   while (scannedSignatures < maxSignatures) {
@@ -85,23 +91,29 @@ export async function collectWalletHistoryEvidence(
 
     if (page.length === 0) {
       const walletAgeDays = ageDaysFromBlockTime(oldestObservedBlockTime, nowMs);
+      const scoringBoundsSatisfied =
+        scannedSignatures >= GWAPSCORE_TX_ACTIVITY_CAP &&
+        walletAgeDays !== null &&
+        walletAgeDays >= GWAPSCORE_WALLET_AGE_CAP_DAYS;
       return {
         txCount: scannedSignatures,
         walletAgeDays,
         scannedSignatures,
         oldestObservedBlockTime,
         historyExhausted: true,
-        scoringBoundsSatisfied:
-          scannedSignatures >= GWAPSCORE_TX_ACTIVITY_CAP &&
-          walletAgeDays >= GWAPSCORE_WALLET_AGE_CAP_DAYS,
-        evidenceCompleteForScoring: true,
+        scoringBoundsSatisfied,
+        evidenceCompleteForScoring:
+          scoringBoundsSatisfied || (scannedSignatures > 0 && missingBlockTimes === 0),
         stopReason: "history_exhausted",
       };
     }
 
     scannedSignatures += page.length;
     for (const item of page) {
-      if (item.blockTime === null || !Number.isFinite(item.blockTime)) continue;
+      if (item.blockTime === null || !Number.isFinite(item.blockTime)) {
+        missingBlockTimes += 1;
+        continue;
+      }
       if (oldestObservedBlockTime === null || item.blockTime < oldestObservedBlockTime) {
         oldestObservedBlockTime = item.blockTime;
       }
@@ -110,6 +122,7 @@ export async function collectWalletHistoryEvidence(
     const walletAgeDays = ageDaysFromBlockTime(oldestObservedBlockTime, nowMs);
     const scoringBoundsSatisfied =
       scannedSignatures >= GWAPSCORE_TX_ACTIVITY_CAP &&
+      walletAgeDays !== null &&
       walletAgeDays >= GWAPSCORE_WALLET_AGE_CAP_DAYS;
 
     if (scoringBoundsSatisfied) {
@@ -134,7 +147,7 @@ export async function collectWalletHistoryEvidence(
         oldestObservedBlockTime,
         historyExhausted: true,
         scoringBoundsSatisfied: false,
-        evidenceCompleteForScoring: true,
+        evidenceCompleteForScoring: scannedSignatures > 0 && missingBlockTimes === 0,
         stopReason: "history_exhausted",
       };
     }
@@ -152,6 +165,7 @@ export async function collectWalletHistoryEvidence(
     historyExhausted: false,
     scoringBoundsSatisfied:
       scannedSignatures >= GWAPSCORE_TX_ACTIVITY_CAP &&
+      walletAgeDays !== null &&
       walletAgeDays >= GWAPSCORE_WALLET_AGE_CAP_DAYS,
     evidenceCompleteForScoring: false,
     stopReason: "scan_budget_exhausted",
