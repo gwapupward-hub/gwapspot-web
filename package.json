@@ -14,7 +14,7 @@
     "test:ppv:commerce:localnet": "node --experimental-strip-types scripts/ppv-commerce-localnet.mjs"
   },
   "dependencies": {
-    "@privy-io/node": "^0.35.0",
+    "@privy-io/node": "^0.36.0",
     "@privy-io/react-auth": "^3.45.0",
     "@solana-program/memo": "^0.15.0",
     "@solana-program/system": "^0.15.0",
