@@ -1,6 +1,10 @@
 # GWAP First-Five-Minutes Sprint · November 9–15, 2026
 
-Status: **Sprint 1 implemented locally; release pending.**
+Status: **Sprint 1 follow-up implemented on a local feature branch; PR and deployment pending authorization.**
+
+The initial public first-value experience was merged in PR #331 (baseline commit
+`3743a689`). This follow-up closes remaining continuity and measurement gaps; it
+does not expand GNS registration, GwapScore scoring, or PPV custody scope.
 
 ## North star
 
@@ -39,11 +43,21 @@ Not tested in this audit: mobile breakpoints, authenticated OS journey, successf
 
 ## Sprint 1 change set
 
-- Mount the existing `HomeUtility` public lookup on the homepage. Keep its existing `/api/public/lookup` validation and rate-limit boundary.
-- Make wallet-free lookup the primary hero CTA and the identity card's first destination. Claims still require OS access.
-- Explain that public identity and scores are signals, not security audits or endorsements.
-- Skip the homepage entry splash and timed Lil Gwapz popup to avoid two nonessential first-visit actions. Campaign pages retain their existing intro bypass.
-- Record five starting intents and the first public lookup result with coarse time buckets (`under_30s`, `30s_to_2m`, `2m_to_5m`, `5m_plus`). Do not send raw wallet or `.gwap` query data in this event.
+- **Already in the November 10 baseline (PR #331):** mount `HomeUtility` on the
+  homepage, link hero and identity goal to wallet-free discovery, explain source
+  limitations, and skip the compulsory homepage splash/promo. Keep the existing
+  `/api/public/lookup` validation and rate-limit boundary.
+- **Follow-up in this feature branch:** retain the identity goal through the
+  in-page public lookup, and retain identity intent plus the validated `.gwap`
+  suggestion through the `/app/identity?name=…` claim/sign-in handoff.
+- **Follow-up in this feature branch:** measure results with typed, privacy-safe
+  lookup events rather than inferring success from changing DOM text. All-source
+  outages, invalid inputs, and request failures must **not** count as first
+  value. Maintain coarse timing (`under_30s`, `30s_to_2m`, `2m_to_5m`, `5m_plus`)
+  without emitting wallet addresses or searched names to analytics.
+- **Follow-up in this feature branch:** give truthful source-unavailable copy,
+  disclose test SOL/devnet for name registration, and require a fresh registry
+  check and explicit signing before registering a suggested name.
 
 ### Sprint 1 acceptance
 
@@ -53,6 +67,21 @@ Not tested in this audit: mobile breakpoints, authenticated OS journey, successf
 4. No compulsory intro/promo popup blocks the homepage.
 5. Frontend passes focused tests, TypeScript, lint, full suite and a production build.
 6. Check desktop and mobile in a deployment preview before merging. Do not treat a local build as production confirmation.
+
+### Follow-up verification, November 10
+
+| Check | Result | Limitation |
+| --- | --- | --- |
+| Public lookup, intent continuity, first-value event tests | Pass | Unit/source-level integration checks, not a browser E2E test |
+| Full repository tests | Pass: 627 tests, 0 failures | Local runtime and test fixtures |
+| TypeScript, ESLint, Next.js production build | Pass | Lint reports existing warnings but no errors |
+| Local HTTP smoke | `/` 200, malformed public name 400, `/app/identity?name=…` 200 | Does not prove real authenticated sign-in or registry availability |
+| Production or preview, mobile, actual signed-in claim | Not verified | Requires separately authorized preview/release validation |
+
+**Release guard:** Do not push the feature branch until preview behavior is
+approved. Vercel automatically generates previews from GitHub branch pushes
+in the current repository integration, so a remote draft PR may initiate a
+deployment even if it is never merged.
 
 ## Thursday: Identity → reputation attribution
 
