@@ -12,6 +12,13 @@ type LookupState = {
   outcome: string | null;
 };
 
+function firstValueTimeBucket(elapsedSeconds: number) {
+  if (elapsedSeconds < 30) return "under_30s";
+  if (elapsedSeconds < 120) return "30s_to_2m";
+  if (elapsedSeconds <= 300) return "2m_to_5m";
+  return "5m_plus";
+}
+
 function safeTrack(name: string, properties: AnalyticsProperties) {
   try {
     track(name, properties);
@@ -54,11 +61,17 @@ function classifyConversionLink(anchor: HTMLAnchorElement) {
   const label = normalizeLabel(anchor.textContent);
 
   if (section === "top" && anchor.closest(".hero-ctas")) {
+    if (href === "#lookup") return { event: "hero_conversion_click", action: "public_lookup", label };
+    if (href === "#overview") return { event: "hero_conversion_click", action: "choose_goal", label };
     if (href.startsWith("/app/identity")) return { event: "hero_conversion_click", action: "claim_identity", label };
     if (href === "/app") return { event: "hero_conversion_click", action: "enter_os", label };
   }
 
   if (section === "overview" && anchor.closest(".overview-foundation")) {
+    const intent = anchor.dataset.gwapIntent;
+    if (["build_project", "validate_idea", "identity", "reputation", "proof"].includes(intent || "")) {
+      return { event: "intent_path_selected", action: intent || "unknown", label };
+    }
     if (href.startsWith("/app/identity")) return { event: "intent_path_selected", action: "identity", label };
     if (href === "#top") return { event: "intent_path_selected", action: "reputation", label };
     if (href === "/app") return { event: "intent_path_selected", action: "os", label };
@@ -76,11 +89,24 @@ function classifyConversionLink(anchor: HTMLAnchorElement) {
 
 export function ConversionTelemetry() {
   useEffect(() => {
+    const pageStart = performance.now();
+    let firstValueTracked = false;
     let lookupState: LookupState = {
       attempt: 0,
       mode: "unknown",
       completed: false,
       outcome: null,
+    };
+
+    const recordFirstValue = (outcome: string) => {
+      if (firstValueTracked) return;
+      firstValueTracked = true;
+      safeTrack("first_value_reached", {
+        mode: lookupState.mode === "unknown" ? getLookupMode() : lookupState.mode,
+        outcome,
+        elapsed_bucket: firstValueTimeBucket((performance.now() - pageStart) / 1000),
+        source: "homepage",
+      });
     };
 
     const handleSubmit = (event: Event) => {
@@ -143,6 +169,7 @@ export function ConversionTelemetry() {
               outcome,
               source: "hero",
             });
+            recordFirstValue(outcome);
             return;
           }
 

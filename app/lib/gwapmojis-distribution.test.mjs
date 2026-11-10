@@ -146,7 +146,7 @@ test("no intro overlay stands between a shared link and the first tap", () => {
   const layers = read("../components/public-experience-layers.tsx");
   const splash = read("../components/premium-splash.tsx");
   assert.match(layers, /pathname === "\/gwapmojis" \|\| pathname\.startsWith\("\/gwapmojis\/"\)/);
-  assert.match(layers, /<PremiumSplash skipIntro=\{isCampaignLanding\} \/>/);
+  assert.match(layers, /<PremiumSplash skipIntro=\{isCampaignLanding \|\| pathname === "\/"\} \/>/);
   assert.match(splash, /useState<OverlayMode>\(skipIntro \? null : "intro"\)/);
   assert.match(splash, /if \(skipIntro \|\| hasSeenIntro \|\| reducedMotion\)/);
   // A download link is exempt from the route-transition overlay too.
