@@ -2,15 +2,13 @@
 
 import { track } from "@vercel/analytics";
 import { useEffect } from "react";
+import {
+  isMeaningfulPublicLookupOutcome,
+  PUBLIC_LOOKUP_EVENT,
+  type PublicLookupEventDetail,
+} from "../lib/public-first-value";
 
 type AnalyticsProperties = Record<string, string | number | boolean>;
-
-type LookupState = {
-  attempt: number;
-  mode: "wallet" | "name" | "unknown";
-  completed: boolean;
-  outcome: string | null;
-};
 
 function firstValueTimeBucket(elapsedSeconds: number) {
   if (elapsedSeconds < 30) return "under_30s";
@@ -29,30 +27,6 @@ function safeTrack(name: string, properties: AnalyticsProperties) {
 
 function normalizeLabel(value: string | null | undefined) {
   return value?.replace(/\s+/g, " ").trim().slice(0, 80) || "unknown";
-}
-
-function getLookupMode() {
-  const active = document.querySelector<HTMLButtonElement>(
-    '.hero-utility-tabs button[aria-pressed="true"]',
-  );
-  const label = normalizeLabel(active?.textContent).toLowerCase();
-  if (label.includes("wallet")) return "wallet" as const;
-  if (label.includes("gwap") || label.includes("name")) return "name" as const;
-  return "unknown" as const;
-}
-
-function getLookupOutcome() {
-  const result = document.querySelector<HTMLElement>(
-    ".hero-utility-feedback .hero-utility-result",
-  );
-  if (!result) return null;
-
-  const signal = normalizeLabel(result.querySelector("small")?.textContent).toLowerCase();
-  if (signal.includes("available")) return "name_available";
-  if (signal.includes("registered")) return "name_registered";
-  if (signal.includes("identity + reputation")) return "identity_found";
-  if (signal.includes("wallet found")) return "wallet_scored_no_identity";
-  return "result_shown";
 }
 
 function classifyConversionLink(anchor: HTMLAnchorElement) {
@@ -91,39 +65,37 @@ export function ConversionTelemetry() {
   useEffect(() => {
     const pageStart = performance.now();
     let firstValueTracked = false;
-    let lookupState: LookupState = {
-      attempt: 0,
-      mode: "unknown",
-      completed: false,
-      outcome: null,
-    };
 
-    const recordFirstValue = (outcome: string) => {
+    const recordFirstValue = (detail: Extract<PublicLookupEventDetail, { phase: "completed" | "recovered" }>) => {
       if (firstValueTracked) return;
       firstValueTracked = true;
       safeTrack("first_value_reached", {
-        mode: lookupState.mode === "unknown" ? getLookupMode() : lookupState.mode,
-        outcome,
+        mode: detail.mode,
+        outcome: detail.outcome,
         elapsed_bucket: firstValueTimeBucket((performance.now() - pageStart) / 1000),
         source: "homepage",
       });
     };
 
-    const handleSubmit = (event: Event) => {
-      const form = event.target;
-      if (!(form instanceof HTMLFormElement) || !form.matches(".hero-utility-form")) return;
-
-      lookupState = {
-        attempt: lookupState.attempt + 1,
-        mode: getLookupMode(),
-        completed: false,
-        outcome: null,
-      };
-
-      safeTrack("lookup_started", {
-        mode: lookupState.mode,
-        source: "hero",
-      });
+    const handleLookup = (event: Event) => {
+      const detail = (event as CustomEvent<PublicLookupEventDetail>).detail;
+      if (!detail || !Number.isSafeInteger(detail.attempt) || detail.attempt < 1) return;
+      if (detail.mode !== "wallet" && detail.mode !== "name") return;
+      if (detail.phase === "started") {
+        safeTrack("lookup_started", { mode: detail.mode, source: "hero" });
+        return;
+      }
+      if (detail.phase !== "completed" && detail.phase !== "recovered") return;
+      if (detail.phase === "recovered") {
+        safeTrack("lookup_identity_recovered", { mode: detail.mode, source: "hero" });
+      } else {
+        safeTrack("lookup_completed", {
+          mode: detail.mode,
+          outcome: detail.outcome,
+          source: "hero",
+        });
+      }
+      if (isMeaningfulPublicLookupOutcome(detail.outcome)) recordFirstValue(detail);
     };
 
     const handleClick = (event: MouseEvent) => {
@@ -143,61 +115,11 @@ export function ConversionTelemetry() {
       });
     };
 
-    const feedback = document.querySelector<HTMLElement>(".hero-utility-feedback");
-    const feedbackObserver = feedback
-      ? new MutationObserver(() => {
-          const error = feedback.querySelector(".is-error");
-          if (error && !lookupState.completed) {
-            lookupState.completed = true;
-            lookupState.outcome = "error";
-            safeTrack("lookup_completed", {
-              mode: lookupState.mode,
-              outcome: "error",
-              source: "hero",
-            });
-            return;
-          }
-
-          const outcome = getLookupOutcome();
-          if (!outcome) return;
-
-          if (!lookupState.completed) {
-            lookupState.completed = true;
-            lookupState.outcome = outcome;
-            safeTrack("lookup_completed", {
-              mode: lookupState.mode,
-              outcome,
-              source: "hero",
-            });
-            recordFirstValue(outcome);
-            return;
-          }
-
-          if (
-            lookupState.outcome === "wallet_scored_no_identity" &&
-            outcome === "identity_found"
-          ) {
-            lookupState.outcome = outcome;
-            safeTrack("lookup_identity_recovered", {
-              mode: "wallet",
-              source: "hero",
-            });
-          }
-        })
-      : null;
-
-    feedbackObserver?.observe(feedback!, {
-      childList: true,
-      subtree: true,
-      characterData: true,
-    });
-
-    document.addEventListener("submit", handleSubmit, { capture: true });
+    window.addEventListener(PUBLIC_LOOKUP_EVENT, handleLookup);
     document.addEventListener("click", handleClick, { capture: true });
 
     return () => {
-      feedbackObserver?.disconnect();
-      document.removeEventListener("submit", handleSubmit, { capture: true });
+      window.removeEventListener(PUBLIC_LOOKUP_EVENT, handleLookup);
       document.removeEventListener("click", handleClick, { capture: true });
     };
   }, []);

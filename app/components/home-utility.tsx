@@ -10,6 +10,11 @@ import {
 } from "react";
 import type { GwapScoreResult } from "../lib/gwap-score";
 import {
+  classifyPublicLookupResult,
+  PUBLIC_LOOKUP_EVENT,
+  type PublicLookupEventDetail,
+} from "../lib/public-first-value";
+import {
   buildPublicLookupShareUrl,
   readPublicLookupDeepLink,
 } from "../lib/public-share";
@@ -77,6 +82,10 @@ type ResultCardActions = {
   shareStatus: ShareStatus;
 };
 
+function reportLookup(detail: PublicLookupEventDetail) {
+  window.dispatchEvent(new CustomEvent(PUBLIC_LOOKUP_EVENT, { detail }));
+}
+
 function ShareButton({ onShare, shareStatus }: ResultCardActions) {
   const labels: Record<ShareStatus, string> = {
     idle: "Share result",
@@ -134,8 +143,8 @@ function NameResultCard({
       <div className="hero-utility-result is-positive">
         <div>
           <small>AVAILABLE</small>
-          <strong>{result.fullName} is ready.</strong>
-          <p>Claim it inside GWAP OS and turn it into your identity hub.</p>
+          <strong>{result.fullName} is available.</strong>
+          <p>Registration currently uses Solana devnet (test SOL). Continue inside GWAP OS to check and claim it.</p>
         </div>
         <div className="hero-utility-result-actions">
           <Link href={`/app/identity?name=${encodeURIComponent(result.name)}`}>
@@ -189,7 +198,7 @@ function WalletResultCard({
     return (
       <div className="hero-utility-result">
         <div>
-          <small>WALLET FOUND</small>
+          <small>WALLET CHECKED</small>
           <strong>
             {identity.status === "none"
               ? "No .gwap identity is linked yet."
@@ -197,7 +206,7 @@ function WalletResultCard({
           </strong>
           <p>
             {identity.status === "unavailable"
-              ? `${shortAddress(result.wallet)} was scored while GWAP retries the identity lookup.`
+              ? `${shortAddress(result.wallet)} was checked while GWAP retries the identity lookup. Any unavailable score remains unavailable.`
               : `${shortAddress(result.wallet)} was checked directly with GwapScore.`}
           </p>
           <GwapScoreDisplay result={score} variant="card" />
@@ -250,6 +259,7 @@ export function HomeUtility() {
   const recoveryControllerRef = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const shareResetRef = useRef<number | null>(null);
+  const attemptRef = useRef(0);
 
   useEffect(
     () => () => {
@@ -260,7 +270,7 @@ export function HomeUtility() {
     [],
   );
 
-  const recoverUnavailableIdentity = useCallback(async (wallet: string) => {
+  const recoverUnavailableIdentity = useCallback(async (wallet: string, attempt: number) => {
     recoveryControllerRef.current?.abort();
     const controller = new AbortController();
     recoveryControllerRef.current = controller;
@@ -298,10 +308,16 @@ export function HomeUtility() {
             continue;
           }
 
-          if (controller.signal.aborted) return;
+          if (controller.signal.aborted || attempt !== attemptRef.current) return;
 
           if (payload.identity.status !== "unavailable") {
             setResult(payload);
+            reportLookup({
+              phase: "recovered",
+              attempt,
+              mode: "wallet",
+              outcome: classifyPublicLookupResult(payload),
+            });
             return;
           }
         } catch {
@@ -323,12 +339,15 @@ export function HomeUtility() {
     controllerRef.current?.abort();
     recoveryControllerRef.current?.abort();
     recoveryControllerRef.current = null;
+    const attempt = ++attemptRef.current;
+    reportLookup({ phase: "started", attempt, mode: nextMode });
 
     const validationMessage = getValidationMessage(nextMode, nextQuery);
     if (validationMessage) {
       setResult(null);
       setStatus("error");
       setMessage(validationMessage);
+      reportLookup({ phase: "completed", attempt, mode: nextMode, outcome: "invalid_input" });
       return;
     }
 
@@ -356,10 +375,18 @@ export function HomeUtility() {
         );
       }
 
+      if (controller.signal.aborted || attempt !== attemptRef.current) return;
+
       setResult(payload);
       setStatus("success");
+      reportLookup({
+        phase: "completed",
+        attempt,
+        mode: nextMode,
+        outcome: classifyPublicLookupResult(payload),
+      });
       if (payload.kind === "wallet" && payload.identity.status === "unavailable") {
-        void recoverUnavailableIdentity(payload.wallet);
+        void recoverUnavailableIdentity(payload.wallet, attempt);
       }
       if (syncUrl) {
         const shareQuery = payload.kind === "name" ? payload.fullName : payload.wallet;
@@ -380,6 +407,7 @@ export function HomeUtility() {
           ? error.message
           : "The lookup could not be completed.",
       );
+      reportLookup({ phase: "completed", attempt, mode: nextMode, outcome: "lookup_error" });
     } finally {
       if (controllerRef.current === controller) {
         controllerRef.current = null;
@@ -403,6 +431,7 @@ export function HomeUtility() {
     controllerRef.current?.abort();
     recoveryControllerRef.current?.abort();
     recoveryControllerRef.current = null;
+    attemptRef.current += 1;
     setMode(nextMode);
     setQuery("");
     setStatus("idle");

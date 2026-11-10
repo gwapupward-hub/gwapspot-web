@@ -21,6 +21,9 @@ test("five starting paths and first-value timing are measurable without identity
   assert.match(telemetry, /first_value_reached/);
   assert.match(telemetry, /elapsed_bucket: firstValueTimeBucket/);
   assert.match(telemetry, /if \(href === "#lookup"\)/);
+  assert.match(telemetry, /isMeaningfulPublicLookupOutcome/);
+  assert.match(telemetry, /window\.addEventListener\(PUBLIC_LOOKUP_EVENT, handleLookup\)/);
+  assert.doesNotMatch(telemetry, /MutationObserver/);
   assert.doesNotMatch(telemetry, /safeTrack\("first_value_reached", \{[\s\S]{0,250}(wallet|query):/);
 });
 
@@ -28,6 +31,25 @@ test("lookup retains public API access and authenticated claim handoff", () => {
   const utility = read("../components/home-utility.tsx");
   assert.match(utility, /\/api\/public\/lookup\?type=/);
   assert.match(utility, /href=\{`\/app\/identity\?name=/);
+  assert.match(utility, /reportLookup\(\{ phase: "completed"/);
+  assert.match(utility, /classifyPublicLookupResult\(payload\)/);
+});
+
+test("public identity goal and result CTA retain the correct intent without redirecting the lookup", () => {
+  const bridge = read("../components/entry-intent-bridge.tsx");
+  assert.match(bridge, /getGwapEntryIntentForPublicGoal\(anchor\.dataset\.gwapIntent\)/);
+  assert.match(bridge, /inLookupActions && destination\.pathname !== "\/app\/identity"/);
+  assert.match(bridge, /inGoalCards && destination\.pathname\.startsWith\("\/app"\)/);
+});
+
+test("available public name is suggested after sign-in but never auto-claimed", () => {
+  const page = read("../app/identity/page.tsx");
+  const walletView = read("../app/components/identity-wallet-view.tsx");
+  const identityView = read("../app/components/identity-view.tsx");
+  assert.match(page, /normalizePublicLookup\("name", rawName\)/);
+  assert.match(page, /IdentityWalletView suggestedName=\{suggestedName\}/);
+  assert.match(walletView, /IdentityView suggestedName=\{suggestedName\}/);
+  assert.match(identityView, /Recheck availability before signing/);
 });
 
 test("homepage first visit has no mandatory intro or timed promo", () => {
