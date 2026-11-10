@@ -193,7 +193,7 @@ function WalletResultCard({
           <strong>
             {identity.status === "none"
               ? "No .gwap identity is linked yet."
-              : "GwapScore ready. Reconnecting to GNS…"}
+              : "GNS identity is temporarily unavailable."}
           </strong>
           <p>
             {identity.status === "unavailable"
@@ -475,7 +475,7 @@ export function HomeUtility() {
       <div className="hero-utility-heading">
         <div>
           <small>LIVE GWAP UTILITY</small>
-          <strong id="hero-utility-title">Check the network.</strong>
+          <strong id="hero-utility-title">Check a public identity.</strong>
         </div>
         <span>NO SIGNUP</span>
       </div>
@@ -486,14 +486,14 @@ export function HomeUtility() {
           aria-pressed={mode === "wallet"}
           onClick={() => selectMode("wallet")}
         >
-          Wallet Intelligence
+          Solana wallet
         </button>
         <button
           type="button"
           aria-pressed={mode === "name"}
           onClick={() => selectMode("name")}
         >
-          .GWAP Name
+          .gwap name
         </button>
       </div>
 

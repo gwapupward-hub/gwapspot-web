@@ -8,7 +8,6 @@ import { GwapInteractionLayer } from "./gwap-interaction-layer";
 import { GwapSensoryPolishLayer } from "./gwap-sensory-polish-layer";
 import { GwapSystemMemoryLayer } from "./gwap-system-memory-layer";
 import { GwapTouchProductNavigationLayer } from "./gwap-touch-product-navigation-layer";
-import { LilGwapzPromoGate } from "./lil-gwapz-promo-gate";
 import PremiumSplash from "./premium-splash";
 import { Telemetry } from "../telemetry";
 
@@ -69,7 +68,7 @@ export function PublicExperienceLayers() {
 
   return (
     <>
-      <PremiumSplash skipIntro={isCampaignLanding} />
+      <PremiumSplash skipIntro={isCampaignLanding || pathname === "/"} />
       <GwapTouchProductNavigationLayer />
       <GwapInteractionLayer />
       <GwapSensoryPolishLayer />
@@ -77,7 +76,6 @@ export function PublicExperienceLayers() {
       <GwapContinuityLayer />
       <Telemetry />
       <ConversionTelemetry />
-      {pathname === "/" ? <LilGwapzPromoGate /> : null}
     </>
   );
 }

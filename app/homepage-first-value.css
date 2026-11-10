@@ -1,0 +1,56 @@
+/* Put a useful public result before any account or wallet decision. */
+.overview-lookup {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  align-items: center;
+  gap: clamp(24px, 4vw, 64px);
+  margin: clamp(34px, 6vw, 76px) 0;
+  scroll-margin-top: 110px;
+}
+
+.overview-lookup-copy h3 {
+  margin: 18px 0 14px;
+  color: #f6faf6;
+  font-size: clamp(30px, 3.5vw, 54px);
+  font-weight: 750;
+  letter-spacing: -.045em;
+  line-height: 1.03;
+}
+
+.overview-lookup-copy p {
+  max-width: 480px;
+  margin: 0;
+  color: #c2cec4;
+  font-size: clamp(14px, 1.25vw, 17px);
+  line-height: 1.65;
+}
+
+.overview-lookup-copy .overview-lookup-limit {
+  margin-top: 15px;
+  color: #a6b7a9;
+  font-size: 12px;
+}
+
+.overview-lookup .hero-utility {
+  width: 100%;
+  max-width: none;
+  margin-top: 0;
+}
+
+.overview-lookup .hero-utility-tabs button,
+.overview-lookup .hero-utility-result-actions > a,
+.overview-lookup .hero-utility-result-actions > button {
+  min-height: 44px;
+  font-size: 12px;
+}
+
+.overview-lookup .hero-utility-heading strong { font-size: 17px; }
+.overview-lookup .hero-utility-result strong { font-size: 14px; }
+.overview-lookup .hero-utility-result p,
+.overview-lookup .hero-utility-feedback > p { font-size: 12px; }
+.overview-lookup .hero-utility-form input { font-size: 14px; }
+
+@media (max-width: 900px) {
+  .overview-lookup { grid-template-columns: 1fr; }
+  .overview-lookup-copy p { max-width: 650px; }
+}
