@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getGnsApiBase } from "../../../app/lib/gns";
+import { resolveGnsNameDetailed } from "../../../app/lib/gns";
 import {
   isValidGnsName,
   normalizeGnsName,
@@ -28,30 +28,31 @@ export async function GET(request: Request) {
     );
   }
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 2_500);
-
-  try {
-    const response = await fetch(`${getGnsApiBase()}/resolve/${encodeURIComponent(name)}`, {
-      cache: "no-store",
-      headers: { Accept: "application/json" },
-      signal: controller.signal,
-    });
-    if (!response.ok) throw new Error("GNS registry unavailable");
-
-    const payload = (await response.json()) as { found?: boolean; owner?: string | null };
-    return NextResponse.json({
-      name,
-      fullName: `${name}.gwap`,
-      available: payload.found !== true,
-      owner: payload.found === true ? payload.owner ?? null : null,
-    });
-  } catch {
+  const result = await resolveGnsNameDetailed(name);
+  if (!result.ok) {
+    // Never infer availability from a failed lookup. `retryable` tells the
+    // client this is transient (a cold or busy registry), not a bad request.
     return NextResponse.json(
-      { error: "GNS registry is temporarily unavailable." },
-      { status: 503 },
+      {
+        error: "GNS registry is temporarily unavailable.",
+        reason: result.reason,
+        retryable: true,
+      },
+      {
+        status: 503,
+        headers: {
+          "Retry-After": "3",
+          "X-GNS-Failure": result.reason,
+          "Cache-Control": "no-store",
+        },
+      },
     );
-  } finally {
-    clearTimeout(timeout);
   }
+
+  return NextResponse.json({
+    name,
+    fullName: `${name}.gwap`,
+    available: result.value.found !== true,
+    owner: result.value.found === true ? result.value.owner : null,
+  });
 }

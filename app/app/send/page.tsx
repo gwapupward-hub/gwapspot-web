@@ -9,8 +9,9 @@ import {
   Transaction,
 } from "@solana/web3.js";
 import bs58 from "bs58";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useGwapOs } from "../components/os-provider";
+import { fetchGnsWithRecovery, warmGnsRegistry } from "../lib/gns-lookup-client";
 import { recordWalletActivity } from "../lib/wallet-activity";
 import styles from "./send-mode.module.css";
 
@@ -76,6 +77,7 @@ export default function SendPage() {
   const [status, setStatus] = useState("");
   const [signature, setSignature] = useState("");
   const sendLock = useRef(false);
+  const resolveRequestRef = useRef(0);
 
   const rpcUrl = process.env.NEXT_PUBLIC_SOLANA_RPC_URL?.trim() || clusterApiUrl("mainnet-beta");
   const connection = useMemo(() => new Connection(rpcUrl, "confirmed"), [rpcUrl]);
@@ -83,6 +85,10 @@ export default function SendPage() {
     () => wallets.find((wallet) => wallet.address === account.verifiedWallet) ?? null,
     [account.verifiedWallet, wallets],
   );
+
+  useEffect(() => {
+    if (runtimeMode !== "devnet") warmGnsRegistry();
+  }, [runtimeMode]);
 
   if (runtimeMode === "devnet") {
     return (
@@ -136,10 +142,19 @@ export default function SendPage() {
 
       setStatus("Resolving .gwap identity…");
       try {
-        const response = await fetch(`/api/gns/resolve?name=${encodeURIComponent(name)}`, {
-          credentials: "same-origin",
-          cache: "no-store",
-        });
+        const requestId = ++resolveRequestRef.current;
+        const response = await fetchGnsWithRecovery(
+          () =>
+            fetch(`/api/gns/resolve?name=${encodeURIComponent(name)}`, {
+              credentials: "same-origin",
+              cache: "no-store",
+            }),
+          {
+            isCancelled: () => requestId !== resolveRequestRef.current,
+            onRetry: () => setStatus("GNS registry is waking up — retrying…"),
+          },
+        );
+        if (requestId !== resolveRequestRef.current) return null;
         const payload = (await response.json()) as GnsResolvePayload;
         if (!response.ok) {
           setError(payload.error || "Could not resolve that .gwap name.");

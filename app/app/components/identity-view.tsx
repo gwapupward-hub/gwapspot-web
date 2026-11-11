@@ -34,6 +34,7 @@ import {
 } from "../lib/gns-registration";
 import { useGwapOs } from "./os-provider";
 import { GnsProfileEditor } from "./gns-profile-editor";
+import { fetchGnsWithRecovery, warmGnsRegistry } from "../lib/gns-lookup-client";
 
 type SearchState =
   | { status: "idle"; message: string }
@@ -192,6 +193,20 @@ export function IdentityView({ suggestedName = "" }: { suggestedName?: string })
     [getAccessToken],
   );
 
+  useEffect(() => {
+    if (gnsIdentity.status === "found") return;
+    let cancelled = false;
+    void getAccessToken()
+      .then((token) => {
+        if (cancelled) return;
+        warmGnsRegistry(token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [getAccessToken, gnsIdentity.status]);
+
   async function readPayload(response: Response) {
     try {
       return (await response.json()) as ApiPayload;
@@ -226,8 +241,19 @@ export function IdentityView({ suggestedName = "" }: { suggestedName?: string })
     });
 
     try {
-      const availabilityResponse = await authenticatedFetch(
-        `/api/gns/resolve?name=${encodeURIComponent(nextCandidate)}`,
+      const availabilityResponse = await fetchGnsWithRecovery(
+        () =>
+          authenticatedFetch(
+            `/api/gns/resolve?name=${encodeURIComponent(nextCandidate)}`,
+          ),
+        {
+          isCancelled: () => requestId !== checkRequestRef.current,
+          onRetry: () =>
+            setSearch({
+              status: "checking",
+              message: `GNS registry is waking up — retrying ${nextCandidate}.gwap...`,
+            }),
+        },
       );
       const availability = (await readPayload(availabilityResponse)) as ApiPayload & {
         available?: boolean;

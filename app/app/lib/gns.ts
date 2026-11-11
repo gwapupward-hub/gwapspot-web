@@ -19,6 +19,14 @@ const GNS_LOOKUP_TIMEOUT_MS = 2_500;
 const MAX_GNS_LOOKUP_TIMEOUT_MS = 10_000;
 const GNS_CONFIG_TIMEOUT_MS = 4_000;
 const GNS_REGISTER_TIMEOUT_MS = 18_000;
+// Read-only registry lookups. The backend can be cold (a sleeping instance
+// takes tens of seconds to boot), so a lookup retries transient failures
+// within a bounded budget instead of failing on the first slow answer.
+const GNS_RESOLVE_ATTEMPT_TIMEOUT_MS = 6_000;
+const GNS_RESOLVE_BUDGET_MS = 12_000;
+const GNS_RETRY_BACKOFF_MS = [300, 900];
+const GNS_RETRYABLE_STATUS = new Set([502, 503, 504]);
+const GNS_WARM_TIMEOUT_MS = 1_500;
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -57,6 +65,150 @@ function isPublicKey(value: string) {
 
 function getApiBase() {
   return (process.env.GNS_API_URL || DEFAULT_GNS_API_URL).replace(/\/+$/, "");
+}
+
+export type GnsRegistryFailureReason =
+  | "timeout"
+  | "network"
+  | "upstream_5xx"
+  | "upstream_4xx"
+  | "invalid_payload";
+
+export type GnsRegistryFailure = {
+  ok: false;
+  reason: GnsRegistryFailureReason;
+  status: number | null;
+  attempts: number;
+  elapsedMs: number;
+};
+
+export type GnsRegistryResult<T> =
+  | { ok: true; value: T; attempts: number; elapsedMs: number }
+  | GnsRegistryFailure;
+
+/** Fixed operation labels: diagnostics never carry names, wallets or URLs. */
+export type GnsRegistryOperation =
+  | "resolve_name"
+  | "domains_by_wallet"
+  | "profile_by_name";
+
+export type GnsRegistryFetchOptions = {
+  attemptTimeoutMs?: number;
+  budgetMs?: number;
+};
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function logRegistryFailure(op: GnsRegistryOperation, failure: GnsRegistryFailure) {
+  // A missing record is an answer, not an outage.
+  if (failure.status === 404) return;
+  console.warn("gns_registry_lookup_failed", {
+    op,
+    reason: failure.reason,
+    status: failure.status,
+    attempts: failure.attempts,
+    elapsedMs: failure.elapsedMs,
+  });
+}
+
+/**
+ * GET a read-only GNS registry path. Network errors, timeouts and 502/503/504
+ * are retried with short backoff inside `budgetMs`; any other status, and any
+ * 200 whose body is not a JSON object, fails immediately. Failures are never
+ * converted into an answer — callers decide what "unavailable" means.
+ */
+export async function fetchGnsRegistry<T>(
+  op: GnsRegistryOperation,
+  path: string,
+  parse: (payload: UnknownRecord) => T | null,
+  options: GnsRegistryFetchOptions = {},
+): Promise<GnsRegistryResult<T>> {
+  const attemptTimeoutMs = options.attemptTimeoutMs ?? GNS_RESOLVE_ATTEMPT_TIMEOUT_MS;
+  const budgetMs = options.budgetMs ?? GNS_RESOLVE_BUDGET_MS;
+  const started = Date.now();
+  const url = `${getApiBase()}${path}`;
+  let attempts = 0;
+  let reason: GnsRegistryFailureReason = "timeout";
+  let status: number | null = null;
+
+  while (true) {
+    const remaining = budgetMs - (Date.now() - started);
+    if (remaining <= 0) break;
+    attempts += 1;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), Math.min(attemptTimeoutMs, remaining));
+    let retryable = false;
+
+    try {
+      const response = await fetch(url, {
+        cache: "no-store",
+        headers: { Accept: "application/json" },
+        signal: controller.signal,
+      });
+      status = response.status;
+      if (response.ok) {
+        let value: T | null = null;
+        try {
+          const record = asRecord(await response.json());
+          value = record ? parse(record) : null;
+        } catch {
+          if (controller.signal.aborted) {
+            reason = "timeout";
+            retryable = true;
+          }
+        }
+        if (value !== null) {
+          return { ok: true, value, attempts, elapsedMs: Date.now() - started };
+        }
+        if (!retryable) reason = "invalid_payload";
+      } else {
+        reason = response.status >= 500 ? "upstream_5xx" : "upstream_4xx";
+        retryable = GNS_RETRYABLE_STATUS.has(response.status);
+      }
+    } catch {
+      status = null;
+      reason = controller.signal.aborted ? "timeout" : "network";
+      retryable = true;
+    } finally {
+      clearTimeout(timer);
+    }
+
+    const backoff = GNS_RETRY_BACKOFF_MS[attempts - 1];
+    if (!retryable || backoff === undefined) break;
+    if (Date.now() - started + backoff >= budgetMs) break;
+    await sleep(backoff);
+  }
+
+  const failure: GnsRegistryFailure = {
+    ok: false,
+    reason,
+    status,
+    attempts,
+    elapsedMs: Date.now() - started,
+  };
+  logRegistryFailure(op, failure);
+  return failure;
+}
+
+/**
+ * Nudge a sleeping registry instance awake. Arrival of the request is what
+ * starts the boot, so this does not wait for the instance to become ready.
+ */
+export async function warmGnsRegistry() {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), GNS_WARM_TIMEOUT_MS);
+  try {
+    const response = await fetch(`${getApiBase()}/readiness`, {
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
+    });
+    return response.ok;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 export function getGnsProfileUrl(name: string) {
@@ -122,76 +274,56 @@ export async function resolveGnsIdentity(
   const scorePromise = fetchGwapScore(wallet, {
     timeoutMs: options.scoreTimeoutMs,
   });
-  const controller = new AbortController();
   const requestedTimeout = options.timeoutMs ?? GNS_LOOKUP_TIMEOUT_MS;
   const timeoutMs = Number.isFinite(requestedTimeout)
     ? Math.min(Math.max(requestedTimeout, 1_000), MAX_GNS_LOOKUP_TIMEOUT_MS)
     : GNS_LOOKUP_TIMEOUT_MS;
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-  const apiBase = getApiBase();
 
-  try {
-    const domainsResponse = await fetch(
-      `${apiBase}/domains/${encodeURIComponent(wallet)}`,
-      {
-        cache: "no-store",
-        headers: { Accept: "application/json" },
-        signal: controller.signal,
-      },
-    );
+  const domainsResult = await fetchGnsRegistry(
+    "domains_by_wallet",
+    `/domains/${encodeURIComponent(wallet)}`,
+    (payload) =>
+      Array.isArray(payload.domains)
+        ? payload.domains
+            .map(asRecord)
+            .filter((domain): domain is UnknownRecord => Boolean(domain))
+        : [],
+    // One timeout-length attempt, plus a retry for fast transient failures.
+    { attemptTimeoutMs: timeoutMs, budgetMs: Math.min(timeoutMs * 2, MAX_GNS_LOOKUP_TIMEOUT_MS) },
+  );
+  if (!domainsResult.ok) return emptyIdentity("unavailable", await scorePromise);
 
-    if (!domainsResponse.ok) {
-      return emptyIdentity("unavailable", await scorePromise);
-    }
+  const activeDomains = domainsResult.value.filter((domain) => domain.status !== "expired");
+  const primary =
+    activeDomains.find((domain) => domain.is_primary === true) || activeDomains[0];
 
-    const domainsPayload = asRecord(await domainsResponse.json());
-    const domains = Array.isArray(domainsPayload?.domains)
-      ? domainsPayload.domains
-          .map(asRecord)
-          .filter((domain): domain is UnknownRecord => Boolean(domain))
-      : [];
-    const activeDomains = domains.filter((domain) => domain.status !== "expired");
-    const primary =
-      activeDomains.find((domain) => domain.is_primary === true) || activeDomains[0];
+  if (!primary) return emptyIdentity("none", await scorePromise);
+  const name = asString(primary.name);
+  if (!name) return emptyIdentity("none", await scorePromise);
 
-    if (!primary) return emptyIdentity("none", await scorePromise);
-    const name = asString(primary.name);
-    if (!name) return emptyIdentity("none", await scorePromise);
+  const profilePromise = fetchGnsRegistry(
+    "profile_by_name",
+    `/profile/${encodeURIComponent(name)}`,
+    (payload) => payload,
+    { attemptTimeoutMs: timeoutMs, budgetMs: timeoutMs },
+  ).then((result) => (result.ok ? result.value : null));
+  const [score, profile] = await Promise.all([scorePromise, profilePromise]);
+  const baseIdentity = identityFromDomain(primary, score);
+  if (!profile) return baseIdentity;
 
-    const profilePromise = fetch(
-      `${apiBase}/profile/${encodeURIComponent(name)}`,
-      {
-        cache: "no-store",
-        headers: { Accept: "application/json" },
-        signal: controller.signal,
-      },
-    )
-      .then(async (response) =>
-        response.ok ? asRecord(await response.json()) : null,
-      )
-      .catch(() => null);
-    const [score, profile] = await Promise.all([scorePromise, profilePromise]);
-    const baseIdentity = identityFromDomain(primary, score);
-    if (!profile) return baseIdentity;
-
-    return {
-      ...baseIdentity,
-      fullName: asString(profile.full_name) || baseIdentity.fullName,
-      avatar: asString(profile.avatar) || baseIdentity.avatar,
-      bio: asString(profile.bio),
-      verified: asBoolean(profile.verified),
-      isGenesis: asBoolean(profile.is_genesis) || baseIdentity.isGenesis,
-      tier:
-        profile.tier === "premium" || profile.tier === "free"
-          ? profile.tier
-          : baseIdentity.tier,
-      updatedAt: asString(profile.updated_at),
-    };
-  } catch {
-    return emptyIdentity("unavailable", await scorePromise);
-  } finally {
-    clearTimeout(timeout);
-  }
+  return {
+    ...baseIdentity,
+    fullName: asString(profile.full_name) || baseIdentity.fullName,
+    avatar: asString(profile.avatar) || baseIdentity.avatar,
+    bio: asString(profile.bio),
+    verified: asBoolean(profile.verified),
+    isGenesis: asBoolean(profile.is_genesis) || baseIdentity.isGenesis,
+    tier:
+      profile.tier === "premium" || profile.tier === "free"
+        ? profile.tier
+        : baseIdentity.tier,
+    updatedAt: asString(profile.updated_at),
+  };
 }
 
 export function getGnsApiBase() {
@@ -328,29 +460,29 @@ export async function registerGnsIdentity({
   }
 }
 
-export async function resolveGnsName(name: string) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), GNS_CONFIG_TIMEOUT_MS);
+export type GnsNameResolution = { found: boolean; owner: string | null };
 
-  try {
-    const response = await fetch(
-      `${getApiBase()}/resolve/${encodeURIComponent(name)}`,
-      {
-        cache: "no-store",
-        headers: { Accept: "application/json" },
-        signal: controller.signal,
-      },
-    );
-    if (!response.ok) return null;
+/** Name -> owner with the failure reason preserved for diagnostics and retries. */
+export function resolveGnsNameDetailed(
+  name: string,
+  options: GnsRegistryFetchOptions = {},
+): Promise<GnsRegistryResult<GnsNameResolution>> {
+  return fetchGnsRegistry(
+    "resolve_name",
+    `/resolve/${encodeURIComponent(name)}`,
+    // `found` must be an explicit boolean: an ambiguous body is not "available".
+    (payload) =>
+      typeof payload.found === "boolean"
+        ? { found: payload.found, owner: asString(payload.owner) }
+        : null,
+    options,
+  );
+}
 
-    const payload = asRecord(await response.json());
-    return {
-      found: payload?.found === true,
-      owner: asString(payload?.owner),
-    };
-  } catch {
-    return null;
-  } finally {
-    clearTimeout(timeout);
-  }
+export async function resolveGnsName(
+  name: string,
+  options: GnsRegistryFetchOptions = {},
+): Promise<GnsNameResolution | null> {
+  const result = await resolveGnsNameDetailed(name, options);
+  return result.ok ? result.value : null;
 }
