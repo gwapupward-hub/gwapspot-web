@@ -227,3 +227,73 @@ test("preserves historical cross-cluster receipts without presenting them as act
   assert.deepEqual(fixture.activations, []);
   assert.equal(fetchMock.mock.callCount(), 0);
 });
+
+
+test("retries an uncertain receipt using the same signature without activating identity prematurely", async (t) => {
+  await trackGnsRegistrationSync({ accountId, ...receipt, network: "devnet" });
+  let registerCalls = 0;
+  let resolvedOwner = null;
+  t.mock.method(globalThis, "fetch", async (url) => {
+    if (String(url).endsWith("/config")) return Response.json(backendConfig);
+    if (String(url).endsWith("/register")) {
+      registerCalls += 1;
+      return registerCalls === 1
+        ? Response.json({}, { status: 502 })
+        : Response.json({ registered: true });
+    }
+    return Response.json({ found: Boolean(resolvedOwner), owner: resolvedOwner });
+  });
+
+  const uncertain = await reconcileGnsRegistrationSync(accountId);
+  assert.equal(uncertain.status, "indexing");
+  assert.equal(uncertain.txSignature, txSignature);
+  assert.equal(uncertain.attempts, 1);
+  assert.deepEqual(fixture.activations, []);
+
+  const recovered = await reconcileGnsRegistrationSync(accountId);
+  assert.equal(recovered.status, "active");
+  assert.equal(recovered.txSignature, txSignature);
+  assert.equal(recovered.attempts, 2);
+  assert.equal(registerCalls, 2);
+  assert.deepEqual(fixture.activations, [{ id: accountId, name: "builder" }]);
+
+  const repeated = await reconcileGnsRegistrationSync(accountId);
+  assert.equal(repeated.status, "active");
+  assert.equal(registerCalls, 2);
+  assert.equal(fixture.activations.length, 1);
+});
+
+test("a registry ownership mismatch never activates the pending identity", async (t) => {
+  await trackGnsRegistrationSync({ accountId, ...receipt, network: "devnet" });
+  const otherWallet = CANONICAL_GNS_PROGRAM_ID;
+  t.mock.method(globalThis, "fetch", async (url) => {
+    if (String(url).endsWith("/config")) return Response.json(backendConfig);
+    if (String(url).endsWith("/register")) return Response.json({}, { status: 502 });
+    return Response.json({ found: true, owner: otherWallet });
+  });
+  const result = await reconcileGnsRegistrationSync(accountId);
+  assert.equal(result.status, "failed");
+  assert.match(result.error, /another wallet/);
+  assert.equal(result.owner, receipt.owner);
+  assert.deepEqual(fixture.activations, []);
+});
+
+test("repeated tracking of one receipt preserves attempts and signature", async () => {
+  const original = await trackGnsRegistrationSync({ accountId, ...receipt, network: "devnet" });
+  const repeated = await trackGnsRegistrationSync({ accountId, ...receipt, network: "devnet" });
+  assert.equal(repeated.status, "submitted");
+  assert.equal(repeated.attempts, original.attempts);
+  assert.equal(repeated.submittedAt, original.submittedAt);
+  assert.equal(repeated.txSignature, original.txSignature);
+});
+
+test("receipt API does not report success when a failed register resolves to another owner", async (t) => {
+  t.mock.method(globalThis, "fetch", async (url) => {
+    if (String(url).endsWith("/config")) return Response.json(backendConfig);
+    if (String(url).endsWith("/register")) return Response.json({}, { status: 502 });
+    return Response.json({ found: true, owner: CANONICAL_GNS_PROGRAM_ID });
+  });
+  const response = await POST(request());
+  assert.equal(response.status, 502);
+  assert.equal((await response.json()).recovered, undefined);
+});
