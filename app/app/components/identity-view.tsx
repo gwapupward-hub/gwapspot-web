@@ -132,7 +132,7 @@ function registrationErrorMessage(error: unknown) {
   return message;
 }
 
-export function IdentityView() {
+export function IdentityView({ suggestedName = "" }: { suggestedName?: string }) {
   const router = useRouter();
   const { getAccessToken } = usePrivy();
   const { account, gnsIdentity } = useGwapOs();
@@ -140,12 +140,14 @@ export function IdentityView() {
   const { signAndSendTransaction } = useSignAndSendTransaction();
   const checkRequestRef = useRef(0);
   const registrationInFlightRef = useRef(false);
-  const [name, setName] = useState("");
+  const [name, setName] = useState(suggestedName);
   const [candidate, setCandidate] = useState("");
   const [config, setConfig] = useState<GnsRegistrationConfig | null>(null);
   const [search, setSearch] = useState<SearchState>({
     status: "idle",
-    message: "Enter a .gwap name to query the registry.",
+    message: suggestedName
+      ? "Name carried over from your public lookup. Recheck availability before signing."
+      : "Enter a .gwap name to query the registry.",
   });
   const [registration, setRegistration] = useState<RegistrationState>({
     status: "idle",

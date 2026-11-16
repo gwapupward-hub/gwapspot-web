@@ -13,6 +13,7 @@ import { ecosystemProductGroups, ecosystemProductIndexBySlug, ecosystemProducts,
 import { roadmapPhases } from "../lib/roadmap";
 import { CountUp } from "./count-up";
 import { GwapEcosystemGraph } from "./gwap-ecosystem-graph";
+import { HomeUtility } from "./home-utility";
 
 type IconName = "arrow" | "search" | "menu" | "close" | "spark" | "shield" | "network";
 
@@ -191,7 +192,7 @@ export function CinematicHome({
           <span className="hero-pill"><i /> For builders, creators & entrepreneurs</span>
           <h1>Grind with<br /><em>a purpose.</em></h1>
           <p>Build something real. Establish who you are. Prove what you have done. Protect the work when value moves—without needing to become a blockchain expert.</p>
-          <div className="hero-ctas"><GlassButton href="#overview" primary>Choose what I want to do</GlassButton><GlassButton href="/app">Open GWAP OS</GlassButton></div>
+          <div className="hero-ctas"><GlassButton href="#lookup" primary>Check a wallet or .gwap</GlassButton><GlassButton href="#overview">Choose my goal</GlassButton></div>
           <div className="hero-trust"><span><Icon name="shield" /> No crypto expertise required</span><span><Icon name="network" /> Start with your goal</span><span><Icon name="spark" /> Solana powered underneath</span></div>
         </div>
 
@@ -223,32 +224,42 @@ export function CinematicHome({
           </div>
         </div>
 
+        <div className="overview-lookup" id="lookup">
+          <div className="overview-lookup-copy">
+            <span className="eyebrow-premium"><Icon name="shield" /> Your first trust check</span>
+            <h3>See what can be verified.</h3>
+            <p>Look up a Solana wallet or .gwap name without signing in. See public identity and reputation signals, what is unavailable, and what to do next.</p>
+            <p className="overview-lookup-limit">A name, proof, or GwapScore is not a security audit or a guarantee of someone&apos;s honesty.</p>
+          </div>
+          <HomeUtility />
+        </div>
+
         <div className="overview-foundation" aria-label="Choose what you want to do in GWAP">
-          <Link href="/app/ideas/lab" className="overview-foundation-card">
+          <Link href="/app/ideas/lab" className="overview-foundation-card" data-gwap-intent="build_project">
             <span>01 / START A BUSINESS OR PROJECT</span>
             <div><strong>Build something</strong></div>
             <p>Turn a rough concept into an executable project with Daily Ideas 2.0 and Idea Lab.</p>
             <small>Start building <Icon name="arrow" /></small>
           </Link>
-          <Link href="/app/ideas" className="overview-foundation-card">
+          <Link href="/app/ideas" className="overview-foundation-card" data-gwap-intent="validate_idea">
             <span>02 / DEVELOP AN IDEA</span>
             <div><strong>Validate an idea</strong></div>
             <p>Research the problem, audience, opportunity, and next steps before spending time building the wrong thing.</p>
             <small>Develop my idea <Icon name="arrow" /></small>
           </Link>
-          <Link href="/app/identity" className="overview-foundation-card">
+          <Link href="#lookup" className="overview-foundation-card" data-gwap-intent="identity">
             <span>03 / BUILD MY DIGITAL IDENTITY</span>
             <div><Image src="/logos/gns.webp" alt="" width={42} height={42} /><strong>Own my identity</strong></div>
-            <p>Claim a .gwap name and create a portable identity that can connect your profile, projects, and activity.</p>
-            <small>Create my identity <Icon name="arrow" /></small>
+            <p>Check a wallet or .gwap name for free, then claim your name in GWAP OS when you are ready.</p>
+            <small>Check an identity <Icon name="arrow" /></small>
           </Link>
-          <Link href="/app/score" className="overview-foundation-card">
+          <Link href="/app/score" className="overview-foundation-card" data-gwap-intent="reputation">
             <span>04 / BUILD MY REPUTATION</span>
             <div><Image src="/logos/gwapscore.svg" alt="" width={42} height={42} /><strong>Prove my credibility</strong></div>
             <p>Use social proof, verified activity, and optional wallet intelligence to understand and strengthen your GwapScore.</p>
             <small>Build my reputation <Icon name="arrow" /></small>
           </Link>
-          <Link href="/app/ppv" className="overview-foundation-card">
+          <Link href="/app/ppv" className="overview-foundation-card" data-gwap-intent="proof">
             <span>05 / MAKE OR PROTECT A TRANSACTION</span>
             <div><strong>Protect the deal</strong></div>
             <p>Use Private Proof Vault for proofs, agreements, receipts, and protected economic activity when value starts moving.</p>

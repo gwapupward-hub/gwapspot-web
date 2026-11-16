@@ -10,6 +10,7 @@ import {
   serializeActivationSelection,
 } from "../lib/activation-analytics";
 import {
+  getGwapEntryIntentForPublicGoal,
   getGwapEntryIntentForPath,
   GWAP_ENTRY_INTENT_COOKIE_KEY,
   GWAP_ENTRY_INTENT_STORAGE_KEY,
@@ -41,10 +42,19 @@ export function EntryIntentBridge() {
       }
 
       const anchor = event.target.closest<HTMLAnchorElement>("a[href]");
-      if (!anchor || !anchor.closest(".overview-foundation")) return;
+      if (!anchor) return;
+
+      const inGoalCards = Boolean(anchor.closest(".overview-foundation"));
+      const inLookupActions = Boolean(anchor.closest(".hero-utility-result-actions"));
+      if (!inGoalCards && !inLookupActions) return;
 
       const destination = new URL(anchor.href, window.location.href);
-      const intent = getGwapEntryIntentForPath(destination.pathname);
+      if (destination.origin !== window.location.origin) return;
+      if (inLookupActions && destination.pathname !== "/app/identity") return;
+
+      const intent = inGoalCards
+        ? getGwapEntryIntentForPublicGoal(anchor.dataset.gwapIntent) ?? getGwapEntryIntentForPath(destination.pathname)
+        : "identity";
       if (!intent) return;
 
       const progress = createActivationProgress(intent);
@@ -60,7 +70,7 @@ export function EntryIntentBridge() {
 
       safeTrack("intent_selected", {
         intent,
-        source: "public_overview",
+        source: inGoalCards ? "public_overview" : "public_lookup",
         surface: activationSurface(intent),
       });
 
@@ -74,8 +84,12 @@ export function EntryIntentBridge() {
       document.cookie = `${GWAP_ENTRY_INTENT_COOKIE_KEY}=${encodeURIComponent(intent)}; ${persistent}`;
       document.cookie = `${GWAP_ACTIVATION_COOKIE_KEY}=${encodeURIComponent(serializeActivationSelection(progress))}; ${persistent}`;
 
-      event.preventDefault();
-      window.location.assign("/app");
+      // The identity goal stays on the public lookup. A claim action keeps
+      // its exact /app/identity?name=... destination through sign-in.
+      if (inGoalCards && destination.pathname.startsWith("/app")) {
+        event.preventDefault();
+        window.location.assign("/app");
+      }
     };
 
     document.addEventListener("click", onClick, true);

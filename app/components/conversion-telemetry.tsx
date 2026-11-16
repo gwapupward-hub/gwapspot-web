@@ -2,15 +2,20 @@
 
 import { track } from "@vercel/analytics";
 import { useEffect } from "react";
+import {
+  isMeaningfulPublicLookupOutcome,
+  PUBLIC_LOOKUP_EVENT,
+  type PublicLookupEventDetail,
+} from "../lib/public-first-value";
 
 type AnalyticsProperties = Record<string, string | number | boolean>;
 
-type LookupState = {
-  attempt: number;
-  mode: "wallet" | "name" | "unknown";
-  completed: boolean;
-  outcome: string | null;
-};
+function firstValueTimeBucket(elapsedSeconds: number) {
+  if (elapsedSeconds < 30) return "under_30s";
+  if (elapsedSeconds < 120) return "30s_to_2m";
+  if (elapsedSeconds <= 300) return "2m_to_5m";
+  return "5m_plus";
+}
 
 function safeTrack(name: string, properties: AnalyticsProperties) {
   try {
@@ -24,41 +29,23 @@ function normalizeLabel(value: string | null | undefined) {
   return value?.replace(/\s+/g, " ").trim().slice(0, 80) || "unknown";
 }
 
-function getLookupMode() {
-  const active = document.querySelector<HTMLButtonElement>(
-    '.hero-utility-tabs button[aria-pressed="true"]',
-  );
-  const label = normalizeLabel(active?.textContent).toLowerCase();
-  if (label.includes("wallet")) return "wallet" as const;
-  if (label.includes("gwap") || label.includes("name")) return "name" as const;
-  return "unknown" as const;
-}
-
-function getLookupOutcome() {
-  const result = document.querySelector<HTMLElement>(
-    ".hero-utility-feedback .hero-utility-result",
-  );
-  if (!result) return null;
-
-  const signal = normalizeLabel(result.querySelector("small")?.textContent).toLowerCase();
-  if (signal.includes("available")) return "name_available";
-  if (signal.includes("registered")) return "name_registered";
-  if (signal.includes("identity + reputation")) return "identity_found";
-  if (signal.includes("wallet found")) return "wallet_scored_no_identity";
-  return "result_shown";
-}
-
 function classifyConversionLink(anchor: HTMLAnchorElement) {
   const section = anchor.closest<HTMLElement>("section[id]")?.id || "unknown";
   const href = anchor.getAttribute("href") || "";
   const label = normalizeLabel(anchor.textContent);
 
   if (section === "top" && anchor.closest(".hero-ctas")) {
+    if (href === "#lookup") return { event: "hero_conversion_click", action: "public_lookup", label };
+    if (href === "#overview") return { event: "hero_conversion_click", action: "choose_goal", label };
     if (href.startsWith("/app/identity")) return { event: "hero_conversion_click", action: "claim_identity", label };
     if (href === "/app") return { event: "hero_conversion_click", action: "enter_os", label };
   }
 
   if (section === "overview" && anchor.closest(".overview-foundation")) {
+    const intent = anchor.dataset.gwapIntent;
+    if (["build_project", "validate_idea", "identity", "reputation", "proof"].includes(intent || "")) {
+      return { event: "intent_path_selected", action: intent || "unknown", label };
+    }
     if (href.startsWith("/app/identity")) return { event: "intent_path_selected", action: "identity", label };
     if (href === "#top") return { event: "intent_path_selected", action: "reputation", label };
     if (href === "/app") return { event: "intent_path_selected", action: "os", label };
@@ -76,28 +63,39 @@ function classifyConversionLink(anchor: HTMLAnchorElement) {
 
 export function ConversionTelemetry() {
   useEffect(() => {
-    let lookupState: LookupState = {
-      attempt: 0,
-      mode: "unknown",
-      completed: false,
-      outcome: null,
+    const pageStart = performance.now();
+    let firstValueTracked = false;
+
+    const recordFirstValue = (detail: Extract<PublicLookupEventDetail, { phase: "completed" | "recovered" }>) => {
+      if (firstValueTracked) return;
+      firstValueTracked = true;
+      safeTrack("first_value_reached", {
+        mode: detail.mode,
+        outcome: detail.outcome,
+        elapsed_bucket: firstValueTimeBucket((performance.now() - pageStart) / 1000),
+        source: "homepage",
+      });
     };
 
-    const handleSubmit = (event: Event) => {
-      const form = event.target;
-      if (!(form instanceof HTMLFormElement) || !form.matches(".hero-utility-form")) return;
-
-      lookupState = {
-        attempt: lookupState.attempt + 1,
-        mode: getLookupMode(),
-        completed: false,
-        outcome: null,
-      };
-
-      safeTrack("lookup_started", {
-        mode: lookupState.mode,
-        source: "hero",
-      });
+    const handleLookup = (event: Event) => {
+      const detail = (event as CustomEvent<PublicLookupEventDetail>).detail;
+      if (!detail || !Number.isSafeInteger(detail.attempt) || detail.attempt < 1) return;
+      if (detail.mode !== "wallet" && detail.mode !== "name") return;
+      if (detail.phase === "started") {
+        safeTrack("lookup_started", { mode: detail.mode, source: "hero" });
+        return;
+      }
+      if (detail.phase !== "completed" && detail.phase !== "recovered") return;
+      if (detail.phase === "recovered") {
+        safeTrack("lookup_identity_recovered", { mode: detail.mode, source: "hero" });
+      } else {
+        safeTrack("lookup_completed", {
+          mode: detail.mode,
+          outcome: detail.outcome,
+          source: "hero",
+        });
+      }
+      if (isMeaningfulPublicLookupOutcome(detail.outcome)) recordFirstValue(detail);
     };
 
     const handleClick = (event: MouseEvent) => {
@@ -117,60 +115,11 @@ export function ConversionTelemetry() {
       });
     };
 
-    const feedback = document.querySelector<HTMLElement>(".hero-utility-feedback");
-    const feedbackObserver = feedback
-      ? new MutationObserver(() => {
-          const error = feedback.querySelector(".is-error");
-          if (error && !lookupState.completed) {
-            lookupState.completed = true;
-            lookupState.outcome = "error";
-            safeTrack("lookup_completed", {
-              mode: lookupState.mode,
-              outcome: "error",
-              source: "hero",
-            });
-            return;
-          }
-
-          const outcome = getLookupOutcome();
-          if (!outcome) return;
-
-          if (!lookupState.completed) {
-            lookupState.completed = true;
-            lookupState.outcome = outcome;
-            safeTrack("lookup_completed", {
-              mode: lookupState.mode,
-              outcome,
-              source: "hero",
-            });
-            return;
-          }
-
-          if (
-            lookupState.outcome === "wallet_scored_no_identity" &&
-            outcome === "identity_found"
-          ) {
-            lookupState.outcome = outcome;
-            safeTrack("lookup_identity_recovered", {
-              mode: "wallet",
-              source: "hero",
-            });
-          }
-        })
-      : null;
-
-    feedbackObserver?.observe(feedback!, {
-      childList: true,
-      subtree: true,
-      characterData: true,
-    });
-
-    document.addEventListener("submit", handleSubmit, { capture: true });
+    window.addEventListener(PUBLIC_LOOKUP_EVENT, handleLookup);
     document.addEventListener("click", handleClick, { capture: true });
 
     return () => {
-      feedbackObserver?.disconnect();
-      document.removeEventListener("submit", handleSubmit, { capture: true });
+      window.removeEventListener(PUBLIC_LOOKUP_EVENT, handleLookup);
       document.removeEventListener("click", handleClick, { capture: true });
     };
   }, []);
