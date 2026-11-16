@@ -12,6 +12,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/lil-gwapz",
     "/about",
     "/ecosystem",
+    "/ppv",
     "/developers",
     "/roadmap",
     "/community",
