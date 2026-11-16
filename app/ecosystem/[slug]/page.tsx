@@ -107,6 +107,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
                     {launchDestination.label} <ArrowIcon />
                   </Link>
                 )
+              ) : product.slug === "private-proof-vault" ? (
+                <Link className="primary-button" href="/ppv">
+                  Explore Private Proof Vault <ArrowIcon />
+                </Link>
               ) : (
                 <Link className="primary-button" href="/roadmap">
                   View development roadmap <ArrowIcon />
