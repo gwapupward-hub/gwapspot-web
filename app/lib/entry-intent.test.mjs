@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   GWAP_ENTRY_INTENTS,
+  getGwapEntryIntentForPublicGoal,
   getGwapEntryIntentForPath,
   isGwapEntryIntent,
 } from "./entry-intent.ts";
@@ -33,4 +34,19 @@ test("entry intent validation rejects unknown values", () => {
   assert.equal(isGwapEntryIntent("wallet"), false);
   assert.equal(isGwapEntryIntent(null), false);
   assert.equal(getGwapEntryIntentForPath("/app"), null);
+});
+
+test("all public goal cards retain their canonical intent, including in-page identity lookup", () => {
+  const cards = {
+    build_project: "build",
+    validate_idea: "validate",
+    identity: "identity",
+    reputation: "reputation",
+    proof: "transaction",
+  };
+  for (const [goal, intent] of Object.entries(cards)) {
+    assert.equal(getGwapEntryIntentForPublicGoal(goal), intent);
+  }
+  assert.equal(getGwapEntryIntentForPublicGoal("unknown"), null);
+  assert.equal(getGwapEntryIntentForPublicGoal(null), null);
 });

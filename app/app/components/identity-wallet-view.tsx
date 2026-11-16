@@ -15,11 +15,11 @@ function shortAddress(address: string) {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
 }
 
-export function IdentityWalletView() {
+export function IdentityWalletView({ suggestedName = "" }: { suggestedName?: string }) {
   const { account, gnsIdentity } = useGwapOs();
   const [copied, setCopied] = useState(false);
 
-  if (gnsIdentity.status !== "found") return <IdentityView />;
+  if (gnsIdentity.status !== "found") return <IdentityView suggestedName={suggestedName} />;
 
   const score: GwapScoreResult = {
     status: gnsIdentity.scoreStatus,

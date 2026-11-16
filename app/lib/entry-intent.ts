@@ -79,3 +79,15 @@ export function isGwapEntryIntent(value: string | null): value is GwapEntryInten
 export function getGwapEntryIntentForPath(pathname: string) {
   return intentBySourcePath.get(pathname) ?? null;
 }
+
+const intentByPublicGoal: Record<string, GwapEntryIntent> = {
+  build_project: "build",
+  validate_idea: "validate",
+  identity: "identity",
+  reputation: "reputation",
+  proof: "transaction",
+};
+
+export function getGwapEntryIntentForPublicGoal(value: string | null | undefined) {
+  return value ? intentByPublicGoal[value] ?? null : null;
+}
