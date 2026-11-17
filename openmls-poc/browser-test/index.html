@@ -16,6 +16,15 @@ try {
     tamper: mod.fixture_tamper,
     staleWriterRejected: mod.fixture_stale_writer_rejected
   };
+  window.__outbox = {
+    reset: mod.outbox_reset,
+    initialize: mod.outbox_init,
+    status: mod.outbox_status,
+    send: mod.outbox_send,
+    deliver: mod.outbox_deliver,
+    holdLock: mod.outbox_hold_lock,
+    releaseLock: mod.outbox_release_lock
+  };
   window.__fixtureReady = true;
 } catch (err) {
   window.__fixtureReady = false;
