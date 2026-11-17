@@ -275,6 +275,50 @@ test('a second independent PostgreSQL pool can resume queued DS delivery',async(
  }finally{await secondPool.end()}
 });
 
+test('concurrent recipient membership removal cannot be bypassed during delivery',async()=>{
+ const f=await fixture(),grant=f.authorize();
+ await f.ds.authorizeEnvelope(grant);
+ const db=await pool.connect();
+ try{
+   await db.query('BEGIN');
+   await db.query('UPDATE messenger_test_group_members SET active=FALSE'+
+     ' WHERE group_id=$1 AND device_id=$2',['mls_group_001','bob_device']);
+   const concurrent=f.ds.submitEnvelope(f.submit(grant)).then(
+     x=>({accepted:x.accepted}),e=>({error:String(e.message||e)}));
+   await new Promise(resolve=>setTimeout(resolve,40));
+   await db.query('COMMIT');
+   const outcome=await concurrent;
+   assert.match(outcome.error||'',/Unauthorized group member/);
+   const rows=await pool.query('SELECT COUNT(*)::integer AS n FROM messenger_opaque_deliveries');
+   assert.equal(rows.rows[0].n,0);
+ }finally{
+   try{await db.query('ROLLBACK')}catch{}
+   db.release();
+ }
+});
+
+test('concurrent device revocation cannot be bypassed during delivery',async()=>{
+ const f=await fixture(),grant=f.authorize();
+ await f.ds.authorizeEnvelope(grant);
+ const db=await pool.connect();
+ try{
+   await db.query('BEGIN');
+   await db.query('UPDATE messenger_checkpoint_devices SET revoked=TRUE,'+
+     ' binding_version=2,fence=fence+1 WHERE device_id=$1',['bob_device']);
+   const concurrent=f.ds.submitEnvelope(f.submit(grant)).then(
+     x=>({accepted:x.accepted}),e=>({error:String(e.message||e)}));
+   await new Promise(resolve=>setTimeout(resolve,40));
+   await db.query('COMMIT');
+   const outcome=await concurrent;
+   assert.match(outcome.error||'',/Unknown or revoked device/);
+   const rows=await pool.query('SELECT COUNT(*)::integer AS n FROM messenger_opaque_deliveries');
+   assert.equal(rows.rows[0].n,0);
+ }finally{
+   try{await db.query('ROLLBACK')}catch{}
+   db.release();
+ }
+});
+
 test('fixture group-admin methods are disabled by default',async()=>{
  const f=await fixture();
  const service=new PostgresEnvelopeDS({pool,serverSigningKey:server.privateKey});
