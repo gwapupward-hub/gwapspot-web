@@ -3,6 +3,7 @@
 // No live wallet, GNS, user account, production DB or network delivery.
 import {createServer} from 'node:http';
 import {SQLiteCheckpointAuthority} from './sqlite-checkpoint.mjs';
+import {SQLiteDeliveryGate} from './sqlite-delivery.mjs';
 
 if(process.env.GWAP_TEST_ONLY!=='YES'
    || !process.env.GWAP_SQLITE_TEST_DB
@@ -11,6 +12,7 @@ if(process.env.GWAP_TEST_ONLY!=='YES'
 }
 const admin=process.env.GWAP_ADMIN_TEST_TOKEN;
 const authority=new SQLiteCheckpointAuthority(process.env.GWAP_SQLITE_TEST_DB);
+const delivery=new SQLiteDeliveryGate(authority);
 
 async function json(req) {
   const chunks=[];
@@ -32,12 +34,13 @@ const server=createServer(async(req,res)=>{
     const path=new URL(req.url,'http://127.0.0.1').pathname;
     const data=await json(req);
     let receipt;
-    if(path==='/fixture/register'||path==='/fixture/rotate-fence'||path==='/fixture/revoke'){
+    if(path==='/fixture/register'||path==='/fixture/rotate-fence'||path==='/fixture/revoke'||path==='/fixture/list-deliveries'){
       if(req.headers['x-fixture-admin']!==admin)
         return respond(res,403,{error:'Fixture admin token required'});
       receipt=path==='/fixture/register' ? authority.register(data) :
         path==='/fixture/rotate-fence' ? authority.rotateFence(data.deviceId) :
-          authority.revoke(data.deviceId,data.nextBindingVersion);
+        path==='/fixture/revoke' ? authority.revoke(data.deviceId,data.nextBindingVersion) :
+          {deliveries:delivery.listFixture(data.deviceId)};
     } else if(path==='/checkpoint/advance'){
       receipt=authority.advance(data);
       // Test-only deterministic SIGKILL AFTER SQLite COMMIT, BEFORE HTTP response.
@@ -45,8 +48,14 @@ const server=createServer(async(req,res)=>{
       if(req.headers['x-fixture-kill-after-commit']===admin){
         process.kill(process.pid,'SIGKILL');
       }
-    } else if(path==='/checkpoint/resume'){
+     } else if(path==='/checkpoint/resume'){
       receipt=authority.resume(data);
+    } else if(path==='/delivery/submit'){
+      receipt=delivery.submit(data);
+      // Test-only SIGKILL after durable envelope acceptance before HTTP receipt.
+      if(req.headers['x-fixture-kill-after-commit']===admin){
+        process.kill(process.pid,'SIGKILL');
+      }
     } else {
       return respond(res,404,{error:'Unknown endpoint'});
     }
