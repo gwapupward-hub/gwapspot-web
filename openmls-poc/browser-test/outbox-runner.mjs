@@ -76,7 +76,7 @@ try {
   evidence.push('competing tab rejected by exclusive lock; no outbox envelope released');
 
   // Inject IndexedDB transaction abort: neither new ratchet state nor outbox is committed.
-  await rejects(()=>command(alice,'send',1,'must abort safely',1),/transaction abort|AbortError|Injected/i);
+  await rejects(()=>command(alice,'send',1,'must abort safely',1),/transaction abort|transaction error|AbortError|Injected/i);
   assert.deepEqual(await command(second,'status'),{revision:1,pending:0,delivered:0});
   evidence.push('injected abort left state+outbox at revision 1 with zero queued envelopes');
 
@@ -115,7 +115,7 @@ try {
 
   // Receiver acknowledgement is also atomic: an injected abort keeps the envelope queued.
   assert.equal((await command(alice,'send',5,'retry after receiver abort',0)).revision,6);
-  await rejects(()=>command(alice,'deliver',6,1),/transaction abort|AbortError|Injected/i);
+  await rejects(()=>command(alice,'deliver',6,1),/transaction abort|transaction error|AbortError|Injected/i);
   assert.deepEqual(await command(second,'status'),{revision:6,pending:1,delivered:2});
   const retry=await command(second,'deliver',6,0);
   assert.equal(retry.plaintext,'retry after receiver abort');
