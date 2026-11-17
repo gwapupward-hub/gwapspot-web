@@ -11,7 +11,7 @@ import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { generateKeyPairSync,randomBytes,sign } from 'node:crypto';
 import assert from 'node:assert/strict';
-import {canonicalIntent,canonicalResume,sha256Hex} from '../checkpoint/monotonic-checkpoint.mjs';
+import {canonicalIntent,canonicalResume,canonicalDelivery,sha256Hex} from '../checkpoint/monotonic-checkpoint.mjs';
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 const site=createServer(async(req,res)=>{
@@ -127,6 +127,27 @@ function signedResume(record){
     localRevision:record.revision,localCommitment:commitment(record)};
   return {...intent,signature:sign(null,canonicalResume(intent),keys.privateKey).toString('base64')};
 }
+async function pendingWire(){
+  return page.evaluate(async()=>{
+    const item=await window.__outbox.peek();
+    let ascii='';
+    for(const byte of item.ciphertext)ascii+=String.fromCharCode(byte);
+    return {revision:item.revision,groupId:item.groupId,ciphertextBase64:btoa(ascii)};
+  });
+}
+function signedDelivery(record,pending,messageId,fence=1){
+  const intent={deviceId,accountId,bindingVersion,fence,
+    revision:record.revision,commitment:commitment(record),
+    groupId:pending.groupId,messageId,
+    ciphertextHash:sha256Hex(Buffer.from(pending.ciphertextBase64,'base64'))};
+  return {...intent,ciphertextBase64:pending.ciphertextBase64,
+    signature:sign(null,canonicalDelivery(intent),keys.privateKey).toString('base64')};
+}
+async function fixtureDelivered(){
+  const r=await post('/fixture/list-deliveries',{deviceId},{'x-fixture-admin':admin});
+  assert.equal(r.status,200);
+  return r.body.deliveries;
+}
 async function gate(record){
   const check=await post('/checkpoint/resume',signedResume(record));
   if(check.status!==200||check.body.allowDelivery!==true)
@@ -153,11 +174,29 @@ try {
   const sent=await wasm('send',1,'first remote-checkpointed MLS message',0);
   assert.equal(sent.revision,2);
   const rev2=await snapshot();
+  const wire2=await pendingWire();
+  assert.equal(wire2.revision,2);
+  const submit2=signedDelivery(rev2,wire2,'mls_ciphertext_000002');
+  const premature=await post('/delivery/submit',submit2);
+  assert.equal(premature.status,409);
+  assert.match(premature.body.error,/Unanchored local state/);
+  assert.equal((await fixtureDelivered()).length,0);
+  evidence.push('delivery server refused real signed MLS ciphertext until independent checkpoint advanced');
+
   const advance2=signedAdvance(rev2,1,'intent-000002');
   const ack2=await post('/checkpoint/advance',advance2);
   assert.equal(ack2.status,200);
   assert.equal((await gate(rev2)).body.revision,2);
-  evidence.push('real OpenMLS encrypted outbox revision 2 was anchored on independent SQLite authority');
+  const dsAccepted=await post('/delivery/submit',submit2);
+  assert.equal(dsAccepted.status,200);
+  assert.equal(dsAccepted.body.duplicate,false);
+  assert.equal((await post('/delivery/submit',submit2)).body.duplicate,true);
+  const acceptedWire=await fixtureDelivered();
+  assert.equal(acceptedWire.length,1);
+  assert.equal(acceptedWire[0].ciphertextBase64,wire2.ciphertextBase64);
+  assert.equal(Buffer.from(acceptedWire[0].ciphertextBase64,'base64')
+    .includes(Buffer.from('first remote-checkpointed MLS message')),false);
+  evidence.push('actual MLS PrivateMessage passed signed server fence and was persisted once without plaintext');
 
   // Explicit hostile whole-local-snapshot rollback: same valid AES-GCM encrypted bytes
   // but an older revision. The remote checkpoint MUST deny delivery.
@@ -166,6 +205,10 @@ try {
   try {await gate(await snapshot());}catch(e){denied=/rollback detected/.test(String(e));}
   assert.equal(denied,true,'old but authentic encrypted snapshot must fail closed');
   assert.equal((await wasm('status')).revision,1);
+  const rolledBackSend=signedDelivery(rev1,wire2,'mls_rollback_attempt');
+  const dsRejected=await post('/delivery/submit',rolledBackSend);
+  assert.equal(dsRejected.status,409);
+  assert.match(dsRejected.body.error,/Rolled-back sender state/);
   await setSnapshot(rev2);
   assert.equal((await gate(await snapshot())).body.revision,2);
   evidence.push('attacker-restored old valid encrypted browser snapshot rejected; restoring rev2 allowed');
@@ -204,6 +247,13 @@ try {
   assert.equal((await post('/checkpoint/advance',
     signedAdvance(rev4,3,'intent-000004'))).status,200);
   await gate(rev4);
+  const wire4=await pendingWire();
+  assert.equal(wire4.revision,4);
+  const submit4=signedDelivery(rev4,wire4,'mls_ciphertext_000004');
+  const dsSecond=await post('/delivery/submit',submit4);
+  assert.equal(dsSecond.status,200);
+  assert.equal((await fixtureDelivered()).length,2);
+  evidence.push('second real MLS ciphertext submitted through server gate after resumed checkpoint');
   const second=await wasm('deliver',4,0);
   assert.equal(second.plaintext,'second anchored MLS message');
   const rev5=await snapshot();
@@ -211,7 +261,14 @@ try {
     signedAdvance(rev5,4,'intent-000005'))).status,200);
   assert.equal((await gate(rev5)).body.revision,5);
   assert.deepEqual(await wasm('status'),{revision:5,pending:0,delivered:2});
-  evidence.push('two real MLS ciphertexts decrypted after external checkpoint resume, with receiver checkpoints anchored');
+  evidence.push('two real MLS ciphertexts decrypted after server-side delivery acceptance and checkpoint recovery');
+  assert.equal((await post('/fixture/revoke',{deviceId,nextBindingVersion:2},
+    {'x-fixture-admin':admin})).status,200);
+  const revoked=await post('/delivery/submit',submit4);
+  assert.equal(revoked.status,409);
+  assert.match(revoked.body.error,/revoked device/);
+  assert.equal((await fixtureDelivered()).length,2);
+  evidence.push('test-only domain/device revocation immediately blocked new server delivery authorization');
 
   console.log(JSON.stringify({result:'PASS',environment:'Chromium OpenMLS WASM + separate SQLite checkpoint process',
     claims:evidence},null,2));
