@@ -106,3 +106,14 @@ export class InMemoryCheckpointAuthority {
     return {allowDelivery:true,revision:d.revision,fence:d.fence};
   }
 }
+
+// Signed by the sender device for a single opaque MLS envelope. Separate protocol
+// domain prevents reusing checkpoint or resume signatures as delivery authorization.
+export function canonicalDelivery(request) {
+  return Buffer.from(JSON.stringify([
+    'GWAP_MESSENGER_TEST_DELIVERY_V1',
+    request.deviceId, request.accountId, request.bindingVersion,
+    request.fence, request.revision, request.commitment,
+    request.groupId, request.messageId, request.ciphertextHash
+  ]));
+}
