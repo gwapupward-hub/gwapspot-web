@@ -229,6 +229,23 @@ pub async fn outbox_status() -> Result<JsValue,JsValue> {
     result(revision,pending.len(),delivered,None)
 }
 
+// TEST ONLY: inspect the opaque pending MLS PrivateMessage without exposing group secrets.
+// This does not certify the group ID against a real GNS or MLS recipient directory.
+#[wasm_bindgen]
+pub async fn outbox_peek() -> Result<JsValue,JsValue> {
+    let (revision,(_sender,_receiver,id,_public,pending,_delivered))=load().await?;
+    let wire=pending.first().ok_or_else(||jserr("No queued MLS ciphertext"))?;
+    let group_id=id.iter().map(|b|format!("{b:02x}")).collect::<String>();
+    let result=Object::new();
+    Reflect::set(&result,&JsValue::from_str("revision"),
+        &JsValue::from_f64(revision as f64))?;
+    Reflect::set(&result,&JsValue::from_str("groupId"),
+        &JsValue::from_str(&group_id))?;
+    Reflect::set(&result,&JsValue::from_str("ciphertext"),
+        &Uint8Array::from(wire.as_slice()).into())?;
+    Ok(result.into())
+}
+
 #[wasm_bindgen]
 pub async fn outbox_send(expected_revision:u32,text:String,failure:u32)
     -> Result<JsValue,JsValue> {
