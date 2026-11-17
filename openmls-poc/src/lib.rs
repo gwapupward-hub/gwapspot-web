@@ -2,6 +2,9 @@
 //! Uses BasicCredential fixtures, NOT authenticated GNS identities.
 //! Production verification must additionally bind device credentials to live .gwap control.
 
+#[cfg(all(test, target_arch = "wasm32", feature = "browser-tests"))]
+wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_browser);
+
 #[cfg(test)]
 mod tests {
     use openmls::prelude::*;
@@ -162,6 +165,18 @@ mod tests {
             bob_group.epoch_authenticator().as_slice()
         );
 
+        // Reload serialized group data from the same in-memory provider.
+        // This tests OpenMLS state persistence APIs, NOT browser durable storage.
+        let bob_group_id = bob_group.group_id().clone();
+        drop(bob_group);
+        let mut bob_group = MlsGroup::load(bob_provider.storage(), &bob_group_id)
+            .expect("load persisted group")
+            .expect("group exists in provider storage");
+        assert_eq!(
+            alice_group.epoch_authenticator().as_slice(),
+            bob_group.epoch_authenticator().as_slice()
+        );
+
         let message = alice_group.create_message(
             &alice_provider, &alice_signer, b"New epoch is active",
         ).expect("encrypt in next epoch");
@@ -173,6 +188,25 @@ mod tests {
             ProcessedMessageContent::ApplicationMessage(msg) =>
                 assert_eq!(msg.into_bytes(), b"New epoch is active"),
             _ => panic!("unexpected type"),
+        }
+    }
+    // Validates required browser APIs; does not prove encrypted IndexedDB key storage.
+    #[cfg(target_arch = "wasm32")]
+    #[wasm_bindgen_test::wasm_bindgen_test]
+    fn web_crypto_and_indexeddb_capability() {
+        use wasm_bindgen::JsValue;
+        let globals = js_sys::global();
+        let win = js_sys::Reflect::get(&globals, &JsValue::from_str("window"))
+            .expect("probe browser window");
+        if win.is_undefined() || win.is_null() {
+            // In Node, only the OpenMLS cryptographic smoke test runs.
+            return;
+        }
+        for property in ["crypto", "indexedDB"] {
+            let value = js_sys::Reflect::get(&win, &JsValue::from_str(property))
+                .expect("browser security API query");
+            assert!(!value.is_undefined() && !value.is_null(),
+                "browser must expose {property}");
         }
     }
 }
