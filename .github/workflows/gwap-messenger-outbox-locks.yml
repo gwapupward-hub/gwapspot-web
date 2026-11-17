@@ -28,6 +28,8 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown
+      - name: Test signed monotonic checkpoint contract (in-memory authority only)
+        run: node --test openmls-poc/checkpoint/monotonic-checkpoint.test.mjs
       - name: Native MLS regression
         run: cargo test --manifest-path openmls-poc/Cargo.toml --lib -- --nocapture
       - name: Install wasm-pack
