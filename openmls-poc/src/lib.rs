@@ -5,6 +5,9 @@
 #[cfg(target_arch = "wasm32")]
 mod browser_restart;
 
+#[cfg(target_arch = "wasm32")]
+mod outbox_spike;
+
 #[cfg(all(test, target_arch = "wasm32"))]
 mod browser_persistence;
 
