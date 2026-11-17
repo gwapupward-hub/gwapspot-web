@@ -201,7 +201,7 @@ test('expired grant, stale writer fence, incorrect state and signature are refus
  const wrongSig=f.submit(a,f.initialWire,{},
    f.outsider.privateKey);
  await assert.rejects(f.ds.submitEnvelope(wrongSig),/Invalid device signature/);
- await pool.query('UPDATE messenger_envelope_grants SET expires_at=NOW()-INTERVAL $1 WHERE sender_device_id=$2',
+ await pool.query('UPDATE messenger_envelope_grants SET expires_at=NOW()-$1::interval WHERE sender_device_id=$2',
    ['1 minute','alice_device']);
  await assert.rejects(f.ds.submitEnvelope(f.submit(a)),/authorization expired/);
  await f.ck.rotateFenceFixture('alice_device');
