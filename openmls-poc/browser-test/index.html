@@ -21,6 +21,8 @@ try {
     initialize: mod.outbox_init,
     status: mod.outbox_status,
     send: mod.outbox_send,
+    peek: mod.outbox_peek,
+    deliverFromDs: mod.outbox_deliver_from_ds,
     deliver: mod.outbox_deliver,
     holdLock: mod.outbox_hold_lock,
     releaseLock: mod.outbox_release_lock
