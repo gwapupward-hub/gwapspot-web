@@ -26,9 +26,13 @@ const server=createServer(async(req,res)=>{
     if(!file.startsWith(webroot+sep)){res.writeHead(403).end();return;}
     const mime=file.endsWith('.wasm')?'application/wasm':
       file.endsWith('.js')?'text/javascript':file.endsWith('.html')?'text/html':'application/octet-stream';
+    const bytes=await readFile(file);
     res.writeHead(200,{'content-type':mime,'cache-control':'no-store'});
-    res.end(await readFile(file));
-  }catch(e){res.writeHead(404).end('Not found');}
+    res.end(bytes);
+  }catch(e){
+    if(!res.headersSent)res.writeHead(404,{'content-type':'text/plain'});
+    if(!res.writableEnded)res.end('Not found');
+  }
 });
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const origin='http://127.0.0.1:'+server.address().port+'/browser-test/index.html';
