@@ -6,6 +6,14 @@
 
 Prevent a browser from bypassing its own pre-send checks by requiring the receiving Delivery Service (DS) to consult the independently durable per-device checkpoint **inside the same SQLite transaction that accepts the opaque ciphertext**. An Ed25519 signature authenticates the sender's delivery intent; the DS compares the current account/binding version, writer fence, revision, and exact sealed-snapshot hash against durable authority state before insertion.
 
+## Verified CI outcome
+
+**Both isolated CI workflows PASSED on November 17, 2026.**
+
+- SQLite server-side signed delivery enforcement: [run #44192476963](https://github.com/gwapupward-hub/gwapspot-web/actions/runs/44192476963) — 10/10 reference checkpoint tests + 1/1 durable checkpoint crash test + 1/1 signed delivery crash/replay test; zero failures.
+- Real Chromium OpenMLS WASM + independently persistent SQLite DS gate: [run #44192877221](https://github.com/gwapupward-hub/gwapspot-web/actions/runs/44192877221) — native MLS regression, `wasm-pack build`, and browser integration each succeeded. GitHub job emitted `result: PASS` with real MLS PrivateMessage submitted only after external checkpoint acceptance, byte-identical ciphertext retained in SQLite, duplicate request idempotency, rejection of a fully rolled-back valid browser snapshot, fail-closed service outage, recovery of both browser and server after restart, two ciphertext decryptions, and simulated device revocation denial.
+- The server stores ciphertext bytes and routing metadata only; it has **no MLS private group state or plaintext**. Test fixtures use a privileged admin endpoint to inspect opaque ciphertext; this is NOT an authorized recipient sync endpoint.
+
 ## Test implementation
 
 - `openmls-poc/checkpoint/sqlite-delivery.mjs`: test-only `SQLiteDeliveryGate` with persisted opaque ciphertext and receipt. Signed `canonicalDelivery` is domain-separated from checkpoint advances and resume proofs.
@@ -33,6 +41,6 @@ Reviewed OpenMLS storage adapter → auth-enrolled device and live GNS checks �
 - Durable SQLite checkpoint fixture: https://github.com/gwapupward-hub/gwapspot-web/actions/runs/44189734926
 - Chromium with independently durable SQLite authority: https://github.com/gwapupward-hub/gwapspot-web/actions/runs/44190106769
 - DS server-only signed checkpoint enforcement: https://github.com/gwapupward-hub/gwapspot-web/actions/runs/44192476963
-- Combined browser/DS CI: https://github.com/gwapupward-hub/gwapspot-web/actions/runs/44192877221 (check actual conclusion before claiming pass).
+- Combined browser/DS CI: https://github.com/gwapupward-hub/gwapspot-web/actions/runs/44192877221 — verified SUCCESS.
 
 **No public end-user E2EE claim is supported.**
