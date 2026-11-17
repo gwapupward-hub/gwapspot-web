@@ -1,0 +1,52 @@
+name: GWAP Messenger — real OpenMLS ciphertext through durable DS fence
+
+on:
+  push:
+    branches:
+      - 'test/gwap-messenger-ds-fencing-20261117'
+    paths:
+      - 'openmls-poc/src/**'
+      - 'openmls-poc/browser-test/**'
+      - '.github/workflows/gwap-messenger-ds-browser.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gwap-messenger-ds-browser-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  browser-delivery-gate:
+    name: Actual OpenMLS WASM PrivateMessage + persisted checkpoint and DS authorization
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node 24 built-in SQLite
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install Rust stable WebAssembly toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Native MLS regression
+        run: cargo test --manifest-path openmls-poc/Cargo.toml --lib
+      - name: Install wasm-pack
+        run: cargo install wasm-pack --version 0.13.1 --locked
+      - name: Build OpenMLS browser WebAssembly fixture
+        working-directory: openmls-poc
+        run: wasm-pack build --release --target web --out-dir pkg
+      - name: Verify Chromium and integration runner syntax
+        run: |
+          command -v google-chrome
+          node --check openmls-poc/browser-test/checkpoint-integration-runner.mjs
+      - name: Install Playwright test driver only
+        run: npm install --prefix openmls-poc/browser-test --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
+      - name: Run actual OpenMLS ciphertext with DS-side signed checkpoint fencing and revocation
+        run: node openmls-poc/browser-test/checkpoint-integration-runner.mjs
+
+# Loopback-only fixture, generated device Ed25519 keys, ephemeral SQLite and Chrome profile.
+# No live Solana/GNS, recipient authentication, production DS, preview or merge.
