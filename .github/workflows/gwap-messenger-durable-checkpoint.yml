@@ -1,0 +1,42 @@
+name: GWAP Messenger — durable signed checkpoint crash tests
+
+on:
+  push:
+    branches:
+      - 'test/gwap-messenger-durable-checkpoint-20261117'
+    paths:
+      - 'openmls-poc/checkpoint/**'
+      - '.github/workflows/gwap-messenger-durable-checkpoint.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gwap-durable-checkpoint-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sqlite-authority:
+    name: SQLite WAL signed checkpoint, SIGKILL and rollback tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure Node 24 (built-in SQLite)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Check local test source
+        run: |
+          node --version
+          node --check openmls-poc/checkpoint/sqlite-checkpoint.mjs
+          node --check openmls-poc/checkpoint/sqlite-server.mjs
+          node --check openmls-poc/checkpoint/sqlite-checkpoint.test.mjs
+      - name: Re-run reference in-memory Ed25519 checkpoint tests
+        run: node --test openmls-poc/checkpoint/monotonic-checkpoint.test.mjs
+      - name: Execute independent durable SQLite authority crash/restart and rollback suite
+        run: node --test openmls-poc/checkpoint/sqlite-checkpoint.test.mjs
+
+# Test-only, loopback server, temporary SQLite database, generated fixture keys.
+# No real GNS/Solana checks, shared DB, production API, Vercel or deployment.
