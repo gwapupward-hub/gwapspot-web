@@ -1,0 +1,46 @@
+name: GWAP Messenger — durable delivery-service fencing
+
+on:
+  push:
+    branches:
+      - 'test/gwap-messenger-ds-fencing-20261117'
+    paths:
+      - 'openmls-poc/checkpoint/**'
+      - '.github/workflows/gwap-messenger-ds-fencing.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gwap-messenger-ds-fencing-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  delivery-fencing:
+    name: Real SQLite checkpoint-enforced opaque delivery and SIGKILL recovery
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout isolated test branch
+        uses: actions/checkout@v4
+      - name: Node 24 with built-in SQLite
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax-check delivery-service source
+        run: |
+          node --check openmls-poc/checkpoint/monotonic-checkpoint.mjs
+          node --check openmls-poc/checkpoint/sqlite-checkpoint.mjs
+          node --check openmls-poc/checkpoint/sqlite-delivery.mjs
+          node --check openmls-poc/checkpoint/sqlite-server.mjs
+          node --check openmls-poc/checkpoint/sqlite-delivery.test.mjs
+      - name: Regress Ed25519 checkpoint reference tests
+        run: node --test openmls-poc/checkpoint/monotonic-checkpoint.test.mjs
+      - name: Regress persistent checkpoint server SIGKILL tests
+        run: node --test openmls-poc/checkpoint/sqlite-checkpoint.test.mjs
+      - name: Test durable delivery authorization and ciphertext receipt recovery
+        run: node --test openmls-poc/checkpoint/sqlite-delivery.test.mjs
+
+# Loopback-only, fixture Ed25519 keys, temporary isolated SQLite DB.
+# Not a production DS, Solana/GNS integration, user auth, public preview or deployment.
