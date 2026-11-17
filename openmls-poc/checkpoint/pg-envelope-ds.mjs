@@ -92,9 +92,22 @@ export class PostgresEnvelopeDS {
    ok(r.rowCount===1&&!r.rows[0].revoked,'Unknown or revoked device');
    return r.rows[0];
  }
+ // Deterministic row-lock order blocks revocation between validation and commit
+ // and prevents opposite-direction sender/recipient operations from deadlocking.
+ async #activePair(db,senderId,recipientId){
+   const ids=[...new Set([senderId,recipientId])].sort();
+   const r=await db.query(
+     'SELECT * FROM messenger_checkpoint_devices WHERE device_id=ANY($1::text[])'+
+     ' ORDER BY device_id FOR UPDATE',[ids]);
+   ok(r.rowCount===ids.length&&r.rows.every(row=>!row.revoked),
+     'Unknown or revoked device');
+   const byId=new Map(r.rows.map(row=>[row.device_id,row]));
+   return {sender:byId.get(senderId),recipient:byId.get(recipientId)};
+ }
  async #member(db,groupId,deviceId){
    const r=await db.query(
-    'SELECT active FROM messenger_test_group_members WHERE group_id=$1 AND device_id=$2',
+    'SELECT active FROM messenger_test_group_members'+
+    ' WHERE group_id=$1 AND device_id=$2 FOR SHARE',
     [groupId,deviceId]);
    ok(r.rowCount===1&&r.rows[0].active,'Unauthorized group member');
  }
@@ -137,9 +150,8 @@ export class PostgresEnvelopeDS {
    grantBasics(r);
    const digest=envelopeHash(authorizeEnvelopeBytes(r));
    return this.#tx(async db=>{
-     const sender=await this.#device(db,r.deviceId,true);
+     const {sender}=await this.#activePair(db,r.deviceId,r.recipientDeviceId);
      authenticate(sender,r,authorizeEnvelopeBytes(r));
-     await this.#device(db,r.recipientDeviceId,false);
      await this.#member(db,r.groupId,r.deviceId);
      await this.#member(db,r.groupId,r.recipientDeviceId);
      const prior=await db.query(
@@ -178,9 +190,8 @@ export class PostgresEnvelopeDS {
  async submitEnvelope(r){
    const wire=submitBasics(r);
    return this.#tx(async db=>{
-     const sender=await this.#device(db,r.deviceId,true);
+     const {sender}=await this.#activePair(db,r.deviceId,r.recipientDeviceId);
      authenticate(sender,r,submitEnvelopeBytes(r));
-     await this.#device(db,r.recipientDeviceId,false);
      await this.#member(db,r.groupId,r.deviceId);
      await this.#member(db,r.groupId,r.recipientDeviceId);
      const g=await db.query(
