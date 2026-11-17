@@ -1,0 +1,53 @@
+name: GWAP Messenger — atomic MLS outbox and two-tab safety
+
+on:
+  push:
+    branches:
+      - 'test/gwap-messenger-outbox-locks-20261117'
+    paths:
+      - 'openmls-poc/**'
+      - '.github/workflows/gwap-messenger-outbox-locks.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gwap-messenger-atomic-outbox-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  outbox-tests:
+    name: Real OpenMLS sender ratchet + transactional encrypted outbox
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout isolated test branch
+        uses: actions/checkout@v4
+      - name: Install Rust and WebAssembly target
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Native MLS regression
+        run: cargo test --manifest-path openmls-poc/Cargo.toml --lib -- --nocapture
+      - name: Install wasm-pack
+        run: cargo install wasm-pack --version 0.13.1 --locked
+      - name: Build browser-compatible OpenMLS engine
+        working-directory: openmls-poc
+        run: wasm-pack build --release --target web --out-dir pkg
+      - name: Verify JavaScript runner syntax and Chrome availability
+        run: |
+          command -v google-chrome
+          node --version
+          node --check openmls-poc/browser-test/outbox-runner.mjs
+          node --check openmls-poc/browser-test/restart-runner.mjs
+      - name: Install isolated Playwright driver
+        run: npm install --prefix openmls-poc/browser-test --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
+      - name: Re-run browser process-restart regression
+        run: node openmls-poc/browser-test/restart-runner.mjs
+      - name: Test competing tabs, transactional abort, lost response and idempotent outbox recovery
+        run: node openmls-poc/browser-test/outbox-runner.mjs
+
+# Only an isolated POC. This does not deploy GwapOS or access Solana.
+# Independent rollback anchor, production StorageProvider and crash/failure testing
+# are still mandatory release gates.
