@@ -229,6 +229,22 @@ pub async fn outbox_status() -> Result<JsValue,JsValue> {
     result(revision,pending.len(),delivered,None)
 }
 
+// TEST ONLY: returns serialized MLS encrypted message bytes, never group keys.
+#[wasm_bindgen]
+pub async fn outbox_peek() -> Result<JsValue,JsValue> {
+    let (revision,(_sender,_receiver,id,_public,pending,_delivered))=load().await?;
+    let wire=pending.first().ok_or_else(||jserr("No queued MLS ciphertext"))?;
+    let group_id=id.iter().map(|b|format!("{b:02x}")).collect::<String>();
+    let result=Object::new();
+    Reflect::set(&result,&JsValue::from_str("revision"),
+        &JsValue::from_f64(revision as f64))?;
+    Reflect::set(&result,&JsValue::from_str("groupId"),
+        &JsValue::from_str(&group_id))?;
+    Reflect::set(&result,&JsValue::from_str("ciphertext"),
+        &Uint8Array::from(wire.as_slice()).into())?;
+    Ok(result.into())
+}
+
 #[wasm_bindgen]
 pub async fn outbox_send(expected_revision:u32,text:String,failure:u32)
     -> Result<JsValue,JsValue> {
@@ -269,6 +285,42 @@ pub async fn outbox_deliver(expected_revision:u32,failure:u32)
         .ok_or_else(|| jserr("Missing receiver MLS group"))?;
     let wire=pending.remove(0);
     let parsed=MlsMessageIn::tls_deserialize_exact(wire)
+        .map_err(|e| jserr(format!("{e:?}")))?
+        .try_into_protocol_message()
+        .map_err(|e| jserr(format!("{e:?}")))?;
+    let msg=bob.process_message(&b,parsed)
+        .map_err(|e| jserr(format!("{e:?}")))?;
+    let content=match msg.into_content() {
+        ProcessedMessageContent::ApplicationMessage(m)=>m.into_bytes(),
+        _=>return Err(jserr("Expected encrypted MLS application message"))
+    };
+    let new_snapshot:OutboxSnapshot=(sender,key_values(&b),id,public,pending.clone(),delivered+1);
+    let bytes=serde_json::to_vec(&new_snapshot).unwrap();
+    // Commit receiver ratchet progress + removal from outbox before receipt.
+    let committed=save_outbox_js(&bytes,revision,failure).await?;
+    let text=String::from_utf8(content).map_err(|e|jserr(e.to_string()))?;
+    result(committed,pending.len(),delivered+1,Some(&text))
+}
+
+#[wasm_bindgen]
+pub async fn outbox_deliver_from_ds(expected_revision:u32,failure:u32, retrieved_wire:Vec<u8>)
+    -> Result<JsValue,JsValue> {
+    if failure>2{return Err(jserr("Invalid injection mode"));}
+    let (revision,(sender,receiver,id,public,mut pending,delivered))=load().await?;
+    if revision!=expected_revision{return Err(jserr("Stale deliver caller revision"));}
+    if pending.is_empty(){return Err(jserr("No committed envelope pending delivery"));}
+    let b=restore(receiver);
+    let group_id=GroupId::from_slice(&id);
+    let mut bob=MlsGroup::load(b.storage(),&group_id)
+        .map_err(|e| jserr(format!("{e:?}")))?
+        .ok_or_else(|| jserr("Missing receiver MLS group"))?;
+    // This fixture happens to colocate both participants. Demand byte-for-byte
+    // equality with the opaque DS-retrieved envelope before recipient decryption.
+    let queued_wire=pending.remove(0);
+    if queued_wire != retrieved_wire {
+        return Err(jserr("Delivery ciphertext differs from committed sender outbox"));
+    }
+    let parsed=MlsMessageIn::tls_deserialize_exact(retrieved_wire)
         .map_err(|e| jserr(format!("{e:?}")))?
         .try_into_protocol_message()
         .map_err(|e| jserr(format!("{e:?}")))?;
