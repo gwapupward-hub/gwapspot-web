@@ -51,6 +51,8 @@ jobs:
         run: node --test openmls-poc/checkpoint/monotonic-checkpoint.test.mjs
       - name: Run real PostgreSQL durable checkpoint and failure-injection tests
         run: node --test openmls-poc/checkpoint/durable-checkpoint.test.mjs
+      - name: Exercise localhost signed checkpoint HTTP contract
+        run: node --test openmls-poc/checkpoint/local-http-test-server.test.mjs
 
 # Test-only disposable Postgres service. No Neon access, no GNS wallet keys,
 # no Vercel deployment, no production data, no merges.
