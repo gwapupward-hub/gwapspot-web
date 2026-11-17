@@ -1,0 +1,52 @@
+name: GWAP Messenger — browser/SQLite checkpoint integration
+
+on:
+  push:
+    branches:
+      - 'test/gwap-messenger-durable-checkpoint-20261117'
+    paths:
+      - 'openmls-poc/browser-test/checkpoint-integration-runner.mjs'
+      - 'openmls-poc/checkpoint/**'
+      - '.github/workflows/gwap-messenger-durable-browser.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gwap-messenger-durable-browser-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  webassembly-checkpoint:
+    name: Real OpenMLS WASM + independently durable signed checkpoint
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure Node 24 with built-in SQLite
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install Rust stable and WebAssembly target
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Check cryptographic regression
+        run: cargo test --manifest-path openmls-poc/Cargo.toml --lib
+      - name: Install wasm-pack
+        run: cargo install wasm-pack --version 0.13.1 --locked
+      - name: Build test browser OpenMLS WASM
+        working-directory: openmls-poc
+        run: wasm-pack build --release --target web --out-dir pkg
+      - name: Check browser runner and Chrome
+        run: |
+          command -v google-chrome
+          node --check openmls-poc/browser-test/checkpoint-integration-runner.mjs
+      - name: Install isolated Playwright
+        run: npm install --prefix openmls-poc/browser-test --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
+      - name: Verify Chromium OpenMLS encrypted outbox and independently persistent signed checkpoint
+        run: node openmls-poc/browser-test/checkpoint-integration-runner.mjs
+
+# Test-only isolated on ephemeral loopback server, temp SQLite DB and fixture Ed25519.
+# Not a production DS, persistent production DB, GNS integration, rollout or security audit.
