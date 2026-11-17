@@ -84,7 +84,7 @@ mod tests {
         ).expect("Alice encrypts");
         let wire = alice_message.to_bytes().expect("serialize");
         assert!(!wire.windows(b"Hello Bob".len()).any(|w| w == b"Hello Bob"));
-        let parsed = MlsMessageIn::tls_deserialize_exact(wire)
+        let parsed = MlsMessageIn::tls_deserialize_exact(wire.clone())
             .expect("deserialize").try_into_protocol_message().expect("protocol message");
         let processed = bob_group.process_message(&bob_provider, parsed)
             .expect("Bob decrypts and authenticates");
@@ -92,6 +92,39 @@ mod tests {
             ProcessedMessageContent::ApplicationMessage(msg) =>
                 assert_eq!(msg.into_bytes(), b"Hello Bob: encrypted under OpenMLS"),
             _ => panic!("unexpected content"),
+        }
+
+        // A consumed sender-generation key must not decrypt the same envelope twice.
+        let replay = MlsMessageIn::tls_deserialize_exact(wire)
+            .expect("parse replay").try_into_protocol_message().expect("replay protocol type");
+        assert!(
+            bob_group.process_message(&bob_provider, replay).is_err(),
+            "replayed MLS application message must be rejected"
+        );
+
+        // Flip one bit of a fresh ciphertext/tag; preserve the original valid message.
+        let integrity_message = alice_group.create_message(
+            &alice_provider, &alice_signer, b"MAC integrity probe"
+        ).expect("encrypt integrity probe");
+        let original = integrity_message.to_bytes().expect("serialize integrity probe");
+        let mut corrupted = original.clone();
+        let last = corrupted.len() - 1;
+        corrupted[last] ^= 0x01;
+        let malformed = MlsMessageIn::tls_deserialize_exact(corrupted)
+            .expect("ciphertext bit flip must leave the wire format parseable")
+            .try_into_protocol_message().expect("ciphertext wire variant");
+        assert!(
+            bob_group.process_message(&bob_provider, malformed).is_err(),
+            "tampered MLS ciphertext/tag must fail authentication"
+        );
+        let intact = MlsMessageIn::tls_deserialize_exact(original)
+            .unwrap().try_into_protocol_message().unwrap();
+        match bob_group.process_message(&bob_provider, intact)
+            .expect("valid envelope survives invalid ciphertext attempt").into_content()
+        {
+            ProcessedMessageContent::ApplicationMessage(msg) =>
+                assert_eq!(msg.into_bytes(), b"MAC integrity probe"),
+            _ => panic!("expected a valid application message"),
         }
 
         let bob_message = bob_group.create_message(
