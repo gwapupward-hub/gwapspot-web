@@ -1,0 +1,145 @@
+//! Real OpenMLS test-only smoke tests. No cryptographic primitives are implemented here.
+//! Uses BasicCredential fixtures, NOT authenticated GNS identities.
+//! Production verification must additionally bind device credentials to live .gwap control.
+
+#[cfg(test)]
+mod tests {
+    use openmls::prelude::*;
+    use openmls::prelude::tls_codec::*;
+    use openmls_basic_credential::SignatureKeyPair;
+    use openmls_rust_crypto::OpenMlsRustCrypto;
+
+    fn new_credential(
+        name: &[u8],
+        suite: Ciphersuite,
+        provider: &impl OpenMlsProvider,
+    ) -> (CredentialWithKey, SignatureKeyPair) {
+        let identity = BasicCredential::new(name.to_vec());
+        let signer = SignatureKeyPair::new(suite.signature_algorithm())
+            .expect("generate device signer");
+        signer.store(provider.storage()).expect("store signing key");
+        (
+            CredentialWithKey {
+                credential: identity.into(),
+                signature_key: signer.public().into(),
+            },
+            signer,
+        )
+    }
+
+    #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test::wasm_bindgen_test)]
+    #[cfg_attr(not(target_arch = "wasm32"), test)]
+    fn two_member_welcome_private_messages_and_epoch_update() {
+        let suite = Ciphersuite::MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519;
+        let alice_provider = OpenMlsRustCrypto::default();
+        let bob_provider = OpenMlsRustCrypto::default();
+        let (alice_cred, alice_signer) =
+            new_credential(b"alice.gwap:device-test-1", suite, &alice_provider);
+        let (bob_cred, bob_signer) =
+            new_credential(b"bob.gwap:device-test-1", suite, &bob_provider);
+
+        let bob_keypackage = KeyPackage::builder()
+            .build(suite, &bob_provider, &bob_signer, bob_cred)
+            .expect("Bob's MLS KeyPackage");
+
+        let create_config = MlsGroupCreateConfig::builder()
+            .ciphersuite(suite)
+            .use_ratchet_tree_extension(true)
+            .build();
+        let mut alice_group = MlsGroup::new(
+            &alice_provider, &alice_signer, &create_config, alice_cred,
+        ).expect("Alice creates group");
+
+        let (_commit, welcome, _info) = alice_group.add_members(
+            &alice_provider, &alice_signer,
+            std::slice::from_ref(bob_keypackage.key_package()),
+        ).expect("Alice adds Bob");
+        // The local POC assumes canonical acceptance. Production must use DS ordering.
+        alice_group.merge_pending_commit(&alice_provider).expect("merge accepted Commit");
+
+        assert_eq!(alice_group.members().count(), 2);
+        let welcome_in = MlsMessageIn::tls_deserialize_exact(
+            welcome.to_bytes().expect("serialize Welcome"),
+        ).expect("deserialize Welcome");
+        let welcome = match welcome_in.extract() {
+            MlsMessageBodyIn::Welcome(value) => value,
+            _ => panic!("expected Welcome"),
+        };
+        let join_config = MlsGroupJoinConfig::builder()
+            .use_ratchet_tree_extension(true)
+            .build();
+        let staged_bob = StagedWelcome::new_from_welcome(
+            &bob_provider, &join_config, welcome, None,
+        ).expect("Bob stages Welcome");
+        let mut bob_group = staged_bob.into_group(&bob_provider).expect("Bob joins");
+
+        assert_eq!(bob_group.members().count(), 2);
+        assert_eq!(
+            alice_group.epoch_authenticator().as_slice(),
+            bob_group.epoch_authenticator().as_slice()
+        );
+
+        let alice_message = alice_group.create_message(
+            &alice_provider, &alice_signer, b"Hello Bob: encrypted under OpenMLS",
+        ).expect("Alice encrypts");
+        let wire = alice_message.to_bytes().expect("serialize");
+        assert!(!wire.windows(b"Hello Bob".len()).any(|w| w == b"Hello Bob"));
+        let parsed = MlsMessageIn::tls_deserialize_exact(wire)
+            .expect("deserialize").try_into_protocol_message().expect("protocol message");
+        let processed = bob_group.process_message(&bob_provider, parsed)
+            .expect("Bob decrypts and authenticates");
+        match processed.into_content() {
+            ProcessedMessageContent::ApplicationMessage(msg) =>
+                assert_eq!(msg.into_bytes(), b"Hello Bob: encrypted under OpenMLS"),
+            _ => panic!("unexpected content"),
+        }
+
+        let bob_message = bob_group.create_message(
+            &bob_provider, &bob_signer, b"Bob response",
+        ).expect("Bob encrypts");
+        let parsed = MlsMessageIn::tls_deserialize_exact(bob_message.to_bytes().unwrap())
+            .unwrap().try_into_protocol_message().unwrap();
+        let processed = alice_group.process_message(&alice_provider, parsed).unwrap();
+        match processed.into_content() {
+            ProcessedMessageContent::ApplicationMessage(msg) =>
+                assert_eq!(msg.into_bytes(), b"Bob response"),
+            _ => panic!("unexpected response"),
+        }
+
+        let old_authenticator = alice_group.epoch_authenticator().as_slice().to_vec();
+        let (update_commit, _welcome_option, _group_info) = bob_group.self_update(
+            &bob_provider, &bob_signer, LeafNodeParameters::default(),
+        ).expect("Bob stages update").into_contents();
+        let parsed = MlsMessageIn::tls_deserialize_exact(
+            update_commit.to_bytes().expect("serialize Commit")
+        ).expect("deserialize Commit").try_into_protocol_message().expect("protocol Commit");
+        let processed = alice_group.process_message(&alice_provider, parsed)
+            .expect("Alice validates Commit");
+        match processed.into_content() {
+            ProcessedMessageContent::StagedCommitMessage(staged) =>
+                alice_group.merge_staged_commit(&alice_provider, *staged)
+                    .expect("Alice merges Commit"),
+            _ => panic!("expected staged commit"),
+        }
+        bob_group.merge_pending_commit(&bob_provider).expect("Bob merges accepted Commit");
+
+        assert_ne!(old_authenticator, alice_group.epoch_authenticator().as_slice());
+        assert_eq!(
+            alice_group.epoch_authenticator().as_slice(),
+            bob_group.epoch_authenticator().as_slice()
+        );
+
+        let message = alice_group.create_message(
+            &alice_provider, &alice_signer, b"New epoch is active",
+        ).expect("encrypt in next epoch");
+        let parsed = MlsMessageIn::tls_deserialize_exact(message.to_bytes().unwrap())
+            .unwrap().try_into_protocol_message().unwrap();
+        let processed = bob_group.process_message(&bob_provider, parsed)
+            .expect("decrypt in next epoch");
+        match processed.into_content() {
+            ProcessedMessageContent::ApplicationMessage(msg) =>
+                assert_eq!(msg.into_bytes(), b"New epoch is active"),
+            _ => panic!("unexpected type"),
+        }
+    }
+}
