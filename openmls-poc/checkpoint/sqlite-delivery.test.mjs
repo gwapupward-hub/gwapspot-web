@@ -155,8 +155,10 @@ test('delivery gate enforces independent durable checkpoint, signer and fencing 
 
     assert.equal((await post('/fixture/revoke',{deviceId,nextBindingVersion:2},
       {'x-fixture-admin':admin})).status,200);
+    const revokedWire=randomBytes(64);
     const afterRevoke=delivery({fence:2,messageId:'fixture_revoked_01',
-      ciphertextHash:sha256Hex(randomBytes(16))});
+      ciphertextHash:sha256Hex(revokedWire),
+      ciphertextBase64:revokedWire.toString('base64')});
     assert.match((await post('/delivery/submit',afterRevoke)).body.error,/revoked device/);
     assert.equal((await list()).length,3);
     checks.push('domain/device revocation fixture stopped sender even with a signed request');
