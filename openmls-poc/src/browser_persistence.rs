@@ -207,7 +207,7 @@ async fn indexeddb_encrypted_snapshot_resumes_real_openmls_group() {
         .expect("encrypt and persist snapshot in browser IndexedDB");
     assert_eq!(first_revision, 1);
     let metadata = read_stored_metadata_only().await.unwrap();
-    assert!(metadata.contains(r#"\"cryptoKeyNonextractable\":true"#),
+    assert!(metadata.contains(r#""cryptoKeyNonextractable":true"#),
         "the key stored in IndexedDB must not be exportable");
     assert!(metadata.contains("encryptedBytes"),
         "IndexedDB contains an encrypted blob, not individual plaintext MLS values");
