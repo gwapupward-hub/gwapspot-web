@@ -1,0 +1,67 @@
+name: GWAP Messenger — actual MLS ciphertext through PostgreSQL recipient sync
+
+on:
+  push:
+    branches:
+      - 'test/gwap-messenger-wasm-postgres-e2e-20261117'
+    paths:
+      - 'openmls-poc/**'
+      - '.github/workflows/gwap-messenger-pg-wasm-e2e.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gwap-messenger-pg-wasm-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  wasm-postgres-roundtrip:
+    name: Chromium OpenMLS → PostgreSQL grant → signed recipient fetch → OpenMLS decryption
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: gwap_checkpoint_test
+          POSTGRES_USER: gwap_test
+          POSTGRES_PASSWORD: gwap_test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U gwap_test -d gwap_checkpoint_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      CHECKPOINT_TEST_DATABASE_URL: postgres://gwap_test:gwap_test_password@127.0.0.1:5432/gwap_checkpoint_test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install Rust stable with browser WASM target
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Native OpenMLS regression
+        run: cargo test --manifest-path openmls-poc/Cargo.toml --lib -- --nocapture
+      - name: Install wasm-pack
+        run: cargo install wasm-pack --version 0.13.1 --locked
+      - name: Build actual OpenMLS browser WASM
+        working-directory: openmls-poc
+        run: wasm-pack build --release --target web --out-dir pkg
+      - name: Verify Chromium and test runner JS
+        run: |
+          command -v google-chrome
+          node --check openmls-poc/browser-test/pg-envelope-e2e-runner.mjs
+      - name: Install isolated PostgreSQL and Chromium test adapters
+        run: npm install --prefix openmls-poc --no-save --ignore-scripts --no-audit --no-fund pg@8.16.3 playwright-core@1.56.1
+      - name: Execute actual MLS 2-message encrypted PostgreSQL recipient roundtrip
+        run: node openmls-poc/browser-test/pg-envelope-e2e-runner.mjs
+
+# Disposable localhost Chrome profile + generated keys + ephemeral Postgres 16.
+# No real .gwap/GNS, live DB, Vercel deployment, merge or production data.
