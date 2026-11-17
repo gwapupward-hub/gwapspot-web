@@ -128,6 +128,10 @@ export async function saveAtomicOutbox(bytes, expectedRevision, mode) {
 }
 "#)]
 extern "C" {
+    #[wasm_bindgen(catch, js_name = holdOutboxLockForTest)]
+    async fn hold_outbox_lock_js() -> Result<(), JsValue>;
+    #[wasm_bindgen(js_name = releaseOutboxLockForTest)]
+    fn release_outbox_lock_js();
     #[wasm_bindgen(catch, js_name = resetAtomicOutboxTest)]
     async fn reset_outbox_js() -> Result<(), JsValue>;
     #[wasm_bindgen(catch, js_name = loadAtomicOutbox)]
@@ -281,3 +285,8 @@ pub async fn outbox_deliver(expected_revision:u32,failure:u32)
     let text=String::from_utf8(content).map_err(|e|jserr(e.to_string()))?;
     result(committed,pending.len(),delivered+1,Some(&text))
 }
+
+#[wasm_bindgen]
+pub async fn outbox_hold_lock() -> Result<(),JsValue> { hold_outbox_lock_js().await }
+#[wasm_bindgen]
+pub fn outbox_release_lock() { release_outbox_lock_js(); }
