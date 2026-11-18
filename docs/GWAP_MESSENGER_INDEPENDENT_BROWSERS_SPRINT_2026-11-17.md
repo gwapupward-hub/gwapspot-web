@@ -2,7 +2,7 @@
 
 **Date:** November 17, 2026.  
 **Branch:** `test/gwap-messenger-two-client-mls-20261117`.  
-**CI:** https://github.com/gwapupward-hub/gwapspot-web/actions/runs/44207121839 (verify final run conclusion before claiming a pass).  
+**Verified CI:** https://github.com/gwapupward-hub/gwapspot-web/actions/runs/44207121839 — **SUCCESS** (native 1/1; WASM build; two independent Chromium clients, all 8 logged assertions).  
 **Canonical tracker:** https://github.com/gwapupward-hub/gwapspot-web/issues/341.
 
 ## Objective and architecture
@@ -20,8 +20,20 @@ Each device additionally generates an independent non-extractable **WebCrypto Ed
 5. Both clients exchange fresh encrypted messages in the new epoch, with no cross-profile private-key sharing.
 6. Fixture relay rejects a repeated KeyPackage and a sender spoof using another device's signing identity.
 
-**These are planned assertions; passing status requires the CI runner's actual test output.**
+**Verified from the completed GitHub Actions job log:** the runner emitted `result: PASS` in "two independent Chromium profiles + real OpenMLS WebAssembly + signed loopback relay", with **8 of 8 logged integration assertions passing**. The native Rust regression also passed (1/1), and `wasm-pack build --release --target web` succeeded. No independent-device persistence, real GNS binding or production Delivery Service was exercised.
 
+## Eight executed integration checks
+
+1. Two distinct Chromium browser processes/profiles and OpenMLS private providers, each with browser-generated nonextractable Ed25519 relay key.
+2. Bob serialized and published a genuine KeyPackage; Alice retrieved it through an authenticated relay. A forged inbox read was denied.
+3. Alice verified Bob's KeyPackage using OpenMLS, created a group, and relayed an initial Add Commit before Welcome. Bob joined from Welcome, verified a two-member roster and matching epoch authenticator. A repeated KeyPackage attempt was rejected.
+4. Alice's OpenMLS PrivateMessage traversed the relay and decrypted in Bob's independent profile. Tampered wire and consumed-key replay were rejected.
+5. Bob encrypted a reply from his independent provider; Alice decrypted it.
+6. Bob staged and transported an actual MLS self-update Commit; Alice validated/merged it and Bob merged his accepted pending Commit. The resulting epoch authenticator changed and matched on both devices.
+7. New-epoch messages encrypted and decrypted in both directions.
+8. Attempted sender impersonation using the other fixture's device ID was rejected; the relay recorded eight typed opaque wire events without MLS private keys.
+
+**Known nonclaim:** test-only transport signing keys are not bound to the OpenMLS signing identity or to a real GNS wallet/domain-ownership assertion.
 ## Important nonclaims
 
 - **Distinct test browser profiles are not independently verified real GNS identities.** The relay's privileged enrollment maps only fixtures `alice` and `bob` to device Ed25519 public keys. There is no wallet signature, authoritative `.gwap` current owner, domain transfer, identity transparency, key transparency, contact consent, or verified binding of the relay key to the MLS BasicCredential.
