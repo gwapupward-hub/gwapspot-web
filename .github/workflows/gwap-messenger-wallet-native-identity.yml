@@ -63,5 +63,32 @@ jobs:
       - name: Actual OpenMLS cryptographic credential accepted by wallet-signed SQL gate
         run: node --test openmls-poc/gns-binding/native-mls-enrollment.test.mjs
 
+  gwapos-session-map:
+    name: GwapOS Privy session and immutable account trust boundary
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Reject unverified/mismatched wallet and stale canonical account mapping
+        run: node --experimental-strip-types --test app/lib/messenger-verified-session-core.test.mjs
+
+  app-typescript-contract:
+    name: Typecheck isolated GwapOS server auth integration seam
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+      - name: Install locked application dependencies without postinstall side effects
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Check server-side Privy, canonical account and new Messenger session types
+        run: npm run typecheck
+
 # No real Privy token or user-wallet signature, no live GNS account enrollment,
 # no production Neon schema, no Preview, no merge or deployment.
