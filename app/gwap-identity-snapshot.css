@@ -1,331 +1,212 @@
-/* Responsive identity snapshot treatment for an available .gwap lookup result. */
-.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) {
+/* Real, source-backed GNS identity result. Only rendered when API confirms name.available. */
+.overview-lookup > .gns-live-result { grid-column: 1 / -1; min-width: 0; }
+.gns-live-result {
+  --snapshot-green: #13dd13;
+  --snapshot-purple: #a068ff;
+  --snapshot-orange: #ffb76e;
   position: relative;
   isolation: isolate;
-  display: grid;
-  grid-template-columns: minmax(0, 1.32fr) minmax(190px, .68fr);
-  gap: clamp(18px, 3vw, 28px);
-  min-height: 352px;
-  margin-top: 14px;
-  padding: clamp(22px, 3.4vw, 30px);
+  min-width: 0;
   overflow: hidden;
+  padding: clamp(22px, 5vw, 62px);
   border: 1px solid rgba(255,255,255,.16);
-  border-radius: 24px;
+  border-radius: clamp(23px, 3.5vw, 46px);
   background:
-    radial-gradient(circle at 10% 18%, rgba(19,221,19,.13), transparent 32%),
-    radial-gradient(circle at 84% 74%, rgba(141,92,255,.08), transparent 34%),
-    linear-gradient(145deg, rgba(5,13,7,.98), rgba(3,5,4,.98) 48%, rgba(7,5,10,.98));
-  box-shadow:
-    inset 0 1px rgba(255,255,255,.08),
-    0 24px 66px rgba(0,0,0,.38),
-    0 0 44px rgba(19,221,19,.045);
+    radial-gradient(ellipse at 14% 9%, rgba(19,221,19,.12), transparent 46%),
+    radial-gradient(ellipse at 90% 86%, rgba(116,69,194,.075), transparent 54%),
+    linear-gradient(135deg, #030b04, #030504 56%, #08050d);
+  box-shadow: inset 0 1px rgba(255,255,255,.07), 0 28px 72px rgba(0,0,0,.4);
+  color: #f8faf8;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
 }
-
-.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="])::before,
-.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="])::after {
+.gns-live-result-watermark {
   position: absolute;
   z-index: -1;
-  color: rgba(255,255,255,.028);
+  color: rgba(255,255,255,.03);
   font-weight: 900;
-  letter-spacing: -.08em;
+  letter-spacing: -.085em;
   line-height: .78;
-  pointer-events: none;
-  user-select: none;
-}
-
-.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="])::before {
-  content: "GWAP";
-  top: 36px;
-  right: -22px;
-  font-size: clamp(108px, 18vw, 176px);
-}
-
-.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="])::after {
-  content: "IDENTITY";
-  right: -8px;
-  bottom: 18px;
-  font-size: clamp(82px, 13vw, 132px);
-}
-
-.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) > div:first-child {
-  position: relative;
-  z-index: 2;
-  align-self: stretch;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-width: 0;
-  padding-top: 52px;
-}
-
-.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) > div:first-child::before {
-  content: ".GWAP LOOKUP RESULT";
-  position: absolute;
-  top: 0;
-  left: 0;
-  display: inline-flex;
-  align-items: center;
-  width: max-content;
-  max-width: 100%;
-  padding: 9px 13px 9px 30px;
-  border: 1px solid rgba(19,221,19,.34);
-  border-radius: 999px;
-  background: rgba(8,51,11,.5);
-  color: #bff6c4;
-  font-size: 8px;
-  font-weight: 900;
-  letter-spacing: .16em;
-  text-transform: uppercase;
-  box-shadow: inset 0 1px rgba(255,255,255,.05);
-}
-
-.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) > div:first-child::after {
-  content: "";
-  position: absolute;
-  top: 14px;
-  left: 13px;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--gwap-green);
-  box-shadow: 0 0 14px rgba(19,221,19,.92);
-}
-
-.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) > div:first-child > small {
-  margin-top: auto;
-  color: transparent;
-  font-size: 0;
-}
-
-.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) > div:first-child > small::before {
-  content: "YOUR GWAP IDENTITY";
-  color: #a97cff;
-  font-size: clamp(9px, 1.4vw, 11px);
-  font-weight: 900;
-  letter-spacing: .16em;
-}
-
-.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) > div:first-child > strong {
-  display: block;
-  margin-top: 12px;
-  overflow-wrap: anywhere;
-  color: #f7faf7;
-  font-size: clamp(31px, 5.2vw, 48px);
-  font-weight: 860;
-  line-height: .96;
-  letter-spacing: -.055em;
-  text-wrap: balance;
-}
-
-.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) > div:first-child > p {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 10px;
-  margin: 18px 0 0;
-  padding: 14px 15px;
-  border: 1px solid rgba(141,92,255,.2);
-  border-radius: 14px;
-  background: rgba(255,255,255,.025);
-  color: transparent;
-  font-size: 0;
-}
-
-.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) > div:first-child > p::before {
-  content: "●  Identity available   •   Ready for GwapSpot OS";
-  color: #dce8dd;
-  font-size: 9px;
-  font-weight: 760;
-  line-height: 1.45;
-}
-
-.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) > div:first-child > p::after {
-  content: "STATUS  AVAILABLE    ·    LAYER  GNS";
-  color: #9a72ea;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 8px;
-  font-weight: 850;
-  letter-spacing: .1em;
-}
-
-.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) .hero-utility-result-actions {
-  position: relative;
-  z-index: 2;
-  align-self: stretch;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  gap: 9px;
-  width: auto;
-  padding-top: 54px;
-}
-
-.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) .hero-utility-result-actions::before {
-  content: "AVAILABLE TO CLAIM";
-  position: absolute;
-  top: 0;
-  right: 0;
-  padding: 9px 12px;
-  border: 1px solid rgba(255,133,46,.32);
-  border-radius: 999px;
-  background: rgba(64,29,5,.38);
-  color: #ffb275;
-  font-size: 8px;
-  font-weight: 900;
-  letter-spacing: .11em;
   white-space: nowrap;
+  user-select: none;
+  pointer-events: none;
 }
-
-.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) .hero-utility-result-actions > a {
-  min-height: 104px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  width: 100%;
-  padding: 18px 16px;
-  border: 1px solid rgba(19,221,19,.8);
-  border-radius: 20px;
-  background: linear-gradient(135deg, #17ef22, #10cb17);
-  color: #001b03;
-  box-shadow: inset 0 1px rgba(255,255,255,.36), 0 18px 40px rgba(19,221,19,.18);
-  font-size: 0;
-  font-weight: 900;
-  text-align: center;
-  transition: transform .22s ease, filter .22s ease, box-shadow .22s ease;
+.gns-live-result-watermark--top {
+  top: 7%; right: -1%;
+  font-size: clamp(120px, 20vw, 254px);
 }
-
-.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) .hero-utility-result-actions > a::before {
-  content: "CLAIM YOUR IDENTITY";
-  font-size: clamp(14px, 2.1vw, 18px);
+.gns-live-result-watermark--bottom {
+  top: 42%; right: 0;
+  font-size: clamp(92px, 16vw, 200px);
+  color: rgba(144,85,237,.037);
+}
+.gns-live-result-header,.gns-live-result-grid,.gns-live-result-footer {
+  position: relative; z-index: 1;
+}
+.gns-live-result-header {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;
+}
+.gns-live-result-pill {
+  display: inline-flex; align-items: center; gap: 12px;
+  padding: 11px 18px; border-radius: 999px;
+  font-size: clamp(10px,1.2vw,15px); font-weight: 850;
+  letter-spacing: .12em; line-height: 1.2; white-space: nowrap;
+}
+.gns-live-result-pill--lookup {
+  border: 1px solid rgba(19,221,19,.35);
+  background: rgba(5,80,7,.36);
+  color: #b5eeb8;
+}
+.gns-live-result-pill--lookup i,
+.gns-live-result-signal i {
+  display: inline-block; flex: none;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--snapshot-green);
+  box-shadow: 0 0 0 6px rgba(19,221,19,.1), 0 0 16px rgba(19,221,19,.28);
+}
+.gns-live-result-pill--available {
+  border: 1px solid rgba(255,141,33,.32);
+  background: rgba(114,57,9,.23);
+  color: var(--snapshot-orange);
+}
+.gns-live-result-grid {
+  display: grid;
+  grid-template-columns: minmax(0,1.7fr) minmax(225px,.92fr);
+  align-items: end;
+  gap: clamp(18px,4.5vw,54px);
+  margin-top: clamp(50px,6.5vw,94px);
+}
+.gns-live-result-main { min-width: 0; }
+.gns-live-result-eyebrow {
+  color: var(--snapshot-purple);
+  font-size: clamp(14px,1.9vw,23px);
+  font-weight: 850; letter-spacing: .13em;
+}
+.gns-live-result-name {
+  margin: 15px 0 19px;
+  font-size: clamp(38px,6.4vw,89px);
+  font-weight: 870;
   line-height: 1;
-  letter-spacing: -.02em;
+  letter-spacing: -.07em;
+  overflow-wrap: anywhere;
+  color: #fff;
 }
-
-.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) .hero-utility-result-actions > a::after {
-  content: "ENTER GWAPSPOT OS →";
-  font-size: 8px;
-  font-weight: 850;
-  letter-spacing: .08em;
+.gns-live-result-rule {
+  width: 100%; height: 3px;
+  background: linear-gradient(90deg, transparent, #9056f6 28%, #9056f6 64%, transparent);
+  opacity: .72;
 }
-
-.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) .hero-utility-result-actions > a span {
-  display: none;
+.gns-live-result-signal {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 12px;
+  margin-top: 28px;
+  color: #af8af1;
+  font-size: clamp(12px,1.7vw,18px);
+  font-weight: 750; line-height: 1.45;
 }
-
-.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) .hero-utility-result-actions > a:hover {
-  transform: translateY(-2px);
-  filter: brightness(1.06);
-  color: #001b03;
-  border-color: rgba(255,255,255,.18);
-  box-shadow: inset 0 1px rgba(255,255,255,.4), 0 22px 48px rgba(19,221,19,.24);
+.gns-live-result-signal strong { color: #d8f5d9; }
+.gns-live-result-signal > span:nth-of-type(1) { color: #8b8b8b; }
+.gns-live-result-snapshot {
+  margin-top: clamp(25px,4.5vw,52px);
+  padding: clamp(19px,2.9vw,28px);
+  border: 1px solid rgba(155,99,242,.24);
+  border-radius: clamp(17px,2.2vw,28px);
+  background: rgba(255,255,255,.02);
 }
-
-.hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) .hero-utility-result-actions > button {
-  min-height: 38px;
-  width: 100%;
-  border-color: rgba(255,255,255,.1);
-  background: rgba(255,255,255,.025);
-  color: #879188;
-  font-size: 8px;
+.gns-live-result-snapshot-title {
+  display: block; margin-bottom: 22px;
+  color: var(--snapshot-purple);
+  font-size: clamp(12px,1.4vw,17px);
+  font-weight: 850; letter-spacing: .13em;
 }
-
-@media (max-width: 680px) {
-  .hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) {
-    grid-template-columns: 1fr;
-    gap: 16px;
-    min-height: 0;
-    padding: 18px;
-    border-radius: 19px;
-  }
-
-  .hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="])::before {
-    top: 84px;
-    right: -28px;
-    font-size: 100px;
-  }
-
-  .hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="])::after {
-    right: -24px;
-    bottom: 156px;
-    font-size: 72px;
-  }
-
-  .hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) > div:first-child {
-    padding-top: 48px;
-  }
-
-  .hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) > div:first-child > strong {
-    margin-top: 10px;
-    font-size: clamp(28px, 9.4vw, 38px);
-    line-height: .98;
-  }
-
-  .hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) > div:first-child > p {
-    margin-top: 15px;
-    padding: 12px 13px;
-  }
-
-  .hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) > div:first-child > p::before,
-  .hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) > div:first-child > p::after {
-    font-size: 7.5px;
-    line-height: 1.5;
-  }
-
-  .hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) .hero-utility-result-actions {
-    width: 100%;
-    padding-top: 45px;
-  }
-
-  .hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) .hero-utility-result-actions::before {
-    right: auto;
-    left: 0;
-    padding: 8px 10px;
-    font-size: 7px;
-  }
-
-  .hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) .hero-utility-result-actions > a {
-    min-height: 82px;
-    border-radius: 17px;
-  }
-
-  .hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) .hero-utility-result-actions > a::before {
-    font-size: 16px;
-  }
+.gns-live-result-snapshot dl {
+  display: flex; flex-wrap: wrap; gap: 12px 22px;
+  margin: 0; padding: 0;
 }
-
+.gns-live-result-snapshot dl > div {
+  display: flex; min-width: 0; gap: 8px; align-items: baseline;
+}
+.gns-live-result-snapshot dt,
+.gns-live-result-snapshot dd {
+  margin: 0;
+  font-size: clamp(12px,1.35vw,16px);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.gns-live-result-snapshot dt { color: #f5f5f5; }
+.gns-live-result-snapshot dd { color: #9a9a9a; }
+.gns-live-result-snapshot dd.is-available { color: var(--snapshot-green); }
+.gns-live-result-snapshot dd.is-gns { color: #b4a2fc; }
+.gns-live-result-promise {
+  margin: clamp(26px,4.5vw,48px) 0 0;
+  color: #cbcbcb;
+  font-size: clamp(14px,1.8vw,20px);
+  font-weight: 700;
+}
+.gns-live-result-disclosure {
+  margin: 11px 0 0;
+  color: #a4b4a6;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.gns-live-result-actions {
+  display: flex; flex-direction: column;
+  gap: 13px;
+  padding-bottom: clamp(42px,6vw,70px);
+}
+.gns-live-result-claim {
+  display: flex; width: 100%; min-width: 0; min-height: 116px;
+  flex-direction: column; justify-content: center; align-items: center; gap: 8px;
+  padding: 18px 18px;
+  border: 1px solid rgba(19,221,19,.85);
+  border-radius: 27px;
+  background: var(--snapshot-green); color: #021403;
+  box-shadow: inset 0 1px rgba(255,255,255,.18), 0 19px 45px rgba(19,221,19,.13);
+  text-decoration: none; text-align: center;
+  transition: filter .2s ease, transform .2s ease;
+}
+.gns-live-result-claim strong {
+  font-size: clamp(16px,2.2vw,27px);
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: -.025em;
+}
+.gns-live-result-claim span {
+  font-size: clamp(11px,1.3vw,14px); font-weight: 850; letter-spacing: .02em;
+}
+.gns-live-result-claim:hover {
+  transform: translateY(-2px); filter: brightness(1.075); color: #021403;
+}
+.gns-live-result-claim:focus-visible,.gns-live-result-actions > button:focus-visible {
+  outline: 3px solid #fff; outline-offset: 4px;
+}
+.gns-live-result-actions > .hero-utility-share {
+  min-height: 44px; width: 100%; padding: 10px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 14px; background: rgba(255,255,255,.03);
+  color: #cdd5ce; font-size: 12px; font-weight: 700;
+}
+.gns-live-result-footer {
+  display: flex; justify-content: space-between; gap: 16px;
+  margin-top: clamp(35px,5vw,60px);
+  color: rgba(255,255,255,.33); font-size: clamp(11px,1.25vw,15px);
+  font-weight: 850; letter-spacing: .14em;
+}
+.gns-live-result-footer strong { color: var(--snapshot-green); }
+@media (max-width: 750px) {
+  .gns-live-result-grid { grid-template-columns: 1fr; margin-top: 48px; }
+  .gns-live-result-actions { padding-bottom: 0; }
+  .gns-live-result-claim { min-height: 86px; border-radius: 20px; }
+  .gns-live-result-watermark--top { top: 14%; right: -15%; }
+  .gns-live-result-watermark--bottom { top: 42%; right: -17%; }
+}
 @media (max-width: 420px) {
-  .hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) {
-    padding: 16px;
-  }
-
-  .hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) > div:first-child::before {
-    padding: 8px 10px 8px 26px;
-    font-size: 7px;
-  }
-
-  .hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) > div:first-child::after {
-    top: 12px;
-    left: 11px;
-  }
-
-  .hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) > div:first-child > strong {
-    font-size: clamp(27px, 9vw, 34px);
-  }
-
-  .hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) > div:first-child > p::before {
-    content: "●  Identity available\AReady for GwapSpot OS";
-    white-space: pre-line;
-  }
-
-  .hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) > div:first-child > p::after {
-    content: "STATUS  AVAILABLE\A LAYER  GNS";
-    white-space: pre-line;
-  }
+  .gns-live-result { padding: 17px; border-radius: 21px; }
+  .gns-live-result-pill { padding: 8px 10px; gap: 8px; font-size: 9px; letter-spacing: .065em; }
+  .gns-live-result-pill--lookup i,.gns-live-result-signal i { width: 9px; height: 9px; }
+  .gns-live-result-name { font-size: clamp(31px,8vw,39px); }
+  .gns-live-result-snapshot dl { gap: 9px 12px; }
+  .gns-live-result-snapshot-title { margin-bottom: 15px; }
+  .gns-live-result-signal { gap: 8px; }
 }
-
 @media (prefers-reduced-motion: reduce) {
-  .hero-utility-result.is-positive:has(.hero-utility-result-actions > a[href^="/app/identity?name="]) .hero-utility-result-actions > a {
-    transition: none;
-  }
+  .gns-live-result-claim { transition: none; }
 }
