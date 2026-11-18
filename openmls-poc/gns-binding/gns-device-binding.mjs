@@ -5,7 +5,7 @@
 import {createHash,createPublicKey,randomBytes,verify} from 'node:crypto';
 
 export const GNS_DEVNET_GENESIS='EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG';
-export const GNS_PROGRAM='6cDCrNYmasd1qmnvdLf8jyt9iFa3jW9VLzJhrb7X7SEH';
+export const GNS_PROGRAM='A9SCN6tgaoAEorFzY5ZPinruk8LCttmrAEU9JoAmUKUH';
 const ALPHABET='123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
 const ED25519_SPKI_PREFIX=Buffer.from('302a300506032b6570032100','hex');
 const namePattern=/^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$/;
