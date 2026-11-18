@@ -144,6 +144,12 @@ test('domain transfer revokes old device; new wallet needs new account, signatur
   await assert.rejects(f.gate.checkKeyPackage('device_alice_001',f.kps.alice),
     /Device revoked/);
   // The buyer cannot adopt old account, key package or private history via alias.
+  const stolenAccount=f.enrollment('alice',{
+    wallet:f.wallets.buyer,device:f.devices.buyer,
+    accountId:'gwap_alice_001',deviceId:'device_buyer_stolen_001',kp:f.kps.buyer
+  });
+  await assert.rejects(f.gate.enroll(stolenAccount),
+    /Stable GWAP account cannot transfer/);
   const newEnrollment=f.enrollment('alice',{
     wallet:f.wallets.buyer,device:f.devices.buyer,
     accountId:'gwap_buyer_001',deviceId:'device_buyer_001',kp:f.kps.buyer
