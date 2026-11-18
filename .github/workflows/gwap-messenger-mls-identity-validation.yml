@@ -28,9 +28,9 @@ jobs:
         run: cargo build --manifest-path openmls-poc/Cargo.toml --bin gwap-mls-keypackage
       - name: Confirm actual KeyPackage fixture admission and mismatched device denial
         run: |
-          target/debug/gwap-mls-keypackage fixture gwap_1234567890abcdefghijklmn device_phone_01 > /tmp/gwap-mls-test-keypackage.tls
-          target/debug/gwap-mls-keypackage verify gwap_1234567890abcdefghijklmn device_phone_01 < /tmp/gwap-mls-test-keypackage.tls
-          if target/debug/gwap-mls-keypackage verify gwap_1234567890abcdefghijklmn device_imposter < /tmp/gwap-mls-test-keypackage.tls; then
+          openmls-poc/target/debug/gwap-mls-keypackage fixture gwap_1234567890abcdefghijklmn device_phone_01 > /tmp/gwap-mls-test-keypackage.tls
+          openmls-poc/target/debug/gwap-mls-keypackage verify gwap_1234567890abcdefghijklmn device_phone_01 < /tmp/gwap-mls-test-keypackage.tls
+          if openmls-poc/target/debug/gwap-mls-keypackage verify gwap_1234567890abcdefghijklmn device_imposter < /tmp/gwap-mls-test-keypackage.tls; then
             echo "Wrong device was mistakenly accepted"
             exit 1
           fi
