@@ -1,0 +1,51 @@
+name: GWAP Messenger — two independent MLS browsers with GNS owner/device binding
+
+on:
+  push:
+    branches:
+      - 'test/gwap-messenger-gns-device-binding-20261117'
+    paths:
+      - 'openmls-poc/gns-binding/**'
+      - 'openmls-poc/browser-test/gns-bound-*'
+      - '.github/workflows/gwap-messenger-gns-browser.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gwap-messenger-gns-browser-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gns-browser:
+    name: Separate OpenMLS clients plus wallet-signed identity transfer checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust stable with WebAssembly
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Regress native OpenMLS crypto
+        run: cargo test --manifest-path openmls-poc/Cargo.toml --lib
+      - name: Install wasm-pack
+        run: cargo install wasm-pack --version 0.13.1 --locked
+      - name: Build browser OpenMLS WebAssembly
+        working-directory: openmls-poc
+        run: wasm-pack build --release --target web --out-dir pkg
+      - name: Check Node/browser driver and test source
+        run: |
+          command -v google-chrome
+          node --version
+          node --check openmls-poc/gns-binding/gns-device-binding.mjs
+          node --check openmls-poc/browser-test/gns-bound-two-client-runner.mjs
+      - name: Install isolated Chromium test driver
+        run: npm install --prefix openmls-poc/browser-test --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
+      - name: Run independently keyed browser MLS + wallet-signed .gwap fixture transfer tests
+        run: node openmls-poc/browser-test/gns-bound-two-client-runner.mjs
+
+# GNS source is a controllable resolver fixture; no real on-chain finality verified.
+# Generated ephemeral wallet test keys, no mainnet or production data.
+# This workflow does not deploy or merge anything.
