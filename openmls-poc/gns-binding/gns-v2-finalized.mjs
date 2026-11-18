@@ -92,7 +92,7 @@ function decodeEvent(log){
     const owner=c.pubkey();
     return {type,fullName,hash,owner};
   }
-  if(type==='NameMigrated'){
+  if(type==='NameMigrated'||type==='NameMigrationRolledBack'){
     const fullName=c.string(37),hash=c.take(32).toString('hex');
     const owner=c.pubkey();
     return {type,fullName,hash,owner};
