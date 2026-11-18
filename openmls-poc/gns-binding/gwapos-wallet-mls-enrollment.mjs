@@ -43,10 +43,13 @@ export class TestOnlyMessengerWalletEnrollmentGateway {
   async #live(name){
     let p;
     try{p=await this.#readFinalized(name)}catch{}
-    requireIt(p&&p.name===name&&p.historyComplete===true&&
+    requireIt(p&&p.name===name&&p.network==='devnet'&&
+      p.historyComplete===true&&p.independentRpcCorroboration===true&&
       p.commitment==='finalized'&&p.programId===GNS_PROGRAM&&
-      hash.test(p.ownershipVersion)&&p.finalizedSlot>0,
-      'incomplete finalized GNS V2 ownership evidence');
+      hash.test(p.ownershipVersion)&&
+      Number.isSafeInteger(p.finalizedSlot)&&p.finalizedSlot>0&&
+      Number.isSafeInteger(p.transferCount)&&p.transferCount>=0,
+      'incomplete or uncorroborated finalized GNS V2 ownership evidence');
     return p;
   }
   async issueChallenge({sessionToken,name,deviceId,
@@ -63,6 +66,12 @@ export class TestOnlyMessengerWalletEnrollmentGateway {
       mlsKeyPackageBytes.length<=16384,'invalid serialized MLS KeyPackage');
     const keyHash=sha256(mlsKeyPackageBytes);
     const challenge=await this.#directory.issueChallenge(full);
+    // Bound test-only in-memory attempts; production must use a shared,
+    // transactional one-time challenge store across all service replicas.
+    for(const [id,pending] of this.#pending){
+      if(pending.consumed||pending.expiresAt<this.#clock())this.#pending.delete(id);
+    }
+    requireIt(this.#pending.size<128,'too many outstanding enrollment attempts');
     const attempt=randomBytes(16).toString('hex');
     const expected={
       network:'devnet',genesisHash:GNS_DEVNET_GENESIS,
