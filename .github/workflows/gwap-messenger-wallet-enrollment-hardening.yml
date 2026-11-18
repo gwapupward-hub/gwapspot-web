@@ -1,0 +1,34 @@
+name: GWAP Messenger wallet enrollment security fixtures
+on:
+  push:
+    branches:
+      - 'test/gwap-messenger-archive-wallet-hardening-20261117'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  wallet-gate:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: gwap_gns_directory_test
+          POSTGRES_USER: gwap_test
+          POSTGRES_PASSWORD: gwap_test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U gwap_test -d gwap_gns_directory_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      GNS_DIRECTORY_TEST_DATABASE_URL: postgres://gwap_test:gwap_test_password@127.0.0.1:5432/gwap_gns_directory_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm install --prefix openmls-poc/gns-binding --no-save --ignore-scripts --no-audit --no-fund @solana/web3.js@1.98.4 pg@8.16.3
+      - run: node --test openmls-poc/gns-binding/gwapos-wallet-mls-enrollment.test.mjs
