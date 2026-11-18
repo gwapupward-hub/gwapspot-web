@@ -39,7 +39,7 @@ function fixture(){
  async function readFinalized(name){
    readCalls++;
    if(!current.available)throw Error('RPC outage');
-   if(name!==fullName)throw Error('wrong name');
+   if(name!==fullName)throw Error('wrong name: '+JSON.stringify(name)+' expected '+JSON.stringify(fullName));
    return {name:fullName,owner:current.wallet,network:'devnet',
      programId:GNS_PROGRAM,commitment:'finalized',
      ownershipVersion:current.version,
