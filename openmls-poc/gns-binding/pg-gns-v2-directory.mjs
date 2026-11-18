@@ -117,6 +117,11 @@ export class DurableGnsDeviceDirectory {
     return {changed,version:proof.ownershipVersion,
       generation:Number(latest.rows[0].binding_generation)};
   }
+  async #synchronizeBeforeAuthorization(name,proof){
+    // Commit transfer revocation in its OWN transaction. It must survive the
+    // subsequent unauthorized/replayed request's transaction rollback.
+    return this.#tx(db=>this.#sync(db,name,proof));
+  }
   async issueChallenge(rawName){
     const name=canonicalNameV2(rawName);
     const proof=await this.#proof(name);
@@ -145,6 +150,7 @@ export class DurableGnsDeviceDirectory {
     requireIt(proof.owner===input.wallet,'wallet is not finalized owner');
     checkedSignature(input.walletSignature,enrollmentIntentBytes(input),
       walletKey(input.wallet));
+    await this.#synchronizeBeforeAuthorization(proof.name,proof);
     const now=this.#clock();
     requireIt(int(input.expiresAt)&&input.expiresAt>=now&&
       input.expiresAt-now<=120000,'expired/oversized device challenge');
@@ -189,6 +195,7 @@ export class DurableGnsDeviceDirectory {
     requireIt(hash.test(request.payloadHash)&&/^[a-f0-9]{32}$/.test(request.nonce),
       'invalid payload/nonce');
     const proof=await this.#proof(name);
+    await this.#synchronizeBeforeAuthorization(name,proof);
     return this.#tx(async db=>{
       await this.#sync(db,name,proof);
       const r=await db.query('SELECT * FROM messenger_gns_v2_devices'+
@@ -226,6 +233,7 @@ export class DurableGnsDeviceDirectory {
       name=r.rows[0].name;
     }finally{db.release()}
     const proof=await this.#proof(name);
+    await this.#synchronizeBeforeAuthorization(name,proof);
     return this.#tx(async db=>{
       await this.#sync(db,name,proof);
       const result=await db.query('SELECT * FROM messenger_gns_v2_devices'+
