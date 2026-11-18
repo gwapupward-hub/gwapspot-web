@@ -1,0 +1,36 @@
+name: GWAP Messenger — roadmap.gwap V2 finalized read-only audit
+
+on:
+  push:
+    branches:
+      - 'test/gwap-messenger-roadmap-live-gns-v2-20261117'
+    paths:
+      - 'openmls-poc/gns-binding/roadmap-live-gns-v2-audit.mjs'
+      - '.github/workflows/gwap-messenger-roadmap-live-audit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gwap-messenger-roadmap-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  roadmap-name-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install read-only Solana public RPC client
+        run: npm install --prefix openmls-poc/gns-binding --no-save --ignore-scripts --no-audit --no-fund @solana/web3.js@1.98.4
+      - name: Syntax check read-only domain verifier
+        run: node --check openmls-poc/gns-binding/roadmap-live-gns-v2-audit.mjs
+      - name: Inspect actual finalized roadmap.gwap account and transfer history
+        run: node openmls-poc/gns-binding/roadmap-live-gns-v2-audit.mjs
+
+# Read-only public Solana devnet name lookup. No wallet signatures, account
+# enrollment, user private keys, transaction submissions, merge or deployment.
