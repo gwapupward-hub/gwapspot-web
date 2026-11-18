@@ -33,8 +33,14 @@ On an **observed** owner transfer, older bindings are marked revoked. The new ow
 ## Evidence
 
 - Node 24 wallet-owner transfer-contract CI: https://github.com/gwapupward-hub/gwapspot-web/actions/runs/44210996661 — **9 passed, 0 failed**; amended contract additionally bars new owner from old stable account.
-- Browser integration CI (check result before claiming pass): https://github.com/gwapupward-hub/gwapspot-web/actions/runs/44211707378 . This runs two independent Chromium/OpenMLS browsers, browser-generated nonextractable Ed25519 wallet and transport keys, and wallet signatures over **genuine OpenMLS KeyPackage hashes**. After the established encrypted conversation and update Commit, a simulated resolver transfer revokes former-owner operations, and the buyer's fresh enrollment does not provide access to the old relay's ciphertext.
+- **Final browser integration CI: https://github.com/gwapupward-hub/gwapspot-web/actions/runs/44212236507 — SUCCESS.** Native OpenMLS regression 1/1, browser WebAssembly compilation, and **9/9 independent-client integration assertions** passed. Separate Chromium profiles generated independent nonextractable Ed25519 test-wallet and relay keys and signed genuinely generated OpenMLS KeyPackage hashes; relay authenticated first contact, Add Commit before Welcome, MLS ciphertext in both directions, a self-update Commit, new epoch messages, and spoof/replay/tamper rejection. An injected resolver transfer rejected former-owner send/pull, required a new wallet/device/KeyPackage and stable account, and denied new owner access to the old relay's encrypted messages. Note: actual GNS devnet finality was NOT checked.
 
+
+### CI failure / fix history
+
+- First browser attempt [#44211707378](https://github.com/gwapupward-hub/gwapspot-web/actions/runs/44211707378) executed to the sender-spoof assertion, where the server correctly rejected a forged role with `Domain/relay role mismatch`. The test expected the old `Invalid relay signature` wording; the assertion was corrected without relaxing server checks.
+- Corrected [#44212236507](https://github.com/gwapupward-hub/gwapspot-web/actions/runs/44212236507) completed successfully. The final GitHub Actions log emitted `result: PASS` with 9 integration assertions, including owner-transfer isolation and a new owner unable to retrieve the old inbox.
+- The amended Node wallet-binding contract, including the rule that a new alias owner cannot inherit the old canonical account ID, passed [#44211707337](https://github.com/gwapupward-hub/gwapspot-web/actions/runs/44211707337): **9/9 passed**.
 ## What is NOT verified and must block release
 
 1. **No real chain/ownership finality:** there was no direct Solana devnet PDA decode, finalized account read, transfer transaction or verified transfer event in the CI tests. GNS backend `/resolve` is currently an *owner-only* read, not an attested ownership-version oracle. Must design a trusted, monotonic finalized authority before public device enrollment.
