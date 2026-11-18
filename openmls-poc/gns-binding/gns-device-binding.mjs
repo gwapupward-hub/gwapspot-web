@@ -148,7 +148,7 @@ export class GnsDeviceBindingGate {
     must(verify(null,enrollmentIntentBytes(intent),
       walletPublicKey(intent.wallet),signatureBase64(intent.walletSignature)),
       'Invalid controlling-wallet Ed25519 signature');
-    must(!this.#bindings.values().some(e=>!e.revoked&&e.name===intent.name&&
+    must(!Array.from(this.#bindings.values()).some(e=>!e.revoked&&e.name===intent.name&&
       e.accountId===intent.accountId&&e.transportPublicSpkiBase64===intent.transportPublicSpkiBase64),
       'Duplicate active transport identity');
     this.#nonces.delete(intent.nonce);
