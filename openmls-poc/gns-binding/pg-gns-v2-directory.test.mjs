@@ -176,7 +176,8 @@ test('wallet signature, challenge and MLS KeyPackage digest cannot be swapped',a
  const forged={...e.input,transportPublicSpkiBase64:f.buyerDevice.spki};
  await assert.rejects(f.app.enroll(forged),/invalid Ed25519 signature/);
  const bound=await f.app.enroll(e.input);
- await assert.rejects(f.app.enroll(e.input),/duplicate key value|unique constraint/i);
+ await assert.rejects(f.app.enroll(e.input),
+   /challenge stale, reused or issued under other owner epoch/);
  await assert.rejects(f.app.checkKeyPackage(bound.deviceId,randomBytes(230)),
    /MLS KeyPackage mismatches/);
  await assert.rejects(f.app.authorizeAction(f.action(bound,{
