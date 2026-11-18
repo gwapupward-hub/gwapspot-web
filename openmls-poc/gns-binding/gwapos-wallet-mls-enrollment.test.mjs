@@ -32,6 +32,7 @@ function fixture(){
  const original=identity(),newOwner=identity(),device=identity();
  const now=1_800_000_000_000;
  let currentOwner=original.address;
+ let mlsValidatorEnabled=true;
  let version='a'.repeat(64),historyComplete=true,outage=false,
      independentRpcCorroboration=true,network='devnet';
  const sessions=new Map([
@@ -57,6 +58,15 @@ function fixture(){
  const gateway=new TestOnlyMessengerWalletEnrollmentGateway({
    directory,readFinalized:proof,
    verifySession:async token=>sessions.get(token),
+   // Existing Node contract fixtures contain random bytes. This explicitly
+   // stubbed validator is NOT cryptographic validation. A SEPARATE integration
+   // test runs the actual native OpenMLS signature/credential validator.
+   verifyMlsKeyPackage:async ({accountId,deviceId})=>
+     mlsValidatorEnabled?{
+       validated:true,
+       credentialIdentity:'GWAP-MLS-IDENTITY-V1|'+accountId+'|'+deviceId,
+       signaturePublicKeyHex:'a'.repeat(64)
+     }:{validated:false},
    now:()=>now
  });
  const kp=randomBytes(440);
@@ -75,6 +85,7 @@ function fixture(){
    rollback:()=>{currentOwner=original.address;version='c'.repeat(64)},
    outage:v=>{outage=v},
    completeness:v=>{historyComplete=v},
+   mlsValidator:v=>{mlsValidatorEnabled=v},
    corroboration:v=>{independentRpcCorroboration=v},
    networkChange:v=>{network=v}
  };
@@ -210,4 +221,28 @@ test('wrong network from injected finalized source never opens enrollment',async
  const f=fixture();f.networkChange('mainnet-beta');
  await assert.rejects(f.gateway.issueChallenge(f.input),
    /incomplete or uncorroborated finalized/);
+});
+
+test('wallet challenge rejects absent native MLS verifier binding',async()=>{
+ const f=fixture();
+ assert.throws(()=>new TestOnlyMessengerWalletEnrollmentGateway({
+   directory:f.directory,readFinalized:f.proof,
+   verifySession:async token=>f.sessions.get(token)
+ }),/trusted native OpenMLS credential verifier required/);
+});
+test('MLS signature/identity-verification failure blocks wallet challenge before nonce issuance',async()=>{
+ const f=fixture();f.mlsValidator(false);
+ await assert.rejects(f.gateway.issueChallenge(f.input),
+   /signed OpenMLS KeyPackage or credential identity invalid/);
+ assert.equal((await pool.query('SELECT COUNT(*)::integer AS n FROM messenger_gns_v2_challenges')).rows[0].n,0);
+});
+test('MLS verification fails closed if credential status changes after challenge',async()=>{
+ const f=fixture(),challenge=await f.gateway.issueChallenge(f.input);
+ const signed=await f.signChallenge(challenge);
+ f.mlsValidator(false);
+ await assert.rejects(f.gateway.complete({
+   sessionToken:f.input.sessionToken,attempt:challenge.attempt,
+   signedIntent:signed,mlsKeyPackageBytes:f.kp
+ }),/signed OpenMLS KeyPackage or credential identity invalid/);
+ assert.equal((await pool.query('SELECT COUNT(*)::integer AS n FROM messenger_gns_v2_devices')).rows[0].n,0);
 });
