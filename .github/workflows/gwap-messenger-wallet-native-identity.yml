@@ -1,0 +1,67 @@
+name: GWAP Messenger - wallet signature and native MLS credential integration
+
+on:
+  push:
+    branches:
+      - 'test/gwap-messenger-privy-mls-identity-20261118'
+    paths:
+      - 'openmls-poc/src/**'
+      - 'openmls-poc/gns-binding/**'
+      - 'app/lib/messenger-verified-session.ts'
+      - '.github/workflows/gwap-messenger-wallet-native-identity.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gwap-messenger-native-identity-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  wallet-native-openmls:
+    name: Native OpenMLS signer + server-session challenge + PostgreSQL device enrollment
+    runs-on: ubuntu-latest
+    timeout-minutes: 28
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: gwap_gns_directory_test
+          POSTGRES_USER: gwap_test
+          POSTGRES_PASSWORD: gwap_test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U gwap_test -d gwap_gns_directory_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      GNS_DIRECTORY_TEST_DATABASE_URL: postgres://gwap_test:gwap_test_password@127.0.0.1:5432/gwap_gns_directory_test
+      GWAP_MLS_VALIDATOR_BIN: ${{ github.workspace }}/openmls-poc/target/debug/gwap-mls-keypackage
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Compile and regression-test genuine OpenMLS 0.9.2 signer/validator
+        run: |
+          cargo test --manifest-path openmls-poc/Cargo.toml --lib
+          cargo build --manifest-path openmls-poc/Cargo.toml --bin gwap-mls-keypackage
+      - name: Install isolated public-key and SQL fixtures
+        run: npm install --prefix openmls-poc/gns-binding --no-save --ignore-scripts --no-audit --no-fund @solana/web3.js@1.98.4 pg@8.16.3
+      - name: Check JavaScript contract syntax
+        run: |
+          node --check openmls-poc/gns-binding/native-mls-keypackage-verifier.mjs
+          node --check openmls-poc/gns-binding/gwapos-wallet-mls-enrollment.mjs
+          node --check openmls-poc/gns-binding/gwapos-wallet-mls-enrollment.test.mjs
+          node --check openmls-poc/gns-binding/native-mls-enrollment.test.mjs
+      - name: Existing wallet-session/transfer regression, explicit fixture verifier
+        run: node --test openmls-poc/gns-binding/gwapos-wallet-mls-enrollment.test.mjs
+      - name: Actual OpenMLS cryptographic credential accepted by wallet-signed SQL gate
+        run: node --test openmls-poc/gns-binding/native-mls-enrollment.test.mjs
+
+# No real Privy token or user-wallet signature, no live GNS account enrollment,
+# no production Neon schema, no Preview, no merge or deployment.
