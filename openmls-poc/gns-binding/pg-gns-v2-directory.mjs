@@ -60,7 +60,8 @@ export class DurableGnsDeviceDirectory {
   async #proof(name){
     let result;
     try{result=await this.#reader(name)}
-    catch{fail('finalized GNS history unavailable; device authorization locked')}
+    catch(e){fail('finalized GNS history unavailable; device authorization locked'+
+      (process.env.GWAP_GNS_TEST_DIAGNOSTICS==='1'?' [fixture: '+String(e?.message||e)+']':''))}
     return assertProof(result,name);
   }
   async #tx(fn){
