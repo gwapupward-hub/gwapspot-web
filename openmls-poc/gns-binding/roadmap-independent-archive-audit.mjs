@@ -8,7 +8,7 @@ import {verifyFinalizedV2Ownership} from './gns-v2-finalized.mjs';
 const name='roadmap.gwap';
 const primary='https://api.devnet.solana.com';
 const secondary=process.env.GNS_ARCHIVE_READONLY_DEVNET_RPC||
-  'https://solana-devnet.drpc.org';
+  'https://solana-devnet.gateway.tatum.io';
 const out={
   name,network:'devnet',comparison:'UNVERIFIED',
   independentRpcCorroboration:false,archiveCompletenessProven:false,
