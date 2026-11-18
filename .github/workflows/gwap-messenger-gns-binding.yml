@@ -1,0 +1,39 @@
+name: GWAP Messenger — GNS wallet and MLS device binding contract
+
+on:
+  push:
+    branches:
+      - 'test/gwap-messenger-gns-device-binding-20261117'
+    paths:
+      - 'openmls-poc/gns-binding/**'
+      - '.github/workflows/gwap-messenger-gns-binding.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gwap-messenger-gns-binding-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gns-binding:
+    name: Wallet-signed devnet GNS device enrollment and transfer revocation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Syntax check
+        run: |
+          node --check openmls-poc/gns-binding/gns-device-binding.mjs
+          node --check openmls-poc/gns-binding/gns-device-binding.test.mjs
+      - name: Execute fail-closed identity and domain-transfer tests
+        run: node --test openmls-poc/gns-binding/gns-device-binding.test.mjs
+
+# NO live RPC or GNS calls in this test. Registry owner is injected fixture.
+# No personal wallet keys; only ephemeral Ed25519 pairs.
+# Test-only code, no GwapOS merge, Vercel preview, or production deployment.
