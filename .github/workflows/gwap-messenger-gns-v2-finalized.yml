@@ -59,6 +59,8 @@ jobs:
       - name: Require A→B→A ownership version in device authorization
         run: node --test openmls-poc/gns-binding/gns-v2-binding-strict.test.mjs
       - name: Validate durable PostgreSQL finalized-owner and wallet-device registry
+        env:
+          GWAP_GNS_TEST_DIAGNOSTICS: '1'
         run: node --test openmls-poc/gns-binding/pg-gns-v2-directory.test.mjs
       - name: Optional read-only real Solana devnet A9SCN6 program preflight
         id: live_program_preflight
