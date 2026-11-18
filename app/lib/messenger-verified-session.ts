@@ -5,10 +5,7 @@ import "server-only";
 // GWAP account mapping. No new login, no new session issuer, no account write.
 import { getAuthenticatedWalletIdentityResult } from "./privy-server";
 import { getGwapAccountForWallet } from "./gwap-account";
-
-export type VerifiedMessengerSession =
-  | { status: "ready"; authenticated: true; subject: string; accountId: string; verifiedWallet: string }
-  | { status: "unauthenticated" | "unavailable" | "account_mismatch" };
+import { decideVerifiedMessengerSession, type VerifiedMessengerSession } from "./messenger-verified-session-core";
 
 /**
  * Read-only, server-side session identity boundary for a future Messenger API.
@@ -32,25 +29,7 @@ export async function resolveVerifiedMessengerSession(
     return { status: "unavailable" };
   }
 
-  // Account mappings may be stale, or the wallet may be a secondary wallet
-  // linked to another account. Neither is authority to create an inbox.
-  if (
-    !existing ||
-    !existing.privyUserIds.includes(auth.identity.userId) ||
-    existing.primaryWallet !== auth.identity.verifiedWallet ||
-    !existing.wallets.some((wallet) => wallet.address === auth.identity.verifiedWallet) ||
-    !/^gwap_[A-Za-z0-9_-]{20,64}$/.test(existing.id)
-  ) {
-    return { status: "account_mismatch" };
-  }
-
-  return {
-    status: "ready",
-    authenticated: true,
-    subject: auth.identity.userId,
-    accountId: existing.id,
-    verifiedWallet: auth.identity.verifiedWallet,
-  };
+  return decideVerifiedMessengerSession(auth, existing);
 }
 
 // BEFORE integration with actual route handlers:
