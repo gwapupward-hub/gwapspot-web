@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS messenger_gns_v2_names (
   ownership_version CHAR(64) NOT NULL,
   creation_signature TEXT NOT NULL,
   transfer_count BIGINT NOT NULL CHECK (transfer_count>=0),
+  binding_generation BIGINT NOT NULL DEFAULT 1 CHECK (binding_generation>=1),
   finalized_slot BIGINT NOT NULL CHECK(finalized_slot>0),
   observed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -27,6 +28,7 @@ CREATE TABLE IF NOT EXISTS messenger_gns_v2_devices (
   account_id TEXT NOT NULL REFERENCES messenger_gns_v2_accounts(account_id),
   owner_wallet TEXT NOT NULL,
   ownership_version CHAR(64) NOT NULL,
+  binding_generation BIGINT NOT NULL CHECK (binding_generation>=1),
   transport_public_spki_base64 TEXT NOT NULL,
   mls_keypackage_hash CHAR(64) NOT NULL,
   revoked BOOLEAN NOT NULL DEFAULT FALSE,
