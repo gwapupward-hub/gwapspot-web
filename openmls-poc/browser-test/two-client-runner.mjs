@@ -157,8 +157,8 @@ try {
   const postCommit=await invoke(alice.page,'encrypt','After Commit across two processes');
   await invoke(alice.page,'send','bob','application',postCommit);
   const bobNewEpoch=await invoke(bob.page,'pull',bobCursor);
-  same(bobNewEpoch.events.map(e=>e.kind),['commit-update'===bobNewEpoch.events[0]?.kind?'commit-update':'application']);
   // Bob sent the Commit, so it must not appear in Bob's inbox.
+  same(bobNewEpoch.events.map(e=>e.kind),['application']);
   same(await invoke(bob.page,'receive',bobNewEpoch.events[0].wire),
     {kind:'application',text:'After Commit across two processes'});
   bobCursor=bobNewEpoch.events[0].seq;
@@ -172,8 +172,8 @@ try {
 
   await expectError(invoke(bob.page,'sendAsImposter','bob','application',reply),
     /Invalid relay signature/);
-  assert.equal(relay.eventCount,9);
-  passed.push('relay prevents spoofing; nine ordered opaque events stored with no MLS private keys');
+  assert.equal(relay.eventCount,8);
+  passed.push('relay prevents spoofing; eight ordered opaque events stored with no MLS private keys');
 
   console.log(JSON.stringify({result:'PASS',environment:
     'two independent Chromium profiles + real OpenMLS WebAssembly + signed loopback relay',
