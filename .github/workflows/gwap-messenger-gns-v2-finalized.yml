@@ -1,0 +1,57 @@
+name: GWAP Messenger — canonical GNS V2 finalized ownership audit
+
+on:
+  push:
+    branches:
+      - 'test/gwap-messenger-gns-v2-finalized-20261117'
+    paths:
+      - 'openmls-poc/gns-binding/**'
+      - '.github/workflows/gwap-messenger-gns-v2-finalized.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gwap-messenger-gns-v2-finalized-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  finalized-history-contract:
+    name: V2 onchain account, finalized history, transfer sequence and strict device proof
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Pin test-only Solana public-key and read-only RPC library
+        run: npm install --prefix openmls-poc/gns-binding --no-save --ignore-scripts --no-audit --no-fund @solana/web3.js@1.98.4
+      - name: Syntax-check V2 source and test fixtures
+        run: |
+          node --check openmls-poc/gns-binding/gns-v2-finalized.mjs
+          node --check openmls-poc/gns-binding/gns-v2-finalized.test.mjs
+          node --check openmls-poc/gns-binding/gns-v2-binding-strict.test.mjs
+          node --check openmls-poc/gns-binding/gns-v2-live-readonly.mjs
+      - name: Regress existing wallet-signed browser device and transfer policy
+        run: node --test openmls-poc/gns-binding/gns-device-binding.test.mjs
+      - name: Verify canonical V2 PDA and mock-finalized archive transfer security
+        run: node --test openmls-poc/gns-binding/gns-v2-finalized.test.mjs
+      - name: Require A→B→A ownership version in device authorization
+        run: node --test openmls-poc/gns-binding/gns-v2-binding-strict.test.mjs
+      - name: Optional read-only real Solana devnet A9SCN6 program preflight
+        id: live_program_preflight
+        continue-on-error: true
+        timeout-minutes: 2
+        run: node openmls-poc/gns-binding/gns-v2-live-readonly.mjs
+      - name: State scope and optional preflight outcome
+        env:
+          PREFLIGHT_OUTCOME: ${{ steps.live_program_preflight.outcome }}
+        run: |
+          echo "Real Solana devnet program read: ${PREFLIGHT_OUTCOME}"
+          echo "The V2 transfer history and device binding tests use mocked RPC data."
+          echo "Live name-account transfer finality is NOT proven by this workflow."
+
+# Test-only, no GitHub secrets, no wallet, no RPC writes, no program upgrades,
+# no GwapOS production merge or Vercel Preview deployment.
