@@ -2,6 +2,8 @@
 //! Uses BasicCredential fixtures, NOT authenticated GNS identities.
 //! Production verification must additionally bind device credentials to live .gwap control.
 
+pub mod identity_validation;
+
 #[cfg(target_arch = "wasm32")]
 mod browser_restart;
 
