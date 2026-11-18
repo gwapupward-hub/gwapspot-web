@@ -26,11 +26,18 @@ function validateSession(s){
 // KeyPackage hash, without exposing MLS private state to the server.
 export class TestOnlyMessengerWalletEnrollmentGateway {
   #directory;#verifySession;#readFinalized;#clock;#pending=new Map();
-  constructor({directory,verifySession,readFinalized,now=()=>Date.now()}){
+  #verifyMlsKeyPackage;
+  constructor({directory,verifySession,readFinalized,verifyMlsKeyPackage,
+    now=()=>Date.now()}){
     requireIt(directory&&typeof directory.enroll==='function'&&
       typeof directory.issueChallenge==='function','directory required');
     requireIt(typeof verifySession==='function','session verifier required');
     requireIt(typeof readFinalized==='function','finalized GNS verifier required');
+    // No optional bypass: the admission gate must validate the actual
+    // OpenMLS KeyPackage cryptographic signature and credential identity.
+    requireIt(typeof verifyMlsKeyPackage==='function',
+      'trusted native OpenMLS credential verifier required');
+    this.#verifyMlsKeyPackage=verifyMlsKeyPackage;
     this.#directory=directory;this.#verifySession=verifySession;
     this.#readFinalized=readFinalized;this.#clock=now;
   }
@@ -52,6 +59,18 @@ export class TestOnlyMessengerWalletEnrollmentGateway {
       'incomplete or uncorroborated finalized GNS V2 ownership evidence');
     return p;
   }
+  async #assertMlsCredential(bytes,accountId,deviceId){
+    let evidence;
+    try{evidence=await this.#verifyMlsKeyPackage({
+      bytes,accountId,deviceId});}catch{}
+    const expected='GWAP-MLS-IDENTITY-V1|'+accountId+'|'+deviceId;
+    requireIt(evidence?.validated===true&&
+      evidence.credentialIdentity===expected&&
+      typeof evidence.signaturePublicKeyHex==='string'&&
+      /^[0-9a-f]{64}$/.test(evidence.signaturePublicKeyHex),
+      'signed OpenMLS KeyPackage or credential identity invalid');
+    return evidence;
+  }
   async issueChallenge({sessionToken,name,deviceId,
       transportPublicSpkiBase64,mlsKeyPackageBytes}){
     const session=await this.#session(sessionToken);
@@ -64,6 +83,8 @@ export class TestOnlyMessengerWalletEnrollmentGateway {
     requireIt((mlsKeyPackageBytes instanceof Uint8Array||
       Buffer.isBuffer(mlsKeyPackageBytes))&&mlsKeyPackageBytes.length>100&&
       mlsKeyPackageBytes.length<=16384,'invalid serialized MLS KeyPackage');
+    await this.#assertMlsCredential(mlsKeyPackageBytes,
+      session.accountId,deviceId);
     const keyHash=sha256(mlsKeyPackageBytes);
     const challenge=await this.#directory.issueChallenge(full);
     // Bound test-only in-memory attempts; production must use a shared,
@@ -117,6 +138,8 @@ export class TestOnlyMessengerWalletEnrollmentGateway {
       'MLS KeyPackage bytes missing');
     requireIt(sha256(mlsKeyPackageBytes)===saved.mlsKeyPackageHash,
       'MLS KeyPackage changed after signed wallet challenge');
+    await this.#assertMlsCredential(mlsKeyPackageBytes,
+      saved.accountId,saved.deviceId);
     const bound=await this.#directory.enroll(signedIntent);
     await this.#directory.checkKeyPackage(bound.deviceId,mlsKeyPackageBytes);
     return {deviceId:bound.deviceId,accountId:bound.accountId,
