@@ -210,7 +210,7 @@ function AvailableNameSnapshot({
         <div className="gns-live-result-actions">
           <Link
             className="gns-live-result-claim"
-            href={"/app/identity?name=" + encodeURIComponent(result.name)}
+            href={`/app/identity?name=${encodeURIComponent(result.name)}`}
           >
             <strong>CLAIM YOUR IDENTITY</strong>
             <span>ENTER GWAPSPOT OS →</span>
