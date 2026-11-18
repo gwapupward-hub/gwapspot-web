@@ -48,3 +48,21 @@ The strict test suites were independently rerun and **passed again without chang
 - Three redundant test/manual workflow copies created during this follow-up were deleted. **The pre-existing canonical workflow** `.github/workflows/gwap-messenger-archive-wallet-hardening.yml` remains the single trusted integration gate, with its protected `gwap-messenger-archive-readonly` environment reference. The protected environment and secret still require owner-controlled configuration; their existence was not independently established here.
 
 **No change to release decision:** the live independent-archive check remains blocked, and no production identity or MLS device authorization is permitted.
+
+
+## November 18 — Owner-configured archive RPC recheck: PASSED
+
+**This newest result supersedes the earlier missing-secret/blocker status in this report.**
+
+- User confirmed that the protected archive RPC was configured. The failed job in the existing workflow was rerun with GitHub Actions run [#44239930911, attempt 2](https://github.com/gwapupward-hub/gwapspot-web/actions/runs/44239930911), **completed successfully** on November 18, 2026 at approximately 05:46 UTC.
+- The secret-backed, independent secondary finalized devnet RPC returned `FINALIZED_HISTORY_READ_SUCCESS` and agreed with the primary on name, canonical GNS V2 program, derived PDA, owner, registration signature, ownership-version hash, transfer-event count and history count.
+- Name: `roadmap.gwap`. PDA: `EmzaYXdX33QkUCVU8xqcRqot5KD4q3baQuxaiFgRBFqo`. Public on-chain owner: `58kuGbxpvaamvYE44WYkyipBB6FVKt2qT9u3vAKtyKYV`.
+- Registration: `4Ru9DcAj5xvFLD3yrsQbpREuLRjqXHzMF6hin2tEnwQvBhi26PzRha4FWZJiFfsFdjy4z46oCsndDR5AH9n62GiF`. Derived ownership version: `22a071adfb4b256e105401c219879199372d4a8b5e902fd28a1c80ccb5ce77b3`.
+- Both providers returned **1 registration history entry and 0 observed transfers**; primary finalized slot **523529264**, secondary finalized slot **523529267**.
+- Exact verdict: `comparison = MATCHING_FINALIZED_RPC_RESPONSES`, `independentRpcCorroboration = true`, `archiveCompletenessProven = false`, and `canAuthorizeMessaging = false`.
+- The synthetic wallet/GNS/OpenMLS enrollment test job retained its earlier passing status: **17/17 archive-comparison fixture assertions + 14/14 wallet-device enrollment fixture assertions**. No live GwapOS session, actual owner-wallet signature, enrolled device, or transaction was involved.
+- The secondary RPC URL/API credentials remain secret in the protected workflow. The visible job log masked the endpoint; no secret was copied into this report or chat.
+
+**Security interpretation:** The independent RPC corroboration gate is now **PASS**, subject to the limitations of two RPC providers and a GNS V2 program without a native monotonic transfer counter. This does **not** prove absolute archival completeness or authorize production messaging. **Next engineering gate**: implement an independently reviewable GwapOS session-bound, consented wallet `signMessage` pilot and bind a *validated* OpenMLS credential/signing identity to the correct immutable GWAP account/device. Persistent reviewed MLS storage, canonical delivery, iPhone Safari and security review remain open.
+
+**Release state unchanged: NO MERGE, NO DEPLOY, NO REAL DEVICE ENROLLMENT.**
