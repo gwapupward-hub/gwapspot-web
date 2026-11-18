@@ -1,0 +1,81 @@
+name: GWAP Messenger — archive RPC secret gate and signed-device contract
+
+on:
+  push:
+    branches:
+      - 'test/gwap-messenger-archive-wallet-hardening-20261117'
+    paths:
+      - 'openmls-poc/gns-binding/**'
+      - '.github/workflows/gwap-messenger-archive-wallet-hardening.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gwap-messenger-archive-hardening-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  wallet-and-archive-contract:
+    name: Synthetic finalized archive comparison + GwapOS device signing (Postgres 16)
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: gwap_gns_directory_test
+          POSTGRES_USER: gwap_test
+          POSTGRES_PASSWORD: gwap_test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U gwap_test -d gwap_gns_directory_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      GNS_DIRECTORY_TEST_DATABASE_URL: postgres://gwap_test:gwap_test_password@127.0.0.1:5432/gwap_gns_directory_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install pinned, test-only Solana and PostgreSQL clients
+        run: npm install --prefix openmls-poc/gns-binding --no-save --ignore-scripts --no-audit --no-fund @solana/web3.js@1.98.4 pg@8.16.3
+      - name: Check JavaScript and test-runner syntax
+        run: |
+          node --check openmls-poc/gns-binding/roadmap-archive-comparison.mjs
+          node --check openmls-poc/gns-binding/roadmap-independent-archive-audit.mjs
+          node --check openmls-poc/gns-binding/gwapos-wallet-mls-enrollment.mjs
+          node --check openmls-poc/gns-binding/gwapos-wallet-mls-enrollment.test.mjs
+      - name: Verify strict cross-provider history comparison logic
+        run: node --test openmls-poc/gns-binding/roadmap-archive-comparison.test.mjs
+      - name: Verify GwapOS signed-device enrollment contract
+        run: node --test openmls-poc/gns-binding/gwapos-wallet-mls-enrollment.test.mjs
+
+  independently-corroborate-roadmap:
+    name: Secondary archival devnet RPC — BLOCK unless secret configured and full evidence matches
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: gwap-messenger-archive-readonly
+    env:
+      GNS_ARCHIVE_READONLY_DEVNET_RPC: ${{ secrets.GNS_ARCHIVE_READONLY_DEVNET_RPC }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install Solana read-only client
+        run: npm install --prefix openmls-poc/gns-binding --no-save --ignore-scripts --no-audit --no-fund @solana/web3.js@1.98.4
+      - name: Compare independently verified finalized roadmap.gwap ownership histories
+        timeout-minutes: 3
+        run: node openmls-poc/gns-binding/roadmap-independent-archive-audit.mjs
+
+# Configure GNS_ARCHIVE_READONLY_DEVNET_RPC ONLY as a protected GitHub Actions
+# environment secret under 'gwap-messenger-archive-readonly'; restrict this
+# environment to approved branches and require review before use.
+# No RPC URL/token is committed, echoed or interpolated into a shell script.
+# Without the secret this archival gate exits 2 (BLOCKED); other tests still run.
+# No live wallet, Neon database, Solana transaction, merge or deploy.
