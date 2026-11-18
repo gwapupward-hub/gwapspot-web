@@ -39,3 +39,12 @@
 ## Release boundary
 
 Isolated GitHub branch, test-only files, 31 passing contract tests. No main-branch merge, no Vercel preview, no production database, no Solana transaction, no wallet signing, no public E2EE claim. **Release blocked pending verified independent archival evidence and actual user-session/device validation.**
+## November 18 follow-up verification
+
+The strict test suites were independently rerun and **passed again without changing the security contract**:
+
+- [Archive comparator run #44241660998](https://github.com/gwapupward-hub/gwapspot-web/actions/runs/44241660998): **17/17 passed**. These use synthetic finalized-proof objects and are not independent live archival confirmation.
+- [Wallet enrollment run #44241659720](https://github.com/gwapupward-hub/gwapspot-web/actions/runs/44241659720): **14/14 passed** against disposable PostgreSQL 16. No actual user's wallet signed.
+- Three redundant test/manual workflow copies created during this follow-up were deleted. **The pre-existing canonical workflow** `.github/workflows/gwap-messenger-archive-wallet-hardening.yml` remains the single trusted integration gate, with its protected `gwap-messenger-archive-readonly` environment reference. The protected environment and secret still require owner-controlled configuration; their existence was not independently established here.
+
+**No change to release decision:** the live independent-archive check remains blocked, and no production identity or MLS device authorization is permitted.
