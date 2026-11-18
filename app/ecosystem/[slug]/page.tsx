@@ -12,6 +12,7 @@ import {
   productBySlug,
 } from "../../lib/ecosystem";
 import { createPageMetadata } from "../../lib/metadata";
+import gnsPreviewStyles from "./gns-preview.module.css";
 
 type ProductPageProps = {
   params: Promise<{ slug: string }>;
@@ -137,6 +138,50 @@ export default async function ProductPage({ params }: ProductPageProps) {
           </aside>
         </div>
       </section>
+
+      {product.slug === "gns" ? (
+        <section className={`inner-section ${gnsPreviewStyles.section}`} aria-labelledby="gns-identity-preview-heading">
+          <div className={gnsPreviewStyles.heading}>
+            <span className="eyebrow"><SparkIcon /> Identity, made recognizable</span>
+            <h2 id="gns-identity-preview-heading">See what a .gwap identity could look like.</h2>
+            <p>
+              A readable name can make it easier to connect a wallet, profile,
+              and verified activity. Here is an illustrative lookup-result design.
+            </p>
+          </div>
+          <figure className={gnsPreviewStyles.figure}>
+            <img
+              className={gnsPreviewStyles.image}
+              src="/brand/gns/gwap-identity-snapshot-card.svg"
+              width={1200}
+              height={760}
+              loading="lazy"
+              decoding="async"
+              alt="Illustrative .gwap identity snapshot showing emerald.gwap, an example availability status, and a claim identity call-to-action. This is not a live lookup."
+            />
+            <figcaption className={gnsPreviewStyles.caption}>
+              <strong>Design example, not a live availability result.</strong> The
+              name and status shown are illustrative. Verify the current result
+              in GNS before taking action. Registrations currently use Solana devnet.
+            </figcaption>
+          </figure>
+          <div className={gnsPreviewStyles.actions}>
+            {product.externalUrl ? (
+              <a
+                className="primary-button"
+                href={product.externalUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Check a .gwap name <ArrowIcon />
+              </a>
+            ) : null}
+            <Link className="secondary-button" href="/app">
+              Explore GWAP OS <ArrowIcon />
+            </Link>
+          </div>
+        </section>
+      ) : null}
 
       <section className="inner-section">
         <div className="product-columns">
