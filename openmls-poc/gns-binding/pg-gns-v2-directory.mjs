@@ -103,14 +103,18 @@ export class DurableGnsDeviceDirectory {
         ' WHERE name=$1 AND revoked=FALSE',[name]);
       await db.query('UPDATE messenger_gns_v2_names SET owner_wallet=$2,'+
         'ownership_version=$3,creation_signature=$4,transfer_count=$5,'+
-        'finalized_slot=$6,observed_at=NOW() WHERE name=$1',
+        'finalized_slot=$6,binding_generation=binding_generation+1,'+
+        'observed_at=NOW() WHERE name=$1',
         [name,proof.owner,proof.ownershipVersion,proof.creationSignature,
          proof.transferCount,proof.finalizedSlot]);
     }else if(Number(old.finalized_slot)<proof.finalizedSlot){
       await db.query('UPDATE messenger_gns_v2_names SET finalized_slot=$2,'+
         'observed_at=NOW() WHERE name=$1',[name,proof.finalizedSlot]);
     }
-    return {changed,version:proof.ownershipVersion};
+    const latest=await db.query(
+      'SELECT binding_generation FROM messenger_gns_v2_names WHERE name=$1',[name]);
+    return {changed,version:proof.ownershipVersion,
+      generation:Number(latest.rows[0].binding_generation)};
   }
   async issueChallenge(rawName){
     const name=canonicalNameV2(rawName);
@@ -142,7 +146,7 @@ export class DurableGnsDeviceDirectory {
     requireIt(int(input.expiresAt)&&input.expiresAt>=now&&
       input.expiresAt-now<=120000,'expired/oversized device challenge');
     return this.#tx(async db=>{
-      await this.#sync(db,proof.name,proof);
+      const epoch=await this.#sync(db,proof.name,proof);
       const r=await db.query('SELECT * FROM messenger_gns_v2_challenges'+
         ' WHERE nonce=$1 FOR UPDATE',[input.nonce]);
       const challenge=r.rows[0];
@@ -160,15 +164,16 @@ export class DurableGnsDeviceDirectory {
         ' (account_id,original_wallet) VALUES($1,$2)',[input.accountId,input.wallet]);
       await db.query('INSERT INTO messenger_gns_v2_devices'+
         ' (device_id,name,account_id,owner_wallet,ownership_version,'+
-        'transport_public_spki_base64,mls_keypackage_hash)'+
-        ' VALUES($1,$2,$3,$4,$5,$6,$7)',
+        'binding_generation,transport_public_spki_base64,mls_keypackage_hash)'+
+        ' VALUES($1,$2,$3,$4,$5,$6,$7,$8)',
         [input.deviceId,proof.name,input.accountId,input.wallet,
-          proof.ownershipVersion,input.transportPublicSpkiBase64,
+          proof.ownershipVersion,epoch.generation,input.transportPublicSpkiBase64,
           input.mlsKeyPackageHash]);
       await db.query('UPDATE messenger_gns_v2_challenges SET consumed=TRUE WHERE nonce=$1',
         [input.nonce]);
       return {deviceId:input.deviceId,accountId:input.accountId,
-        name:input.name,wallet:input.wallet,ownershipVersion:proof.ownershipVersion};
+        name:input.name,wallet:input.wallet,ownershipVersion:proof.ownershipVersion,
+        bindingGeneration:epoch.generation};
     });
   }
   async authorizeAction(request){
@@ -193,8 +198,8 @@ export class DurableGnsDeviceDirectory {
         'stale .gwap owner/account/device binding');
       // Preserve existing client API: bindingGeneration identifies the name's
       // observed epoch; in this durable model, a fresh revision count is used.
-      requireIt(int(request.bindingGeneration)&&request.bindingGeneration>=1,
-        'invalid binding generation');
+      requireIt(request.bindingGeneration===Number(row.binding_generation),
+        'stale durable device binding generation');
       checkedSignature(request.signature,authorizedActionBytes(request),
         transportKey(row.transport_public_spki_base64));
       const accepted=await db.query('INSERT INTO messenger_gns_v2_action_nonces'+
