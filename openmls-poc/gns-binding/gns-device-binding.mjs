@@ -92,6 +92,7 @@ export class GnsDeviceBindingGate {
   #resolver;
   #names=new Map();
   #bindings=new Map();
+  #stableAccountOwners=new Map();
   #nonces=new Map();
   #usedActions=new Set();
   #now;
@@ -144,6 +145,9 @@ export class GnsDeviceBindingGate {
     must(!this.#bindings.has(intent.deviceId),'Device already enrolled');
     const live=await this.#observed(intent.name);
     must(live.wallet===intent.wallet,'Wallet does not currently own .gwap name');
+    const priorAccountOwner=this.#stableAccountOwners.get(intent.accountId);
+    must(!priorAccountOwner||priorAccountOwner===intent.wallet,
+      'Stable GWAP account cannot transfer with a .gwap alias');
     must(intent.expiresAt-clock<=120000,'Excessive challenge validity');
     must(verify(null,enrollmentIntentBytes(intent),
       walletPublicKey(intent.wallet),signatureBase64(intent.walletSignature)),
@@ -159,6 +163,7 @@ export class GnsDeviceBindingGate {
       mlsKeyPackageHash:intent.mlsKeyPackageHash,revoked:false
     };
     this.#bindings.set(intent.deviceId,result);
+    this.#stableAccountOwners.set(intent.accountId,intent.wallet);
     return {deviceId:result.deviceId,name:result.name,wallet:result.wallet,
       accountId:result.accountId,bindingGeneration:live.generation,
       keyPackageHash:result.mlsKeyPackageHash};
