@@ -18,7 +18,7 @@ try {
   const hex=bytes=>Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
   const digest=async bytes=>hex(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)));
   const DEVNET_GENESIS='EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG';
-  const GNS_PROGRAM='6cDCrNYmasd1qmnvdLf8jyt9iFa3jW9VLzJhrb7X7SEH';
+  const GNS_PROGRAM='A9SCN6tgaoAEorFzY5ZPinruk8LCttmrAEU9JoAmUKUH';
   function nameFromIdentity(){if(!name)throw Error('Not bootstrapped');return name;}
   async function signedOperation(fields,kind){
     if(!binding)throw Error('Device binding not established');
