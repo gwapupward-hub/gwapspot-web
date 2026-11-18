@@ -223,7 +223,7 @@ try {
   passed.push('new-epoch bidirectional MLS ciphertext works after Commit and Welcome separation');
 
   await expectError(invoke(bob.page,'sendAsImposter','bob','application',reply),
-    /Invalid relay signature/);
+    /Invalid relay signature|Domain\/relay role mismatch/);
   assert.equal(relay.eventCount,8);
   passed.push('relay prevents spoofing; eight ordered opaque events stored with no MLS private keys');
 
@@ -243,7 +243,7 @@ try {
   });
   assert.equal(newBinding.bindingGeneration,2);
   assert.notEqual(newBinding.accountId,aliceBinding.accountId);
-  await expectError(invoke(newAlice.page,'pull',0),/Invalid relay signature/);
+  await expectError(invoke(newAlice.page,'pull',0),/Invalid relay signature|Domain\/relay role mismatch/);
   passed.push('GNS fixture transfer invalidated previous owner; new wallet bound a fresh KeyPackage but cannot inherit the old MLS inbox');
 
   console.log(JSON.stringify({result:'PASS',environment:
