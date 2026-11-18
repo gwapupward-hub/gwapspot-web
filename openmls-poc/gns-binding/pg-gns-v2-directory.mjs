@@ -139,7 +139,9 @@ export class DurableGnsDeviceDirectory {
       'invalid immutable account/device identifier');
     requireIt(hash.test(input.mlsKeyPackageHash),'invalid MLS KeyPackage hash');
     transportKey(input.transportPublicSpkiBase64);
-    const proof=await this.#proof(input.name);
+    // Enrollment signs a canonical label, whereas the finalized account
+    // verifier indexes the canonical full ".gwap" name.
+    const proof=await this.#proof(canonicalNameV2(input.name));
     requireIt(proof.owner===input.wallet,'wallet is not finalized owner');
     checkedSignature(input.walletSignature,enrollmentIntentBytes(input),
       walletKey(input.wallet));
