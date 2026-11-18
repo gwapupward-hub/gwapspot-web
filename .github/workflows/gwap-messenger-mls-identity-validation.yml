@@ -1,0 +1,39 @@
+name: GWAP Messenger - signed OpenMLS credential admission
+
+on:
+  push:
+    branches:
+      - 'test/gwap-messenger-privy-mls-identity-20261118'
+    paths:
+      - 'openmls-poc/src/identity_validation.rs'
+      - 'openmls-poc/src/bin/gwap-mls-keypackage.rs'
+      - 'openmls-poc/src/lib.rs'
+      - '.github/workflows/gwap-messenger-mls-identity-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-openmls-credential:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - name: Verify real OpenMLS signed credential and account/device binding
+        run: cargo test --manifest-path openmls-poc/Cargo.toml --lib
+      - name: Compile native KeyPackage admission verifier
+        run: cargo build --manifest-path openmls-poc/Cargo.toml --bin gwap-mls-keypackage
+      - name: Confirm actual KeyPackage fixture admission and mismatched device denial
+        run: |
+          target/debug/gwap-mls-keypackage fixture gwap_1234567890abcdefghijklmn device_phone_01 > /tmp/gwap-mls-test-keypackage.tls
+          target/debug/gwap-mls-keypackage verify gwap_1234567890abcdefghijklmn device_phone_01 < /tmp/gwap-mls-test-keypackage.tls
+          if target/debug/gwap-mls-keypackage verify gwap_1234567890abcdefghijklmn device_imposter < /tmp/gwap-mls-test-keypackage.tls; then
+            echo "Wrong device was mistakenly accepted"
+            exit 1
+          fi
+          rm -f /tmp/gwap-mls-test-keypackage.tls
+
+# No GwapOS real account, no wallet, no production RPC or DB, no deploy.
