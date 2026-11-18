@@ -32,7 +32,8 @@ function fixture(){
  const original=identity(),newOwner=identity(),device=identity();
  const now=1_800_000_000_000;
  let currentOwner=original.address;
- let version='a'.repeat(64),historyComplete=true,outage=false;
+ let version='a'.repeat(64),historyComplete=true,outage=false,
+     independentRpcCorroboration=true,network='devnet';
  const sessions=new Map([
    ['session_verified_001',{authenticated:true,subject:'privy:owner',
      accountId:'gwap_roadmap_001',verifiedWallet:original.address}],
@@ -44,8 +45,9 @@ function fixture(){
  const proof=async name=>{
    if(outage)throw Error('archive RPC unavailable');
    assert.equal(name,'roadmap.gwap');
-   return {name,network:'devnet',commitment:'finalized',
-     programId:GNS_V2_PROGRAM_ID,historyComplete,owner:currentOwner,
+   return {name,network,commitment:'finalized',
+     programId:GNS_V2_PROGRAM_ID,historyComplete,
+     independentRpcCorroboration,owner:currentOwner,
      creationSignature:'test-creation-sig',transferCount:0,
      ownershipVersion:version,finalizedSlot:523505900};
  };
@@ -72,7 +74,9 @@ function fixture(){
    transfer:newWallet=>{currentOwner=newWallet;version='b'.repeat(64)},
    rollback:()=>{currentOwner=original.address;version='c'.repeat(64)},
    outage:v=>{outage=v},
-   completeness:v=>{historyComplete=v}
+   completeness:v=>{historyComplete=v},
+   corroboration:v=>{independentRpcCorroboration=v},
+   networkChange:v=>{network=v}
  };
 }
 test('verified OS session + explicit signMessage enrolls exact MLS KeyPackage',async()=>{
@@ -160,10 +164,10 @@ test('RPC outage and missing archive completeness block enrollment',async()=>{
  const f=fixture();
  f.outage(true);
  await assert.rejects(f.gateway.issueChallenge(f.input),
-   /incomplete finalized GNS V2 ownership evidence/);
+   /incomplete or uncorroborated finalized GNS V2 ownership evidence/);
  f.outage(false);f.completeness(false);
  await assert.rejects(f.gateway.issueChallenge(f.input),
-   /incomplete finalized GNS V2 ownership evidence/);
+   /incomplete or uncorroborated finalized GNS V2 ownership evidence/);
 });
 test('client wallet decline cannot fabricate enrollment signature',async()=>{
  const f=fixture(),challenge=await f.gateway.issueChallenge(f.input);
@@ -182,4 +186,28 @@ test('wallet signature cannot be moved to another nonce or GWAP account',async()
    signedIntent:{...signed,accountId:'gwap_attacker_001'},
    mlsKeyPackageBytes:f.kp
  }),/signed challenge property mismatch/);
+});
+
+test('single-RPC evidence cannot start wallet enrollment despite correct current owner',async()=>{
+ const f=fixture();
+ f.corroboration(false);
+ await assert.rejects(f.gateway.issueChallenge(f.input),
+   /incomplete or uncorroborated finalized/);
+ const n=await pool.query('SELECT COUNT(*)::integer AS n FROM messenger_gns_v2_challenges');
+ assert.equal(n.rows[0].n,0);
+});
+test('archive corroboration lost between challenge and completion denies device',async()=>{
+ const f=fixture(),challenge=await f.gateway.issueChallenge(f.input);
+ const signed=await f.signChallenge(challenge);
+ f.corroboration(false);
+ await assert.rejects(f.gateway.complete({
+   sessionToken:f.input.sessionToken,attempt:challenge.attempt,
+   signedIntent:signed,mlsKeyPackageBytes:f.kp
+ }),/incomplete or uncorroborated finalized/);
+ assert.equal((await pool.query('SELECT COUNT(*)::integer AS n FROM messenger_gns_v2_devices')).rows[0].n,0);
+});
+test('wrong network from injected finalized source never opens enrollment',async()=>{
+ const f=fixture();f.networkChange('mainnet-beta');
+ await assert.rejects(f.gateway.issueChallenge(f.input),
+   /incomplete or uncorroborated finalized/);
 });
