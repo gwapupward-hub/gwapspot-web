@@ -11,7 +11,8 @@ const secondary=process.env.GNS_ARCHIVE_READONLY_DEVNET_RPC||
   'https://solana-devnet.drpc.org';
 const out={
   name,network:'devnet',comparison:'UNVERIFIED',
-  independentArchiveConfirmed:false,canAuthorizeMessaging:false,
+  independentRpcCorroboration:false,archiveCompletenessProven:false,
+  canAuthorizeMessaging:false,
   noTransactionSubmitted:true,results:{}
 };
 function host(raw){
@@ -28,8 +29,9 @@ out.results.secondaryHost=secondaryHost;
 async function read(url,tag){
   const connection=new Connection(url,{commitment:'finalized',
     confirmTransactionInitialTimeout:10000});
-  const stop=new Promise((_,reject)=>setTimeout(
-    ()=>reject(Error('read-only audit deadline exceeded')),60000));
+  let timer;
+  const stop=new Promise((_,reject)=>{timer=setTimeout(
+    ()=>reject(Error('read-only audit deadline exceeded')),35000)});
   return Promise.race([verifyFinalizedV2Ownership({
     name,connection,maxHistory:500,historyPageSize:100
   }),stop]).then(proof=>{
@@ -44,7 +46,7 @@ async function read(url,tag){
     out.results[tag]={status:'FAILED_CLOSED',
       error:String(err?.message||err).slice(0,350)};
     return null;
-  });
+  }).finally(()=>clearTimeout(timer));
 }
 const first=await read(primary,'primary');
 const second=await read(secondary,'secondary');
@@ -57,11 +59,13 @@ if(first&&second){
     out.comparison='DISAGREEMENT_FAIL_CLOSED';
   }else{
     out.comparison='MATCHING_FINALIZED_RPC_RESPONSES';
-    out.independentArchiveConfirmed=true;
+    out.independentRpcCorroboration=true;
+    // Two providers can share missing history; no onchain transfer counter exists.
+    out.archiveCompletenessProven=false;
   }
 }else{
   out.comparison='SECONDARY_ARCHIVE_EVIDENCE_UNAVAILABLE';
 }
 console.log(JSON.stringify(out,null,2));
 // An absent/failed secondary provider is a BLOCKED security gate, not success.
-if(!out.independentArchiveConfirmed)process.exitCode=2;
+if(!out.independentRpcCorroboration)process.exitCode=2;
