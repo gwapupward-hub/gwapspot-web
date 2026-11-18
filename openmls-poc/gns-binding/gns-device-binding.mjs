@@ -96,10 +96,12 @@ export class GnsDeviceBindingGate {
   #nonces=new Map();
   #usedActions=new Set();
   #now;
+  #requireFinalized;
 
-  constructor({resolver,now=()=>Date.now()}){
+  constructor({resolver,now=()=>Date.now(),requireFinalized=false}){
     must(typeof resolver==='function','Resolver required');
     this.#resolver=resolver;this.#now=now;
+    this.#requireFinalized=Boolean(requireFinalized);
   }
   issueChallenge(name){
     name=strictDomain(name);
@@ -113,6 +115,12 @@ export class GnsDeviceBindingGate {
     try{answer=await this.#resolver(name)}catch{}
     must(answer&&typeof answer==='object'&&typeof answer.found==='boolean',
       'GNS resolver unavailable; messaging locked');
+    if(this.#requireFinalized){
+      must(answer.found===true && answer.ownershipFinalized===true &&
+        hashPattern.test(answer.ownershipVersion) &&
+        Number.isSafeInteger(answer.finalizedSlot) && answer.finalizedSlot>0,
+        'Finalized GNS history proof missing or incomplete; messaging locked');
+    }
     let wallet=null;
     if(answer.found){
       must(typeof answer.owner==='string','GNS owner unresolved; messaging locked');
@@ -121,12 +129,15 @@ export class GnsDeviceBindingGate {
     }
     const prior=this.#names.get(name);
     if(!prior){
-      const value={wallet,generation:1};
+      const value={wallet,generation:1,
+        ownershipVersion:answer.ownershipVersion||null};
       this.#names.set(name,value);
       return value;
     }
-    if(prior.wallet!==wallet){
-      const next={wallet,generation:prior.generation+1};
+    if(prior.wallet!==wallet ||
+      (this.#requireFinalized&&prior.ownershipVersion!==answer.ownershipVersion)){
+      const next={wallet,generation:prior.generation+1,
+        ownershipVersion:answer.ownershipVersion||null};
       this.#names.set(name,next);
       for(const entry of this.#bindings.values()){
         if(entry.name===name)entry.revoked=true;
