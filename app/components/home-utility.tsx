@@ -138,23 +138,6 @@ function NameResultCard({
   onShare,
   shareStatus,
 }: { result: NameResult } & ResultCardActions) {
-  if (result.available) {
-    return (
-      <div className="hero-utility-result is-positive">
-        <div>
-          <small>AVAILABLE</small>
-          <strong>{result.fullName} is available.</strong>
-          <p>Registration currently uses Solana devnet (test SOL). Continue inside GWAP OS to check and claim it.</p>
-        </div>
-        <div className="hero-utility-result-actions">
-          <Link href={`/app/identity?name=${encodeURIComponent(result.name)}`}>
-            Claim name <span aria-hidden="true">↗</span>
-          </Link>
-          <ShareButton onShare={onShare} shareStatus={shareStatus} />
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="hero-utility-result">
@@ -177,6 +160,69 @@ function NameResultCard({
         <ShareButton onShare={onShare} shareStatus={shareStatus} />
       </div>
     </div>
+  );
+}
+
+function AvailableNameSnapshot({
+  result,
+  onShare,
+  shareStatus,
+}: { result: NameResult } & ResultCardActions) {
+  return (
+    <section
+      className="gns-live-result"
+      aria-label={"Available .gwap lookup result for " + result.fullName}
+      data-testid="gns-live-snapshot"
+    >
+      <span className="gns-live-result-watermark gns-live-result-watermark--top" aria-hidden="true">GWAP</span>
+      <span className="gns-live-result-watermark gns-live-result-watermark--bottom" aria-hidden="true">IDENTITY</span>
+      <header className="gns-live-result-header">
+        <span className="gns-live-result-pill gns-live-result-pill--lookup">
+          <i aria-hidden="true" />
+          .GWAP LOOKUP RESULT
+        </span>
+        <span className="gns-live-result-pill gns-live-result-pill--available">AVAILABLE TO CLAIM</span>
+      </header>
+      <div className="gns-live-result-grid">
+        <div className="gns-live-result-main">
+          <span className="gns-live-result-eyebrow">YOUR GWAP IDENTITY</span>
+          <h3 className="gns-live-result-name">{result.fullName}</h3>
+          <div className="gns-live-result-rule" aria-hidden="true" />
+          <div className="gns-live-result-signal">
+            <i aria-hidden="true" />
+            <strong>Identity available</strong>
+            <span aria-hidden="true">·</span>
+            <span>Ready for GwapSpot OS</span>
+          </div>
+          <div className="gns-live-result-snapshot">
+            <span className="gns-live-result-snapshot-title">IDENTITY SNAPSHOT</span>
+            <dl>
+              <div><dt>Name</dt><dd>{result.fullName}</dd></div>
+              <div><dt>Status</dt><dd className="is-available">Available</dd></div>
+              <div><dt>Layer</dt><dd className="is-gns">GNS</dd></div>
+            </dl>
+          </div>
+          <p className="gns-live-result-promise">Make this identity yours before someone else does.</p>
+          <p className="gns-live-result-disclosure">
+            Live registry lookup · Solana devnet (test SOL). Availability can change. Registration is confirmed inside GWAP OS.
+          </p>
+        </div>
+        <div className="gns-live-result-actions">
+          <Link
+            className="gns-live-result-claim"
+            href={`/app/identity?name=${encodeURIComponent(result.name)}`}
+          >
+            <strong>CLAIM YOUR IDENTITY</strong>
+            <span>ENTER GWAPSPOT OS →</span>
+          </Link>
+          <ShareButton onShare={onShare} shareStatus={shareStatus} />
+        </div>
+      </div>
+      <footer className="gns-live-result-footer">
+        <span>GRIND WITH A PURPOSE</span>
+        <strong>GWAP</strong>
+      </footer>
+    </section>
   );
 }
 
@@ -499,7 +545,8 @@ export function HomeUtility() {
   }
 
   return (
-    <section className="hero-utility" aria-labelledby="hero-utility-title">
+    <>
+      <section className="hero-utility" aria-labelledby="hero-utility-title">
       <div className="hero-utility-reflection" aria-hidden="true" />
       <div className="hero-utility-heading">
         <div>
@@ -566,7 +613,7 @@ export function HomeUtility() {
       <div className="hero-utility-feedback" aria-live="polite">
         {status === "loading" ? <p>Querying the GWAP network…</p> : null}
         {status === "error" ? <p className="is-error">{message}</p> : null}
-        {status === "success" && result?.kind === "name" ? (
+        {status === "success" && result?.kind === "name" && !result.available ? (
           <NameResultCard
             result={result}
             onShare={shareResult}
@@ -586,6 +633,14 @@ export function HomeUtility() {
         <span><i /> No signup required</span>
         <span>Powered by GWAP</span>
       </footer>
-    </section>
+      </section>
+      {status === "success" && result?.kind === "name" && result.available ? (
+        <AvailableNameSnapshot
+          result={result}
+          onShare={shareResult}
+          shareStatus={shareStatus}
+        />
+      ) : null}
+    </>
   );
 }
