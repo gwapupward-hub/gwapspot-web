@@ -1,0 +1,43 @@
+name: GWAP Messenger — Encrypted IndexedDB persistence spike
+
+on:
+  push:
+    branches:
+      - 'test/gwap-messenger-idb-persistence-20261117'
+    paths:
+      - 'openmls-poc/**'
+      - '.github/workflows/gwap-messenger-idb-persistence.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gwap-messenger-idb-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  persistence-spike:
+    name: OpenMLS encrypted browser storage test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout isolated test branch
+        uses: actions/checkout@v4
+      - name: Install Rust stable with WebAssembly target
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Verify native OpenMLS crypto fixture
+        run: cargo test --manifest-path openmls-poc/Cargo.toml --lib -- --nocapture
+      - name: Install wasm-pack
+        run: cargo install wasm-pack --version 0.13.1 --locked
+      - name: Verify WebAssembly Node compatibility (browser IDB test skipped in Node)
+        working-directory: openmls-poc
+        run: wasm-pack test --node
+      - name: Verify real OpenMLS group restore from WebCrypto-encrypted IndexedDB in Chromium
+        working-directory: openmls-poc
+        run: wasm-pack test --headless --chrome --features browser-tests
+
+# Test-only fixture; no deployment, secrets, wallet credentials, production persistence or GNS.
+# Full reload/restart durability, locking, rollback protection and real iOS Safari are separate gates.

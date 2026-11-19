@@ -1,0 +1,50 @@
+name: GWAP Messenger — independent OpenMLS browser clients
+
+on:
+  push:
+    branches:
+      - 'test/gwap-messenger-two-client-mls-20261117'
+    paths:
+      - 'openmls-poc/**'
+      - '.github/workflows/gwap-messenger-two-browser-mls.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gwap-messenger-two-client-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  two-browser-mls:
+    name: Independent Alice/Bob OpenMLS WASM with authenticated loopback relay
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout isolated branch
+        uses: actions/checkout@v4
+      - name: Install Rust stable + wasm32 target
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Native cryptographic regression
+        run: cargo test --manifest-path openmls-poc/Cargo.toml --lib
+      - name: Install wasm-pack
+        run: cargo install wasm-pack --version 0.13.1 --locked
+      - name: Build OpenMLS 0.9.2 as browser WebAssembly
+        working-directory: openmls-poc
+        run: wasm-pack build --release --target web --out-dir pkg
+      - name: Check JS fixture and Chromium availability
+        run: |
+          command -v google-chrome
+          node --version
+          node --check openmls-poc/browser-test/isolated-relay.mjs
+          node --check openmls-poc/browser-test/two-client-runner.mjs
+      - name: Install test-only browser driver
+        run: npm install --prefix openmls-poc/browser-test --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
+      - name: Execute real independent browser MLS KeyPackage Welcome Commit and app tests
+        run: node openmls-poc/browser-test/two-client-runner.mjs
+
+# Two distinct local browser profiles and fixture Ed25519 transport credentials only.
+# No real GNS, live DS, database, production keys, Vercel preview, merge or deploy.

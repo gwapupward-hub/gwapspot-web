@@ -1,0 +1,41 @@
+name: GWAP Messenger — macOS Safari storage compatibility
+
+on:
+  push:
+    branches:
+      - 'test/gwap-messenger-idb-persistence-20261117'
+    paths:
+      - '.github/workflows/gwap-messenger-safari-macos.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gwap-messenger-safari-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  safari-compatibility:
+    name: Desktop Safari WebAssembly / IndexedDB smoke test
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - name: Checkout isolated browser test branch
+        uses: actions/checkout@v4
+      - name: Enable Safari WebDriver automation
+        run: |
+          /usr/bin/safaridriver --version
+          sudo /usr/bin/safaridriver --enable
+      - name: Install Rust and WebAssembly target
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Install wasm-pack
+        run: cargo install wasm-pack --version 0.13.1 --locked
+      - name: Execute real OpenMLS browser persistence test in desktop Safari
+        working-directory: openmls-poc
+        run: wasm-pack test --safari --features browser-tests
+
+# Desktop macOS Safari test only; this is NOT real iPhone/mobile Safari.
+# No production deployment, merge, Solana or customer data access.

@@ -1,0 +1,43 @@
+name: GWAP Messenger — OpenMLS WebAssembly test gate
+
+on:
+  push:
+    branches:
+      - 'test/gwap-messenger-openmls-wasm-20261117'
+    paths:
+      - 'openmls-poc/**'
+      - '.github/workflows/gwap-messenger-openmls-wasm.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gwap-messenger-wasm-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  wasm-compatibility:
+    name: Native + WASM Node + Chromium (test only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout isolated test branch
+        uses: actions/checkout@v4
+      - name: Install Rust stable with WebAssembly target
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Test native group reload and key agreement
+        run: cargo test --manifest-path openmls-poc/Cargo.toml --lib -- --nocapture
+      - name: Install wasm-pack from crates.io (locked)
+        run: cargo install wasm-pack --version 0.13.1 --locked
+      - name: Execute real OpenMLS tests under Node WASM
+        working-directory: openmls-poc
+        run: wasm-pack test --node
+      - name: Execute real OpenMLS tests under headless Chromium
+        working-directory: openmls-poc
+        run: wasm-pack test --headless --chrome --features browser-tests
+
+# No production deploy, Solana RPC calls, secrets, mainnet, merge or preview promotion.
+# IndexedDB presence and in-memory group reload are not equivalent to secure durable MLS storage.

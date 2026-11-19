@@ -1,0 +1,58 @@
+name: GWAP Messenger — PostgreSQL durable checkpoint security gate
+
+on:
+  push:
+    branches:
+      - 'test/gwap-messenger-checkpoint-postgres-20261117'
+    paths:
+      - 'openmls-poc/checkpoint/**'
+      - '.github/workflows/gwap-messenger-checkpoint-postgres.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gwap-messenger-checkpoint-postgres-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  durable-checkpoint:
+    name: Ed25519 signed checkpoint CAS on isolated PostgreSQL 16
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: gwap_checkpoint_test
+          POSTGRES_USER: gwap_test
+          POSTGRES_PASSWORD: gwap_test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U gwap_test -d gwap_checkpoint_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      CHECKPOINT_TEST_DATABASE_URL: postgres://gwap_test:gwap_test_password@127.0.0.1:5432/gwap_checkpoint_test
+    steps:
+      - name: Checkout isolated development branch
+        uses: actions/checkout@v4
+      - name: Verify Node environment and source syntax
+        run: |
+          node --version
+          node --check openmls-poc/checkpoint/durable-checkpoint.mjs
+          node --check openmls-poc/checkpoint/durable-checkpoint.test.mjs
+      - name: Install isolated PostgreSQL test client
+        run: npm install --prefix openmls-poc/checkpoint --no-save --ignore-scripts --no-audit --no-fund pg@8.16.3
+      - name: Retain in-memory checkpoint reference regression
+        run: node --test openmls-poc/checkpoint/monotonic-checkpoint.test.mjs
+      - name: Run real PostgreSQL durable checkpoint and failure-injection tests
+        run: node --test openmls-poc/checkpoint/durable-checkpoint.test.mjs
+      - name: Exercise localhost signed checkpoint HTTP contract
+        run: node --test openmls-poc/checkpoint/local-http-test-server.test.mjs
+
+# Test-only disposable Postgres service. No Neon access, no GNS wallet keys,
+# no Vercel deployment, no production data, no merges.

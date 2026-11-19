@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GWAP Messenger — Independent OpenMLS Test Device</title></head>
+<body>
+<h1>GWAP Messenger: Independent Browser Test Client</h1>
+<p>Isolated fixture only. No wallet, real .gwap, production account or server.</p>
+<script type="module">
+try {
+  const m=await import('../pkg/gwap_messenger_openmls_poc.js');
+  await m.default();
+  const enc=new TextEncoder();
+  const array=u=>Array.from(u);
+  const b64=u=>btoa(Array.from(u,b=>String.fromCharCode(b)).join(''));
+  const bytes=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+  let pair,name;
+  const token=()=>crypto.randomUUID().replaceAll('-','');
+  async function signIntent(fields,kind) {
+    const canonical=kind==='send'?
+      ['GWAP_TWO_BROWSER_RELAY_V1','send',fields.sender,fields.recipient,
+       fields.kind,fields.wireBase64,fields.nonce]:
+      ['GWAP_TWO_BROWSER_RELAY_V1','pull',fields.requester,fields.afterSeq,
+       fields.nonce];
+    return b64(new Uint8Array(await crypto.subtle.sign('Ed25519',pair.privateKey,
+      enc.encode(JSON.stringify(canonical)))));
+  }
+  async function request(route,body) {
+    const r=await fetch(route,{method:'POST',headers:{'content-type':'application/json'},
+      body:JSON.stringify(body)});
+    const result=await r.json();
+    if(!r.ok)throw Error(result.error||'Test relay rejected request');
+    return result;
+  }
+  window.__independent={
+    async bootstrap(id){
+      if(!['alice','bob'].includes(id))throw Error('Unexpected fixture identity');
+      name=id;
+      m.separate_bootstrap(id+'.gwap:fixture-device');
+      pair=await crypto.subtle.generateKey('Ed25519',false,['sign','verify']);
+      const publicDer=await crypto.subtle.exportKey('spki',pair.publicKey);
+      return b64(new Uint8Array(publicDer));
+    },
+    keypackage(){return array(m.separate_keypackage());},
+    invite(kp){const v=m.separate_invite(Uint8Array.from(kp));
+      return {commit:array(v.commit),welcome:array(v.welcome)};},
+    join(welcome){m.separate_join(Uint8Array.from(welcome));return true;},
+    encrypt(text){return array(m.separate_encrypt(text));},
+    receive(wire){return m.separate_receive(Uint8Array.from(wire));},
+    stageCommit(){return array(m.separate_stage_update());},
+    finishCommit(){m.separate_finish_update();return true;},
+    authenticator(){return array(m.separate_epoch_authenticator());},
+    members(){return m.separate_members_count();},
+    async send(to,kind,wire) {
+      const requestBody={sender:name,recipient:to,kind,
+        wireBase64:b64(Uint8Array.from(wire)),nonce:token()};
+      return request('/relay/send',{...requestBody,
+        signature:await signIntent(requestBody,'send')});
+    },
+    async pull(afterSeq=0) {
+      const requestBody={requester:name,afterSeq,nonce:token()};
+      const result=await request('/relay/pull',{...requestBody,
+        signature:await signIntent(requestBody,'pull')});
+      return {events:result.events.map(e=>({...e,wire:array(bytes(e.wireBase64))}))};
+    },
+    async sendAsImposter(to,kind,wire) {
+      const requestBody={sender:name==='bob'?'alice':'bob',recipient:to,kind,
+        wireBase64:b64(Uint8Array.from(wire)),nonce:token()};
+      return request('/relay/send',{...requestBody,
+        signature:await signIntent(requestBody,'send')});
+    },
+    async unauthorizedPull(forgedRequestId,afterSeq=0){
+      const requestBody={requester:forgedRequestId,afterSeq,nonce:token()};
+      return request('/relay/pull',{...requestBody,
+        signature:await signIntent(requestBody,'pull')});
+    },
+    publicKeyExtractable(){return pair.privateKey.extractable;},
+  };
+  window.__independentReady=true;
+}catch(error){
+  window.__independentError=String(error?.stack||error);
+  window.__independentReady=false;
+}
+</script>
+</body></html>
