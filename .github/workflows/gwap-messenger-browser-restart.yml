@@ -1,0 +1,49 @@
+name: GWAP Messenger — browser restart and MLS state recovery spike
+
+on:
+  push:
+    branches:
+      - 'test/gwap-messenger-restart-20261117'
+    paths:
+      - 'openmls-poc/**'
+      - '.github/workflows/gwap-messenger-browser-restart.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gwap-messenger-restart-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  restart-fixture:
+    name: OpenMLS Chromium full page and browser restart test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout test-only branch
+        uses: actions/checkout@v4
+      - name: Set up Rust stable WebAssembly target
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Verify baseline native OpenMLS test
+        run: cargo test --manifest-path openmls-poc/Cargo.toml --lib -- --nocapture
+      - name: Install wasm-pack
+        run: cargo install wasm-pack --version 0.13.1 --locked
+      - name: Build browser-loadable OpenMLS WebAssembly module
+        working-directory: openmls-poc
+        run: wasm-pack build --release --target web --out-dir pkg
+      - name: Check runner Chrome and JS test code
+        run: |
+          command -v google-chrome
+          node --version
+          node --check openmls-poc/browser-test/restart-runner.mjs
+      - name: Install isolated Playwright browser driver
+        run: npm install --prefix openmls-poc/browser-test --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.56.1
+      - name: Run persistent-profile restart and tamper tests
+        run: node openmls-poc/browser-test/restart-runner.mjs
+
+# NO merge/deploy, no real Solana keys, no live GNS, no production data.
+# Browser test simulates externally trusted revision floor, NOT a hardened anchor.

@@ -1,0 +1,36 @@
+name: GWAP Messenger — OpenMLS native crypto spike
+
+on:
+  push:
+    branches:
+      - 'test/gwap-messenger-openmls-crypto-20261117'
+    paths:
+      - 'openmls-poc/**'
+      - '.github/workflows/gwap-messenger-openmls-native.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gwap-messenger-crypto-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  openmls-native:
+    name: Run OpenMLS native cryptographic tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout isolated test branch
+        uses: actions/checkout@v4
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+      - name: Rust toolchain versions
+        run: |
+          rustc --version
+          cargo --version
+      - name: Run real OpenMLS test
+        run: cargo test --manifest-path openmls-poc/Cargo.toml --lib -- --nocapture
+
+# No production deployment, secrets, keys, GNS updates or merge steps.

@@ -1,0 +1,73 @@
+name: GWAP Messenger — independent roadmap.gwap RPC and wallet enrollment contract
+
+on:
+  push:
+    branches:
+      - 'test/gwap-messenger-roadmap-live-gns-v2-20261117'
+    paths:
+      - 'openmls-poc/gns-binding/roadmap-independent-archive-audit.mjs'
+      - 'openmls-poc/gns-binding/gwapos-wallet-mls-enrollment*'
+      - '.github/workflows/gwap-messenger-roadmap-second-rpc-wallet.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gwap-messenger-archive-wallet-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  wallet-session-enrollment:
+    name: GwapOS verified-wallet signMessage + device enrollment contract (Postgres fixture)
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: gwap_gns_directory_test
+          POSTGRES_USER: gwap_test
+          POSTGRES_PASSWORD: gwap_test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U gwap_test -d gwap_gns_directory_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      GNS_DIRECTORY_TEST_DATABASE_URL: postgres://gwap_test:gwap_test_password@127.0.0.1:5432/gwap_gns_directory_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install public Solana key and isolated Postgres test adapter
+        run: npm install --prefix openmls-poc/gns-binding --no-save --ignore-scripts --no-audit --no-fund @solana/web3.js@1.98.4 pg@8.16.3
+      - name: Verify syntax, wallet enrollment API and security tests
+        run: |
+          node --check openmls-poc/gns-binding/gwapos-wallet-mls-enrollment.mjs
+          node --check openmls-poc/gns-binding/gwapos-wallet-mls-enrollment.test.mjs
+          node --check openmls-poc/gns-binding/roadmap-independent-archive-audit.mjs
+      - name: Verify server-authenticated session and signed MLS enrollment
+        run: node --test openmls-poc/gns-binding/gwapos-wallet-mls-enrollment.test.mjs
+
+  independently-corroborate-roadmap:
+    name: Separate public RPC — full finalized roadmap.gwap owner and history (gate)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install read-only Solana RPC library
+        run: npm install --prefix openmls-poc/gns-binding --no-save --ignore-scripts --no-audit --no-fund @solana/web3.js@1.98.4
+      - name: Compare public devnet source to independently hosted devnet RPC
+        timeout-minutes: 3
+        run: node openmls-poc/gns-binding/roadmap-independent-archive-audit.mjs
+
+# NO wallet/user signature is requested. No live GwapOS session, private keys,
+# GNS onchain transfer, transaction, Neon schema or production deploy occurs.
+# The independent RPC gate intentionally FAILS if archive evidence is unavailable.
