@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+  <title id="title">GWAP Identity Snapshot Card</title>
+  <desc id="desc">Successful .gwap lookup result card with claim your identity call to action.</desc>
+  <defs>
+    <linearGradient id="surface" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#080808"/>
+      <stop offset="0.55" stop-color="#030303"/>
+      <stop offset="1" stop-color="#0D0A12"/>
+    </linearGradient>
+    <radialGradient id="greenGlow" cx="18%" cy="16%" r="70%">
+      <stop offset="0" stop-color="#13DD13" stop-opacity="0.14"/>
+      <stop offset="0.45" stop-color="#13DD13" stop-opacity="0.04"/>
+      <stop offset="1" stop-color="#13DD13" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="purpleLine" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8F5CFF" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#8F5CFF" stop-opacity="0.65"/>
+      <stop offset="1" stop-color="#8F5CFF" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="14" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="buttonShadow" x="-20%" y="-40%" width="140%" height="180%">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#13DD13" flood-opacity="0.20"/>
+    </filter>
+    <pattern id="grain" width="110" height="110" patternUnits="userSpaceOnUse">
+      <circle cx="8" cy="12" r="1" fill="#fff" opacity="0.028"/>
+      <circle cx="49" cy="28" r="0.8" fill="#fff" opacity="0.018"/>
+      <circle cx="89" cy="76" r="0.9" fill="#fff" opacity="0.022"/>
+      <circle cx="33" cy="91" r="0.7" fill="#fff" opacity="0.016"/>
+    </pattern>
+  </defs>
+
+  <rect x="18" y="18" width="1164" height="724" rx="44" fill="url(#surface)" stroke="#202020" stroke-width="2"/>
+  <rect x="18" y="18" width="1164" height="724" rx="44" fill="url(#greenGlow)"/>
+  <rect x="18" y="18" width="1164" height="724" rx="44" fill="url(#grain)"/>
+
+  <!-- oversized ghosted typography -->
+  <text x="880" y="250" text-anchor="middle" font-family="Arial Black, Inter, sans-serif" font-size="244" font-weight="900" fill="#FFFFFF" opacity="0.033" letter-spacing="-16">GWAP</text>
+  <text x="760" y="476" text-anchor="middle" font-family="Arial Black, Inter, sans-serif" font-size="184" font-weight="900" fill="#8F5CFF" opacity="0.026" letter-spacing="-12">IDENTITY</text>
+
+  <!-- top label -->
+  <g transform="translate(72 70)">
+    <rect x="0" y="0" width="238" height="42" rx="21" fill="#13DD13" fill-opacity="0.10" stroke="#13DD13" stroke-opacity="0.35"/>
+    <circle cx="22" cy="21" r="6" fill="#13DD13" filter="url(#softGlow)"/>
+    <text x="40" y="27" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="800" fill="#A9FFA9" letter-spacing="1.3">.GWAP LOOKUP RESULT</text>
+  </g>
+
+  <!-- urgency pill -->
+  <g transform="translate(902 70)">
+    <rect x="0" y="0" width="208" height="42" rx="21" fill="#FF8A21" fill-opacity="0.10" stroke="#FF8A21" stroke-opacity="0.33"/>
+    <text x="104" y="27" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="800" fill="#FFB86F" letter-spacing="1.0">AVAILABLE TO CLAIM</text>
+  </g>
+
+  <!-- primary result -->
+  <text x="72" y="204" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="700" fill="#8F5CFF" letter-spacing="2.2">YOUR GWAP IDENTITY</text>
+  <text x="72" y="298" font-family="Arial Black, Inter, sans-serif" font-size="82" font-weight="900" fill="#FFFFFF" letter-spacing="-3">emerald.gwap</text>
+  <rect x="72" y="326" width="592" height="3" rx="2" fill="url(#purpleLine)"/>
+
+  <!-- status cluster -->
+  <g transform="translate(72 362)">
+    <circle cx="12" cy="12" r="12" fill="#13DD13" fill-opacity="0.12"/>
+    <circle cx="12" cy="12" r="5" fill="#13DD13"/>
+    <text x="34" y="18" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="800" fill="#D8FFD8">Identity available</text>
+    <text x="196" y="18" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="600" fill="#7D7D7D">•</text>
+    <text x="218" y="18" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="700" fill="#A99AF8">Ready for GwapSpot OS</text>
+  </g>
+
+  <!-- metadata rail -->
+  <g transform="translate(72 430)">
+    <rect x="0" y="0" width="642" height="116" rx="24" fill="#FFFFFF" fill-opacity="0.025" stroke="#8F5CFF" stroke-opacity="0.18"/>
+    <text x="28" y="34" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="800" fill="#8F5CFF" letter-spacing="1.5">IDENTITY SNAPSHOT</text>
+    <text x="28" y="72" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700" fill="#F4F4F4">Name</text>
+    <text x="100" y="72" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="600" fill="#9A9A9A">emerald.gwap</text>
+    <text x="312" y="72" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700" fill="#F4F4F4">Status</text>
+    <text x="378" y="72" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="800" fill="#13DD13">Available</text>
+    <text x="496" y="72" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700" fill="#F4F4F4">Layer</text>
+    <text x="548" y="72" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700" fill="#A99AF8">GNS</text>
+  </g>
+
+  <!-- action copy -->
+  <text x="72" y="606" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="650" fill="#BDBDBD">Make this identity yours before someone else does.</text>
+
+  <!-- CTA -->
+  <g transform="translate(746 502)" filter="url(#buttonShadow)">
+    <rect x="0" y="0" width="364" height="104" rx="28" fill="#13DD13"/>
+    <text x="182" y="48" text-anchor="middle" font-family="Arial Black, Inter, sans-serif" font-size="24" font-weight="900" fill="#021002">CLAIM YOUR IDENTITY</text>
+    <text x="182" y="76" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700" fill="#083408">ENTER GWAPSPOT OS →</text>
+  </g>
+
+  <!-- footer marker -->
+  <g transform="translate(72 676)">
+    <text x="0" y="0" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="800" fill="#4F4F4F" letter-spacing="1.6">GRIND WITH A PURPOSE</text>
+    <text x="1038" y="0" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="800" fill="#13DD13" letter-spacing="1.5">GWAP</text>
+  </g>
+</svg>
