@@ -27,7 +27,7 @@
     "@vercel/speed-insights": "^2.0.0",
     "bs58": "^6.0.0",
     "buffer": "^6.0.3",
-    "next": "^16.4.2",
+    "next": "^16.4.6",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "redis": "^6.3.0",
